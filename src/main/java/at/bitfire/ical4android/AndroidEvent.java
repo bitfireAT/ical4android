@@ -10,13 +10,33 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.RemoteException;
 import android.provider.CalendarContract;
-import android.provider.CalendarContract.*;
+import android.provider.CalendarContract.Attendees;
+import android.provider.CalendarContract.Events;
+import android.provider.CalendarContract.Reminders;
 import android.util.Log;
 
-import net.fortuna.ical4j.model.*;
+import net.fortuna.ical4j.model.Date;
+import net.fortuna.ical4j.model.DateTime;
+import net.fortuna.ical4j.model.Dur;
+import net.fortuna.ical4j.model.ParameterList;
+import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.component.VAlarm;
-import net.fortuna.ical4j.model.parameter.*;
-import net.fortuna.ical4j.model.property.*;
+import net.fortuna.ical4j.model.parameter.Cn;
+import net.fortuna.ical4j.model.parameter.CuType;
+import net.fortuna.ical4j.model.parameter.PartStat;
+import net.fortuna.ical4j.model.parameter.Role;
+import net.fortuna.ical4j.model.parameter.Rsvp;
+import net.fortuna.ical4j.model.property.Action;
+import net.fortuna.ical4j.model.property.Attendee;
+import net.fortuna.ical4j.model.property.Description;
+import net.fortuna.ical4j.model.property.Duration;
+import net.fortuna.ical4j.model.property.ExDate;
+import net.fortuna.ical4j.model.property.ExRule;
+import net.fortuna.ical4j.model.property.Organizer;
+import net.fortuna.ical4j.model.property.RDate;
+import net.fortuna.ical4j.model.property.RRule;
+import net.fortuna.ical4j.model.property.RecurrenceId;
+import net.fortuna.ical4j.model.property.Status;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -26,7 +46,6 @@ import java.text.ParseException;
 import java.util.List;
 
 import lombok.Cleanup;
-import lombok.Getter;
 
 public abstract class AndroidEvent {
     private static final String TAG = "ical4android.Event";
@@ -65,7 +84,6 @@ public abstract class AndroidEvent {
             );
             while (iterEvents.hasNext()) {
                 Entity e = iterEvents.next();
-
                 populateEvent(e.getEntityValues());
 
                 List<Entity.NamedContentValues> subValues = e.getSubValues();

@@ -14,7 +14,6 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Entity;
 import android.content.EntityIterator;
 import android.database.Cursor;
 import android.net.Uri;
@@ -24,8 +23,6 @@ import android.provider.CalendarContract.Attendees;
 import android.provider.CalendarContract.Calendars;
 import android.provider.CalendarContract.Events;
 import android.util.Log;
-
-import net.fortuna.ical4j.model.Content;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -42,7 +39,7 @@ import lombok.Getter;
  * database to store the contacts.
  */
 public abstract class AndroidCalendar {
-	private static final String TAG = "ical4android.Calendar";
+    private static final String TAG = "ical4android.Calendar";
 
     final protected Account account;
     final protected ContentProviderClient providerClient;
@@ -115,11 +112,19 @@ public abstract class AndroidCalendar {
         }
     }
 
+    public void delete() throws CalendarStorageException {
+        try {
+            providerClient.delete(syncAdapterURI(ContentUris.withAppendedId(Calendars.CONTENT_URI, id)), null, null);
+        } catch (RemoteException e) {
+            throw new CalendarStorageException("Couldn't delete calendar", e);
+        }
+    }
+
+
     protected void populate(ContentValues info) {
         isSynced = info.getAsInteger(Calendars.SYNC_EVENTS) != 0;
         isVisible = info.getAsInteger(Calendars.VISIBLE) != 0;
     }
-
 
     protected AndroidEvent[] query(String where, String[] whereArgs) throws CalendarStorageException {
         where = (where == null ? "" : "(" + where + ") AND ") + Events.CALENDAR_ID + "=?";

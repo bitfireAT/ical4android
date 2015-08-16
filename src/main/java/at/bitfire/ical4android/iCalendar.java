@@ -15,15 +15,10 @@ import net.fortuna.ical4j.model.PropertyFactoryRegistry;
 import net.fortuna.ical4j.model.component.VTimeZone;
 import net.fortuna.ical4j.model.property.DateProperty;
 import net.fortuna.ical4j.util.CompatibilityHints;
-import net.fortuna.ical4j.util.SimpleHostInfo;
 import net.fortuna.ical4j.util.Strings;
-import net.fortuna.ical4j.util.UidGenerator;
-
-import org.apache.commons.codec.CharEncoding;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.util.TimeZone;
 import java.util.UUID;
