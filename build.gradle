@@ -1,0 +1,38 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 22
+    buildToolsVersion "22.0.1"
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 22
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    packagingOptions {
+        exclude 'LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+    }
+}
+
+dependencies {
+    // support libraries
+    compile 'com.android.support:appcompat-v7:22.2.0'
+    compile 'org.apache.commons:commons-lang3:3.4'
+    provided 'org.projectlombok:lombok:1.16.4'
+
+    // ical4j
+    compile('org.mnode.ical4j:ical4j:2.0-alpha1') {
+        // we don't need content builders, see https://github.com/ical4j/ical4j/wiki/Groovy
+        exclude group: 'org.codehaus.groovy', module: 'groovy-all'
+    }
+    compile('org.slf4j:slf4j-android:1.7.12')       // slf4j is used by ical4j
+}
