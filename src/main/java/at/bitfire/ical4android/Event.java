@@ -24,6 +24,7 @@ import net.fortuna.ical4j.model.property.DtStart;
 import net.fortuna.ical4j.model.property.Duration;
 import net.fortuna.ical4j.model.property.ExDate;
 import net.fortuna.ical4j.model.property.ExRule;
+import net.fortuna.ical4j.model.property.LastModified;
 import net.fortuna.ical4j.model.property.Location;
 import net.fortuna.ical4j.model.property.Organizer;
 import net.fortuna.ical4j.model.property.ProdId;
@@ -61,6 +62,7 @@ public class Event extends iCalendar {
     // uid is inherited from iCalendar
     public int sequence;
     public RecurrenceId recurrenceId;
+    public long lastModified;
 
     public String summary, location, description;
 
@@ -201,6 +203,8 @@ public class Event extends iCalendar {
         e.recurrenceId = event.getRecurrenceId();
         if (event.getSequence() != null)
             e.sequence = event.getSequence().getSequenceNo();
+        if (event.getLastModified() != null)
+            e.lastModified = event.getLastModified().getDateTime().getTime();
 
         if ((e.dtStart = event.getStartDate()) == null || (e.dtEnd = event.getEndDate()) == null)
             throw new InvalidCalendarException("Invalid start time/end time/duration");
@@ -212,13 +216,13 @@ public class Event extends iCalendar {
         // * related UNIX times must be in UTC
         // * must have a duration (set to one day if missing)
         // TODO AndroidCalendar
-        /*if (!isDateTime(e.dtStart) && !e.dtEnd.getDate().after(e.dtStart.getDate())) {
+        if (!isDateTime(e.dtStart) && !e.dtEnd.getDate().after(e.dtStart.getDate())) {
             Log.i(TAG, "Repairing iCal: DTEND := DTSTART+1");
             java.util.Calendar c = java.util.Calendar.getInstance(TimeZone.getTimeZone(TimeZones.UTC_ID));
             c.setTime(e.dtStart.getDate());
             c.add(java.util.Calendar.DATE, 1);
             e.dtEnd.setDate(new Date(c.getTimeInMillis()));
-        }*/
+        }
 
         e.rrule = (RRule) event.getProperty(Property.RRULE);
         for (RDate rdate : (List<RDate>) (List<?>) event.getProperties(Property.RDATE))
@@ -308,6 +312,8 @@ public class Event extends iCalendar {
             props.add(uid);
         if (recurrenceId != null)
             props.add(recurrenceId);
+        if (lastModified != 0)
+            props.add(new LastModified(new DateTime(lastModified)));
 
         props.add(dtStart);
         if (dtEnd != null)

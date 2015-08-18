@@ -51,13 +51,12 @@ public abstract class AndroidEvent {
     private static final String TAG = "ical4android.Event";
 
     public static final String
-            COLUMN_UID = android.os.Build.VERSION.SDK_INT >= 17 ? Events.UID_2445 : Events.SYNC_DATA2,
-            COLUMN_SEQUENCE = Events.SYNC_DATA1;
+            COLUMN_UID = android.os.Build.VERSION.SDK_INT >= 17 ? Events.UID_2445 : Events.SYNC_DATA1;
 
     final protected AndroidCalendar calendar;
 
     protected Long id;
-    private Event event;
+    protected Event event;
 
 
     protected AndroidEvent(AndroidCalendar calendar, long id) {
@@ -76,6 +75,7 @@ public abstract class AndroidEvent {
             return event;
 
         try {
+            event = new Event();
             @Cleanup EntityIterator iterEvents = CalendarContract.EventsEntity.newEntityIterator(
                     calendar.providerClient.query(
                             calendar.syncAdapterURI(ContentUris.withAppendedId(CalendarContract.EventsEntity.CONTENT_URI, id)),
@@ -103,7 +103,6 @@ public abstract class AndroidEvent {
 
     protected void populateEvent(ContentValues values) {
         event.uid = values.getAsString(COLUMN_UID);
-        event.sequence = values.getAsInteger(COLUMN_SEQUENCE);
 
         event.summary = values.getAsString(Events.TITLE);
         event.location = values.getAsString(Events.EVENT_LOCATION);
@@ -305,7 +304,7 @@ public abstract class AndroidEvent {
     public void add() throws CalendarStorageException {
         BatchOperation batch = new BatchOperation(calendar.providerClient);
         Builder builder = ContentProviderOperation.newInsert(eventsURI());
-        buildEntry(builder);
+        buildEvent(builder);
         batch.enqueue(builder.build());
         batch.commit();
     }
@@ -315,20 +314,19 @@ public abstract class AndroidEvent {
 
         BatchOperation batch = new BatchOperation(calendar.providerClient);
         Builder builder = ContentProviderOperation.newUpdate(eventURI());
-        buildEntry(builder);
+        buildEvent(builder);
         batch.enqueue(builder.build());
         batch.commit();
     }
 
-    protected void buildEntry(Builder builder) {
+    protected void buildEvent(Builder builder) {
         builder	.withValue(Events.CALENDAR_ID, calendar.getId())
                 .withValue(Events.ALL_DAY, event.isAllDay() ? 1 : 0)
                 .withValue(Events.DTSTART, event.getDtStartInMillis())
                 .withValue(Events.EVENT_TIMEZONE, event.getDtStartTzID())
                 .withValue(Events.HAS_ALARM, event.getAlarms().isEmpty() ? 0 : 1)
                 .withValue(Events.HAS_ATTENDEE_DATA, event.getAttendees().isEmpty() ? 0 : 1)
-                .withValue(COLUMN_UID, event.uid)
-                .withValue(COLUMN_SEQUENCE, event.sequence);
+                .withValue(COLUMN_UID, event.uid);
 
         boolean recurring = false;
         if (event.rrule != null) {

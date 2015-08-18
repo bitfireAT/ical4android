@@ -129,7 +129,6 @@ public abstract class AndroidCalendar {
     protected AndroidEvent[] query(String where, String[] whereArgs) throws CalendarStorageException {
         where = (where == null ? "" : "(" + where + ") AND ") + Events.CALENDAR_ID + "=?";
         whereArgs = ArrayUtils.add(whereArgs, String.valueOf(id));
-        Log.i(TAG, "SELECT where: " + where + " " + StringUtils.join(whereArgs, "|"));
 
         @Cleanup Cursor cursor = null;
         try {
@@ -152,7 +151,6 @@ public abstract class AndroidCalendar {
     protected int delete(String where, String[] whereArgs) throws CalendarStorageException {
         where = (where == null ? "" : "(" + where + ") AND ") + Events.CALENDAR_ID + "=?";
         whereArgs = ArrayUtils.add(whereArgs, String.valueOf(id));
-        Log.i(TAG, "DELETE where: " + where + " " + StringUtils.join(whereArgs, "|"));
 
         try {
             return providerClient.delete(syncAdapterURI(Events.CONTENT_URI), where, whereArgs);
