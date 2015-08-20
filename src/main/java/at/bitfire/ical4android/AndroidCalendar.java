@@ -27,6 +27,7 @@ import android.util.Log;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.FileNotFoundException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -46,6 +47,8 @@ public abstract class AndroidCalendar {
     final AndroidEventFactory eventFactory;
 
     @Getter final private long id;
+    @Getter private String name, displayName;
+    @Getter private Integer color;
     @Getter private boolean isSynced, isVisible;
 
     protected AndroidCalendar(Account account, ContentProviderClient providerClient, AndroidEventFactory eventFactory, long id) {
@@ -82,6 +85,26 @@ public abstract class AndroidCalendar {
 			throw new CalendarStorageException("Couldn't create calendar", e);
 		}
 	}
+
+    public static AndroidCalendar findByID(Account account, ContentProviderClient provider, AndroidCalendarFactory factory) throws FileNotFoundException, CalendarStorageException {
+        @Cleanup EntityIterator iterCalendars = null;
+        try {
+            iterCalendars = CalendarContract.CalendarEntity.newEntityIterator(
+                    provider.query(syncAdapterURI(CalendarContract.CalendarEntity.CONTENT_URI, account), null, null, null, null)
+            );
+        } catch (RemoteException e) {
+            throw new CalendarStorageException("Couldn't query calendars", e);
+        }
+
+        if (iterCalendars.hasNext()) {
+            ContentValues values = iterCalendars.next().getEntityValues();
+
+            AndroidCalendar calendar = factory.newInstance(account, provider, values.getAsLong(Calendars._ID));
+            calendar.populate(values);
+            return calendar;
+        }
+        throw new FileNotFoundException();
+    }
 
     public static AndroidCalendar[] findAll(Account account, ContentProviderClient provider, AndroidCalendarFactory factory) throws CalendarStorageException {
         @Cleanup EntityIterator iterCalendars = null;
@@ -122,6 +145,12 @@ public abstract class AndroidCalendar {
 
 
     protected void populate(ContentValues info) {
+        name = info.getAsString(Calendars.NAME);
+        displayName = info.getAsString(Calendars.CALENDAR_DISPLAY_NAME);
+
+        if (info.containsKey(Calendars.CALENDAR_COLOR))
+            color = info.getAsInteger(Calendars.CALENDAR_COLOR);
+
         isSynced = info.getAsInteger(Calendars.SYNC_EVENTS) != 0;
         isVisible = info.getAsInteger(Calendars.VISIBLE) != 0;
     }
