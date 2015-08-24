@@ -86,11 +86,11 @@ public abstract class AndroidCalendar {
 		}
 	}
 
-    public static AndroidCalendar findByID(Account account, ContentProviderClient provider, AndroidCalendarFactory factory) throws FileNotFoundException, CalendarStorageException {
+    public static AndroidCalendar findByID(Account account, ContentProviderClient provider, AndroidCalendarFactory factory, long id) throws FileNotFoundException, CalendarStorageException {
         @Cleanup EntityIterator iterCalendars = null;
         try {
             iterCalendars = CalendarContract.CalendarEntity.newEntityIterator(
-                    provider.query(syncAdapterURI(CalendarContract.CalendarEntity.CONTENT_URI, account), null, null, null, null)
+                    provider.query(syncAdapterURI(ContentUris.withAppendedId(CalendarContract.CalendarEntity.CONTENT_URI, id), account), null, null, null, null)
             );
         } catch (RemoteException e) {
             throw new CalendarStorageException("Couldn't query calendars", e);

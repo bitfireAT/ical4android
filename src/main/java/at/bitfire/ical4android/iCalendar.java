@@ -127,8 +127,13 @@ public class iCalendar {
 
         public static class Factory implements ParameterFactory {
             @Override
-            public Parameter createParameter(String name, String value) throws URISyntaxException {
+            public Parameter createParameter(String value) throws URISyntaxException {
                 return new Email(value);
+            }
+
+            @Override
+            public boolean supports(String name) {
+                return false;
             }
         }
     }
