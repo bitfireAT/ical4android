@@ -22,7 +22,7 @@ import android.util.Log;
 import java.util.ArrayList;
 
 public class BatchOperation {
-	private static final String TAG = "davdroid.BatchOperation";
+	private static final String TAG = "ical4android.BatchOp";
 
 	private final ContentProviderClient providerClient;
 	private final ArrayList<ContentProviderOperation> queue = new ArrayList<>();

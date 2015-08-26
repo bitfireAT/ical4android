@@ -30,8 +30,10 @@ import android.util.Log;
 import net.fortuna.ical4j.model.Date;
 import net.fortuna.ical4j.model.DateTime;
 import net.fortuna.ical4j.model.Dur;
+import net.fortuna.ical4j.model.Parameter;
 import net.fortuna.ical4j.model.ParameterList;
 import net.fortuna.ical4j.model.PropertyList;
+import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.component.VAlarm;
 import net.fortuna.ical4j.model.parameter.Cn;
 import net.fortuna.ical4j.model.parameter.CuType;
@@ -49,6 +51,7 @@ import net.fortuna.ical4j.model.property.RDate;
 import net.fortuna.ical4j.model.property.RRule;
 import net.fortuna.ical4j.model.property.RecurrenceId;
 import net.fortuna.ical4j.model.property.Status;
+import net.fortuna.ical4j.util.TimeZones;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -89,10 +92,10 @@ public abstract class AndroidEvent {
         try {
             event = new Event();
             @Cleanup EntityIterator iterEvents = CalendarContract.EventsEntity.newEntityIterator(
-                    calendar.providerClient.query(
+                    calendar.provider.query(
                             calendar.syncAdapterURI(ContentUris.withAppendedId(CalendarContract.EventsEntity.CONTENT_URI, id)),
                             null, null, null, null),
-                    calendar.providerClient
+                    calendar.provider
             );
             while (iterEvents.hasNext()) {
                 Entity e = iterEvents.next();
@@ -298,7 +301,7 @@ public abstract class AndroidEvent {
     }
 
     protected void populateExceptions() throws RemoteException {
-        @Cleanup Cursor c = calendar.providerClient.query(calendar.syncAdapterURI(Events.CONTENT_URI),
+        @Cleanup Cursor c = calendar.provider.query(calendar.syncAdapterURI(Events.CONTENT_URI),
                 new String[] { Events._ID },
                 Events.ORIGINAL_ID + "=?", new String[] { String.valueOf(id) }, null);
         while (c != null && c.moveToNext()) {
@@ -313,22 +316,33 @@ public abstract class AndroidEvent {
     }
 
 
-    public void add() throws CalendarStorageException {
-        BatchOperation batch = new BatchOperation(calendar.providerClient);
+    public Uri add() throws CalendarStorageException {
+        BatchOperation batch = new BatchOperation(calendar.provider);
         Builder builder = ContentProviderOperation.newInsert(eventsURI());
         buildEvent(builder);
         batch.enqueue(builder.build());
+        addDataRows(batch, false);
         batch.commit();
+        return batch.getResult(0).uri;
     }
 
     public void update(Event event) throws CalendarStorageException {
         this.event = event;
 
-        BatchOperation batch = new BatchOperation(calendar.providerClient);
+        BatchOperation batch = new BatchOperation(calendar.provider);
         Builder builder = ContentProviderOperation.newUpdate(eventURI());
         buildEvent(builder);
         batch.enqueue(builder.build());
+        addDataRows(batch, true);
         batch.commit();
+    }
+
+    public int delete() throws CalendarStorageException {
+        try {
+            return calendar.provider.delete(eventURI(), null, null);
+        } catch (RemoteException e) {
+            throw new CalendarStorageException("Couldn't delete event", e);
+        }
     }
 
     protected void buildEvent(Builder builder) {
@@ -339,6 +353,15 @@ public abstract class AndroidEvent {
                 .withValue(Events.HAS_ALARM, event.getAlarms().isEmpty() ? 0 : 1)
                 .withValue(Events.HAS_ATTENDEE_DATA, event.getAttendees().isEmpty() ? 0 : 1)
                 .withValue(COLUMN_UID, event.uid);
+
+        // all-day events and "events on that day" must have a duration (set to one day if zero or missing)
+        if (event.isAllDay() && !event.dtEnd.getDate().after(event.dtStart.getDate())) {
+            Log.w(TAG, "Changing all-day event for Android compatibility: setting DTEND := DTSTART+1");
+            java.util.Calendar c = java.util.Calendar.getInstance(TimeZone.getTimeZone(TimeZones.UTC_ID));
+            c.setTime(event.dtStart.getDate());
+            c.add(java.util.Calendar.DATE, 1);
+            event.dtEnd.setDate(new Date(c.getTimeInMillis()));
+        }
 
         boolean recurring = false;
         if (event.rrule != null) {
@@ -395,7 +418,7 @@ public abstract class AndroidEvent {
                 Log.w(TAG, "Got ORGANIZER without email address which is not supported by Android, ignoring");
         }
 
-        if (event.status!= null) {
+        if (event.status != null) {
             int statusCode = Events.STATUS_TENTATIVE;
             if (event.status == Status.VEVENT_CONFIRMED)
                 statusCode = Events.STATUS_CONFIRMED;
@@ -408,6 +431,104 @@ public abstract class AndroidEvent {
 
         if (event.forPublic != null)
             builder.withValue(Events.ACCESS_LEVEL, event.forPublic ? Events.ACCESS_PUBLIC : Events.ACCESS_PRIVATE);
+    }
+
+    protected void addDataRows(BatchOperation batch, boolean update) {
+        // add reminders
+        for (VAlarm alarm : event.getAlarms()) {
+            Builder builder = ContentProviderOperation.newInsert(Reminders.CONTENT_URI);
+            if (update)
+                builder.withValue(Reminders.EVENT_ID, id);
+            else
+                builder.withValueBackReference(Reminders.EVENT_ID, 0);
+            buildReminder(alarm, builder);
+            batch.enqueue(builder.build());
+        }
+
+        // add attendees
+        for (Attendee attendee : event.getAttendees()) {
+            Builder builder = ContentProviderOperation.newInsert(Attendees.CONTENT_URI);
+            if (update)
+                builder.withValue(Attendees.EVENT_ID, id);
+            else
+                builder.withValueBackReference(Reminders.EVENT_ID, 0);
+            buildAttendee(attendee, builder);
+            batch.enqueue(builder.build());
+        }
+    }
+
+    protected void buildReminder(VAlarm alarm, Builder builder) {
+        int minutes = 0;
+
+        if (alarm.getTrigger() != null) {
+            Dur duration = alarm.getTrigger().getDuration();
+            if (duration != null) {
+                // negative value in TRIGGER means positive value in Reminders.MINUTES and vice versa
+                minutes = -(((duration.getWeeks() * 7 + duration.getDays()) * 24 + duration.getHours()) * 60 + duration.getMinutes());
+                if (duration.isNegative())
+                    minutes *= -1;
+            }
+        }
+
+        Log.d(TAG, "Adding alarm " + minutes + " minutes before");
+        builder.withValue(Reminders.METHOD, Reminders.METHOD_ALERT)
+                .withValue(Reminders.MINUTES, minutes);
+    }
+
+    protected void buildAttendee(Attendee attendee, Builder builder) {
+        final URI member = attendee.getCalAddress();
+        if ("mailto".equalsIgnoreCase(member.getScheme()))
+            // attendee identified by email
+            builder = builder.withValue(Attendees.ATTENDEE_EMAIL, member.getSchemeSpecificPart());
+        else {
+            // attendee identified by other URI
+            builder = builder
+                    .withValue(Attendees.ATTENDEE_ID_NAMESPACE, member.getScheme())
+                    .withValue(Attendees.ATTENDEE_IDENTITY, member.getSchemeSpecificPart());
+            iCalendar.Email email = (iCalendar.Email)attendee.getParameter(iCalendar.Email.PARAMETER_NAME);
+            if (email != null)
+                builder = builder.withValue(Attendees.ATTENDEE_EMAIL, email.getValue());
+        }
+
+        final Cn cn = (Cn)attendee.getParameter(Parameter.CN);
+        if (cn != null)
+            builder.withValue(Attendees.ATTENDEE_NAME, cn.getValue());
+
+        int type = Attendees.TYPE_NONE;
+
+        CuType cutype = (CuType)attendee.getParameter(Parameter.CUTYPE);
+        if (cutype == CuType.RESOURCE || cutype == CuType.ROOM)
+            // "attendee" is a (physical) resource
+            type = Attendees.TYPE_RESOURCE;
+        else {
+            // attendee is not a (physical) resource
+            Role role = (Role)attendee.getParameter(Parameter.ROLE);
+            int relationship;
+            if (role == Role.CHAIR)
+                relationship = Attendees.RELATIONSHIP_ORGANIZER;
+            else {
+                relationship = Attendees.RELATIONSHIP_ATTENDEE;
+                if (role == Role.OPT_PARTICIPANT)
+                    type = Attendees.TYPE_OPTIONAL;
+                else if (role == Role.REQ_PARTICIPANT)
+                    type = Attendees.TYPE_REQUIRED;
+            }
+            builder.withValue(Attendees.ATTENDEE_RELATIONSHIP, relationship);
+        }
+
+        int status = Attendees.ATTENDEE_STATUS_NONE;
+        PartStat partStat = (PartStat)attendee.getParameter(Parameter.PARTSTAT);
+        if (partStat == null || partStat == PartStat.NEEDS_ACTION)
+            status = Attendees.ATTENDEE_STATUS_INVITED;
+        else if (partStat == PartStat.ACCEPTED)
+            status = Attendees.ATTENDEE_STATUS_ACCEPTED;
+        else if (partStat == PartStat.DECLINED)
+            status = Attendees.ATTENDEE_STATUS_DECLINED;
+        else if (partStat == PartStat.TENTATIVE)
+            status = Attendees.ATTENDEE_STATUS_TENTATIVE;
+
+        builder .withValue(Attendees.ATTENDEE_TYPE, type)
+                .withValue(Attendees.ATTENDEE_STATUS, status);
     }
 
 

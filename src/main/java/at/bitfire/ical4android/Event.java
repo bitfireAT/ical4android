@@ -29,7 +29,6 @@ import net.fortuna.ical4j.model.component.VAlarm;
 import net.fortuna.ical4j.model.component.VEvent;
 import net.fortuna.ical4j.model.property.Attendee;
 import net.fortuna.ical4j.model.property.Clazz;
-import net.fortuna.ical4j.model.property.DateProperty;
 import net.fortuna.ical4j.model.property.Description;
 import net.fortuna.ical4j.model.property.DtEnd;
 import net.fortuna.ical4j.model.property.DtStart;
@@ -102,10 +101,11 @@ public class Event extends iCalendar {
 
     /**
      * Parses an InputStream that contains iCalendar VEVENTs.
-     * @param stream       input stream containing the VEVENTs
-     * @param charset      charset of the input stream or null (will assume UTF-8)
+     *
+     * @param stream  input stream containing the VEVENTs
+     * @param charset charset of the input stream or null (will assume UTF-8)
      * @return If no VEVENTs are found: null.
-     *         Otherwise: array of filled Event data objects
+     * Otherwise: array of filled Event data objects
      * @throws IOException
      * @throws InvalidCalendarException
      */
@@ -128,7 +128,7 @@ public class Event extends iCalendar {
             return null;
 
         List<Event> events = new LinkedList<>();
-        for (VEvent masterEvent : (Iterable<VEvent>)findMasterEvents(vEvents)) {
+        for (VEvent masterEvent : (Iterable<VEvent>) findMasterEvents(vEvents)) {
             Event event = fromVEvent(masterEvent);
             for (VEvent exception : (Iterable<VEvent>) findExceptions(event.uid, vEvents))
                 event.exceptions.add(fromVEvent(exception));
@@ -140,9 +140,9 @@ public class Event extends iCalendar {
 
     /**
      * Finds events without RECURRENCE-ID ("master events").
-       If there are multiple versions, use the one with highest SEQUENCE.
+     * If there are multiple versions, use the one with highest SEQUENCE.
      */
-    private static Collection<VEvent> findMasterEvents(List<VEvent> vEvents) {
+    static Collection<VEvent> findMasterEvents(List<VEvent> vEvents) {
         Map<String, VEvent> vEventMap = new HashMap<>(vEvents.size());
         for (VEvent vEvent : (Iterable<VEvent>) vEvents) {
             if (vEvent.getUid() == null) {
@@ -174,8 +174,8 @@ public class Event extends iCalendar {
         return vEventMap.values();
     }
 
-    private static Collection<VEvent> findExceptions(String uid, List<VEvent> vEvents) {
-        Map<String, VEvent> exceptionMap = new HashMap<>();
+    static Collection<VEvent> findExceptions(String uid, List<VEvent> vEvents) {
+        Map<String, VEvent> exceptionMap = new HashMap<>();     // map of <recurring-id, exception> for given uid
         for (VEvent vEvent : vEvents) {
             if (vEvent.getUid() == null || !uid.equals(vEvent.getUid().getValue()) || vEvent.getRecurrenceId() == null)
                 // ignore VEvents without or with wrong UID or without RECURRENCE-ID
@@ -190,7 +190,7 @@ public class Event extends iCalendar {
                     seq = vEvent.getSequence().getSequenceNo();
 
                 int otherSeq = 0;
-                VEvent otherVEvent = exceptionMap.get(uid);
+                VEvent otherVEvent = exceptionMap.get(recurrenceID);
                 if (otherVEvent.getSequence() != null)
                     otherSeq = otherVEvent.getSequence().getSequenceNo();
 
@@ -223,18 +223,6 @@ public class Event extends iCalendar {
 
         validateTimeZone(e.dtStart);
         validateTimeZone(e.dtEnd);
-
-        // all-day events and "events on that day":
-        // * related UNIX times must be in UTC
-        // * must have a duration (set to one day if missing)
-        // TODO AndroidCalendar
-        if (!isDateTime(e.dtStart) && !e.dtEnd.getDate().after(e.dtStart.getDate())) {
-            Log.i(TAG, "Repairing iCal: DTEND := DTSTART+1");
-            java.util.Calendar c = java.util.Calendar.getInstance(TimeZone.getTimeZone(TimeZones.UTC_ID));
-            c.setTime(e.dtStart.getDate());
-            c.add(java.util.Calendar.DATE, 1);
-            e.dtEnd.setDate(new Date(c.getTimeInMillis()));
-        }
 
         e.rrule = (RRule) event.getProperty(Property.RRULE);
         for (RDate rdate : (List<RDate>) (List<?>) event.getProperties(Property.RDATE))
@@ -367,19 +355,6 @@ public class Event extends iCalendar {
 
 
     // time helpers
-
-    /**
-     * Returns the time-zone ID for a given date-time, or TIMEZONE_UTC for dates (without time).
-     * TIMEZONE_UTC is also returned for DATE-TIMEs in UTC representation.
-     *
-     * @param date DateProperty (DATE or DATE-TIME) whose time-zone information is used
-     */
-    protected static String getTzId(DateProperty date) {
-        if (isDateTime(date) && !date.isUtc() && date.getTimeZone() != null)
-            return date.getTimeZone().getID();
-        else
-            return TimeZones.UTC_ID;
-    }
 
     public boolean isAllDay() {
         return !isDateTime(dtStart);

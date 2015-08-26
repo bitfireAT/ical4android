@@ -12,16 +12,12 @@
 
 package at.bitfire.ical4android;
 
-import android.app.Application;
-import android.test.ApplicationTestCase;
+import junit.framework.TestCase;
 
-/**
- * <a href="http://d.android.com/tools/testing/testing_android.html">Testing Fundamentals</a>
- */
-public class ApplicationTest extends ApplicationTestCase<Application> {
+public class TestDateUtils extends TestCase {
 
-    public ApplicationTest() {
-        super(Application.class);
+    public void testTimeZoneRegistry() {
+        assertNotNull(DateUtils.tzRegistry.getTimeZone("Europe/Vienna"));
     }
 
 }

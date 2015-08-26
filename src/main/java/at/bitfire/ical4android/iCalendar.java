@@ -28,6 +28,7 @@ import net.fortuna.ical4j.model.component.VTimeZone;
 import net.fortuna.ical4j.model.property.DateProperty;
 import net.fortuna.ical4j.util.CompatibilityHints;
 import net.fortuna.ical4j.util.Strings;
+import net.fortuna.ical4j.util.TimeZones;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -63,6 +64,19 @@ public class iCalendar {
 
     protected static boolean isDateTime(DateProperty date) {
         return date.getDate() instanceof DateTime;
+    }
+
+    /**
+     * Returns the time-zone ID for a given date-time, or TIMEZONE_UTC for dates (without time).
+     * TIMEZONE_UTC is also returned for DATE-TIMEs in UTC representation.
+     *
+     * @param date DateProperty (DATE or DATE-TIME) whose time-zone information is used
+     */
+    protected static String getTzId(DateProperty date) {
+        if (isDateTime(date) && !date.isUtc() && date.getTimeZone() != null)
+            return date.getTimeZone().getID();
+        else
+            return TimeZones.UTC_ID;
     }
 
     /**
