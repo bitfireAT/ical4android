@@ -13,6 +13,7 @@ package at.bitfire.ical4android;
 
 import android.content.res.AssetManager;
 import android.test.InstrumentationTestCase;
+import android.util.Log;
 
 import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.TimeZone;
@@ -37,6 +38,7 @@ import lombok.Cleanup;
 import lombok.NonNull;
 
 public class EventTest extends InstrumentationTestCase {
+    private static final String TAG = "ical4android.EventTest";
     protected final TimeZone tzVienna = DateUtils.tzRegistry.getTimeZone("Europe/Vienna");
 
     AssetManager assetMgr;
@@ -65,7 +67,7 @@ public class EventTest extends InstrumentationTestCase {
     }
 
     public void testGrouping() throws IOException, InvalidCalendarException {
-        @Cleanup InputStream is = assetMgr.open("multiple.ics", AssetManager.ACCESS_STREAMING);
+        @Cleanup InputStream is = assetMgr.open("events/multiple.ics", AssetManager.ACCESS_STREAMING);
         Event[] events = Event.fromStream(is, null);
         assertEquals(3, events.length);
 
@@ -216,7 +218,10 @@ public class EventTest extends InstrumentationTestCase {
     }
 
     private Event parseCalendar(String fname, Charset charset) throws IOException, InvalidCalendarException {
+        fname = "events/" + fname;
+        Log.d(TAG, "Loading event file " + fname);
         @Cleanup InputStream is = assetMgr.open(fname, AssetManager.ACCESS_STREAMING);
         return Event.fromStream(is, charset)[0];
     }
+
 }

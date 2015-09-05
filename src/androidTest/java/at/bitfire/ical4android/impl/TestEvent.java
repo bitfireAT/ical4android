@@ -10,15 +10,20 @@
  * PURPOSE.  See the GNU General Public License for more details.
  */
 
-package at.bitfire.ical4android;
+package at.bitfire.ical4android.impl;
+
+import at.bitfire.ical4android.AndroidCalendar;
+import at.bitfire.ical4android.AndroidEvent;
+import at.bitfire.ical4android.AndroidEventFactory;
+import at.bitfire.ical4android.Event;
 
 public class TestEvent extends AndroidEvent {
 
-    protected TestEvent(AndroidCalendar calendar, long id) {
+    public TestEvent(AndroidCalendar calendar, long id) {
         super(calendar, id);
     }
 
-    protected TestEvent(AndroidCalendar calendar, Event event) {
+    public TestEvent(AndroidCalendar calendar, Event event) {
         super(calendar, event);
     }
 

@@ -11,14 +11,12 @@
  */
 package at.bitfire.ical4android;
 
-import android.Manifest;
 import android.accounts.Account;
 import android.annotation.TargetApi;
 import android.content.ContentProviderClient;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.RemoteException;
@@ -43,24 +41,22 @@ import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.util.Calendar;
 
+import at.bitfire.ical4android.impl.TestCalendar;
+import at.bitfire.ical4android.impl.TestEvent;
 import lombok.Cleanup;
 
-public class LocalEventTest extends InstrumentationTestCase {
-
-    private static final String
-            TAG = "ical4android.CalTest",
-            accountType = CalendarContract.ACCOUNT_TYPE_LOCAL,
-            calendarName = "DAVdroid_Test";
+public class AndroidEventTest extends InstrumentationTestCase {
+    private static final String TAG = "ical4android.CalTest";
 
     private static final TimeZone tzVienna = DateUtils.tzRegistry.getTimeZone("Europe/Vienna");
 
     Context context;
 
     ContentProviderClient provider;
-    final Account testAccount = new Account(calendarName, accountType);
+    final Account testAccount = new Account("ical4android.AndroidEventTest", CalendarContract.ACCOUNT_TYPE_LOCAL);
 
     Uri calendarUri;
-    AndroidCalendar testCalendar;
+    AndroidCalendar calendar;
 
 
     // helpers
@@ -73,18 +69,6 @@ public class LocalEventTest extends InstrumentationTestCase {
                         build();
     }
 
-    private long insertNewEvent() throws RemoteException {
-        ContentValues values = new ContentValues();
-        values.put(Events.CALENDAR_ID, testCalendar.getId());
-        values.put(Events.TITLE, "Test Event");
-        values.put(Events.ALL_DAY, 0);
-        values.put(Events.DTSTART, Calendar.getInstance().getTimeInMillis());
-        values.put(Events.DTEND, Calendar.getInstance().getTimeInMillis());
-        values.put(Events.EVENT_TIMEZONE, "UTC");
-        values.put(Events.DIRTY, 1);
-        return ContentUris.parseId(provider.insert(syncAdapterURI(Events.CONTENT_URI), values));
-    }
-
 
     // initialization
 
@@ -92,29 +76,18 @@ public class LocalEventTest extends InstrumentationTestCase {
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
     protected void setUp() throws RemoteException, FileNotFoundException, CalendarStorageException {
         context = getInstrumentation().getTargetContext();
-        context.enforceCallingOrSelfPermission(Manifest.permission.WRITE_CALENDAR, "No privileges for managing calendars");
-
         provider = context.getContentResolver().acquireContentProviderClient(CalendarContract.AUTHORITY);
+        assertNotNull("Couldn't access calendar provider", provider);
 
         prepareTestCalendar();
     }
 
     private void prepareTestCalendar() throws RemoteException, FileNotFoundException, CalendarStorageException {
-        testCalendar = TestCalendar.findOrCreate(testAccount, provider);
+        calendar = TestCalendar.findOrCreate(testAccount, provider);
+        assertNotNull("Coulnd't find/create test calendar", calendar);
 
-        @Cleanup Cursor cursor = provider.query(Calendars.CONTENT_URI, new String[]{Calendars._ID},
-                Calendars.ACCOUNT_TYPE + "=? AND " + Calendars.ACCOUNT_NAME + "=?",
-                new String[]{testAccount.type, testAccount.name}, null);
-        if (cursor != null && cursor.moveToNext())
-            calendarUri = ContentUris.withAppendedId(Calendars.CONTENT_URI, cursor.getLong(0));
-        else {
-            ContentValues values = new ContentValues();
-            values.put(Calendars.NAME, "Test Calendar");
-            //calendarUri = AndroidCalendar.create(testAccount, context.getContentResolver(), values);
-        }
-
+        calendarUri = ContentUris.withAppendedId(Calendars.CONTENT_URI, calendar.getId());
         Log.i(TAG, "Prepared test calendar " + calendarUri);
-        testCalendar = AndroidCalendar.findByID(testAccount, provider, TestCalendar.Factory.FACTORY, ContentUris.parseId(calendarUri));
     }
 
     @Override
@@ -122,16 +95,16 @@ public class LocalEventTest extends InstrumentationTestCase {
         Log.i(TAG, "Deleting test calendar");
 
         // all events should have been removed
-        assertEquals(0, testCalendar.query(null, null).length);
+        assertEquals(0, calendar.queryEvents(null, null).length);
 
         // remove test calendar, too
-        testCalendar.delete();
+        calendar.delete();
     }
 
 
     // tests
 
-    public void testAddEvent() throws URISyntaxException, ParseException, CalendarStorageException {
+    public void testAddEvent() throws URISyntaxException, ParseException, FileNotFoundException, CalendarStorageException {
         // build and write event to calendar provider
         Event event = new Event();
         event.uid = "sample1@testAddEvent";
@@ -151,11 +124,11 @@ public class LocalEventTest extends InstrumentationTestCase {
         event.getAttendees().add(new Attendee(new URI("mailto:user2@example.com")));
 
         // add to calendar
-        Uri uri = new TestEvent(testCalendar, event).add();
+        Uri uri = new TestEvent(calendar, event).add();
         assertNotNull("Couldn't add event", uri);
 
         // read and parse event from calendar provider
-        @Cleanup("delete") TestEvent testEvent = new TestEvent(testCalendar, ContentUris.parseId(uri));
+        @Cleanup("delete") TestEvent testEvent = new TestEvent(calendar, ContentUris.parseId(uri));
         assertNotNull("Inserted event is not here", testEvent);
         Event event2 = testEvent.getEvent();
         assertNotNull("Inserted event is empty", event2);
@@ -175,7 +148,7 @@ public class LocalEventTest extends InstrumentationTestCase {
         assertEquals(2, event2.getAttendees().size());
     }
 
-    public void testUpdateEvent() throws URISyntaxException, ParseException, CalendarStorageException {
+    public void testUpdateEvent() throws URISyntaxException, ParseException, FileNotFoundException, CalendarStorageException {
         // add test event without reminder
         Event event = new Event();
         event.uid = "sample1@testAddEvent";
@@ -183,10 +156,10 @@ public class LocalEventTest extends InstrumentationTestCase {
         event.dtStart = new DtStart("20150502T120000Z");
         event.dtEnd = new DtEnd("20150502T130000Z");
         event.organizer = new Organizer(new URI("mailto:organizer@example.com"));
-        Uri uri = new TestEvent(testCalendar, event).add();
+        Uri uri = new TestEvent(calendar, event).add();
 
         // update test event in calendar
-        @Cleanup("delete") TestEvent testEvent = new TestEvent(testCalendar, ContentUris.parseId(uri));
+        @Cleanup("delete") TestEvent testEvent = new TestEvent(calendar, ContentUris.parseId(uri));
         event = testEvent.getEvent();
         event.summary = "Updated event";
         // add data rows
@@ -195,14 +168,14 @@ public class LocalEventTest extends InstrumentationTestCase {
         testEvent.update(event);
 
         // read again and verify result
-        testEvent = new TestEvent(testCalendar, ContentUris.parseId(uri));
+        testEvent = new TestEvent(calendar, ContentUris.parseId(uri));
         Event updatedEvent = testEvent.getEvent();
         assertEquals(event.summary, updatedEvent.summary);
         assertEquals(1, updatedEvent.getAlarms().size());
         assertEquals(1, updatedEvent.getAttendees().size());
     }
 
-    public void testBuildAllDayEntry() throws ParseException, CalendarStorageException {
+    public void testBuildAllDayEntry() throws ParseException, FileNotFoundException, CalendarStorageException {
         // add all-day event to calendar provider
         Event event = new Event();
         event.summary = "All-day event";
@@ -211,11 +184,11 @@ public class LocalEventTest extends InstrumentationTestCase {
         event.dtStart = new DtStart(new Date("20150501"));
         event.dtEnd = new DtEnd(new Date("20150501"));  // "events on same day" are not understood by Android, so it should be changed to next day
         assertTrue(event.isAllDay());
-        Uri uri = new TestEvent(testCalendar, event).add();
+        Uri uri = new TestEvent(calendar, event).add();
         assertNotNull("Couldn't add event", uri);
 
         // read again and verify result
-        @Cleanup("delete") TestEvent testEvent = new TestEvent(testCalendar, ContentUris.parseId(uri));
+        @Cleanup("delete") TestEvent testEvent = new TestEvent(calendar, ContentUris.parseId(uri));
         Event event2 = testEvent.getEvent();
         // compare with original event
         assertEquals(event.summary, event2.summary);

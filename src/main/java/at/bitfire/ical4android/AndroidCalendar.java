@@ -38,9 +38,9 @@ import lombok.Cleanup;
 import lombok.Getter;
 
 /**
- * Represents a locally stored calendar, containing Events.
+ * Represents a locally stored calendar, containing AndroidEvents (whose data objects are Events).
  * Communicates with the Android Contacts Provider which uses an SQLite
- * database to store the contacts.
+ * database to store the events.
  */
 public abstract class AndroidCalendar {
     private static final String TAG = "ical4android.Calendar";
@@ -64,9 +64,13 @@ public abstract class AndroidCalendar {
 	
 	/* class methods, constructor */
 
-    public static void init(Context context ){
-        // set class loader for iCal4j ResourceLoader
-        Thread.currentThread().setContextClassLoader(context.getClassLoader());
+    /**
+     * Acquires a ContentProviderClient for the Android Calendar Contract.
+     * @return A ContentProviderClient, or null if calendar storage is not available/accessible
+     *         Caller is responsible for calling release()!
+     */
+    public static ContentProviderClient acquireContentProviderClient(ContentResolver resolver) {
+        return resolver.acquireContentProviderClient(CalendarContract.AUTHORITY);
     }
 
 	@SuppressLint("InlinedApi")
@@ -137,14 +141,13 @@ public abstract class AndroidCalendar {
         }
     }
 
-    public void delete() throws CalendarStorageException {
+    public int delete() throws CalendarStorageException {
         try {
-            provider.delete(syncAdapterURI(ContentUris.withAppendedId(Calendars.CONTENT_URI, id)), null, null);
+            return provider.delete(syncAdapterURI(ContentUris.withAppendedId(Calendars.CONTENT_URI, id)), null, null);
         } catch (RemoteException e) {
             throw new CalendarStorageException("Couldn't delete calendar", e);
         }
     }
-
 
     protected void populate(ContentValues info) {
         name = info.getAsString(Calendars.NAME);
@@ -157,7 +160,8 @@ public abstract class AndroidCalendar {
         isVisible = info.getAsInteger(Calendars.VISIBLE) != 0;
     }
 
-    protected AndroidEvent[] query(String where, String[] whereArgs) throws CalendarStorageException {
+
+    protected AndroidEvent[] queryEvents(String where, String[] whereArgs) throws CalendarStorageException {
         where = (where == null ? "" : "(" + where + ") AND ") + Events.CALENDAR_ID + "=?";
         whereArgs = ArrayUtils.add(whereArgs, String.valueOf(id));
 
@@ -179,7 +183,7 @@ public abstract class AndroidCalendar {
         return events.toArray(eventFactory.newArray(events.size()));
     }
 
-    protected int delete(String where, String[] whereArgs) throws CalendarStorageException {
+    protected int deleteEvents(String where, String[] whereArgs) throws CalendarStorageException {
         where = (where == null ? "" : "(" + where + ") AND ") + Events.CALENDAR_ID + "=?";
         whereArgs = ArrayUtils.add(whereArgs, String.valueOf(id));
 

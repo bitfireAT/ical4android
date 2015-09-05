@@ -19,13 +19,16 @@ import net.fortuna.ical4j.data.CalendarBuilder;
 import net.fortuna.ical4j.data.CalendarParserFactory;
 import net.fortuna.ical4j.data.ParserException;
 import net.fortuna.ical4j.model.DateTime;
+import net.fortuna.ical4j.model.Dur;
 import net.fortuna.ical4j.model.Parameter;
 import net.fortuna.ical4j.model.ParameterFactory;
 import net.fortuna.ical4j.model.ParameterFactoryImpl;
 import net.fortuna.ical4j.model.ParameterFactoryRegistry;
 import net.fortuna.ical4j.model.PropertyFactoryRegistry;
+import net.fortuna.ical4j.model.component.VAlarm;
 import net.fortuna.ical4j.model.component.VTimeZone;
 import net.fortuna.ical4j.model.property.DateProperty;
+import net.fortuna.ical4j.model.property.ProdId;
 import net.fortuna.ical4j.util.CompatibilityHints;
 import net.fortuna.ical4j.util.Strings;
 import net.fortuna.ical4j.util.TimeZones;
@@ -50,7 +53,7 @@ public class iCalendar {
         CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_OUTLOOK_COMPATIBILITY, true);
     }
 
-    public static final String MIME_ICALENDAR = "text/calendar";
+    protected final static ProdId PRODID_ICAL4ANDROID = new ProdId("+//IDN bitfire.at//ical4android/" + Constants.VERSION);
 
     public String uid;
 
@@ -117,6 +120,23 @@ public class iCalendar {
             Log.e(TAG, "Can't understand time zone definition", e);
         }
         return null;
+    }
+
+
+    // misc. iCalendar helpers
+
+    protected static int alarmMinBefore(VAlarm alarm) {
+        int minutes = 0;
+        if (alarm.getTrigger() != null) {
+            Dur duration = alarm.getTrigger().getDuration();
+            if (duration != null) {
+                // negative value in TRIGGER means positive value in Reminders.MINUTES and vice versa
+                minutes = -(((duration.getWeeks() * 7 + duration.getDays()) * 24 + duration.getHours()) * 60 + duration.getMinutes());
+                if (duration.isNegative())
+                    minutes *= -1;
+            }
+        }
+        return minutes;
     }
 
 

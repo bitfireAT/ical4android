@@ -38,7 +38,6 @@ import net.fortuna.ical4j.model.property.ExRule;
 import net.fortuna.ical4j.model.property.LastModified;
 import net.fortuna.ical4j.model.property.Location;
 import net.fortuna.ical4j.model.property.Organizer;
-import net.fortuna.ical4j.model.property.ProdId;
 import net.fortuna.ical4j.model.property.RDate;
 import net.fortuna.ical4j.model.property.RRule;
 import net.fortuna.ical4j.model.property.RecurrenceId;
@@ -47,7 +46,6 @@ import net.fortuna.ical4j.model.property.Summary;
 import net.fortuna.ical4j.model.property.Transp;
 import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.Version;
-import net.fortuna.ical4j.util.TimeZones;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -68,7 +66,6 @@ import lombok.NonNull;
 
 public class Event extends iCalendar {
     private final static String TAG = "davdroid.Event";
-    private final static ProdId PRODID_ICAL4ANDROID = new ProdId("ical4android");
 
     // uid is inherited from iCalendar
     public int sequence;
@@ -81,10 +78,10 @@ public class Event extends iCalendar {
     public DtEnd dtEnd;
 
     public Duration duration;
-    public RRule rrule;
-    public ExRule exrule;
-    @Getter private List<RDate> rdates = new LinkedList<>();
-    @Getter private List<ExDate> exdates = new LinkedList<>();
+    public RRule rRule;
+    public ExRule exRule;
+    @Getter private List<RDate> rDates = new LinkedList<>();
+    @Getter private List<ExDate> exDates = new LinkedList<>();
 
     @Getter private List<Event> exceptions = new LinkedList<>();
 
@@ -104,10 +101,9 @@ public class Event extends iCalendar {
      *
      * @param stream  input stream containing the VEVENTs
      * @param charset charset of the input stream or null (will assume UTF-8)
-     * @return If no VEVENTs are found: null.
-     * Otherwise: array of filled Event data objects
+     * @return array of filled Event data objects (may have size 0) – doesn't return null
      * @throws IOException
-     * @throws InvalidCalendarException
+     * @throws InvalidCalendarException on parser exceptions
      */
     @SuppressWarnings("unchecked")
     public static Event[] fromStream(@NonNull InputStream stream, Charset charset) throws IOException, InvalidCalendarException {
@@ -119,14 +115,10 @@ public class Event extends iCalendar {
             } else
                 ical = calendarBuilder.build(stream);
         } catch (ParserException e) {
-            throw new InvalidCalendarException("Couldn't parse calendar stream", e);
+            throw new InvalidCalendarException("Couldn't parse calendar resource", e);
         }
 
         ComponentList vEvents = ical.getComponents(Component.VEVENT);
-        if (vEvents.isEmpty())
-            // no VEVENTs found
-            return null;
-
         List<Event> events = new LinkedList<>();
         for (VEvent masterEvent : (Iterable<VEvent>) findMasterEvents(vEvents)) {
             Event event = fromVEvent(masterEvent);
@@ -134,7 +126,6 @@ public class Event extends iCalendar {
                 event.exceptions.add(fromVEvent(exception));
             events.add(event);
         }
-
         return events.toArray(new Event[events.size()]);
     }
 
@@ -224,12 +215,12 @@ public class Event extends iCalendar {
         validateTimeZone(e.dtStart);
         validateTimeZone(e.dtEnd);
 
-        e.rrule = (RRule) event.getProperty(Property.RRULE);
+        e.rRule = (RRule) event.getProperty(Property.RRULE);
         for (RDate rdate : (List<RDate>) (List<?>) event.getProperties(Property.RDATE))
-            e.rdates.add(rdate);
-        e.exrule = (ExRule) event.getProperty(Property.EXRULE);
+            e.rDates.add(rdate);
+        e.exRule = (ExRule) event.getProperty(Property.EXRULE);
         for (ExDate exdate : (List<ExDate>) (List<?>) event.getProperties(Property.EXDATE))
-            e.exdates.add(exdate);
+            e.exDates.add(exdate);
 
         if (event.getSummary() != null)
             e.summary = event.getSummary().getValue();
@@ -299,7 +290,7 @@ public class Event extends iCalendar {
         try {
             output.output(ical, os);
         } catch (ValidationException e) {
-            Log.e(TAG, "Generated invalid iCalendar");
+            Log.e(TAG, "Couldn't generate valid VEVENT", e);
         }
         return os;
     }
@@ -321,13 +312,13 @@ public class Event extends iCalendar {
         if (duration != null)
             props.add(duration);
 
-        if (rrule != null)
-            props.add(rrule);
-        for (RDate rdate : rdates)
+        if (rRule != null)
+            props.add(rRule);
+        for (RDate rdate : rDates)
             props.add(rdate);
-        if (exrule != null)
-            props.add(exrule);
-        for (ExDate exdate : exdates)
+        if (exRule != null)
+            props.add(exRule);
+        for (ExDate exdate : exDates)
             props.add(exdate);
 
         if (summary != null && !summary.isEmpty())

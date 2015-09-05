@@ -10,7 +10,7 @@
  * PURPOSE.  See the GNU General Public License for more details.
  */
 
-package at.bitfire.ical4android;
+package at.bitfire.ical4android.impl;
 
 import android.accounts.Account;
 import android.content.ContentProviderClient;
@@ -20,6 +20,10 @@ import android.net.Uri;
 import android.provider.CalendarContract;
 import android.util.Log;
 
+import at.bitfire.ical4android.AndroidCalendar;
+import at.bitfire.ical4android.AndroidCalendarFactory;
+import at.bitfire.ical4android.CalendarStorageException;
+
 public class TestCalendar extends AndroidCalendar {
     private static final String TAG = "ical4android.TestCal";
 
@@ -27,7 +31,7 @@ public class TestCalendar extends AndroidCalendar {
         super(account, provider, TestEvent.Factory.FACTORY, id);
     }
 
-    static TestCalendar findOrCreate(Account account, ContentProviderClient provider) throws CalendarStorageException {
+    static public TestCalendar findOrCreate(Account account, ContentProviderClient provider) throws CalendarStorageException {
         TestCalendar[] calendars = (TestCalendar[])AndroidCalendar.findAll(account, provider, Factory.FACTORY);
         if (calendars.length == 0) {
             Log.i(TAG, "Test calendar not found, creating");

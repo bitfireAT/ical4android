@@ -55,6 +55,7 @@ import net.fortuna.ical4j.util.TimeZones;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.ParseException;
@@ -85,7 +86,7 @@ public abstract class AndroidEvent {
     }
 
 
-    public Event getEvent() throws CalendarStorageException {
+    public Event getEvent() throws FileNotFoundException, CalendarStorageException {
         if (event != null)
             return event;
 
@@ -97,7 +98,7 @@ public abstract class AndroidEvent {
                             null, null, null, null),
                     calendar.provider
             );
-            while (iterEvents.hasNext()) {
+            if (iterEvents.hasNext()) {
                 Entity e = iterEvents.next();
                 populateEvent(e.getEntityValues());
 
@@ -109,11 +110,12 @@ public abstract class AndroidEvent {
                         populateReminder(subValue.values);
                 }
                 populateExceptions();
-            }
+            } else
+                throw new FileNotFoundException("Locally stored event couldn't be found");
+            return event;
         } catch (RemoteException e) {
             throw new CalendarStorageException("Couldn't read locally stored event", e);
         }
-        return event;
     }
 
     protected void populateEvent(ContentValues values) {
@@ -153,25 +155,25 @@ public abstract class AndroidEvent {
         try {
             String strRRule = values.getAsString(Events.RRULE);
             if (!StringUtils.isEmpty(strRRule))
-                event.rrule = new RRule(strRRule);
+                event.rRule = new RRule(strRRule);
 
             String strRDate = values.getAsString(Events.RDATE);
             if (!StringUtils.isEmpty(strRDate)) {
                 RDate rDate = (RDate)DateUtils.androidStringToRecurrenceSet(strRDate, RDate.class, allDay);
-                event.getRdates().add(rDate);
+                event.getRDates().add(rDate);
             }
 
             String strExRule = values.getAsString(Events.EXRULE);
             if (!StringUtils.isEmpty(strExRule)) {
                 ExRule exRule = new ExRule();
                 exRule.setValue(strExRule);
-                event.exrule = exRule;
+                event.exRule = exRule;
             }
 
             String strExDate = values.getAsString(Events.EXDATE);
             if (!StringUtils.isEmpty(strExDate)) {
                 ExDate exDate = (ExDate)DateUtils.androidStringToRecurrenceSet(strExDate, ExDate.class, allDay);
-                event.getExdates().add(exDate);
+                event.getExDates().add(exDate);
             }
         } catch (ParseException ex) {
             Log.w(TAG, "Couldn't parse recurrence rules, ignoring", ex);
@@ -300,7 +302,7 @@ public abstract class AndroidEvent {
         event.getAlarms().add(alarm);
     }
 
-    protected void populateExceptions() throws RemoteException {
+    protected void populateExceptions() throws FileNotFoundException, RemoteException {
         @Cleanup Cursor c = calendar.provider.query(calendar.syncAdapterURI(Events.CONTENT_URI),
                 new String[] { Events._ID },
                 Events.ORIGINAL_ID + "=?", new String[] { String.valueOf(id) }, null);
@@ -318,7 +320,7 @@ public abstract class AndroidEvent {
 
     public Uri add() throws CalendarStorageException {
         BatchOperation batch = new BatchOperation(calendar.provider);
-        Builder builder = ContentProviderOperation.newInsert(eventsURI());
+        Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(eventsURI()));
         buildEvent(builder);
         batch.enqueue(builder.build());
         addDataRows(batch, false);
@@ -330,16 +332,17 @@ public abstract class AndroidEvent {
         this.event = event;
 
         BatchOperation batch = new BatchOperation(calendar.provider);
-        Builder builder = ContentProviderOperation.newUpdate(eventURI());
+        Builder builder = ContentProviderOperation.newUpdate(calendar.syncAdapterURI(eventURI()));
         buildEvent(builder);
         batch.enqueue(builder.build());
+        removeDataRows(batch);
         addDataRows(batch, true);
         batch.commit();
     }
 
     public int delete() throws CalendarStorageException {
         try {
-            return calendar.provider.delete(eventURI(), null, null);
+            return calendar.provider.delete(calendar.syncAdapterURI(eventURI()), null, null);
         } catch (RemoteException e) {
             throw new CalendarStorageException("Couldn't delete event", e);
         }
@@ -364,23 +367,23 @@ public abstract class AndroidEvent {
         }
 
         boolean recurring = false;
-        if (event.rrule != null) {
+        if (event.rRule != null) {
             recurring = true;
-            builder.withValue(Events.RRULE, event.rrule.getValue());
+            builder.withValue(Events.RRULE, event.rRule.getValue());
         }
-        if (!event.getRdates().isEmpty()) {
+        if (!event.getRDates().isEmpty()) {
             recurring = true;
             try {
-                builder.withValue(Events.RDATE, DateUtils.recurrenceSetsToAndroidString(event.getRdates(), event.isAllDay()));
+                builder.withValue(Events.RDATE, DateUtils.recurrenceSetsToAndroidString(event.getRDates(), event.isAllDay()));
             } catch (ParseException e) {
                 Log.e(TAG, "Couldn't parse RDate(s)", e);
             }
         }
-        if (event.exrule != null)
-            builder.withValue(Events.EXRULE, event.exrule.getValue());
+        if (event.exRule != null)
+            builder.withValue(Events.EXRULE, event.exRule.getValue());
         if (!event.getExceptions().isEmpty())
             try {
-                builder.withValue(Events.EXDATE, DateUtils.recurrenceSetsToAndroidString(event.getExdates(), event.isAllDay()));
+                builder.withValue(Events.EXDATE, DateUtils.recurrenceSetsToAndroidString(event.getExDates(), event.isAllDay()));
             } catch (ParseException e) {
                 Log.e(TAG, "Couldn't parse ExDate(s)", e);
             }
@@ -433,6 +436,18 @@ public abstract class AndroidEvent {
             builder.withValue(Events.ACCESS_LEVEL, event.forPublic ? Events.ACCESS_PUBLIC : Events.ACCESS_PRIVATE);
     }
 
+    protected void removeDataRows(BatchOperation batch) {
+        batch.enqueue(ContentProviderOperation.newDelete(calendar.syncAdapterURI(Events.CONTENT_URI))
+                .withSelection(Events.ORIGINAL_ID + "=?", new String[] { String.valueOf(id) })
+                .build());
+        batch.enqueue(ContentProviderOperation.newDelete(calendar.syncAdapterURI(Attendees.CONTENT_URI))
+                .withSelection(Attendees.EVENT_ID + "=?", new String[]{ String.valueOf(id) })
+                .build());
+        batch.enqueue(ContentProviderOperation.newDelete(calendar.syncAdapterURI(Reminders.CONTENT_URI))
+                .withSelection(Reminders.EVENT_ID + "=?", new String[]{ String.valueOf(id) })
+                .build());
+    }
+
     protected void addDataRows(BatchOperation batch, boolean update) {
         // add reminders
         for (VAlarm alarm : event.getAlarms()) {
@@ -458,20 +473,9 @@ public abstract class AndroidEvent {
     }
 
     protected void buildReminder(VAlarm alarm, Builder builder) {
-        int minutes = 0;
-
-        if (alarm.getTrigger() != null) {
-            Dur duration = alarm.getTrigger().getDuration();
-            if (duration != null) {
-                // negative value in TRIGGER means positive value in Reminders.MINUTES and vice versa
-                minutes = -(((duration.getWeeks() * 7 + duration.getDays()) * 24 + duration.getHours()) * 60 + duration.getMinutes());
-                if (duration.isNegative())
-                    minutes *= -1;
-            }
-        }
-
+        int minutes = iCalendar.alarmMinBefore(alarm);
         Log.d(TAG, "Adding alarm " + minutes + " minutes before");
-        builder.withValue(Reminders.METHOD, Reminders.METHOD_ALERT)
+        builder .withValue(Reminders.METHOD, Reminders.METHOD_ALERT)
                 .withValue(Reminders.MINUTES, minutes);
     }
 
