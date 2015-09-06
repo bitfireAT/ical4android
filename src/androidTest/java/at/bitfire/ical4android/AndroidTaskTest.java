@@ -110,7 +110,7 @@ public class AndroidTaskTest extends InstrumentationTestCase {
         task.location = "Sample location";
         task.dtStart = new DtStart("20150501T120000", tzVienna);
         task.due = new Due("20150501T140000", tzVienna);
-        task.organizer = "organizer@example.com";
+        task.organizer = new Organizer("mailto:organizer@example.com");
         assertFalse(task.isAllDay());
 
         // add to task list

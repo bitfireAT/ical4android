@@ -16,10 +16,10 @@ import net.fortuna.ical4j.model.Calendar;
 import net.fortuna.ical4j.model.Component;
 import net.fortuna.ical4j.model.ComponentList;
 import net.fortuna.ical4j.model.DateTime;
+import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.ValidationException;
-import net.fortuna.ical4j.model.component.VAlarm;
 import net.fortuna.ical4j.model.component.VToDo;
 import net.fortuna.ical4j.model.property.Clazz;
 import net.fortuna.ical4j.model.property.Completed;
@@ -32,16 +32,17 @@ import net.fortuna.ical4j.model.property.ExDate;
 import net.fortuna.ical4j.model.property.Geo;
 import net.fortuna.ical4j.model.property.LastModified;
 import net.fortuna.ical4j.model.property.Location;
+import net.fortuna.ical4j.model.property.Organizer;
 import net.fortuna.ical4j.model.property.PercentComplete;
 import net.fortuna.ical4j.model.property.Priority;
 import net.fortuna.ical4j.model.property.RDate;
 import net.fortuna.ical4j.model.property.RRule;
+import net.fortuna.ical4j.model.property.Sequence;
 import net.fortuna.ical4j.model.property.Status;
 import net.fortuna.ical4j.model.property.Summary;
 import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.Url;
 import net.fortuna.ical4j.model.property.Version;
-import net.fortuna.ical4j.util.TimeZones;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -62,10 +63,10 @@ import lombok.NonNull;
 public class Task extends iCalendar {
 	private final static String TAG = "ical4android.Task";
 
-	public DateTime createdAt;
-    public DateTime lastModified;
+	public Long createdAt, lastModified;
 
-    public String summary, location, description, url, organizer;
+    public String summary, location, description, url;
+    public Organizer organizer;
     public Geo geoPosition;
     public int priority;
     public Clazz classification;
@@ -120,11 +121,13 @@ public class Task extends iCalendar {
 			Log.w(TAG, "Received VTODO without UID, generating new one");
 			t.generateUID();
 		}
+        if (todo.getSequence() != null)
+            t.sequence = todo.getSequence().getSequenceNo();
 
 		if (todo.getCreated() != null)
-			t.createdAt = todo.getCreated().getDateTime();
+			t.createdAt = todo.getCreated().getDateTime().getTime();
 		if (todo.getLastModified() != null)
-			t.lastModified = todo.getLastModified().getDateTime();
+			t.lastModified = todo.getLastModified().getDateTime().getTime();
 
 		if (todo.getSummary() != null)
 			t.summary = todo.getSummary().getValue();
@@ -136,6 +139,8 @@ public class Task extends iCalendar {
             t.description = todo.getDescription().getValue();
 		if (todo.getUrl() != null)
             t.url = todo.getUrl().getValue();
+        if (todo.getOrganizer() != null)
+            t.organizer = todo.getOrganizer();
 
         t.priority = (todo.getPriority() != null) ? todo.getPriority().getLevel() : 0;
 		if (todo.getClassification() != null)
@@ -160,6 +165,12 @@ public class Task extends iCalendar {
 		if (todo.getPercentComplete() != null)
             t.percentComplete = todo.getPercentComplete().getPercentage();
 
+        t.rRule = (RRule)todo.getProperty(Property.RRULE);
+        for (RDate rdate : (List<RDate>) (List<?>) todo.getProperties(Property.RDATE))
+            t.rDates.add(rdate);
+        for (ExDate exdate : (List<ExDate>) (List<?>) todo.getProperties(Property.EXDATE))
+            t.exDates.add(exdate);
+
         return t;
 	}
 
@@ -175,11 +186,13 @@ public class Task extends iCalendar {
 
 		if (uid != null)
 			props.add(new Uid(uid));
+        if (sequence != 0)
+            props.add(new Sequence(sequence));
 
 		if (createdAt != null)
-			props.add(new Created(createdAt));
+			props.add(new Created(new DateTime(createdAt)));
 		if (lastModified != null)
-			props.add(new LastModified(lastModified));
+			props.add(new LastModified(new DateTime(lastModified)));
 
 		if (summary != null)
 			props.add(new Summary(summary));
@@ -195,6 +208,9 @@ public class Task extends iCalendar {
 			} catch (URISyntaxException e) {
 				Log.e(TAG, "Ignoring invalid task URL: " + url, e);
 			}
+        if (organizer != null)
+            props.add(organizer);
+
 		if (priority != 0)
 			props.add(new Priority(priority));
 		if (classification != null)
@@ -202,9 +218,15 @@ public class Task extends iCalendar {
 		if (status != null)
 			props.add(status);
 
+        if (rRule != null)
+            props.add(rRule);
+        for (RDate rDate : rDates)
+            props.add(rDate);
+        for (ExDate exDate : exDates)
+            props.add(exDate);
+
 		// remember used time zones
 		Set<TimeZone> usedTimeZones = new HashSet<>();
-
 		if (due != null) {
 			props.add(due);
 			if (due.getTimeZone() != null)

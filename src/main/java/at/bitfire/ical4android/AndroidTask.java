@@ -35,6 +35,7 @@ import net.fortuna.ical4j.model.property.Due;
 import net.fortuna.ical4j.model.property.Duration;
 import net.fortuna.ical4j.model.property.ExDate;
 import net.fortuna.ical4j.model.property.Geo;
+import net.fortuna.ical4j.model.property.Organizer;
 import net.fortuna.ical4j.model.property.RDate;
 import net.fortuna.ical4j.model.property.RRule;
 import net.fortuna.ical4j.model.property.Status;
@@ -43,6 +44,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.dmfs.provider.tasks.TaskContract;
 
 import java.io.FileNotFoundException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.ParseException;
 
 import lombok.Cleanup;
@@ -114,7 +117,11 @@ public abstract class AndroidTask {
                 task.url = cursor.getString(5);
 
             if (!StringUtils.isEmpty(cursor.getString(6)))
-                task.organizer = cursor.getString(6);
+                try {
+                    task.organizer = new Organizer("mailto:" + cursor.getString(6));
+                } catch (URISyntaxException e) {
+                    Log.w(TAG, "Invalid ORGANIZER email", e);
+                }
 
             if (!cursor.isNull(7))
                 task.priority = cursor.getInt(7);
@@ -162,9 +169,9 @@ public abstract class AndroidTask {
                 tz = DateUtils.tzRegistry.getTimeZone(cursor.getString(13));
 
             if (!cursor.isNull(14))
-                task.createdAt = new DateTime(cursor.getLong(14));
+                task.createdAt = cursor.getLong(14);
             if (!cursor.isNull(15))
-                task.lastModified = new DateTime(cursor.getLong(15));
+                task.lastModified = cursor.getLong(15);
 
             if (!cursor.isNull(16)) {
                 long ts = cursor.getLong(16);
@@ -250,9 +257,20 @@ public abstract class AndroidTask {
                 builder.withValue(TaskContract.Tasks.GEO, task.geoPosition.getValue());
 
         builder .withValue(TaskContract.Tasks.DESCRIPTION, task.description)
-                .withValue(TaskContract.Tasks.URL, task.url)
-                .withValue(TaskContract.Tasks.ORGANIZER, task.organizer)
-                .withValue(TaskContract.Tasks.PRIORITY, task.priority);
+                .withValue(TaskContract.Tasks.URL, task.url);
+
+        if (task.organizer != null)
+            try {
+                URI organizer = new URI(task.organizer.getValue());
+                if ("mailto".equals(organizer.getScheme()))
+                    builder.withValue(TaskContract.Tasks.ORGANIZER, organizer);
+                else
+                    Log.w(TAG, "Found non-mailto ORGANIZER URI, ignoring");
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
+
+        builder .withValue(TaskContract.Tasks.PRIORITY, task.priority);
 
         if (task.classification != null) {
             int classCode = TaskContract.Tasks.CLASSIFICATION_PRIVATE;
@@ -294,9 +312,9 @@ public abstract class AndroidTask {
         }
 
         if (task.createdAt != null)
-            builder.withValue(TaskContract.Tasks.CREATED, task.createdAt.getTime());
+            builder.withValue(TaskContract.Tasks.CREATED, task.createdAt);
         if (task.lastModified != null)
-            builder.withValue(TaskContract.Tasks.LAST_MODIFIED, task.lastModified.getTime());
+            builder.withValue(TaskContract.Tasks.LAST_MODIFIED, task.lastModified);
 
         if (task.dtStart != null)
             builder.withValue(TaskContract.Tasks.DTSTART, task.dtStart.getDate().getTime());
