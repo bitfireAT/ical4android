@@ -21,6 +21,8 @@ import android.util.Log;
 
 import java.util.ArrayList;
 
+import lombok.NonNull;
+
 public class BatchOperation {
 	private static final String TAG = "ical4android.BatchOp";
 
@@ -29,7 +31,7 @@ public class BatchOperation {
 	ContentProviderResult[] results;
 
 
-	public BatchOperation(ContentProviderClient providerClient) {
+	public BatchOperation(@NonNull ContentProviderClient providerClient) {
 		this.providerClient = providerClient;
 	}
 

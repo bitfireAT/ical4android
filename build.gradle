@@ -39,7 +39,6 @@ android {
 }
 
 dependencies {
-    // support libraries
     compile 'org.apache.commons:commons-lang3:3.4'
     provided 'org.projectlombok:lombok:1.16.4'
 

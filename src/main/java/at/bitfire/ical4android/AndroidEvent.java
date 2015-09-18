@@ -72,7 +72,7 @@ public abstract class AndroidEvent {
     final protected AndroidCalendar calendar;
 
     protected Long id;
-    protected Event event;
+    private Event event;
 
 
     protected AndroidEvent(AndroidCalendar calendar, long id) {
@@ -91,7 +91,6 @@ public abstract class AndroidEvent {
             return event;
 
         try {
-            event = new Event();
             @Cleanup EntityIterator iterEvents = CalendarContract.EventsEntity.newEntityIterator(
                     calendar.provider.query(
                             calendar.syncAdapterURI(ContentUris.withAppendedId(CalendarContract.EventsEntity.CONTENT_URI, id)),
@@ -99,6 +98,7 @@ public abstract class AndroidEvent {
                     calendar.provider
             );
             if (iterEvents.hasNext()) {
+	            event = new Event();
                 Entity e = iterEvents.next();
                 populateEvent(e.getEntityValues());
 
@@ -110,9 +110,10 @@ public abstract class AndroidEvent {
                         populateReminder(subValue.values);
                 }
                 populateExceptions();
+
+	            return event;
             } else
                 throw new FileNotFoundException("Locally stored event couldn't be found");
-            return event;
         } catch (RemoteException e) {
             throw new CalendarStorageException("Couldn't read locally stored event", e);
         }
@@ -325,7 +326,10 @@ public abstract class AndroidEvent {
         batch.enqueue(builder.build());
         addDataRows(batch, false);
         batch.commit();
-        return batch.getResult(0).uri;
+
+        Uri uri = batch.getResult(0).uri;
+	    id = ContentUris.parseId(uri);
+	    return uri;
     }
 
     public void update(Event event) throws CalendarStorageException {
