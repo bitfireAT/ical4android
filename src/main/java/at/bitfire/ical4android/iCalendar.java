@@ -41,6 +41,7 @@ import java.util.UUID;
 
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 
 public class iCalendar {
@@ -53,7 +54,8 @@ public class iCalendar {
         CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_OUTLOOK_COMPATIBILITY, true);
     }
 
-    protected final static ProdId PRODID_ICAL4ANDROID = new ProdId("+//IDN bitfire.at//ical4android/" + Constants.VERSION);
+    @Getter @Setter
+    protected static ProdId PRODID_ICAL4ANDROID = new ProdId("+//IDN bitfire.at//ical4android/" + Constants.VERSION);
 
     public String uid;
     public int sequence;
