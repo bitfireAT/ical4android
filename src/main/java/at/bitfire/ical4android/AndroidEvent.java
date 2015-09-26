@@ -58,21 +58,27 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.DateFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 import lombok.Cleanup;
 
+/**
+ * Extend this class for your local implementation of the
+ * event that's stored in the Android Calendar Provider.
+ *
+ * Important: To use recurrence exceptions, you MUST set _SYNC_ID and ORIGINAL_SYNC_ID
+ * in populateEvent() / buildEvent. _ID and ORIGINAL_ID is not sufficient.
+ */
 public abstract class AndroidEvent {
     private static final String TAG = "ical4android.Event";
-
-    public static final String
-            COLUMN_UID = android.os.Build.VERSION.SDK_INT >= 17 ? Events.UID_2445 : Events.SYNC_DATA1;
 
     final protected AndroidCalendar calendar;
 
     protected Long id;
-    private Event event;
+    protected Event event;
 
 
     protected AndroidEvent(AndroidCalendar calendar, long id) {
@@ -120,8 +126,6 @@ public abstract class AndroidEvent {
     }
 
     protected void populateEvent(ContentValues values) {
-        event.uid = values.getAsString(COLUMN_UID);
-
         event.summary = values.getAsString(Events.TITLE);
         event.location = values.getAsString(Events.EVENT_LOCATION);
         event.description = values.getAsString(Events.DESCRIPTION);
@@ -321,45 +325,113 @@ public abstract class AndroidEvent {
 
     public Uri add() throws CalendarStorageException {
         BatchOperation batch = new BatchOperation(calendar.provider);
-        Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(eventsURI()));
-        buildEvent(builder);
-        batch.enqueue(builder.build());
-        addDataRows(batch, false);
+        final int idxEvent = add(batch);
         batch.commit();
 
-        Uri uri = batch.getResult(0).uri;
-	    id = ContentUris.parseId(uri);
-	    return uri;
+        Uri uri = batch.getResult(idxEvent).uri;
+        id = ContentUris.parseId(uri);
+
+        return null;
+    }
+
+    protected int add(BatchOperation batch) {
+        Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(eventsURI()));
+
+        final int idxEvent = batch.nextBackrefIdx();
+        buildEvent(null, builder);
+        batch.enqueue(builder.build());
+
+        // add reminders
+        for (VAlarm alarm : event.getAlarms())
+            addReminder(batch, idxEvent, alarm);
+
+        // add attendees
+        for (Attendee attendee : event.getAttendees())
+            addAttendee(batch, idxEvent, attendee);
+
+        // add exceptions
+        for (Event exception : event.getExceptions()) {
+            /* I guess thatexceptions should be inserted using Events.CONTENT_EXCEPTION_URI so that we could
+               benefit from some provider logic (for recurring exceptions e.g.). However, this method
+               has some caveats:
+               - For instance, only Events.SYNC_DATA1, SYNC_DATA3 and SYNC_DATA7 can be used
+               in exception events (that's hardcoded in the CalendarProvider, don't ask me why).
+               - Also, CONTENT_EXCEPTIONS_URI doesn't deal with exceptions for recurring events defined by RDATE
+               (it checks for RRULE and aborts if no RRULE is found).
+               So I have chosen the method of inserting the exception event manually.
+
+               It's also noteworthy that the link between the "master event" and the exception is not
+               between ID and ORIGINAL_ID (as one could assume), but between _SYNC_ID and ORIGINAL_SYNC_ID.
+               So, if you don't set _SYNC_ID in the master event and ORIGINAL_SYNC_ID in the exception,
+               the exception will appear additionally (and not *instead* of the instance).
+             */
+
+            builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(eventsURI()));
+            buildEvent(exception, builder);
+
+            Date date = exception.recurrenceId.getDate();
+            if (event.isAllDay() && date instanceof DateTime) {       // correct VALUE=DATE-TIME RECURRENCE-IDs to VALUE=DATE for all-day events
+                final DateFormat dateFormatDate = new SimpleDateFormat("yyyyMMdd");
+                final String dateString = dateFormatDate.format(exception.recurrenceId.getDate());
+                try {
+                    date = new Date(dateString);
+                } catch (ParseException e) {
+                    Log.e(TAG, "Couldn't parse DATE part of DATE-TIME RECURRENCE-ID", e);
+                }
+            }
+            builder .withValueBackReference(Events.ORIGINAL_ID, idxEvent)
+                    .withValue(Events.ORIGINAL_ALL_DAY, event.isAllDay() ? 1 : 0)
+                    .withValue(Events.ORIGINAL_INSTANCE_TIME, date.getTime());
+
+            int idxException = batch.nextBackrefIdx();
+            batch.enqueue(builder.build());
+
+            // add exception reminders
+            for (VAlarm alarm : exception.getAlarms())
+                addReminder(batch, idxException, alarm);
+
+            // add exception attendees
+            for (Attendee attendee : exception.getAttendees())
+                addAttendee(batch, idxException, attendee);
+        }
+
+        return idxEvent;
     }
 
     public void update(Event event) throws CalendarStorageException {
         this.event = event;
 
         BatchOperation batch = new BatchOperation(calendar.provider);
-        Builder builder = ContentProviderOperation.newUpdate(calendar.syncAdapterURI(eventURI()));
-        buildEvent(builder);
-        batch.enqueue(builder.build());
-        removeDataRows(batch);
-        addDataRows(batch, true);
+        delete(batch);
+        add(batch);
         batch.commit();
     }
 
     public int delete() throws CalendarStorageException {
-        try {
-            return calendar.provider.delete(calendar.syncAdapterURI(eventURI()), null, null);
-        } catch (RemoteException e) {
-            throw new CalendarStorageException("Couldn't delete event", e);
-        }
+        BatchOperation batch = new BatchOperation(calendar.provider);
+        delete(batch);
+        return batch.commit();
     }
 
-    protected void buildEvent(Builder builder) {
-        builder	.withValue(Events.CALENDAR_ID, calendar.getId())
+    protected void delete(BatchOperation batch) {
+        // remove event
+        batch.enqueue(ContentProviderOperation.newDelete(eventURI()).build());
+
+        // remove exceptions of that event, too (CalendarProvider doesn't do this)
+        batch.enqueue(ContentProviderOperation.newDelete(eventsURI())
+                .withSelection(Events.ORIGINAL_ID + "=?", new String[] { String.valueOf(id) })
+                .build());
+    }
+
+    protected void buildEvent(Event recurrence, Builder builder) {
+        boolean isException = recurrence != null;
+        Event event = isException ? recurrence : this.event;
+
+        builder .withValue(Events.CALENDAR_ID, calendar.getId())
                 .withValue(Events.ALL_DAY, event.isAllDay() ? 1 : 0)
                 .withValue(Events.DTSTART, event.getDtStartInMillis())
                 .withValue(Events.EVENT_TIMEZONE, event.getDtStartTzID())
-                .withValue(Events.HAS_ALARM, event.getAlarms().isEmpty() ? 0 : 1)
-                .withValue(Events.HAS_ATTENDEE_DATA, event.getAttendees().isEmpty() ? 0 : 1)
-                .withValue(COLUMN_UID, event.uid);
+                .withValue(Events.HAS_ATTENDEE_DATA, event.getAttendees().isEmpty() ? 0 : 1);
 
         // all-day events and "events on that day" must have a duration (set to one day if zero or missing)
         if (event.isAllDay() && !event.dtEnd.getDate().after(event.dtStart.getDate())) {
@@ -393,13 +465,13 @@ public abstract class AndroidEvent {
             }
 
         // set either DTEND for single-time events or DURATION for recurring events
-        // because that's the way Android likes it (see docs)
+        // because that's the way Android likes it
         if (recurring) {
             // calculate DURATION from start and end date
             Duration duration = new Duration(event.dtStart.getDate(), event.dtEnd.getDate());
             builder.withValue(Events.DURATION, duration.getValue());
         } else
-            builder	.withValue(Events.DTEND, event.getDtEndInMillis())
+            builder .withValue(Events.DTEND, event.getDtEndInMillis())
                     .withValue(Events.EVENT_END_TIMEZONE, event.getDtEndTzID());
 
         if (event.summary != null)
@@ -440,50 +512,22 @@ public abstract class AndroidEvent {
             builder.withValue(Events.ACCESS_LEVEL, event.forPublic ? Events.ACCESS_PUBLIC : Events.ACCESS_PRIVATE);
     }
 
-    protected void removeDataRows(BatchOperation batch) {
-        batch.enqueue(ContentProviderOperation.newDelete(calendar.syncAdapterURI(Events.CONTENT_URI))
-                .withSelection(Events.ORIGINAL_ID + "=?", new String[] { String.valueOf(id) })
-                .build());
-        batch.enqueue(ContentProviderOperation.newDelete(calendar.syncAdapterURI(Attendees.CONTENT_URI))
-                .withSelection(Attendees.EVENT_ID + "=?", new String[]{ String.valueOf(id) })
-                .build());
-        batch.enqueue(ContentProviderOperation.newDelete(calendar.syncAdapterURI(Reminders.CONTENT_URI))
-                .withSelection(Reminders.EVENT_ID + "=?", new String[]{ String.valueOf(id) })
-                .build());
-    }
+    protected void addReminder(BatchOperation batch, int idxEvent, VAlarm alarm) {
+        Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(Reminders.CONTENT_URI));
+        builder.withValueBackReference(Reminders.EVENT_ID, idxEvent);
 
-    protected void addDataRows(BatchOperation batch, boolean update) {
-        // add reminders
-        for (VAlarm alarm : event.getAlarms()) {
-            Builder builder = ContentProviderOperation.newInsert(Reminders.CONTENT_URI);
-            if (update)
-                builder.withValue(Reminders.EVENT_ID, id);
-            else
-                builder.withValueBackReference(Reminders.EVENT_ID, 0);
-            buildReminder(alarm, builder);
-            batch.enqueue(builder.build());
-        }
-
-        // add attendees
-        for (Attendee attendee : event.getAttendees()) {
-            Builder builder = ContentProviderOperation.newInsert(Attendees.CONTENT_URI);
-            if (update)
-                builder.withValue(Attendees.EVENT_ID, id);
-            else
-                builder.withValueBackReference(Reminders.EVENT_ID, 0);
-            buildAttendee(attendee, builder);
-            batch.enqueue(builder.build());
-        }
-    }
-
-    protected void buildReminder(VAlarm alarm, Builder builder) {
         int minutes = iCalendar.alarmMinBefore(alarm);
-        Log.d(TAG, "Adding alarm " + minutes + " minutes before");
         builder .withValue(Reminders.METHOD, Reminders.METHOD_ALERT)
                 .withValue(Reminders.MINUTES, minutes);
+
+        Log.d(TAG, "Adding alarm " + minutes + " minutes before event");
+        batch.enqueue(builder.build());
     }
 
-    protected void buildAttendee(Attendee attendee, Builder builder) {
+    protected void addAttendee(BatchOperation batch, int idxEvent, Attendee attendee) {
+        Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(Attendees.CONTENT_URI));
+        builder.withValueBackReference(Attendees.EVENT_ID, idxEvent);
+
         final URI member = attendee.getCalAddress();
         if ("mailto".equalsIgnoreCase(member.getScheme()))
             // attendee identified by email
@@ -537,6 +581,8 @@ public abstract class AndroidEvent {
 
         builder .withValue(Attendees.ATTENDEE_TYPE, type)
                 .withValue(Attendees.ATTENDEE_STATUS, status);
+
+        batch.enqueue(builder.build());
     }
 
 

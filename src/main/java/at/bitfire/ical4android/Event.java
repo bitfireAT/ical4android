@@ -12,6 +12,8 @@
 
 package at.bitfire.ical4android;
 
+import android.os.*;
+import android.os.Process;
 import android.util.Log;
 
 import net.fortuna.ical4j.data.CalendarOutputter;
@@ -46,6 +48,8 @@ import net.fortuna.ical4j.model.property.Summary;
 import net.fortuna.ical4j.model.property.Transp;
 import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.Version;
+import net.fortuna.ical4j.util.HostInfo;
+import net.fortuna.ical4j.util.UidGenerator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -59,6 +63,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import lombok.Cleanup;
 import lombok.Getter;
@@ -99,14 +104,15 @@ public class Event extends iCalendar {
     /**
      * Parses an InputStream that contains iCalendar VEVENTs.
      *
-     * @param stream  input stream containing the VEVENTs
-     * @param charset charset of the input stream or null (will assume UTF-8)
+     * @param stream   input stream containing the VEVENTs
+     * @param charset  charset of the input stream or null (will assume UTF-8)
+     * @param hostInfo will be used to generate UIDs (if required), may be null
      * @return array of filled Event data objects (may have size 0) – doesn't return null
      * @throws IOException
      * @throws InvalidCalendarException on parser exceptions
      */
     @SuppressWarnings("unchecked")
-    public static Event[] fromStream(@NonNull InputStream stream, Charset charset) throws IOException, InvalidCalendarException {
+    public static Event[] fromStream(@NonNull InputStream stream, Charset charset, HostInfo hostInfo) throws IOException, InvalidCalendarException {
         final Calendar ical;
         try {
             if (charset != null) {
@@ -118,7 +124,21 @@ public class Event extends iCalendar {
             throw new InvalidCalendarException("Couldn't parse calendar resource", e);
         }
 
-        ComponentList vEvents = ical.getComponents(Component.VEVENT);
+        List<VEvent> vEvents = ical.getComponents(Component.VEVENT);
+
+        // make sure every event has an UID
+        for (VEvent vEvent : vEvents)
+            if (vEvent.getUid() == null) {
+                final UidGenerator generator;
+                if (hostInfo == null)
+                    generator = new UidGenerator(String.valueOf(Process.myPid()));
+                else
+                    generator = new UidGenerator(hostInfo, String.valueOf(Process.myPid()));
+                Uid uid = generator.generateUid();
+                Log.w(TAG, "Found VEVENT without UID, using a random one: " + uid.getValue());
+                vEvent.getProperties().add(uid);
+            }
+
         List<Event> events = new LinkedList<>();
         for (VEvent masterEvent : (Iterable<VEvent>) findMasterEvents(vEvents)) {
             Event event = fromVEvent(masterEvent);
@@ -132,17 +152,15 @@ public class Event extends iCalendar {
     /**
      * Finds events without RECURRENCE-ID ("master events").
      * If there are multiple versions, use the one with highest SEQUENCE.
+     * @param vEvents  list of VEvents to scan; every VEvent must have an UID
      */
     static Collection<VEvent> findMasterEvents(List<VEvent> vEvents) {
         Map<String, VEvent> vEventMap = new HashMap<>(vEvents.size());
         for (VEvent vEvent : (Iterable<VEvent>) vEvents) {
-            if (vEvent.getUid() == null) {
-                Log.w(TAG, "Found event without UID, ignoring");
-                continue;
-            }
             String uid = vEvent.getUid().getValue();
 
             if (vEvent.getRecurrenceId() != null)
+                // VEVENT has a RECURRENCE-ID, so it's an exception
                 continue;
 
             if (vEventMap.containsKey(uid)) {
@@ -168,7 +186,7 @@ public class Event extends iCalendar {
     static Collection<VEvent> findExceptions(String uid, List<VEvent> vEvents) {
         Map<String, VEvent> exceptionMap = new HashMap<>();     // map of <recurring-id, exception> for given uid
         for (VEvent vEvent : vEvents) {
-            if (vEvent.getUid() == null || !uid.equals(vEvent.getUid().getValue()) || vEvent.getRecurrenceId() == null)
+            if (!uid.equals(vEvent.getUid().getValue()) || vEvent.getRecurrenceId() == null)
                 // ignore VEvents without or with wrong UID or without RECURRENCE-ID
                 continue;
 
@@ -199,10 +217,6 @@ public class Event extends iCalendar {
 
         if (event.getUid() != null)
             e.uid = event.getUid().getValue();
-        else {
-            Log.w(TAG, "Received VEVENT without UID, generating new one");
-            e.generateUID();
-        }
         e.recurrenceId = event.getRecurrenceId();
         if (event.getSequence() != null)
             e.sequence = event.getSequence().getSequenceNo();

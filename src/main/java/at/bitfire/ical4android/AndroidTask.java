@@ -263,7 +263,7 @@ public abstract class AndroidTask {
             try {
                 URI organizer = new URI(task.organizer.getValue());
                 if ("mailto".equals(organizer.getScheme()))
-                    builder.withValue(TaskContract.Tasks.ORGANIZER, organizer);
+                    builder.withValue(TaskContract.Tasks.ORGANIZER, organizer.getSchemeSpecificPart());
                 else
                     Log.w(TAG, "Found non-mailto ORGANIZER URI, ignoring");
             } catch (URISyntaxException e) {
