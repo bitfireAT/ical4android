@@ -270,7 +270,7 @@ public abstract class AndroidTask {
                 e.printStackTrace();
             }
 
-        builder .withValue(TaskContract.Tasks.PRIORITY, task.priority);
+        builder.withValue(TaskContract.Tasks.PRIORITY, task.priority);
 
         if (task.classification != null) {
             int classCode = TaskContract.Tasks.CLASSIFICATION_PRIVATE;

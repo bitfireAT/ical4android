@@ -25,6 +25,7 @@ import android.provider.CalendarContract;
 import android.provider.CalendarContract.Attendees;
 import android.provider.CalendarContract.Events;
 import android.provider.CalendarContract.Reminders;
+import android.text.TextUtils;
 import android.util.Log;
 
 import net.fortuna.ical4j.model.Date;
@@ -70,7 +71,7 @@ import lombok.Cleanup;
  * event that's stored in the Android Calendar Provider.
  *
  * Important: To use recurrence exceptions, you MUST set _SYNC_ID and ORIGINAL_SYNC_ID
- * in populateEvent() / buildEvent. _ID and ORIGINAL_ID is not sufficient.
+ * in populateEvent() / buildEvent. Setting _ID and ORIGINAL_ID is not sufficient.
  */
 public abstract class AndroidEvent {
     private static final String TAG = "ical4android.Event";
@@ -219,7 +220,7 @@ public abstract class AndroidEvent {
         event.opaque = values.getAsInteger(Events.AVAILABILITY) != Events.AVAILABILITY_FREE;
 
         // set ORGANIZER if there's attendee data
-        if (values.getAsInteger(Events.HAS_ATTENDEE_DATA) != 0)
+        if (values.getAsInteger(Events.HAS_ATTENDEE_DATA) != 0 && values.containsKey(Events.ORGANIZER))
             try {
                 event.organizer = new Organizer(new URI("mailto", values.getAsString(Events.ORGANIZER), null));
             } catch (URISyntaxException ex) {
@@ -331,7 +332,7 @@ public abstract class AndroidEvent {
         Uri uri = batch.getResult(idxEvent).uri;
         id = ContentUris.parseId(uri);
 
-        return null;
+        return uri;
     }
 
     protected int add(BatchOperation batch) {
@@ -351,7 +352,7 @@ public abstract class AndroidEvent {
 
         // add exceptions
         for (Event exception : event.getExceptions()) {
-            /* I guess thatexceptions should be inserted using Events.CONTENT_EXCEPTION_URI so that we could
+            /* I guess exceptions should be inserted using Events.CONTENT_EXCEPTION_URI so that we could
                benefit from some provider logic (for recurring exceptions e.g.). However, this method
                has some caveats:
                - For instance, only Events.SYNC_DATA1, SYNC_DATA3 and SYNC_DATA7 can be used
@@ -398,13 +399,20 @@ public abstract class AndroidEvent {
         return idxEvent;
     }
 
-    public void update(Event event) throws CalendarStorageException {
+    public Uri update(Event event) throws CalendarStorageException {
         this.event = event;
 
         BatchOperation batch = new BatchOperation(calendar.provider);
         delete(batch);
+
+        final int idxEvent = batch.nextBackrefIdx();
+
         add(batch);
         batch.commit();
+
+        Uri uri = batch.getResult(idxEvent).uri;
+        id = ContentUris.parseId(uri);
+        return uri;
     }
 
     public int delete() throws CalendarStorageException {
