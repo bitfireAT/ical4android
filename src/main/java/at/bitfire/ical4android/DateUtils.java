@@ -14,17 +14,23 @@ package at.bitfire.ical4android;
 
 import android.util.Log;
 
+import net.fortuna.ical4j.data.CalendarBuilder;
+import net.fortuna.ical4j.data.ParserException;
+import net.fortuna.ical4j.model.Calendar;
 import net.fortuna.ical4j.model.Date;
 import net.fortuna.ical4j.model.DateList;
 import net.fortuna.ical4j.model.DateTime;
 import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.TimeZoneRegistry;
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory;
+import net.fortuna.ical4j.model.component.VTimeZone;
 import net.fortuna.ical4j.model.parameter.Value;
 import net.fortuna.ical4j.model.property.DateListProperty;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -45,13 +51,13 @@ public class DateUtils {
 
     // time zones
 
-    public static String findAndroidTimezoneID(String tz) {
+    public static String findAndroidTimezoneID(String tzID) {
         String deviceTZ = null;
         String availableTZs[] = SimpleTimeZone.getAvailableIDs();
 
         // first, try to find an exact match (case insensitive)
         for (String availableTZ : availableTZs)
-            if (availableTZ.equalsIgnoreCase(tz)) {
+            if (availableTZ.equalsIgnoreCase(tzID)) {
                 deviceTZ = availableTZ;
                 break;
             }
@@ -60,7 +66,7 @@ public class DateUtils {
         if (deviceTZ == null) {
             Log.w(TAG, "Coulnd't find time zone with matching identifiers, trying to guess");
             for (String availableTZ : availableTZs)
-                if (StringUtils.indexOfIgnoreCase(tz, availableTZ) != -1) {
+                if (StringUtils.indexOfIgnoreCase(tzID, availableTZ) != -1) {
                     deviceTZ = availableTZ;
                     break;
                 }
@@ -74,6 +80,17 @@ public class DateUtils {
         }
 
         return deviceTZ;
+    }
+
+    public static VTimeZone parseVTimeZone(String timezoneDef) {
+        CalendarBuilder builder = new CalendarBuilder(tzRegistry);
+        try {
+            Calendar cal = builder.build(new StringReader(timezoneDef));
+            return (VTimeZone)cal.getComponent(VTimeZone.VTIMEZONE);
+        } catch (IOException|ParserException e) {
+            Constants.log.warn("Couldn't parse timezone definition");
+            return null;
+        }
     }
 
 

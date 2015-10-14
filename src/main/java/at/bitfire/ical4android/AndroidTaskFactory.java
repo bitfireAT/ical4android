@@ -12,9 +12,11 @@
 
 package at.bitfire.ical4android;
 
+import android.content.ContentValues;
+
 public interface AndroidTaskFactory {
 
-    AndroidTask newInstance(AndroidTaskList calendar, long id);
+    AndroidTask newInstance(AndroidTaskList calendar, long id, ContentValues baseInfo);
     AndroidTask newInstance(AndroidTaskList calendar, Task task);
 
     AndroidTask[] newArray(int size);

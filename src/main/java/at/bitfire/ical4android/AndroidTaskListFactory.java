@@ -14,6 +14,7 @@ package at.bitfire.ical4android;
 
 import android.accounts.Account;
 import android.content.ContentProviderClient;
+import android.content.ContentValues;
 
 public interface AndroidTaskListFactory {
 

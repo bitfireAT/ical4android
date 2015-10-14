@@ -25,20 +25,19 @@ import java.io.IOException;
 public class TaskProvider implements Closeable {
     private static final String TAG = "ical4and.TaskProvider";
 
-
     public enum ProviderName {
         //Mirakel("de.azapps.mirakel.provider"),
         OpenTasks("org.dmfs.tasks");
 
-        final String authority;
+        public final String authority;
 
         ProviderName(String authority) {
             this.authority = authority;
         }
     }
 
-    final ProviderName name;
-    final ContentProviderClient client;
+    public final ProviderName name;
+    public final ContentProviderClient client;
 
     private TaskProvider(ProviderName name, ContentProviderClient client) {
         this.name = name;
@@ -54,7 +53,7 @@ public class TaskProvider implements Closeable {
     public Uri alarmsUri() { return TaskContract.Alarms.getContentUri(name.authority); }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (client != null)
             client.release();
     }

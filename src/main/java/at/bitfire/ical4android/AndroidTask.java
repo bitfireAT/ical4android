@@ -14,20 +14,19 @@ package at.bitfire.ical4android;
 
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderOperation.Builder;
-import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.RemoteException;
-import android.provider.CalendarContract;
+import android.text.TextUtils;
 import android.util.Log;
 
 import net.fortuna.ical4j.model.Date;
 import net.fortuna.ical4j.model.DateTime;
 import net.fortuna.ical4j.model.Dur;
 import net.fortuna.ical4j.model.TimeZone;
-import net.fortuna.ical4j.model.component.VAlarm;
-import net.fortuna.ical4j.model.property.Action;
 import net.fortuna.ical4j.model.property.Clazz;
 import net.fortuna.ical4j.model.property.Completed;
 import net.fortuna.ical4j.model.property.DtStart;
@@ -40,8 +39,7 @@ import net.fortuna.ical4j.model.property.RDate;
 import net.fortuna.ical4j.model.property.RRule;
 import net.fortuna.ical4j.model.property.Status;
 
-import org.apache.commons.lang3.StringUtils;
-import org.dmfs.provider.tasks.TaskContract;
+import org.dmfs.provider.tasks.TaskContract.Tasks;
 
 import java.io.FileNotFoundException;
 import java.net.URI;
@@ -49,13 +47,16 @@ import java.net.URISyntaxException;
 import java.text.ParseException;
 
 import lombok.Cleanup;
+import lombok.Getter;
 
 public abstract class AndroidTask {
     private static final String TAG = "ical4android.Task";
 
     final protected AndroidTaskList taskList;
 
+    @Getter
     protected Long id;
+
     protected Task task;
 
 
@@ -76,7 +77,13 @@ public abstract class AndroidTask {
 
         try {
             task = new Task();
-            populateTask();
+            @Cleanup final Cursor cursor = taskList.provider.client.query(taskSyncURI(), null, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                ContentValues values = new ContentValues(cursor.getColumnCount());
+                DatabaseUtils.cursorRowToContentValues(cursor, values);
+                populateTask(values);
+            } else
+                throw new FileNotFoundException("Couldn't load details of task #" + id);
             return task;
         } catch(RemoteException e) {
             throw new CalendarStorageException("Couldn't read locally stored event", e);
@@ -85,134 +92,142 @@ public abstract class AndroidTask {
         }
     }
 
-    protected void populateTask() throws FileNotFoundException, RemoteException, ParseException {
-        @Cleanup final Cursor cursor = taskList.provider.client.query(tasksURI(),
+    protected void populateTask(ContentValues values) throws FileNotFoundException, RemoteException, ParseException {
+        /*@Cleanup final Cursor cursor = taskList.provider.client.query(tasksSyncURI(),
                 new String[] {
-                        /*  0 */ TaskContract.Tasks._UID, TaskContract.Tasks.TITLE, TaskContract.Tasks.LOCATION, TaskContract.Tasks.GEO,
-                        /*  4 */ TaskContract.Tasks.DESCRIPTION, TaskContract.Tasks.URL, TaskContract.Tasks.ORGANIZER,
-                        /*  7 */ TaskContract.Tasks.PRIORITY, TaskContract.Tasks.CLASSIFICATION,
-                        /*  9 */ TaskContract.Tasks.COMPLETED, TaskContract.Tasks.PERCENT_COMPLETE,
-                        /* 11 */ TaskContract.Tasks.STATUS, TaskContract.Tasks.IS_ALLDAY, TaskContract.Tasks.TZ,
-                        /* 14 */ TaskContract.Tasks.CREATED, TaskContract.Tasks.LAST_MODIFIED,
-                        /* 16 */ TaskContract.Tasks.DTSTART, TaskContract.Tasks.DUE, TaskContract.Tasks.DURATION,
-                        /* 19 */ TaskContract.Tasks.RDATE, TaskContract.Tasks.EXDATE, TaskContract.Tasks.RRULE
-                }, TaskContract.Tasks._ID + "=?", new String[] { String.valueOf(id) }, null);
+                        //  0 / TaskContract.Tasks._UID, TaskContract.Tasks.TITLE, TaskContract.Tasks.LOCATION, TaskContract.Tasks.GEO,
+                        //  4 / TaskContract.Tasks.DESCRIPTION, TaskContract.Tasks.URL, TaskContract.Tasks.ORGANIZER,
+                        /*  7 / TaskContract.Tasks.PRIORITY, TaskContract.Tasks.CLASSIFICATION,
+                        /*  9 / TaskContract.Tasks.COMPLETED, TaskContract.Tasks.PERCENT_COMPLETE,
+                        /* 11 / TaskContract.Tasks.STATUS, TaskContract.Tasks.IS_ALLDAY, TaskContract.Tasks.TZ,
+                        /* 14 / TaskContract.Tasks.CREATED, TaskContract.Tasks.LAST_MODIFIED,
+                        /* 16 / TaskContract.Tasks.DTSTART, TaskContract.Tasks.DUE, TaskContract.Tasks.DURATION,
+                        /* 19 / TaskContract.Tasks.RDATE, TaskContract.Tasks.EXDATE, TaskContract.Tasks.RRULE
+                }, TaskContract.Tasks._ID + "=?", new String[] { String.valueOf(id) }, null);*/
 
-        if (cursor != null && cursor.moveToFirst()) {
-            task.uid = cursor.getString(0);
+        task.uid = values.getAsString(Tasks._UID);
+        task.summary = values.getAsString(Tasks.TITLE);
+        task.location = values.getAsString(Tasks.LOCATION);
 
-            if (!StringUtils.isEmpty(cursor.getString(1)))
-                task.summary = cursor.getString(1);
+        if (values.containsKey(Tasks.GEO)) {
+            String geo = values.getAsString(Tasks.GEO);
+            if (geo != null)
+                task.geoPosition = new Geo(geo);
+        };
 
-            if (!StringUtils.isEmpty(cursor.getString(2)))
-                task.location = cursor.getString(2);
+        task.description = values.getAsString(Tasks.DESCRIPTION);
+        task.url = values.getAsString(Tasks.URL);
 
-            if (!StringUtils.isEmpty(cursor.getString(3)))
-                task.geoPosition = new Geo(cursor.getString(3));
-
-            if (!StringUtils.isEmpty(cursor.getString(4)))
-                task.description = cursor.getString(4);
-
-            if (!StringUtils.isEmpty(cursor.getString(5)))
-                task.url = cursor.getString(5);
-
-            if (!StringUtils.isEmpty(cursor.getString(6)))
-                try {
-                    task.organizer = new Organizer("mailto:" + cursor.getString(6));
-                } catch (URISyntaxException e) {
-                    Log.w(TAG, "Invalid ORGANIZER email", e);
-                }
-
-            if (!cursor.isNull(7))
-                task.priority = cursor.getInt(7);
-
-            if (!cursor.isNull(8))
-                switch (cursor.getInt(8)) {
-                    case TaskContract.Tasks.CLASSIFICATION_PUBLIC:
-                        task.classification = Clazz.PUBLIC;
-                        break;
-                    case TaskContract.Tasks.CLASSIFICATION_CONFIDENTIAL:
-                        task.classification = Clazz.CONFIDENTIAL;
-                        break;
-                    default:
-                        task.classification = Clazz.PRIVATE;
-                }
-
-            if (!cursor.isNull(9))
-                // COMPLETED must always be a DATE-TIME
-                task.completedAt = new Completed(new DateTime(cursor.getLong(9)));
-
-            if (!cursor.isNull(10))
-                task.percentComplete = cursor.getInt(10);
-
-            if (!cursor.isNull(11))
-                switch (cursor.getInt(11)) {
-                    case TaskContract.Tasks.STATUS_IN_PROCESS:
-                        task.status = Status.VTODO_IN_PROCESS;
-                        break;
-                    case TaskContract.Tasks.STATUS_COMPLETED:
-                        task.status = Status.VTODO_COMPLETED;
-                        break;
-                    case TaskContract.Tasks.STATUS_CANCELLED:
-                        task.status = Status.VTODO_CANCELLED;
-                        break;
-                    default:
-                        task.status = Status.VTODO_NEEDS_ACTION;
-                }
-
-            boolean allDay = false;
-            if (!cursor.isNull(12))
-                allDay = cursor.getInt(12) != 0;
-
-            TimeZone tz = null;
-            if (!cursor.isNull(13))
-                tz = DateUtils.tzRegistry.getTimeZone(cursor.getString(13));
-
-            if (!cursor.isNull(14))
-                task.createdAt = cursor.getLong(14);
-            if (!cursor.isNull(15))
-                task.lastModified = cursor.getLong(15);
-
-            if (!cursor.isNull(16)) {
-                long ts = cursor.getLong(16);
-
-                Date dt;
-                if (allDay)
-                    dt = new Date(ts);
-                else {
-                    dt = new DateTime(ts);
-                    if (tz != null)
-                        ((DateTime)dt).setTimeZone(tz);
-                }
-                task.dtStart = new DtStart(dt);
+        String organizer = values.getAsString(Tasks.ORGANIZER);
+        if (!TextUtils.isEmpty(organizer))
+            try {
+                task.organizer = new Organizer("mailto:" + values.getAsString(Tasks.ORGANIZER));
+            } catch (URISyntaxException e) {
+                Log.w(TAG, "Invalid ORGANIZER email", e);
             }
 
-            if (!cursor.isNull(17)) {
-                long ts = cursor.getLong(17);
+        Integer priority = values.getAsInteger(Tasks.PRIORITY);
+        if (priority != null)
+            task.priority = priority;
 
-                Date dt;
-                if (allDay)
-                    dt = new Date(ts);
-                else {
-                    dt = new DateTime(ts);
-                    if (tz != null)
-                        ((DateTime)dt).setTimeZone(tz);
-                }
-                task.due = new Due(dt);
+        Integer classification = values.getAsInteger(Tasks.CLASSIFICATION);
+        if (classification != null)
+            switch (classification) {
+                case Tasks.CLASSIFICATION_PUBLIC:
+                    task.classification = Clazz.PUBLIC;
+                    break;
+                case Tasks.CLASSIFICATION_CONFIDENTIAL:
+                    task.classification = Clazz.CONFIDENTIAL;
+                    break;
+                default:
+                    task.classification = Clazz.PRIVATE;
             }
 
-            if (!cursor.isNull(18))
-                task.duration = new Duration(new Dur(cursor.getString(18)));
+        Long completed = values.getAsLong(Tasks.COMPLETED);
+        if (completed != null)
+            // COMPLETED must always be a DATE-TIME
+            task.completedAt = new Completed(new DateTime(completed));
 
-            if (!cursor.isNull(19))
-                task.getRDates().add((RDate)DateUtils.androidStringToRecurrenceSet(cursor.getString(19), RDate.class, allDay));
+        Integer percentComplete = values.getAsInteger(Tasks.PERCENT_COMPLETE);
+        if (percentComplete != null)
+            task.percentComplete = percentComplete;
 
-            if (!cursor.isNull(20))
-                task.getExDates().add((ExDate)DateUtils.androidStringToRecurrenceSet(cursor.getString(20), ExDate.class, allDay));
+        Integer status = values.getAsInteger(Tasks.STATUS);
+        if (status != null)
+            switch (status) {
+                case Tasks.STATUS_IN_PROCESS:
+                    task.status = Status.VTODO_IN_PROCESS;
+                    break;
+                case Tasks.STATUS_COMPLETED:
+                    task.status = Status.VTODO_COMPLETED;
+                    break;
+                case Tasks.STATUS_CANCELLED:
+                    task.status = Status.VTODO_CANCELLED;
+                    break;
+                default:
+                    task.status = Status.VTODO_NEEDS_ACTION;
+            }
 
-            if (!cursor.isNull(21))
-                task.rRule = new RRule(cursor.getString(21));
+        boolean allDay = false;
+        if (values.getAsInteger(Tasks.IS_ALLDAY) != null)
+            allDay = values.getAsInteger(Tasks.IS_ALLDAY) != 0;
+
+        String tzID = values.getAsString(Tasks.TZ);
+        TimeZone tz = (tzID != null) ? DateUtils.tzRegistry.getTimeZone(tzID) : null;
+
+        Long createdAt = values.getAsLong(Tasks.CREATED);
+        if (createdAt != null)
+            task.createdAt = createdAt;
+
+        Long lastModified = values.getAsLong(Tasks.LAST_MODIFIED);
+        if (lastModified != null)
+            task.lastModified = lastModified;
+
+        Long dtStart = values.getAsLong(Tasks.DTSTART);
+        if (dtStart != null) {
+            long ts = dtStart;
+
+            Date dt;
+            if (allDay)
+                dt = new Date(ts);
+            else {
+                dt = new DateTime(ts);
+                if (tz != null)
+                    ((DateTime)dt).setTimeZone(tz);
+            }
+            task.dtStart = new DtStart(dt);
         }
+
+        Long due = values.getAsLong(Tasks.DUE);
+        if (due != null) {
+            long ts = due;
+
+            Date dt;
+            if (allDay)
+                dt = new Date(ts);
+            else {
+                dt = new DateTime(ts);
+                if (tz != null)
+                    ((DateTime)dt).setTimeZone(tz);
+            }
+            task.due = new Due(dt);
+        }
+
+        String duration = values.getAsString(Tasks.DURATION);
+        if (duration != null)
+            task.duration = new Duration(new Dur(duration));
+
+        String rDate = values.getAsString(Tasks.RDATE);
+        if (rDate != null)
+            task.getRDates().add((RDate)DateUtils.androidStringToRecurrenceSet(rDate, RDate.class, allDay));
+
+        String exDate = values.getAsString(Tasks.EXDATE);
+        if (exDate != null)
+            task.getExDates().add((ExDate)DateUtils.androidStringToRecurrenceSet(exDate, ExDate.class, allDay));
+
+        String rRule = values.getAsString(Tasks.RRULE);
+        if (rRule != null)
+            task.rRule = new RRule(rRule);
     }
 
 
@@ -229,7 +244,7 @@ public abstract class AndroidTask {
         this.task = task;
 
         BatchOperation batch = new BatchOperation(taskList.provider.client);
-        Builder builder = ContentProviderOperation.newUpdate(taskList.syncAdapterURI(taskList.provider.tasksUri()));
+        Builder builder = ContentProviderOperation.newUpdate(taskList.syncAdapterURI(taskSyncURI()));
         buildTask(builder, true);
         batch.enqueue(builder.build());
         batch.commit();
@@ -245,106 +260,106 @@ public abstract class AndroidTask {
 
     protected void buildTask(Builder builder, boolean update) {
         if (!update)
-            builder .withValue(TaskContract.Tasks.LIST_ID, taskList.getId())
-                    .withValue(TaskContract.Tasks._DIRTY, 0);
+            builder .withValue(Tasks.LIST_ID, taskList.getId())
+                    .withValue(Tasks._DIRTY, 0);
 
         builder
-                .withValue(TaskContract.Tasks._UID, task.uid)
-                .withValue(TaskContract.Tasks.TITLE, task.summary)
-                .withValue(TaskContract.Tasks.LOCATION, task.location);
+                .withValue(Tasks._UID, task.uid)
+                .withValue(Tasks.TITLE, task.summary)
+                .withValue(Tasks.LOCATION, task.location);
 
         if (task.geoPosition != null)
-                builder.withValue(TaskContract.Tasks.GEO, task.geoPosition.getValue());
+                builder.withValue(Tasks.GEO, task.geoPosition.getValue());
 
-        builder .withValue(TaskContract.Tasks.DESCRIPTION, task.description)
-                .withValue(TaskContract.Tasks.URL, task.url);
+        builder .withValue(Tasks.DESCRIPTION, task.description)
+                .withValue(Tasks.URL, task.url);
 
         if (task.organizer != null)
             try {
                 URI organizer = new URI(task.organizer.getValue());
                 if ("mailto".equals(organizer.getScheme()))
-                    builder.withValue(TaskContract.Tasks.ORGANIZER, organizer.getSchemeSpecificPart());
+                    builder.withValue(Tasks.ORGANIZER, organizer.getSchemeSpecificPart());
                 else
                     Log.w(TAG, "Found non-mailto ORGANIZER URI, ignoring");
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }
 
-        builder.withValue(TaskContract.Tasks.PRIORITY, task.priority);
+        builder.withValue(Tasks.PRIORITY, task.priority);
 
         if (task.classification != null) {
-            int classCode = TaskContract.Tasks.CLASSIFICATION_PRIVATE;
+            int classCode = Tasks.CLASSIFICATION_PRIVATE;
             if (task.classification == Clazz.PUBLIC)
-                classCode = TaskContract.Tasks.CLASSIFICATION_PUBLIC;
+                classCode = Tasks.CLASSIFICATION_PUBLIC;
             else if (task.classification == Clazz.CONFIDENTIAL)
-                classCode = TaskContract.Tasks.CLASSIFICATION_CONFIDENTIAL;
-            builder.withValue(TaskContract.Tasks.CLASSIFICATION, classCode);
+                classCode = Tasks.CLASSIFICATION_CONFIDENTIAL;
+            builder.withValue(Tasks.CLASSIFICATION, classCode);
         }
 
         if (task.completedAt != null) {
             // COMPLETED must always be a DATE-TIME
-            builder .withValue(TaskContract.Tasks.COMPLETED, task.completedAt.getDateTime().getTime())
-                    .withValue(TaskContract.Tasks.COMPLETED_IS_ALLDAY, 0);
+            builder .withValue(Tasks.COMPLETED, task.completedAt.getDateTime().getTime())
+                    .withValue(Tasks.COMPLETED_IS_ALLDAY, 0);
         }
-        builder.withValue(TaskContract.Tasks.PERCENT_COMPLETE, task.percentComplete);
+        builder.withValue(Tasks.PERCENT_COMPLETE, task.percentComplete);
 
-        int statusCode = TaskContract.Tasks.STATUS_DEFAULT;
+        int statusCode = Tasks.STATUS_DEFAULT;
         if (task.status != null) {
             if (task.status == Status.VTODO_NEEDS_ACTION)
-                statusCode = TaskContract.Tasks.STATUS_NEEDS_ACTION;
+                statusCode = Tasks.STATUS_NEEDS_ACTION;
             else if (task.status == Status.VTODO_IN_PROCESS)
-                statusCode = TaskContract.Tasks.STATUS_IN_PROCESS;
+                statusCode = Tasks.STATUS_IN_PROCESS;
             else if (task.status == Status.VTODO_COMPLETED)
-                statusCode = TaskContract.Tasks.STATUS_COMPLETED;
+                statusCode = Tasks.STATUS_COMPLETED;
             else if (task.status == Status.VTODO_CANCELLED)
-                statusCode = TaskContract.Tasks.STATUS_CANCELLED;
+                statusCode = Tasks.STATUS_CANCELLED;
         }
-        builder.withValue(TaskContract.Tasks.STATUS, statusCode);
+        builder.withValue(Tasks.STATUS, statusCode);
 
         final boolean allDay = task.isAllDay();
         if (allDay)
-            builder.withValue(TaskContract.Tasks.IS_ALLDAY, 1);
+            builder.withValue(Tasks.IS_ALLDAY, 1);
         else {
-            builder.withValue(TaskContract.Tasks.IS_ALLDAY, 0);
+            builder.withValue(Tasks.IS_ALLDAY, 0);
 
             java.util.TimeZone tz = task.getTimeZone();
-            builder.withValue(TaskContract.Tasks.TZ, tz.getID());
+            builder.withValue(Tasks.TZ, tz.getID());
         }
 
         if (task.createdAt != null)
-            builder.withValue(TaskContract.Tasks.CREATED, task.createdAt);
+            builder.withValue(Tasks.CREATED, task.createdAt);
         if (task.lastModified != null)
-            builder.withValue(TaskContract.Tasks.LAST_MODIFIED, task.lastModified);
+            builder.withValue(Tasks.LAST_MODIFIED, task.lastModified);
 
         if (task.dtStart != null)
-            builder.withValue(TaskContract.Tasks.DTSTART, task.dtStart.getDate().getTime());
+            builder.withValue(Tasks.DTSTART, task.dtStart.getDate().getTime());
         if (task.due != null)
-            builder.withValue(TaskContract.Tasks.DUE, task.due.getDate().getTime());
+            builder.withValue(Tasks.DUE, task.due.getDate().getTime());
         if (task.duration != null)
-            builder.withValue(TaskContract.Tasks.DURATION, task.duration.getValue());
+            builder.withValue(Tasks.DURATION, task.duration.getValue());
 
         if (!task.getRDates().isEmpty())
             try {
-                builder.withValue(TaskContract.Tasks.RDATE, DateUtils.recurrenceSetsToAndroidString(task.getRDates(), allDay));
+                builder.withValue(Tasks.RDATE, DateUtils.recurrenceSetsToAndroidString(task.getRDates(), allDay));
             } catch (ParseException e) {
                 Log.e(TAG, "Couldn't parse RDate(s)", e);
             }
         if (!task.getExDates().isEmpty())
             try {
-                builder.withValue(TaskContract.Tasks.EXDATE, DateUtils.recurrenceSetsToAndroidString(task.getExDates(), allDay));
+                builder.withValue(Tasks.EXDATE, DateUtils.recurrenceSetsToAndroidString(task.getExDates(), allDay));
             } catch (ParseException e) {
                 Log.e(TAG, "Couldn't parse ExDate(s)", e);
             }
         if (task.rRule != null)
-            builder.withValue(TaskContract.Tasks.EXDATE, task.rRule.getValue());
+            builder.withValue(Tasks.EXDATE, task.rRule.getValue());
     }
 
 
-    protected Uri tasksURI() {
+    protected Uri tasksSyncURI() {
         return taskList.syncAdapterURI(taskList.provider.tasksUri());
     }
 
-    protected Uri taskURI() {
+    protected Uri taskSyncURI() {
         if (id == null)
             throw new IllegalStateException("Task doesn't have an ID yet");
         return taskList.syncAdapterURI(ContentUris.withAppendedId(taskList.provider.tasksUri(), id));

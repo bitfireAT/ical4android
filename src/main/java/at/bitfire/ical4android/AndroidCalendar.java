@@ -144,6 +144,18 @@ public abstract class AndroidCalendar {
         return calendars.toArray(factory.newArray(calendars.size()));
     }
 
+    protected void populate(ContentValues info) {
+        name = info.getAsString(Calendars.NAME);
+        displayName = info.getAsString(Calendars.CALENDAR_DISPLAY_NAME);
+
+        if (info.containsKey(Calendars.CALENDAR_COLOR))
+            color = info.getAsInteger(Calendars.CALENDAR_COLOR);
+
+        isSynced = info.getAsInteger(Calendars.SYNC_EVENTS) != 0;
+        isVisible = info.getAsInteger(Calendars.VISIBLE) != 0;
+    }
+
+
     public void update(ContentValues info) throws CalendarStorageException {
         try {
             provider.update(syncAdapterURI(calendarSyncURI()), info, null, null);
@@ -158,17 +170,6 @@ public abstract class AndroidCalendar {
         } catch (RemoteException e) {
             throw new CalendarStorageException("Couldn't delete calendar", e);
         }
-    }
-
-    protected void populate(ContentValues info) {
-        name = info.getAsString(Calendars.NAME);
-        displayName = info.getAsString(Calendars.CALENDAR_DISPLAY_NAME);
-
-        if (info.containsKey(Calendars.CALENDAR_COLOR))
-            color = info.getAsInteger(Calendars.CALENDAR_COLOR);
-
-        isSynced = info.getAsInteger(Calendars.SYNC_EVENTS) != 0;
-        isVisible = info.getAsInteger(Calendars.VISIBLE) != 0;
     }
 
 
@@ -190,8 +191,7 @@ public abstract class AndroidCalendar {
         while (cursor != null && cursor.moveToNext()) {
             ContentValues baseInfo = new ContentValues(cursor.getColumnCount());
             DatabaseUtils.cursorRowToContentValues(cursor, baseInfo);
-            AndroidEvent event = eventFactory.newInstance(this, cursor.getLong(0), baseInfo);
-            events.add(event);
+            events.add(eventFactory.newInstance(this, cursor.getLong(0), baseInfo));
         }
         return events.toArray(eventFactory.newArray(events.size()));
     }

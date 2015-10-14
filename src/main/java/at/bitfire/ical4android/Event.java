@@ -12,8 +12,6 @@
 
 package at.bitfire.ical4android;
 
-import android.os.*;
-import android.os.Process;
 import android.util.Log;
 
 import net.fortuna.ical4j.data.CalendarOutputter;
@@ -49,8 +47,6 @@ import net.fortuna.ical4j.model.property.Summary;
 import net.fortuna.ical4j.model.property.Transp;
 import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.Version;
-import net.fortuna.ical4j.util.HostInfo;
-import net.fortuna.ical4j.util.UidGenerator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -107,13 +103,12 @@ public class Event extends iCalendar {
      *
      * @param stream   input stream containing the VEVENTs
      * @param charset  charset of the input stream or null (will assume UTF-8)
-     * @param hostInfo will be used to generate UIDs (if required), may be null
      * @return array of filled Event data objects (may have size 0) – doesn't return null
      * @throws IOException
      * @throws InvalidCalendarException on parser exceptions
      */
     @SuppressWarnings("unchecked")
-    public static Event[] fromStream(@NonNull InputStream stream, Charset charset, HostInfo hostInfo) throws IOException, InvalidCalendarException {
+    public static Event[] fromStream(@NonNull InputStream stream, Charset charset) throws IOException, InvalidCalendarException {
         final Calendar ical;
         try {
             if (charset != null) {
@@ -130,12 +125,7 @@ public class Event extends iCalendar {
         // make sure every event has an UID
         for (VEvent vEvent : vEvents)
             if (vEvent.getUid() == null) {
-                final UidGenerator generator;
-                if (hostInfo == null)
-                    generator = new UidGenerator(String.valueOf(Process.myPid()));
-                else
-                    generator = new UidGenerator(hostInfo, String.valueOf(Process.myPid()));
-                Uid uid = generator.generateUid();
+                Uid uid = new Uid(UUID.randomUUID().toString());
                 Log.w(TAG, "Found VEVENT without UID, using a random one: " + uid.getValue());
                 vEvent.getProperties().add(uid);
             }
