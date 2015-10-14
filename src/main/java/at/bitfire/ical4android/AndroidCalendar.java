@@ -20,7 +20,9 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.EntityIterator;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.RemoteException;
 import android.provider.CalendarContract;
 import android.provider.CalendarContract.Attendees;
@@ -46,13 +48,22 @@ public abstract class AndroidCalendar {
     private static final String TAG = "ical4android.Calendar";
 
     final protected Account account;
-    final protected ContentProviderClient provider;
+    final public ContentProviderClient provider;
     final AndroidEventFactory eventFactory;
 
     @Getter final private long id;
     @Getter private String name, displayName;
     @Getter private Integer color;
     @Getter private boolean isSynced, isVisible;
+
+    /**
+     * Those CalendarContract.Events columns will always be fetched by queryEvents().
+     * Must at least contain Events._ID!
+     */
+    protected String[] eventBaseInfoColumns() {
+        return new String[] { Events._ID };
+    }
+
 
     protected AndroidCalendar(Account account, ContentProviderClient provider, AndroidEventFactory eventFactory, long id) {
         this.account = account;
@@ -135,7 +146,7 @@ public abstract class AndroidCalendar {
 
     public void update(ContentValues info) throws CalendarStorageException {
         try {
-            provider.update(syncAdapterURI(ContentUris.withAppendedId(Calendars.CONTENT_URI, id)), info, null, null);
+            provider.update(syncAdapterURI(calendarSyncURI()), info, null, null);
         } catch (RemoteException e) {
             throw new CalendarStorageException("Couldn't update calendar", e);
         }
@@ -143,7 +154,7 @@ public abstract class AndroidCalendar {
 
     public int delete() throws CalendarStorageException {
         try {
-            return provider.delete(syncAdapterURI(ContentUris.withAppendedId(Calendars.CONTENT_URI, id)), null, null);
+            return provider.delete(calendarSyncURI(), null, null);
         } catch (RemoteException e) {
             throw new CalendarStorageException("Couldn't delete calendar", e);
         }
@@ -169,7 +180,7 @@ public abstract class AndroidCalendar {
         try {
             cursor = provider.query(
                     syncAdapterURI(Events.CONTENT_URI),
-                    new String[] { Events._ID },
+                    eventBaseInfoColumns(),
                     where, whereArgs, null);
         } catch (RemoteException e) {
             throw new CalendarStorageException("Couldn't query calendar events", e);
@@ -177,7 +188,9 @@ public abstract class AndroidCalendar {
 
         List<AndroidEvent> events = new LinkedList<>();
         while (cursor != null && cursor.moveToNext()) {
-            AndroidEvent event = eventFactory.newInstance(this, cursor.getLong(0));
+            ContentValues baseInfo = new ContentValues(cursor.getColumnCount());
+            DatabaseUtils.cursorRowToContentValues(cursor, baseInfo);
+            AndroidEvent event = eventFactory.newInstance(this, cursor.getLong(0), baseInfo);
             events.add(event);
         }
         return events.toArray(eventFactory.newArray(events.size()));
@@ -209,6 +222,10 @@ public abstract class AndroidCalendar {
                 .appendQueryParameter(Calendars.ACCOUNT_TYPE, account.type)
                 .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
                 .build();
+    }
+
+    public Uri calendarSyncURI() {
+        return syncAdapterURI(ContentUris.withAppendedId(Calendars.CONTENT_URI, id));
     }
 
 }

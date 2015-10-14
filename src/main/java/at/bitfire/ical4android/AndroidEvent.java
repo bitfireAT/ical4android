@@ -20,12 +20,12 @@ import android.content.Entity;
 import android.content.EntityIterator;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.RemoteException;
 import android.provider.CalendarContract;
 import android.provider.CalendarContract.Attendees;
 import android.provider.CalendarContract.Events;
 import android.provider.CalendarContract.Reminders;
-import android.text.TextUtils;
 import android.util.Log;
 
 import net.fortuna.ical4j.model.Date;
@@ -65,6 +65,7 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 
 import lombok.Cleanup;
+import lombok.Getter;
 
 /**
  * Extend this class for your local implementation of the
@@ -78,13 +79,17 @@ public abstract class AndroidEvent {
 
     final protected AndroidCalendar calendar;
 
+    @Getter
     protected Long id;
+
     protected Event event;
 
 
-    protected AndroidEvent(AndroidCalendar calendar, long id) {
+    protected AndroidEvent(AndroidCalendar calendar, long id, ContentValues baseInfo) {
         this.calendar = calendar;
         this.id = id;
+
+        // baseInfo is used by derived classes which process SYNC1 etc.
     }
 
     protected AndroidEvent(AndroidCalendar calendar, Event event) {
@@ -315,7 +320,7 @@ public abstract class AndroidEvent {
         while (c != null && c.moveToNext()) {
             long exceptionId = c.getLong(0);
             try {
-                AndroidEvent exception = calendar.eventFactory.newInstance(calendar, exceptionId);
+                AndroidEvent exception = calendar.eventFactory.newInstance(calendar, exceptionId, null);
                 event.getExceptions().add(exception.getEvent());
             } catch (CalendarStorageException e) {
                 Log.e(TAG, "Couldn't find exception details, ignoring", e);
@@ -336,7 +341,7 @@ public abstract class AndroidEvent {
     }
 
     protected int add(BatchOperation batch) {
-        Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(eventsURI()));
+        Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(eventsSyncURI()));
 
         final int idxEvent = batch.nextBackrefIdx();
         buildEvent(null, builder);
@@ -344,11 +349,11 @@ public abstract class AndroidEvent {
 
         // add reminders
         for (VAlarm alarm : event.getAlarms())
-            addReminder(batch, idxEvent, alarm);
+            insertReminder(batch, idxEvent, alarm);
 
         // add attendees
         for (Attendee attendee : event.getAttendees())
-            addAttendee(batch, idxEvent, attendee);
+            insertAttendee(batch, idxEvent, attendee);
 
         // add exceptions
         for (Event exception : event.getExceptions()) {
@@ -367,7 +372,7 @@ public abstract class AndroidEvent {
                the exception will appear additionally (and not *instead* of the instance).
              */
 
-            builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(eventsURI()));
+            builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(eventsSyncURI()));
             buildEvent(exception, builder);
 
             Date date = exception.recurrenceId.getDate();
@@ -389,11 +394,11 @@ public abstract class AndroidEvent {
 
             // add exception reminders
             for (VAlarm alarm : exception.getAlarms())
-                addReminder(batch, idxException, alarm);
+                insertReminder(batch, idxException, alarm);
 
             // add exception attendees
             for (Attendee attendee : exception.getAttendees())
-                addAttendee(batch, idxException, attendee);
+                insertAttendee(batch, idxException, attendee);
         }
 
         return idxEvent;
@@ -423,10 +428,10 @@ public abstract class AndroidEvent {
 
     protected void delete(BatchOperation batch) {
         // remove event
-        batch.enqueue(ContentProviderOperation.newDelete(eventURI()).build());
+        batch.enqueue(ContentProviderOperation.newDelete(eventSyncURI()).build());
 
         // remove exceptions of that event, too (CalendarProvider doesn't do this)
-        batch.enqueue(ContentProviderOperation.newDelete(eventsURI())
+        batch.enqueue(ContentProviderOperation.newDelete(eventsSyncURI())
                 .withSelection(Events.ORIGINAL_ID + "=?", new String[] { String.valueOf(id) })
                 .build());
     }
@@ -520,7 +525,7 @@ public abstract class AndroidEvent {
             builder.withValue(Events.ACCESS_LEVEL, event.forPublic ? Events.ACCESS_PUBLIC : Events.ACCESS_PRIVATE);
     }
 
-    protected void addReminder(BatchOperation batch, int idxEvent, VAlarm alarm) {
+    protected void insertReminder(BatchOperation batch, int idxEvent, VAlarm alarm) {
         Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(Reminders.CONTENT_URI));
         builder.withValueBackReference(Reminders.EVENT_ID, idxEvent);
 
@@ -532,7 +537,7 @@ public abstract class AndroidEvent {
         batch.enqueue(builder.build());
     }
 
-    protected void addAttendee(BatchOperation batch, int idxEvent, Attendee attendee) {
+    protected void insertAttendee(BatchOperation batch, int idxEvent, Attendee attendee) {
         Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(Attendees.CONTENT_URI));
         builder.withValueBackReference(Attendees.EVENT_ID, idxEvent);
 
@@ -594,11 +599,11 @@ public abstract class AndroidEvent {
     }
 
 
-    protected Uri eventsURI() {
+    protected Uri eventsSyncURI() {
         return calendar.syncAdapterURI(Events.CONTENT_URI);
     }
 
-    protected Uri eventURI() {
+    protected Uri eventSyncURI() {
         if (id == null)
             throw new IllegalStateException("Event doesn't have an ID yet");
         return calendar.syncAdapterURI(ContentUris.withAppendedId(Events.CONTENT_URI, id));
