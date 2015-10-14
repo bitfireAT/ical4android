@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import lombok.NonNull;
 
 public class BatchOperation {
-	private static final String TAG = "ical4android.BatchOp";
 
 	private final ContentProviderClient providerClient;
 	private final ArrayList<ContentProviderOperation> queue = new ArrayList<>();
@@ -47,7 +46,7 @@ public class BatchOperation {
 		int affected = 0;
 		if (!queue.isEmpty())
 			try {
-				Log.d(TAG, "Committing " + queue.size() + " operations …");
+				Constants.log.debug("Committing " + queue.size() + " operations …");
 				results = providerClient.applyBatch(queue);
 				for (ContentProviderResult result : results)
 					if (result != null)                 // will have either .uri or .count set
@@ -55,7 +54,7 @@ public class BatchOperation {
 							affected += result.count;
 						else if (result.uri != null)
 							affected += 1;
-				Log.d(TAG, "… " + affected + " record(s) affected");
+                Constants.log.debug("… " + affected + " record(s) affected");
 			} catch(OperationApplicationException|RemoteException e) {
 				throw new CalendarStorageException("Couldn't apply batch operation", e);
 			}

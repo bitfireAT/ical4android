@@ -54,8 +54,7 @@ public class iCalendar {
         CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_OUTLOOK_COMPATIBILITY, true);
     }
 
-    @Getter @Setter
-    protected static ProdId PRODID_ICAL4ANDROID = new ProdId("+//IDN bitfire.at//ical4android/" + Constants.VERSION);
+    public static ProdId prodId = new ProdId("+//IDN bitfire.at//ical4android");
 
     public String uid;
     public int sequence;

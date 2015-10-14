@@ -12,8 +12,11 @@
 
 package at.bitfire.ical4android;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Constants {
 
-    public static final String VERSION = "0.1";
+    static final Logger log = LoggerFactory.getLogger("ical4android");
 
 }

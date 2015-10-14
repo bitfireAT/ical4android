@@ -178,7 +178,7 @@ public class Task extends iCalendar {
 	public ByteArrayOutputStream toStream() throws IOException {
 		final net.fortuna.ical4j.model.Calendar ical = new net.fortuna.ical4j.model.Calendar();
 		ical.getProperties().add(Version.VERSION_2_0);
-		ical.getProperties().add(PRODID_ICAL4ANDROID);
+		ical.getProperties().add(prodId);
 
 		final VToDo todo = new VToDo();
 		ical.getComponents().add(todo);

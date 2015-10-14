@@ -20,7 +20,6 @@ import android.content.Entity;
 import android.content.EntityIterator;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.RemoteException;
 import android.provider.CalendarContract;
 import android.provider.CalendarContract.Attendees;

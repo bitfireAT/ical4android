@@ -43,6 +43,7 @@ import net.fortuna.ical4j.model.property.Organizer;
 import net.fortuna.ical4j.model.property.RDate;
 import net.fortuna.ical4j.model.property.RRule;
 import net.fortuna.ical4j.model.property.RecurrenceId;
+import net.fortuna.ical4j.model.property.Sequence;
 import net.fortuna.ical4j.model.property.Status;
 import net.fortuna.ical4j.model.property.Summary;
 import net.fortuna.ical4j.model.property.Transp;
@@ -267,7 +268,7 @@ public class Event extends iCalendar {
     public ByteArrayOutputStream toStream() throws IOException {
         net.fortuna.ical4j.model.Calendar ical = new net.fortuna.ical4j.model.Calendar();
         ical.getProperties().add(Version.VERSION_2_0);
-        ical.getProperties().add(PRODID_ICAL4ANDROID);
+        ical.getProperties().add(prodId);
 
         // "master event" (without exceptions)
         ComponentList components = ical.getComponents();
@@ -319,6 +320,8 @@ public class Event extends iCalendar {
             props.add(recurrenceId);
         if (lastModified != 0)
             props.add(new LastModified(new DateTime(lastModified)));
+        if (sequence != 0)
+            props.add(new Sequence(sequence));
 
         props.add(dtStart);
         if (dtEnd != null)

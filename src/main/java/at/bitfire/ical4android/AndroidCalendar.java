@@ -123,11 +123,11 @@ public abstract class AndroidCalendar {
         throw new FileNotFoundException();
     }
 
-    public static AndroidCalendar[] findAll(Account account, ContentProviderClient provider, AndroidCalendarFactory factory) throws CalendarStorageException {
+    public static AndroidCalendar[] find(Account account, ContentProviderClient provider, AndroidCalendarFactory factory, String where, String whereArgs[]) throws CalendarStorageException {
         @Cleanup EntityIterator iterCalendars = null;
         try {
             iterCalendars = CalendarContract.CalendarEntity.newEntityIterator(
-                    provider.query(syncAdapterURI(CalendarContract.CalendarEntity.CONTENT_URI, account), null, null, null, null)
+                    provider.query(syncAdapterURI(CalendarContract.CalendarEntity.CONTENT_URI, account), null, where, whereArgs, null)
             );
         } catch (RemoteException e) {
             throw new CalendarStorageException("Couldn't query calendars", e);
