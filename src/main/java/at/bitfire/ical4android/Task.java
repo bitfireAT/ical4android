@@ -20,6 +20,7 @@ import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.ValidationException;
+import net.fortuna.ical4j.model.component.VEvent;
 import net.fortuna.ical4j.model.component.VToDo;
 import net.fortuna.ical4j.model.property.Clazz;
 import net.fortuna.ical4j.model.property.Completed;
@@ -98,18 +99,18 @@ public class Task extends iCalendar {
         try {
             if (charset != null) {
                 @Cleanup InputStreamReader reader = new InputStreamReader(stream, charset);
-                ical = calendarBuilder.build(reader);
+                ical = calendarBuilder().build(reader);
             } else
-                ical = calendarBuilder.build(stream);
+                ical = calendarBuilder().build(stream);
         } catch (ParserException e) {
             throw new InvalidCalendarException("Couldn't parse calendar resource", e);
         }
 
-        ComponentList todos = ical.getComponents(Component.VTODO);
-        Task[] tasks = new Task[todos.size()];
-        for (int i = todos.size() - 1; i >= 0; i--)
-            tasks[i] = fromVToDo((VToDo)todos.get(i));
-        return tasks;
+        List<VToDo> vToDos = ical.getComponents(Component.VTODO);
+        List<Task> tasks = new LinkedList<>();
+        for (VToDo todo : vToDos)
+            tasks.add(fromVToDo(todo));
+        return tasks.toArray(new Task[tasks.size()]);
     }
 
 

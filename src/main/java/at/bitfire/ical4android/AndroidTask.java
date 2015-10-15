@@ -264,7 +264,7 @@ public abstract class AndroidTask {
                     .withValue(Tasks._DIRTY, 0);
 
         builder
-                .withValue(Tasks._UID, task.uid)
+                //.withValue(Tasks._UID, task.uid)          // not available in F-Droid OpenTasks version yet (15 Oct 2015)
                 .withValue(Tasks.TITLE, task.summary)
                 .withValue(Tasks.LOCATION, task.location);
 

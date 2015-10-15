@@ -150,9 +150,11 @@ public class iCalendar {
         parameterFactoryRegistry.register(Email.PARAMETER_NAME, Email.FACTORY);
     }
 
-    protected static final CalendarBuilder calendarBuilder = new CalendarBuilder(
-            CalendarParserFactory.getInstance().createParser(),
-            new PropertyFactoryRegistry(), parameterFactoryRegistry, DateUtils.tzRegistry);
+    protected static CalendarBuilder calendarBuilder() {
+        return new CalendarBuilder(
+                CalendarParserFactory.getInstance().createParser(),
+                new PropertyFactoryRegistry(), parameterFactoryRegistry, DateUtils.tzRegistry);
+    }
 
 
     public static class Email extends Parameter {

@@ -113,9 +113,9 @@ public class Event extends iCalendar {
         try {
             if (charset != null) {
                 @Cleanup InputStreamReader reader = new InputStreamReader(stream, charset);
-                ical = calendarBuilder.build(reader);
+                ical = calendarBuilder().build(reader);
             } else
-                ical = calendarBuilder.build(stream);
+                ical = calendarBuilder().build(stream);
         } catch (ParserException e) {
             throw new InvalidCalendarException("Couldn't parse calendar resource", e);
         }
