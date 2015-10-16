@@ -64,10 +64,10 @@ public class DateUtils {
 
         // if that doesn't work, try to find something else that matches
         if (deviceTZ == null) {
-            Log.w(TAG, "Coulnd't find time zone with matching identifiers, trying to guess");
             for (String availableTZ : availableTZs)
                 if (StringUtils.indexOfIgnoreCase(tzID, availableTZ) != -1) {
                     deviceTZ = availableTZ;
+                    Log.w(TAG, "Couldn't find system time zone \"" + tzID + "\", assuming " + deviceTZ);
                     break;
                 }
         }
@@ -75,7 +75,7 @@ public class DateUtils {
         // if that doesn't work, use UTC as fallback
         if (deviceTZ == null) {
             final String defaultTZ = TimeZone.getDefault().getID();
-            Log.w(TAG, "Couldn't identify time zone, using system default (" + defaultTZ + ") as fallback");
+            Log.w(TAG, "Couldn't find system time zone \"" + tzID +"\", using system default (" + defaultTZ + ") as fallback");
             deviceTZ = defaultTZ;
         }
 

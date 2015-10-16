@@ -12,6 +12,8 @@
 
 package at.bitfire.ical4android.impl;
 
+import android.content.ContentValues;
+
 import at.bitfire.ical4android.AndroidTask;
 import at.bitfire.ical4android.AndroidTaskFactory;
 import at.bitfire.ical4android.AndroidTaskList;
@@ -34,7 +36,7 @@ public class TestTask extends AndroidTask {
         public static final Factory FACTORY = new Factory();
 
         @Override
-        public AndroidTask newInstance(AndroidTaskList taskList, long id) {
+        public AndroidTask newInstance(AndroidTaskList taskList, long id, ContentValues baseInfo) {
             return new TestTask(taskList, id);
         }
 

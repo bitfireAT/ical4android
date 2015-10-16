@@ -32,7 +32,7 @@ public class TestCalendar extends AndroidCalendar {
     }
 
     static public TestCalendar findOrCreate(Account account, ContentProviderClient provider) throws CalendarStorageException {
-        TestCalendar[] calendars = (TestCalendar[])AndroidCalendar.findAll(account, provider, Factory.FACTORY);
+        TestCalendar[] calendars = (TestCalendar[])AndroidCalendar.find(account, provider, Factory.FACTORY, null, null);
         if (calendars.length == 0) {
             Log.i(TAG, "Test calendar not found, creating");
 

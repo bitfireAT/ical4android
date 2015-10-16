@@ -68,7 +68,7 @@ public class EventTest extends InstrumentationTestCase {
 
     public void testGrouping() throws IOException, InvalidCalendarException {
         @Cleanup InputStream is = assetMgr.open("events/multiple.ics", AssetManager.ACCESS_STREAMING);
-        Event[] events = Event.fromStream(is, null, null);
+        Event[] events = Event.fromStream(is, null);
         assertEquals(3, events.length);
 
         Event e = findEvent(events, "multiple-0@ical4android.EventTest");
@@ -221,7 +221,7 @@ public class EventTest extends InstrumentationTestCase {
         fname = "events/" + fname;
         Log.d(TAG, "Loading event file " + fname);
         @Cleanup InputStream is = assetMgr.open(fname, AssetManager.ACCESS_STREAMING);
-        return Event.fromStream(is, charset, null)[0];
+        return Event.fromStream(is, charset)[0];
     }
 
 }

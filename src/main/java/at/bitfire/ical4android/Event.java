@@ -12,8 +12,10 @@
 
 package at.bitfire.ical4android;
 
+import android.content.ContentProviderClient;
 import android.util.Log;
 
+import net.fortuna.ical4j.data.CalendarBuilder;
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.data.ParserException;
 import net.fortuna.ical4j.model.Calendar;

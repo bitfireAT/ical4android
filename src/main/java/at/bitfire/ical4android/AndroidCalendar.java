@@ -196,17 +196,6 @@ public abstract class AndroidCalendar {
         return events.toArray(eventFactory.newArray(events.size()));
     }
 
-    protected int deleteEvents(String where, String[] whereArgs) throws CalendarStorageException {
-        where = (where == null ? "" : "(" + where + ") AND ") + Events.CALENDAR_ID + "=?";
-        whereArgs = ArrayUtils.add(whereArgs, String.valueOf(id));
-
-        try {
-            return provider.delete(syncAdapterURI(Events.CONTENT_URI), where, whereArgs);
-        } catch (RemoteException e) {
-            throw new CalendarStorageException("Couldn't delete calendar events", e);
-        }
-    }
-
 
     public static Uri syncAdapterURI(Uri uri, Account account) {
         return uri.buildUpon()
