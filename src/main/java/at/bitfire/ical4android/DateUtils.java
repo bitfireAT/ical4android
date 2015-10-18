@@ -36,6 +36,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.SimpleTimeZone;
 
 public class DateUtils {
@@ -115,7 +116,7 @@ public class DateUtils {
 		    all-day             store as ...T000000Z                cut off time and store as ...T000000Z
 		    event with time     (ignored)                           store as ...ThhmmssZ
 		*/
-        final DateFormat dateFormatUtcMidnight = new SimpleDateFormat("yyyyMMdd'T'000000'Z'");
+        final DateFormat dateFormatUtcMidnight = new SimpleDateFormat("yyyyMMdd'T'000000'Z'", Locale.US);
 
         for (DateListProperty dateListProp : dates) {
             final Value type = dateListProp.getDates().getType();

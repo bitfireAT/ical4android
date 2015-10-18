@@ -40,7 +40,7 @@ public class TestCalendar extends AndroidCalendar {
             values.put(CalendarContract.Calendars.NAME, "TestCalendar");
             values.put(CalendarContract.Calendars.CALENDAR_DISPLAY_NAME, "ical4android Test Calendar");
             values.put(CalendarContract.Calendars.ALLOWED_REMINDERS,
-                    CalendarContract.Reminders.METHOD_DEFAULT + "," + CalendarContract.Reminders.METHOD_ALARM + "," + CalendarContract.Reminders.METHOD_ALERT);
+                    CalendarContract.Reminders.METHOD_DEFAULT);
             Uri uri = AndroidCalendar.create(account, provider, values);
 
             return new TestCalendar(account, provider, ContentUris.parseId(uri));

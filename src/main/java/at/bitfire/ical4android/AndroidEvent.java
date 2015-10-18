@@ -12,6 +12,7 @@
 
 package at.bitfire.ical4android;
 
+import android.annotation.TargetApi;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderOperation.Builder;
 import android.content.ContentUris;
@@ -20,6 +21,7 @@ import android.content.Entity;
 import android.content.EntityIterator;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.RemoteException;
 import android.provider.CalendarContract;
 import android.provider.CalendarContract.Attendees;
@@ -62,6 +64,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
 import lombok.Cleanup;
 import lombok.Getter;
@@ -242,13 +245,18 @@ public abstract class AndroidEvent {
         }
     }
 
+    @TargetApi(16)
     protected void populateAttendee(ContentValues values) {
         try {
             final Attendee attendee;
-            final String
-                    email = values.getAsString(Attendees.ATTENDEE_EMAIL),
-                    idNS = values.getAsString(Attendees.ATTENDEE_ID_NAMESPACE),
-                    id = values.getAsString(Attendees.ATTENDEE_IDENTITY);
+            final String email = values.getAsString(Attendees.ATTENDEE_EMAIL),
+                    idNS, id;
+            if (Build.VERSION.SDK_INT >= 16) {
+                idNS = values.getAsString(Attendees.ATTENDEE_ID_NAMESPACE);
+                id = values.getAsString(Attendees.ATTENDEE_IDENTITY);
+            } else
+                idNS = id = null;
+
             if (idNS != null || id != null) {
                 // attendee identified by namespace and ID
                 attendee = new Attendee(new URI(idNS, id, null));
@@ -312,6 +320,7 @@ public abstract class AndroidEvent {
         event.getAlarms().add(alarm);
     }
 
+    @SuppressWarnings("Recycle")
     protected void populateExceptions() throws FileNotFoundException, RemoteException {
         @Cleanup Cursor c = calendar.provider.query(calendar.syncAdapterURI(Events.CONTENT_URI),
                 new String[] { Events._ID },
@@ -376,7 +385,7 @@ public abstract class AndroidEvent {
 
             Date date = exception.recurrenceId.getDate();
             if (event.isAllDay() && date instanceof DateTime) {       // correct VALUE=DATE-TIME RECURRENCE-IDs to VALUE=DATE for all-day events
-                final DateFormat dateFormatDate = new SimpleDateFormat("yyyyMMdd");
+                final DateFormat dateFormatDate = new SimpleDateFormat("yyyyMMdd", Locale.US);
                 final String dateString = dateFormatDate.format(exception.recurrenceId.getDate());
                 try {
                     date = new Date(dateString);
@@ -536,6 +545,7 @@ public abstract class AndroidEvent {
         batch.enqueue(builder.build());
     }
 
+    @TargetApi(16)
     protected void insertAttendee(BatchOperation batch, int idxEvent, Attendee attendee) {
         Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(Attendees.CONTENT_URI));
         builder.withValueBackReference(Attendees.EVENT_ID, idxEvent);
@@ -544,7 +554,7 @@ public abstract class AndroidEvent {
         if ("mailto".equalsIgnoreCase(member.getScheme()))
             // attendee identified by email
             builder = builder.withValue(Attendees.ATTENDEE_EMAIL, member.getSchemeSpecificPart());
-        else {
+        else if (Build.VERSION.SDK_INT >= 16) {
             // attendee identified by other URI
             builder = builder
                     .withValue(Attendees.ATTENDEE_ID_NAMESPACE, member.getScheme())
@@ -561,7 +571,7 @@ public abstract class AndroidEvent {
         int type = Attendees.TYPE_NONE;
 
         CuType cutype = (CuType)attendee.getParameter(Parameter.CUTYPE);
-        if (cutype == CuType.RESOURCE || cutype == CuType.ROOM)
+        if ((cutype == CuType.RESOURCE || cutype == CuType.ROOM) && Build.VERSION.SDK_INT >= 16)
             // "attendee" is a (physical) resource
             type = Attendees.TYPE_RESOURCE;
         else {
