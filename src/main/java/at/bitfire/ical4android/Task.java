@@ -14,13 +14,11 @@ import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.data.ParserException;
 import net.fortuna.ical4j.model.Calendar;
 import net.fortuna.ical4j.model.Component;
-import net.fortuna.ical4j.model.ComponentList;
 import net.fortuna.ical4j.model.DateTime;
 import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.ValidationException;
-import net.fortuna.ical4j.model.component.VEvent;
 import net.fortuna.ical4j.model.component.VToDo;
 import net.fortuna.ical4j.model.property.Clazz;
 import net.fortuna.ical4j.model.property.Completed;
@@ -36,7 +34,6 @@ import net.fortuna.ical4j.model.property.Location;
 import net.fortuna.ical4j.model.property.Organizer;
 import net.fortuna.ical4j.model.property.PercentComplete;
 import net.fortuna.ical4j.model.property.Priority;
-import net.fortuna.ical4j.model.property.ProdId;
 import net.fortuna.ical4j.model.property.RDate;
 import net.fortuna.ical4j.model.property.RRule;
 import net.fortuna.ical4j.model.property.Sequence;
@@ -123,8 +120,9 @@ public class Task extends iCalendar {
 			Log.w(TAG, "Received VTODO without UID, generating new one");
 			t.generateUID();
 		}
-        if (todo.getSequence() != null)
-            t.sequence = todo.getSequence().getSequenceNo();
+
+        // sequence must only be null for locally created, not-yet-synchronized events
+        t.sequence = (todo.getSequence() != null) ? todo.getSequence().getSequenceNo() : 0;
 
 		if (todo.getCreated() != null)
 			t.createdAt = todo.getCreated().getDateTime().getTime();
@@ -188,7 +186,7 @@ public class Task extends iCalendar {
 
 		if (uid != null)
 			props.add(new Uid(uid));
-        if (sequence != 0)
+        if (sequence != null && sequence != 0)
             props.add(new Sequence(sequence));
 
 		if (createdAt != null)

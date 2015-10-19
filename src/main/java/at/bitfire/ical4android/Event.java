@@ -12,10 +12,8 @@
 
 package at.bitfire.ical4android;
 
-import android.content.ContentProviderClient;
 import android.util.Log;
 
-import net.fortuna.ical4j.data.CalendarBuilder;
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.data.ParserException;
 import net.fortuna.ical4j.model.Calendar;
@@ -71,8 +69,7 @@ import lombok.NonNull;
 public class Event extends iCalendar {
     private final static String TAG = "davdroid.Event";
 
-    // uid is inherited from iCalendar
-    public int sequence;
+    // uid and sequence are inherited from iCalendar
     public RecurrenceId recurrenceId;
     public long lastModified;
 
@@ -211,8 +208,10 @@ public class Event extends iCalendar {
         if (event.getUid() != null)
             e.uid = event.getUid().getValue();
         e.recurrenceId = event.getRecurrenceId();
-        if (event.getSequence() != null)
-            e.sequence = event.getSequence().getSequenceNo();
+
+        // sequence must only be null for locally created, not-yet-synchronized events
+        e.sequence = (event.getSequence() != null) ? event.getSequence().getSequenceNo() : 0;
+
         if (event.getLastModified() != null)
             e.lastModified = event.getLastModified().getDateTime().getTime();
 
@@ -312,7 +311,7 @@ public class Event extends iCalendar {
             props.add(recurrenceId);
         if (lastModified != 0)
             props.add(new LastModified(new DateTime(lastModified)));
-        if (sequence != 0)
+        if (sequence != null && sequence != 0)
             props.add(new Sequence(sequence));
 
         props.add(dtStart);

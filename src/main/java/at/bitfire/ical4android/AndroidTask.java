@@ -93,18 +93,6 @@ public abstract class AndroidTask {
     }
 
     protected void populateTask(ContentValues values) throws FileNotFoundException, RemoteException, ParseException {
-        /*@Cleanup final Cursor cursor = taskList.provider.client.query(tasksSyncURI(),
-                new String[] {
-                        //  0 / TaskContract.Tasks._UID, TaskContract.Tasks.TITLE, TaskContract.Tasks.LOCATION, TaskContract.Tasks.GEO,
-                        //  4 / TaskContract.Tasks.DESCRIPTION, TaskContract.Tasks.URL, TaskContract.Tasks.ORGANIZER,
-                        /*  7 / TaskContract.Tasks.PRIORITY, TaskContract.Tasks.CLASSIFICATION,
-                        /*  9 / TaskContract.Tasks.COMPLETED, TaskContract.Tasks.PERCENT_COMPLETE,
-                        /* 11 / TaskContract.Tasks.STATUS, TaskContract.Tasks.IS_ALLDAY, TaskContract.Tasks.TZ,
-                        /* 14 / TaskContract.Tasks.CREATED, TaskContract.Tasks.LAST_MODIFIED,
-                        /* 16 / TaskContract.Tasks.DTSTART, TaskContract.Tasks.DUE, TaskContract.Tasks.DURATION,
-                        /* 19 / TaskContract.Tasks.RDATE, TaskContract.Tasks.EXDATE, TaskContract.Tasks.RRULE
-                }, TaskContract.Tasks._ID + "=?", new String[] { String.valueOf(id) }, null);*/
-
         task.uid = values.getAsString(Tasks._UID);
         task.summary = values.getAsString(Tasks.TITLE);
         task.location = values.getAsString(Tasks.LOCATION);

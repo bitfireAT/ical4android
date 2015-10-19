@@ -57,7 +57,7 @@ public class iCalendar {
     public static ProdId prodId = new ProdId("+//IDN bitfire.at//ical4android");
 
     public String uid;
-    public int sequence;
+    public Integer sequence;
 
 
     protected void generateUID() {
