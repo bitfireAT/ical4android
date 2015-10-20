@@ -126,7 +126,7 @@ public abstract class AndroidTaskList {
         List<AndroidTaskList> taskLists = new LinkedList<>();
         try {
             @Cleanup Cursor cursor = provider.client.query(syncAdapterURI(provider.taskListsUri(), account), null, null, null, null);
-            if (cursor != null && cursor.moveToNext()) {
+            while (cursor != null && cursor.moveToNext()) {
                 ContentValues values = new ContentValues(cursor.getColumnCount());
                 DatabaseUtils.cursorRowToContentValues(cursor, values);
                 AndroidTaskList taskList = factory.newInstance(account, provider, values.getAsLong(TaskLists._ID));
