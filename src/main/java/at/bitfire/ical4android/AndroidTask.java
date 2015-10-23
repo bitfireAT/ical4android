@@ -39,6 +39,7 @@ import net.fortuna.ical4j.model.property.RDate;
 import net.fortuna.ical4j.model.property.RRule;
 import net.fortuna.ical4j.model.property.Status;
 
+import org.apache.commons.lang3.StringUtils;
 import org.dmfs.provider.tasks.TaskContract.Tasks;
 
 import java.io.FileNotFoundException;
@@ -103,8 +104,8 @@ public abstract class AndroidTask {
                 task.geoPosition = new Geo(geo);
         };
 
-        task.description = values.getAsString(Tasks.DESCRIPTION);
-        task.url = values.getAsString(Tasks.URL);
+        task.description = StringUtils.stripToNull(values.getAsString(Tasks.DESCRIPTION));
+        task.url = StringUtils.stripToNull(values.getAsString(Tasks.URL));
 
         String organizer = values.getAsString(Tasks.ORGANIZER);
         if (!TextUtils.isEmpty(organizer))
