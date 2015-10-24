@@ -67,7 +67,9 @@ import lombok.Getter;
 import lombok.NonNull;
 
 public class Event extends iCalendar {
-    private final static String TAG = "davdroid.Event";
+    private static final String TAG = "davdroid.Event";
+
+    public static final String CALENDAR_NAME = "X-WR-CALNAME";
 
     // uid and sequence are inherited from iCalendar
     public RecurrenceId recurrenceId;
@@ -100,14 +102,14 @@ public class Event extends iCalendar {
     /**
      * Parses an InputStream that contains iCalendar VEVENTs.
      *
-     * @param stream   input stream containing the VEVENTs
-     * @param charset  charset of the input stream or null (will assume UTF-8)
-     * @return array of filled Event data objects (may have size 0) – doesn't return null
-     * @throws IOException
+     * @param stream        input stream containing the VEVENTs
+     * @param charset       charset of the input stream or null (will assume UTF-8)
+     * @param properties    map of properties, will be filled with CALENDAR_* values, if applicable (may be null)
+     * @return              array of filled Event data objects (may have size 0) – doesn't return null
      * @throws InvalidCalendarException on parser exceptions
      */
     @SuppressWarnings("unchecked")
-    public static Event[] fromStream(@NonNull InputStream stream, Charset charset) throws IOException, InvalidCalendarException {
+    public static Event[] fromStream(@NonNull InputStream stream, Charset charset, Map<String, String> properties) throws IOException, InvalidCalendarException {
         final Calendar ical;
         try {
             if (charset != null) {
@@ -117,6 +119,12 @@ public class Event extends iCalendar {
                 ical = calendarBuilder().build(stream);
         } catch (ParserException e) {
             throw new InvalidCalendarException("Couldn't parse calendar resource", e);
+        }
+
+        if (properties != null) {
+            Property calName = ical.getProperty(CALENDAR_NAME);
+            if (calName != null)
+                properties.put(CALENDAR_NAME, calName.getValue());
         }
 
         List<VEvent> vEvents = ical.getComponents(Component.VEVENT);
@@ -138,6 +146,14 @@ public class Event extends iCalendar {
         }
         return events.toArray(new Event[events.size()]);
     }
+
+    /**
+     * Same as #{@link #fromStream(InputStream, Charset, Map)}, but without properties map.
+     */
+    public static Event[] fromStream(@NonNull InputStream stream, Charset charset) throws IOException, InvalidCalendarException {
+        return fromStream(stream, charset, null);
+    }
+
 
     /**
      * Finds events without RECURRENCE-ID ("master events").

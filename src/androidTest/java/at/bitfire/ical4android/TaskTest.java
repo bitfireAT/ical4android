@@ -74,7 +74,7 @@ public class TaskTest extends InstrumentationTestCase {
 
     public void testSamples() throws ParseException, IOException, InvalidCalendarException {
         Task t = regenerate(parseCalendar("rfc5545-sample1.ics", null));
-        assertEquals(2, t.sequence);
+        assertEquals(2, (int)t.sequence);
         assertEquals("uid4@example.com", t.uid);
         assertEquals("mailto:unclesam@example.com", t.organizer.getValue());
         assertEquals(new Due("19980415T000000"), t.due);
@@ -89,7 +89,7 @@ public class TaskTest extends InstrumentationTestCase {
         // 2. generate a new VTODO file from the parsed code
         // 3. parse it again – so we can test parsing and generating at once
         Task t = regenerate(parseCalendar("most-fields1.ics", null));
-        assertEquals(1, t.sequence);
+        assertEquals(1, (int)t.sequence);
         assertEquals("most-fields1@example.com", t.uid);
         assertEquals("Conference Room - F123, Bldg. 002", t.location);
         assertEquals("37.386013", t.geoPosition.getLatitude().toPlainString());

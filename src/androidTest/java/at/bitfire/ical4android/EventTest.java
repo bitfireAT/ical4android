@@ -32,7 +32,9 @@ import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import lombok.Cleanup;
 import lombok.NonNull;
@@ -56,6 +58,14 @@ public class EventTest extends InstrumentationTestCase {
 
 
     /* public interface tests */
+
+    public void testCalendarProperties() throws IOException, InvalidCalendarException {
+        @Cleanup InputStream is = assetMgr.open("events/multiple.ics", AssetManager.ACCESS_STREAMING);
+        Map<String, String> properties = new HashMap<>();
+        Event[] events = Event.fromStream(is, null, properties);
+        assertEquals(1, properties.size());
+        assertEquals("Test-Kalender", properties.get(Event.CALENDAR_NAME));
+    }
 
     public void testCharsets() throws IOException, InvalidCalendarException {
         Event e = parseCalendar("latin1.ics", Charsets.ISO_8859_1);
