@@ -51,7 +51,7 @@ public abstract class AndroidCalendar {
     final public ContentProviderClient provider;
     final AndroidEventFactory eventFactory;
 
-    @Getter final private long id;
+    @Getter final protected long id;
     @Getter private String name, displayName;
     @Getter private Integer color;
     @Getter private boolean isSynced, isVisible;
