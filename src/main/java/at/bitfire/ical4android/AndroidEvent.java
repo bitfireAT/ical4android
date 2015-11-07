@@ -452,7 +452,7 @@ public abstract class AndroidEvent {
                 .withValue(Events.ALL_DAY, event.isAllDay() ? 1 : 0)
                 .withValue(Events.DTSTART, event.getDtStartInMillis())
                 .withValue(Events.EVENT_TIMEZONE, event.getDtStartTzID())
-                .withValue(Events.HAS_ATTENDEE_DATA, event.getAttendees().isEmpty() ? 0 : 1);
+                .withValue(Events.HAS_ATTENDEE_DATA, 1 /* we know information about all attendees and not only ourselves */);
 
         // all-day events and "events on that day" must have a duration (set to one day if zero or missing)
         if (event.isAllDay() && !event.dtEnd.getDate().after(event.dtStart.getDate())) {
