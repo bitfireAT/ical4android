@@ -233,7 +233,7 @@ public abstract class AndroidTask {
         this.task = task;
 
         BatchOperation batch = new BatchOperation(taskList.provider.client);
-        Builder builder = ContentProviderOperation.newUpdate(taskList.syncAdapterURI(taskSyncURI()));
+        Builder builder = ContentProviderOperation.newUpdate(taskSyncURI());
         buildTask(builder, true);
         batch.enqueue(builder.build());
         batch.commit();
@@ -241,7 +241,7 @@ public abstract class AndroidTask {
 
     public int delete() throws CalendarStorageException {
         try {
-            return taskList.provider.client.delete(taskList.syncAdapterURI(taskList.provider.tasksUri()), null, null);
+            return taskList.provider.client.delete(taskSyncURI(), null, null);
         } catch (RemoteException e) {
             throw new CalendarStorageException("Couldn't delete event", e);
         }
