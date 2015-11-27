@@ -478,7 +478,7 @@ public abstract class AndroidEvent {
         }
         if (event.exRule != null)
             builder.withValue(Events.EXRULE, event.exRule.getValue());
-        if (!event.getExceptions().isEmpty())
+        if (!event.getExDates().isEmpty())
             try {
                 builder.withValue(Events.EXDATE, DateUtils.recurrenceSetsToAndroidString(event.getExDates(), event.isAllDay()));
             } catch (ParseException e) {

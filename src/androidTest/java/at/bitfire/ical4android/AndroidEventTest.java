@@ -31,9 +31,11 @@ import net.fortuna.ical4j.model.DateList;
 import net.fortuna.ical4j.model.Dur;
 import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.component.VAlarm;
+import net.fortuna.ical4j.model.parameter.Value;
 import net.fortuna.ical4j.model.property.Attendee;
 import net.fortuna.ical4j.model.property.DtEnd;
 import net.fortuna.ical4j.model.property.DtStart;
+import net.fortuna.ical4j.model.property.ExDate;
 import net.fortuna.ical4j.model.property.Organizer;
 import net.fortuna.ical4j.model.property.RDate;
 import net.fortuna.ical4j.model.property.RRule;
@@ -143,6 +145,9 @@ public class AndroidEventTest extends InstrumentationTestCase {
         exception.getAttendees().add(new Attendee(new URI("mailto:only.here@today")));
         event.getExceptions().add(exception);
 
+        // add EXDATE
+        event.getExDates().add(new ExDate(new DateList("20150502T120000", Value.DATE_TIME, tzVienna)));
+
         // add to calendar
         Uri uri = new TestEvent(calendar, event).add();
         assertNotNull("Couldn't add event", uri);
@@ -192,6 +197,10 @@ public class AndroidEventTest extends InstrumentationTestCase {
         // compare exception attendee
         assertEquals(1, exception2.getAttendees().size());
         assertEquals(exception.getAttendees().get(0).getCalAddress(), exception2.getAttendees().get(0).getCalAddress());
+
+        // compare EXDATE
+        assertEquals(1, event2.getExDates().size());
+        assertEquals(event.getExDates().get(0), event2.getExDates().get(0));
     }
 
     public void testUpdateEvent() throws URISyntaxException, ParseException, FileNotFoundException, CalendarStorageException {
