@@ -515,7 +515,7 @@ public abstract class AndroidEvent {
             if (email != null)
                 builder.withValue(Events.ORGANIZER, email);
             else
-                Log.w(TAG, "Got ORGANIZER without email address which is not supported by Android, ignoring");
+                Constants.log.warn("Got ORGANIZER without email address which is not supported by Android, ignoring");
         }
 
         if (event.status != null) {
@@ -541,7 +541,7 @@ public abstract class AndroidEvent {
         builder .withValue(Reminders.METHOD, Reminders.METHOD_ALERT)
                 .withValue(Reminders.MINUTES, minutes);
 
-        Log.d(TAG, "Adding alarm " + minutes + " minutes before event");
+        Constants.log.debug("Adding alarm {} minutes before event", minutes);
         batch.enqueue(builder.build());
     }
 
