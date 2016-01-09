@@ -531,6 +531,8 @@ public abstract class AndroidEvent {
 
         if (event.forPublic != null)
             builder.withValue(Events.ACCESS_LEVEL, event.forPublic ? Events.ACCESS_PUBLIC : Events.ACCESS_PRIVATE);
+
+        Constants.log.debug("Built event object: [{}]", builder.build());
     }
 
     protected void insertReminder(BatchOperation batch, int idxEvent, VAlarm alarm) {

@@ -341,6 +341,8 @@ public abstract class AndroidTask {
             }
         if (task.rRule != null)
             builder.withValue(Tasks.EXDATE, task.rRule.getValue());
+
+        Constants.log.debug("Built task object: [{}]", builder.build());
     }
 
 
