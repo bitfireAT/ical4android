@@ -340,7 +340,7 @@ public abstract class AndroidTask {
                 Log.e(TAG, "Couldn't parse ExDate(s)", e);
             }
         if (task.rRule != null)
-            builder.withValue(Tasks.EXDATE, task.rRule.getValue());
+            builder.withValue(Tasks.RRULE, task.rRule.getValue());
 
         Constants.log.debug("Built task object: [{}]", builder.build());
     }
