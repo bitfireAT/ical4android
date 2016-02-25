@@ -21,7 +21,6 @@ import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.RemoteException;
 import android.text.TextUtils;
-import android.util.Log;
 
 import net.fortuna.ical4j.model.Date;
 import net.fortuna.ical4j.model.DateTime;
@@ -46,13 +45,12 @@ import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.ParseException;
+import java.util.logging.Level;
 
 import lombok.Cleanup;
 import lombok.Getter;
 
 public abstract class AndroidTask {
-    private static final String TAG = "ical4android.Task";
-
     final protected AndroidTaskList taskList;
 
     @Getter
@@ -102,7 +100,7 @@ public abstract class AndroidTask {
             String geo = values.getAsString(Tasks.GEO);
             if (geo != null)
                 task.geoPosition = new Geo(geo);
-        };
+        }
 
         task.description = StringUtils.stripToNull(values.getAsString(Tasks.DESCRIPTION));
         task.url = StringUtils.stripToNull(values.getAsString(Tasks.URL));
@@ -112,7 +110,7 @@ public abstract class AndroidTask {
             try {
                 task.organizer = new Organizer("mailto:" + values.getAsString(Tasks.ORGANIZER));
             } catch (URISyntaxException e) {
-                Log.w(TAG, "Invalid ORGANIZER email", e);
+                Constants.log.log(Level.WARNING, "Invalid ORGANIZER email", e);
             }
 
         Integer priority = values.getAsInteger(Tasks.PRIORITY);
@@ -269,7 +267,7 @@ public abstract class AndroidTask {
                 if ("mailto".equals(organizer.getScheme()))
                     builder.withValue(Tasks.ORGANIZER, organizer.getSchemeSpecificPart());
                 else
-                    Log.w(TAG, "Found non-mailto ORGANIZER URI, ignoring");
+                    Constants.log.log(Level.WARNING, "Found non-mailto ORGANIZER URI, ignoring", organizer);
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }
@@ -331,18 +329,18 @@ public abstract class AndroidTask {
             try {
                 builder.withValue(Tasks.RDATE, DateUtils.recurrenceSetsToAndroidString(task.getRDates(), allDay));
             } catch (ParseException e) {
-                Log.e(TAG, "Couldn't parse RDate(s)", e);
+                Constants.log.log(Level.WARNING, "Couldn't parse RDate(s)", e);
             }
         if (!task.getExDates().isEmpty())
             try {
                 builder.withValue(Tasks.EXDATE, DateUtils.recurrenceSetsToAndroidString(task.getExDates(), allDay));
             } catch (ParseException e) {
-                Log.e(TAG, "Couldn't parse ExDate(s)", e);
+                Constants.log.log(Level.WARNING, "Couldn't parse ExDate(s)", e);
             }
         if (task.rRule != null)
             builder.withValue(Tasks.RRULE, task.rRule.getValue());
 
-        Constants.log.debug("Built task object: [{}]", builder.build());
+        Constants.log.log(Level.FINE, "Built task object", builder.build());
     }
 
 

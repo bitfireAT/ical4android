@@ -12,8 +12,6 @@
 
 package at.bitfire.ical4android;
 
-import android.util.Log;
-
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.data.ParserException;
 import net.fortuna.ical4j.model.Calendar;
@@ -61,14 +59,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
 
 import lombok.Cleanup;
 import lombok.Getter;
 import lombok.NonNull;
 
 public class Event extends iCalendar {
-    private static final String TAG = "davdroid.Event";
-
     public static final String CALENDAR_NAME = "X-WR-CALNAME";
 
     // uid and sequence are inherited from iCalendar
@@ -133,7 +130,7 @@ public class Event extends iCalendar {
         for (VEvent vEvent : vEvents)
             if (vEvent.getUid() == null) {
                 Uid uid = new Uid(UUID.randomUUID().toString());
-                Log.w(TAG, "Found VEVENT without UID, using a random one: " + uid.getValue());
+                Constants.log.warning("Found VEVENT without UID, using a random one: " + uid.getValue());
                 vEvent.getProperties().add(uid);
             }
 
@@ -312,7 +309,7 @@ public class Event extends iCalendar {
         try {
             output.output(ical, os);
         } catch (ValidationException e) {
-            Log.e(TAG, "Couldn't generate valid VEVENT", e);
+            Constants.log.log(Level.SEVERE, "Couldn't generate valid VEVENT", e);
         }
         return os;
     }

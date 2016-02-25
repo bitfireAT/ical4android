@@ -21,7 +21,6 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.RemoteException;
-import android.util.Log;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.dmfs.provider.tasks.TaskContract;
@@ -43,8 +42,6 @@ import lombok.Getter;
  *    - OpenTasks
  */
 public abstract class AndroidTaskList {
-    private static final String TAG = "ical4android.TaskList";
-
     final protected Account account;
     public final TaskProvider provider;
     final AndroidTaskFactory taskFactory;
@@ -97,7 +94,7 @@ public abstract class AndroidTaskList {
         info.put(TaskContract.ACCOUNT_TYPE, account.type);
         info.put(TaskLists.ACCESS_LEVEL, 0);
 
-		Log.i(TAG, "Creating local task list: " + info.toString());
+		Constants.log.info("Creating local task list: " + info.toString());
 		try {
 			return provider.client.insert(syncAdapterURI(provider.taskListsUri(), account), info);
 		} catch (RemoteException e) {

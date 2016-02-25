@@ -17,7 +17,6 @@ import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.OperationApplicationException;
 import android.os.RemoteException;
-import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -46,7 +45,7 @@ public class BatchOperation {
 		int affected = 0;
 		if (!queue.isEmpty())
 			try {
-				Constants.log.debug("Committing " + queue.size() + " operations …");
+				Constants.log.fine("Committing " + queue.size() + " operations …");
 				results = providerClient.applyBatch(queue);
 				for (ContentProviderResult result : results)
 					if (result != null)                 // will have either .uri or .count set
@@ -54,7 +53,7 @@ public class BatchOperation {
 							affected += result.count;
 						else if (result.uri != null)
 							affected += 1;
-                Constants.log.debug("… " + affected + " record(s) affected");
+                Constants.log.fine("… " + affected + " record(s) affected");
 			} catch(OperationApplicationException|RemoteException e) {
 				throw new CalendarStorageException("Couldn't apply batch operation", e);
 			}

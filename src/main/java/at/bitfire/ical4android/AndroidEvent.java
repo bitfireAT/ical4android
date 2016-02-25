@@ -27,7 +27,6 @@ import android.provider.CalendarContract;
 import android.provider.CalendarContract.Attendees;
 import android.provider.CalendarContract.Events;
 import android.provider.CalendarContract.Reminders;
-import android.util.Log;
 
 import net.fortuna.ical4j.model.Date;
 import net.fortuna.ical4j.model.DateTime;
@@ -65,6 +64,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.Level;
 
 import lombok.Cleanup;
 import lombok.Getter;
@@ -77,8 +77,6 @@ import lombok.Getter;
  * in populateEvent() / buildEvent. Setting _ID and ORIGINAL_ID is not sufficient.
  */
 public abstract class AndroidEvent {
-    private static final String TAG = "ical4android.Event";
-
     final protected AndroidCalendar calendar;
 
     @Getter
@@ -189,9 +187,9 @@ public abstract class AndroidEvent {
                 event.getExDates().add(exDate);
             }
         } catch (ParseException ex) {
-            Log.w(TAG, "Couldn't parse recurrence rules, ignoring", ex);
+            Constants.log.log(Level.WARNING, "Couldn't parse recurrence rules, ignoring", ex);
         } catch (IllegalArgumentException ex) {
-            Log.w(TAG, "Invalid recurrence rules, ignoring", ex);
+            Constants.log.log(Level.WARNING, "Invalid recurrence rules, ignoring", ex);
         }
 
         if (values.containsKey(Events.ORIGINAL_INSTANCE_TIME)) {
@@ -231,7 +229,7 @@ public abstract class AndroidEvent {
             try {
                 event.organizer = new Organizer(new URI("mailto", values.getAsString(Events.ORGANIZER), null));
             } catch (URISyntaxException ex) {
-                Log.e(TAG, "Error when creating ORGANIZER mailto URI, ignoring", ex);
+                Constants.log.log(Level.WARNING, "Error when creating ORGANIZER mailto URI, ignoring", ex);
             }
 
         // classification
@@ -307,7 +305,7 @@ public abstract class AndroidEvent {
 
             event.getAttendees().add(attendee);
         } catch (URISyntaxException ex) {
-            Log.e(TAG, "Couldn't parse attendee information, ignoring", ex);
+            Constants.log.log(Level.WARNING, "Couldn't parse attendee information, ignoring", ex);
         }
     }
 
@@ -331,7 +329,7 @@ public abstract class AndroidEvent {
                 AndroidEvent exception = calendar.eventFactory.newInstance(calendar, exceptionId, null);
                 event.getExceptions().add(exception.getEvent());
             } catch (CalendarStorageException e) {
-                Log.e(TAG, "Couldn't find exception details, ignoring", e);
+                Constants.log.log(Level.WARNING, "Couldn't find exception details, ignoring", e);
             }
         }
     }
@@ -390,7 +388,7 @@ public abstract class AndroidEvent {
                 try {
                     date = new Date(dateString);
                 } catch (ParseException e) {
-                    Log.e(TAG, "Couldn't parse DATE part of DATE-TIME RECURRENCE-ID", e);
+                    Constants.log.log(Level.WARNING, "Couldn't parse DATE part of DATE-TIME RECURRENCE-ID", e);
                 }
             }
             builder .withValueBackReference(Events.ORIGINAL_ID, idxEvent)
@@ -456,7 +454,7 @@ public abstract class AndroidEvent {
 
         // all-day events and "events on that day" must have a duration (set to one day if zero or missing)
         if (event.isAllDay() && !event.dtEnd.getDate().after(event.dtStart.getDate())) {
-            Log.w(TAG, "Changing all-day event for Android compatibility: setting DTEND := DTSTART+1");
+            Constants.log.log(Level.INFO, "Changing all-day event for Android compatibility: setting DTEND := DTSTART+1");
             java.util.Calendar c = java.util.Calendar.getInstance(TimeZone.getTimeZone(TimeZones.UTC_ID));
             c.setTime(event.dtStart.getDate());
             c.add(java.util.Calendar.DATE, 1);
@@ -473,7 +471,7 @@ public abstract class AndroidEvent {
             try {
                 builder.withValue(Events.RDATE, DateUtils.recurrenceSetsToAndroidString(event.getRDates(), event.isAllDay()));
             } catch (ParseException e) {
-                Log.e(TAG, "Couldn't parse RDate(s)", e);
+                Constants.log.log(Level.WARNING, "Couldn't parse RDate(s)", e);
             }
         }
         if (event.exRule != null)
@@ -482,7 +480,7 @@ public abstract class AndroidEvent {
             try {
                 builder.withValue(Events.EXDATE, DateUtils.recurrenceSetsToAndroidString(event.getExDates(), event.isAllDay()));
             } catch (ParseException e) {
-                Log.e(TAG, "Couldn't parse ExDate(s)", e);
+                Constants.log.log(Level.WARNING, "Couldn't parse ExDate(s)", e);
             }
 
         // set either DTEND for single-time events or DURATION for recurring events
@@ -515,7 +513,7 @@ public abstract class AndroidEvent {
             if (email != null)
                 builder.withValue(Events.ORGANIZER, email);
             else
-                Constants.log.warn("Got ORGANIZER without email address which is not supported by Android, ignoring");
+                Constants.log.warning("Got ORGANIZER without email address which is not supported by Android, ignoring");
         }
 
         if (event.status != null) {
@@ -532,7 +530,7 @@ public abstract class AndroidEvent {
         if (event.forPublic != null)
             builder.withValue(Events.ACCESS_LEVEL, event.forPublic ? Events.ACCESS_PUBLIC : Events.ACCESS_PRIVATE);
 
-        Constants.log.debug("Built event object: [{}]", builder.build());
+        Constants.log.log(Level.FINE, "Built event object", builder.build());
     }
 
     protected void insertReminder(BatchOperation batch, int idxEvent, VAlarm alarm) {
@@ -543,7 +541,7 @@ public abstract class AndroidEvent {
         builder .withValue(Reminders.METHOD, Reminders.METHOD_ALERT)
                 .withValue(Reminders.MINUTES, minutes);
 
-        Constants.log.debug("Adding alarm {} minutes before event", minutes);
+        Constants.log.fine("Adding alarm " + minutes + " minutes before event");
         batch.enqueue(builder.build());
     }
 

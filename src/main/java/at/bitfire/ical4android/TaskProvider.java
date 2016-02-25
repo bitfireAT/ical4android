@@ -20,7 +20,6 @@ import android.util.Log;
 import org.dmfs.provider.tasks.TaskContract;
 
 import java.io.Closeable;
-import java.io.IOException;
 
 public class TaskProvider implements Closeable {
     private static final String TAG = "ical4and.TaskProvider";

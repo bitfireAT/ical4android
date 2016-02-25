@@ -12,11 +12,10 @@
 
 package at.bitfire.ical4android;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Logger;
 
 public class Constants {
 
-    static final Logger log = LoggerFactory.getLogger("ical4android");
+    static final Logger log = Logger.getLogger("davdroid.ical4android");
 
 }

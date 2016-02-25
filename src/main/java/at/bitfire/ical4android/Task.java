@@ -8,8 +8,6 @@
 
 package at.bitfire.ical4android;
 
-import android.util.Log;
-
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.data.ParserException;
 import net.fortuna.ical4j.model.Calendar;
@@ -54,14 +52,13 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 
 import lombok.Cleanup;
 import lombok.Getter;
 import lombok.NonNull;
 
 public class Task extends iCalendar {
-	private final static String TAG = "ical4android.Task";
-
 	public Long createdAt, lastModified;
 
     public String summary, location, description, url;
@@ -117,7 +114,7 @@ public class Task extends iCalendar {
 		if (todo.getUid() != null)
 			t.uid = todo.getUid().getValue();
 		else {
-			Log.w(TAG, "Received VTODO without UID, generating new one");
+			Constants.log.warning("Received VTODO without UID, generating new one");
 			t.generateUID();
 		}
 
@@ -206,7 +203,7 @@ public class Task extends iCalendar {
 			try {
 				props.add(new Url(new URI(url)));
 			} catch (URISyntaxException e) {
-				Log.e(TAG, "Ignoring invalid task URL: " + url, e);
+				Constants.log.log(Level.WARNING, "Ignoring invalid task URL: " + url, e);
 			}
         if (organizer != null)
             props.add(organizer);
@@ -256,7 +253,7 @@ public class Task extends iCalendar {
 		try {
 			output.output(ical, os);
 		} catch (ValidationException e) {
-			Log.e(TAG, "Couldn't generate valid VTODO", e);
+			Constants.log.log(Level.SEVERE, "Couldn't generate valid VTODO", e);
 		}
 		return os;
 	}

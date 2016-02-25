@@ -43,5 +43,4 @@ dependencies {
         exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }
     provided 'org.projectlombok:lombok:1.16.6'
-    compile 'org.slf4j:slf4j-android:1.7.13'
 }

@@ -17,18 +17,15 @@ import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.EntityIterator;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.RemoteException;
 import android.provider.CalendarContract;
 import android.provider.CalendarContract.Attendees;
 import android.provider.CalendarContract.Calendars;
 import android.provider.CalendarContract.Events;
-import android.util.Log;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -45,8 +42,6 @@ import lombok.Getter;
  * database to store the events.
  */
 public abstract class AndroidCalendar {
-    private static final String TAG = "ical4android.Calendar";
-
     final protected Account account;
     final public ContentProviderClient provider;
     final AndroidEventFactory eventFactory;
@@ -95,7 +90,7 @@ public abstract class AndroidCalendar {
             info.put(Calendars.ALLOWED_ATTENDEE_TYPES, Attendees.TYPE_NONE + "," + Attendees.TYPE_OPTIONAL + "," + Attendees.TYPE_REQUIRED + "," + Attendees.TYPE_RESOURCE);
         }
 
-		Log.i(TAG, "Creating local calendar: " + info.toString());
+		Constants.log.info("Creating local calendar: " + info.toString());
 		try {
 			return provider.insert(syncAdapterURI(Calendars.CONTENT_URI, account), info);
 		} catch (RemoteException e) {
