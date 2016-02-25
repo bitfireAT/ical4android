@@ -120,7 +120,7 @@ public class DateUtils {
             if (Value.DATE_TIME.equals(type)) {         // DATE-TIME values will be stored in UTC format for Android
                 if (allDay) {
                     DateList dateList = dateListProp.getDates();
-                    for (Date date : (Iterable<Date>)dateList)
+                    for (Date date : dateList)
                         strDates.add(dateFormatUtcMidnight.format(date));
                 } else {
                     dateListProp.setUtc(true);
@@ -128,7 +128,7 @@ public class DateUtils {
                 }
 
             } else if (Value.DATE.equals(type))       // DATE values have to be converted to DATE-TIME <date>T000000Z for Android
-                for (Date date : (Iterable<Date>)dateListProp.getDates())
+                for (Date date : dateListProp.getDates())
                     strDates.add(dateFormatUtcMidnight.format(date));
         }
         return StringUtils.join(strDates, ",");

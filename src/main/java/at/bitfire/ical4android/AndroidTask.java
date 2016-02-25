@@ -344,10 +344,6 @@ public abstract class AndroidTask {
     }
 
 
-    protected Uri tasksSyncURI() {
-        return taskList.syncAdapterURI(taskList.provider.tasksUri());
-    }
-
     protected Uri taskSyncURI() {
         if (id == null)
             throw new IllegalStateException("Task doesn't have an ID yet");

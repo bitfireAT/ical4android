@@ -42,5 +42,7 @@ dependencies {
         // we don't need content builders, see https://github.com/ical4j/ical4j/wiki/Groovy
         exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }
+    compile 'org.slf4j:slf4j-android:1.7.16'    // used by ical4j
+
     provided 'org.projectlombok:lombok:1.16.6'
 }

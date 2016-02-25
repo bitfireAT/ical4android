@@ -122,7 +122,7 @@ public abstract class AndroidTaskList {
     public static AndroidTaskList[] find(Account account, TaskProvider provider, AndroidTaskListFactory factory, String where, String whereArgs[]) throws CalendarStorageException {
         List<AndroidTaskList> taskLists = new LinkedList<>();
         try {
-            @Cleanup Cursor cursor = provider.client.query(syncAdapterURI(provider.taskListsUri(), account), null, null, null, null);
+            @Cleanup Cursor cursor = provider.client.query(syncAdapterURI(provider.taskListsUri(), account), null, where, whereArgs, null);
             while (cursor != null && cursor.moveToNext()) {
                 ContentValues values = new ContentValues(cursor.getColumnCount());
                 DatabaseUtils.cursorRowToContentValues(cursor, values);

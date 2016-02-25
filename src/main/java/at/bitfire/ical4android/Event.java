@@ -135,9 +135,9 @@ public class Event extends iCalendar {
             }
 
         List<Event> events = new LinkedList<>();
-        for (VEvent masterEvent : (Iterable<VEvent>) findMasterEvents(vEvents)) {
+        for (VEvent masterEvent : findMasterEvents(vEvents)) {
             Event event = fromVEvent(masterEvent);
-            for (VEvent exception : (Iterable<VEvent>) findExceptions(event.uid, vEvents))
+            for (VEvent exception : findExceptions(event.uid, vEvents))
                 event.exceptions.add(fromVEvent(exception));
             events.add(event);
         }
@@ -159,7 +159,7 @@ public class Event extends iCalendar {
      */
     static Collection<VEvent> findMasterEvents(List<VEvent> vEvents) {
         Map<String, VEvent> vEventMap = new HashMap<>(vEvents.size());
-        for (VEvent vEvent : (Iterable<VEvent>) vEvents) {
+        for (VEvent vEvent : vEvents) {
             String uid = vEvent.getUid().getValue();
 
             if (vEvent.getRecurrenceId() != null)

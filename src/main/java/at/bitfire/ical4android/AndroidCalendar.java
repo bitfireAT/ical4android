@@ -14,7 +14,6 @@ package at.bitfire.ical4android;
 import android.accounts.Account;
 import android.annotation.SuppressLint;
 import android.content.ContentProviderClient;
-import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.EntityIterator;
@@ -69,15 +68,6 @@ public abstract class AndroidCalendar {
 
 	
 	/* class methods, constructor */
-
-    /**
-     * Acquires a ContentProviderClient for the Android Calendar Contract.
-     * @return A ContentProviderClient, or null if calendar storage is not available/accessible
-     *         Caller is responsible for calling release()!
-     */
-    public static ContentProviderClient acquireContentProviderClient(ContentResolver resolver) {
-        return resolver.acquireContentProviderClient(CalendarContract.AUTHORITY);
-    }
 
 	@SuppressLint("InlinedApi")
 	public static Uri create(Account account, ContentProviderClient provider, ContentValues info) throws CalendarStorageException {
