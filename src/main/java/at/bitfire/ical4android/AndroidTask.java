@@ -285,7 +285,7 @@ public abstract class AndroidTask {
 
         if (task.completedAt != null) {
             // COMPLETED must always be a DATE-TIME
-            builder .withValue(Tasks.COMPLETED, task.completedAt.getDateTime().getTime())
+            builder .withValue(Tasks.COMPLETED, task.completedAt.getDate().getTime())
                     .withValue(Tasks.COMPLETED_IS_ALLDAY, 0);
         }
         builder.withValue(Tasks.PERCENT_COMPLETE, task.percentComplete);
