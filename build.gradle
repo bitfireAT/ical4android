@@ -14,7 +14,7 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    buildToolsVersion "23.0.3"
 
     defaultConfig {
         minSdkVersion 14
@@ -44,5 +44,5 @@ dependencies {
     }
     compile 'org.slf4j:slf4j-android:1.7.16'    // used by ical4j
 
-    provided 'org.projectlombok:lombok:1.16.6'
+    provided 'org.projectlombok:lombok:1.16.8'
 }

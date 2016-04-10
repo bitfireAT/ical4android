@@ -20,9 +20,9 @@ import android.util.Log;
 import org.dmfs.provider.tasks.TaskContract;
 
 import java.io.Closeable;
+import java.util.logging.Level;
 
 public class TaskProvider implements Closeable {
-    private static final String TAG = "ical4and.TaskProvider";
 
     public enum ProviderName {
         //Mirakel("de.azapps.mirakel.provider"),
@@ -68,7 +68,7 @@ public class TaskProvider implements Closeable {
         try {
             client = resolver.acquireContentProviderClient(name.authority);
         } catch(SecurityException e) {
-            Log.e(TAG, "Not allowed to access task provider: ", e);
+            Constants.log.log(Level.WARNING, "Not allowed to access task provider: ", e);
         }
 
         return client != null ? new TaskProvider(name, client) : null;
