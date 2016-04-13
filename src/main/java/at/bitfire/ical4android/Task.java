@@ -55,7 +55,6 @@ import java.util.Set;
 import java.util.logging.Level;
 
 import lombok.Cleanup;
-import lombok.Getter;
 import lombok.NonNull;
 
 public class Task extends iCalendar {
@@ -75,8 +74,8 @@ public class Task extends iCalendar {
     public Integer percentComplete;
 
     public RRule rRule;
-    @Getter private List<RDate> rDates = new LinkedList<>();
-    @Getter private List<ExDate> exDates = new LinkedList<>();
+    public final List<RDate> rDates = new LinkedList<>();
+    public final List<ExDate> exDates = new LinkedList<>();
 
 
     /**

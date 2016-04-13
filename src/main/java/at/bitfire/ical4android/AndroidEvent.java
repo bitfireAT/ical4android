@@ -123,6 +123,10 @@ public abstract class AndroidEvent {
                 }
                 populateExceptions();
 
+                // remove ORGANIZER if there are not attendees (i.e. this is not a group-scheduled calendar entity)
+                if (event.attendees.isEmpty())
+                    event.organizer = null;
+
 	            return event;
             } else
                 throw new FileNotFoundException("Locally stored event couldn't be found");
@@ -171,7 +175,7 @@ public abstract class AndroidEvent {
             String strRDate = values.getAsString(Events.RDATE);
             if (!StringUtils.isEmpty(strRDate)) {
                 RDate rDate = (RDate)DateUtils.androidStringToRecurrenceSet(strRDate, RDate.class, allDay);
-                event.getRDates().add(rDate);
+                event.rDates.add(rDate);
             }
 
             String strExRule = values.getAsString(Events.EXRULE);
@@ -184,7 +188,7 @@ public abstract class AndroidEvent {
             String strExDate = values.getAsString(Events.EXDATE);
             if (!StringUtils.isEmpty(strExDate)) {
                 ExDate exDate = (ExDate)DateUtils.androidStringToRecurrenceSet(strExDate, ExDate.class, allDay);
-                event.getExDates().add(exDate);
+                event.exDates.add(exDate);
             }
         } catch (ParseException ex) {
             Constants.log.log(Level.WARNING, "Couldn't parse recurrence rules, ignoring", ex);
@@ -303,7 +307,7 @@ public abstract class AndroidEvent {
                     break;
             }
 
-            event.getAttendees().add(attendee);
+            event.attendees.add(attendee);
         } catch (URISyntaxException ex) {
             Constants.log.log(Level.WARNING, "Couldn't parse attendee information, ignoring", ex);
         }
@@ -315,7 +319,7 @@ public abstract class AndroidEvent {
         PropertyList props = alarm.getProperties();
         props.add(Action.DISPLAY);
         props.add(new Description(event.summary));
-        event.getAlarms().add(alarm);
+        event.alarms.add(alarm);
     }
 
     @SuppressWarnings("Recycle")
@@ -327,7 +331,7 @@ public abstract class AndroidEvent {
             long exceptionId = c.getLong(0);
             try {
                 AndroidEvent exception = calendar.eventFactory.newInstance(calendar, exceptionId, null);
-                event.getExceptions().add(exception.getEvent());
+                event.exceptions.add(exception.getEvent());
             } catch (CalendarStorageException e) {
                 Constants.log.log(Level.WARNING, "Couldn't find exception details, ignoring", e);
             }
@@ -354,15 +358,15 @@ public abstract class AndroidEvent {
         batch.enqueue(builder.build());
 
         // add reminders
-        for (VAlarm alarm : event.getAlarms())
+        for (VAlarm alarm : event.alarms)
             insertReminder(batch, idxEvent, alarm);
 
         // add attendees
-        for (Attendee attendee : event.getAttendees())
+        for (Attendee attendee : event.attendees)
             insertAttendee(batch, idxEvent, attendee);
 
         // add exceptions
-        for (Event exception : event.getExceptions()) {
+        for (Event exception : event.exceptions) {
             /* I guess exceptions should be inserted using Events.CONTENT_EXCEPTION_URI so that we could
                benefit from some provider logic (for recurring exceptions e.g.). However, this method
                has some caveats:
@@ -399,11 +403,11 @@ public abstract class AndroidEvent {
             batch.enqueue(builder.build());
 
             // add exception reminders
-            for (VAlarm alarm : exception.getAlarms())
+            for (VAlarm alarm : exception.alarms)
                 insertReminder(batch, idxException, alarm);
 
             // add exception attendees
-            for (Attendee attendee : exception.getAttendees())
+            for (Attendee attendee : exception.attendees)
                 insertAttendee(batch, idxException, attendee);
         }
 
@@ -466,19 +470,19 @@ public abstract class AndroidEvent {
             recurring = true;
             builder.withValue(Events.RRULE, event.rRule.getValue());
         }
-        if (!event.getRDates().isEmpty()) {
+        if (!event.rDates.isEmpty()) {
             recurring = true;
             try {
-                builder.withValue(Events.RDATE, DateUtils.recurrenceSetsToAndroidString(event.getRDates(), event.isAllDay()));
+                builder.withValue(Events.RDATE, DateUtils.recurrenceSetsToAndroidString(event.rDates, event.isAllDay()));
             } catch (ParseException e) {
                 Constants.log.log(Level.WARNING, "Couldn't parse RDate(s)", e);
             }
         }
         if (event.exRule != null)
             builder.withValue(Events.EXRULE, event.exRule.getValue());
-        if (!event.getExDates().isEmpty())
+        if (!event.exDates.isEmpty())
             try {
-                builder.withValue(Events.EXDATE, DateUtils.recurrenceSetsToAndroidString(event.getExDates(), event.isAllDay()));
+                builder.withValue(Events.EXDATE, DateUtils.recurrenceSetsToAndroidString(event.exDates, event.isAllDay()));
             } catch (ParseException e) {
                 Constants.log.log(Level.WARNING, "Couldn't parse ExDate(s)", e);
             }

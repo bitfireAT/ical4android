@@ -206,11 +206,11 @@ public abstract class AndroidTask {
 
         String rDate = values.getAsString(Tasks.RDATE);
         if (rDate != null)
-            task.getRDates().add((RDate)DateUtils.androidStringToRecurrenceSet(rDate, RDate.class, allDay));
+            task.rDates.add((RDate)DateUtils.androidStringToRecurrenceSet(rDate, RDate.class, allDay));
 
         String exDate = values.getAsString(Tasks.EXDATE);
         if (exDate != null)
-            task.getExDates().add((ExDate)DateUtils.androidStringToRecurrenceSet(exDate, ExDate.class, allDay));
+            task.exDates.add((ExDate)DateUtils.androidStringToRecurrenceSet(exDate, ExDate.class, allDay));
 
         String rRule = values.getAsString(Tasks.RRULE);
         if (rRule != null)
@@ -325,15 +325,15 @@ public abstract class AndroidTask {
         if (task.duration != null)
             builder.withValue(Tasks.DURATION, task.duration.getValue());
 
-        if (!task.getRDates().isEmpty())
+        if (!task.rDates.isEmpty())
             try {
-                builder.withValue(Tasks.RDATE, DateUtils.recurrenceSetsToAndroidString(task.getRDates(), allDay));
+                builder.withValue(Tasks.RDATE, DateUtils.recurrenceSetsToAndroidString(task.rDates, allDay));
             } catch (ParseException e) {
                 Constants.log.log(Level.WARNING, "Couldn't parse RDate(s)", e);
             }
-        if (!task.getExDates().isEmpty())
+        if (!task.exDates.isEmpty())
             try {
-                builder.withValue(Tasks.EXDATE, DateUtils.recurrenceSetsToAndroidString(task.getExDates(), allDay));
+                builder.withValue(Tasks.EXDATE, DateUtils.recurrenceSetsToAndroidString(task.exDates, allDay));
             } catch (ParseException e) {
                 Constants.log.log(Level.WARNING, "Couldn't parse ExDate(s)", e);
             }

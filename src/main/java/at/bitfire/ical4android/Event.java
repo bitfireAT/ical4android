@@ -62,7 +62,6 @@ import java.util.UUID;
 import java.util.logging.Level;
 
 import lombok.Cleanup;
-import lombok.Getter;
 import lombok.NonNull;
 
 public class Event extends iCalendar {
@@ -80,10 +79,10 @@ public class Event extends iCalendar {
     public Duration duration;
     public RRule rRule;
     public ExRule exRule;
-    @Getter private List<RDate> rDates = new LinkedList<>();
-    @Getter private List<ExDate> exDates = new LinkedList<>();
+    public final List<RDate> rDates = new LinkedList<>();
+    public final List<ExDate> exDates = new LinkedList<>();
 
-    @Getter private List<Event> exceptions = new LinkedList<>();
+    public final List<Event> exceptions = new LinkedList<>();
 
     public Boolean forPublic;
     public Status status;
@@ -91,9 +90,9 @@ public class Event extends iCalendar {
     public boolean opaque;
 
     public Organizer organizer;
-    @Getter private List<Attendee> attendees = new LinkedList<>();
+    public final List<Attendee> attendees = new LinkedList<>();
 
-    @Getter private List<VAlarm> alarms = new LinkedList<>();
+    public final List<VAlarm> alarms = new LinkedList<>();
 
 
     /**
@@ -263,7 +262,7 @@ public class Event extends iCalendar {
                 e.forPublic = false;
         }
 
-        e.alarms = event.getAlarms();
+        e.alarms.addAll(event.getAlarms());
 
         return e;
     }
