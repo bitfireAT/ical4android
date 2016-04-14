@@ -33,7 +33,6 @@ import net.fortuna.ical4j.model.property.Status;
 
 import org.apache.commons.codec.Charsets;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,7 +43,6 @@ import lombok.Cleanup;
 
 public class TaskTest extends InstrumentationTestCase {
     private static final String TAG = "ical4android.TaskTest";
-    protected final TimeZone tzVienna = DateUtils.tzRegistry.getTimeZone("Europe/Vienna");
 
     AssetManager assetMgr;
 
@@ -106,12 +104,12 @@ public class TaskTest extends InstrumentationTestCase {
         assertTrue(t.isAllDay());
 
         assertEquals(new RRule("FREQ=YEARLY;INTERVAL=2"), t.rRule);
-        assertEquals(2, t.getExDates().size());
-        assertTrue(t.getExDates().contains(new ExDate(new DateList("20120101", Value.DATE))));
-        assertTrue(t.getExDates().contains(new ExDate(new DateList("20140101,20180101", Value.DATE))));
-        assertEquals(2, t.getRDates().size());
-        assertTrue(t.getRDates().contains(new RDate(new DateList("20100310,20100315", Value.DATE))));
-        assertTrue(t.getRDates().contains(new RDate(new DateList("20100810", Value.DATE))));
+        assertEquals(2, t.exDates.size());
+        assertTrue(t.exDates.contains(new ExDate(new DateList("20120101", Value.DATE))));
+        assertTrue(t.exDates.contains(new ExDate(new DateList("20140101,20180101", Value.DATE))));
+        assertEquals(2, t.rDates.size());
+        assertTrue(t.rDates.contains(new RDate(new DateList("20100310,20100315", Value.DATE))));
+        assertTrue(t.rDates.contains(new RDate(new DateList("20100810", Value.DATE))));
 
         assertEquals(828106200000L, t.createdAt.longValue());
         assertEquals(840288600000L, t.lastModified.longValue());

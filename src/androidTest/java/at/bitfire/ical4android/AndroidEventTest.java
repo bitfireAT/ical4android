@@ -15,14 +15,12 @@ import android.accounts.Account;
 import android.annotation.TargetApi;
 import android.content.ContentProviderClient;
 import android.content.ContentUris;
-import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
 import android.os.RemoteException;
 import android.provider.CalendarContract;
 import android.provider.CalendarContract.Calendars;
-import android.provider.CalendarContract.Events;
 import android.test.InstrumentationTestCase;
 import android.util.Log;
 
@@ -37,7 +35,6 @@ import net.fortuna.ical4j.model.property.DtEnd;
 import net.fortuna.ical4j.model.property.DtStart;
 import net.fortuna.ical4j.model.property.ExDate;
 import net.fortuna.ical4j.model.property.Organizer;
-import net.fortuna.ical4j.model.property.RDate;
 import net.fortuna.ical4j.model.property.RRule;
 import net.fortuna.ical4j.model.property.RecurrenceId;
 import net.fortuna.ical4j.model.property.Status;
@@ -46,7 +43,6 @@ import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.ParseException;
-import java.util.Calendar;
 
 import at.bitfire.ical4android.impl.TestCalendar;
 import at.bitfire.ical4android.impl.TestEvent;
@@ -129,11 +125,11 @@ public class AndroidEventTest extends InstrumentationTestCase {
         // TODO test rDates, exDate, duration
 
         // set an alarm one day, two hours, three minutes and four seconds before begin of event
-        event.getAlarms().add(new VAlarm(new Dur(-1, -2, -3, -4)));
+        event.alarms.add(new VAlarm(new Dur(-1, -2, -3, -4)));
 
         // add two attendees
-        event.getAttendees().add(new Attendee(new URI("mailto:user1@example.com")));
-        event.getAttendees().add(new Attendee(new URI("mailto:user2@example.com")));
+        event.attendees.add(new Attendee(new URI("mailto:user1@example.com")));
+        event.attendees.add(new Attendee(new URI("mailto:user2@example.com")));
 
         // add exception with alarm and attendee
         Event exception = new Event();
@@ -141,12 +137,12 @@ public class AndroidEventTest extends InstrumentationTestCase {
         exception.summary = "Exception for sample event";
         exception.dtStart = new DtStart("20150502T140000", tzVienna);
         exception.dtEnd = new DtEnd("20150502T150000", tzVienna);
-        exception.getAlarms().add(new VAlarm(new Dur(-2, -3, -4, -5)));
-        exception.getAttendees().add(new Attendee(new URI("mailto:only.here@today")));
-        event.getExceptions().add(exception);
+        exception.alarms.add(new VAlarm(new Dur(-2, -3, -4, -5)));
+        exception.attendees.add(new Attendee(new URI("mailto:only.here@today")));
+        event.exceptions.add(exception);
 
         // add EXDATE
-        event.getExDates().add(new ExDate(new DateList("20150502T120000", Value.DATE_TIME, tzVienna)));
+        event.exDates.add(new ExDate(new DateList("20150502T120000", Value.DATE_TIME, tzVienna)));
 
         // add to calendar
         Uri uri = new TestEvent(calendar, event).add();
@@ -170,37 +166,37 @@ public class AndroidEventTest extends InstrumentationTestCase {
         assertEquals(event.status, event2.status);
 
         // compare alarm
-        assertEquals(1, event2.getAlarms().size());
-        VAlarm alarm2 = event2.getAlarms().get(0);
+        assertEquals(1, event2.alarms.size());
+        VAlarm alarm2 = event2.alarms.get(0);
         assertEquals(event.summary, alarm2.getDescription().getValue());  // should be built from event title
         assertEquals(new Dur(0, 0, -(24 * 60 + 60 * 2 + 3), 0), alarm2.getTrigger().getDuration());   // calendar provider stores trigger in minutes
 
         // compare attendees
-        assertEquals(2, event2.getAttendees().size());
-        assertEquals(event.getAttendees().get(0).getCalAddress(), event2.getAttendees().get(0).getCalAddress());
-        assertEquals(event.getAttendees().get(1).getCalAddress(), event2.getAttendees().get(1).getCalAddress());
+        assertEquals(2, event2.attendees.size());
+        assertEquals(event.attendees.get(0).getCalAddress(), event2.attendees.get(0).getCalAddress());
+        assertEquals(event.attendees.get(1).getCalAddress(), event2.attendees.get(1).getCalAddress());
 
         // compare exception
-        assertEquals(1, event2.getExceptions().size());
-        Event exception2 = event2.getExceptions().get(0);
+        assertEquals(1, event2.exceptions.size());
+        Event exception2 = event2.exceptions.get(0);
         assertEquals(exception.recurrenceId.getDate(), exception2.recurrenceId.getDate());
         assertEquals(exception.summary, exception2.summary);
         assertEquals(exception.dtStart, exception2.dtStart);
         assertEquals(exception.dtEnd, exception2.dtEnd);
 
         // compare exception alarm
-        assertEquals(1, exception2.getAlarms().size());
-        alarm2 = exception2.getAlarms().get(0);
+        assertEquals(1, exception2.alarms.size());
+        alarm2 = exception2.alarms.get(0);
         assertEquals(exception.summary, alarm2.getDescription().getValue());
         assertEquals(new Dur(0, 0, -(2 * 24 * 60 + 60 * 3 + 4), 0), alarm2.getTrigger().getDuration());   // calendar provider stores trigger in minutes
 
         // compare exception attendee
-        assertEquals(1, exception2.getAttendees().size());
-        assertEquals(exception.getAttendees().get(0).getCalAddress(), exception2.getAttendees().get(0).getCalAddress());
+        assertEquals(1, exception2.attendees.size());
+        assertEquals(exception.attendees.get(0).getCalAddress(), exception2.attendees.get(0).getCalAddress());
 
         // compare EXDATE
-        assertEquals(1, event2.getExDates().size());
-        assertEquals(event.getExDates().get(0), event2.getExDates().get(0));
+        assertEquals(1, event2.exDates.size());
+        assertEquals(event.exDates.get(0), event2.exDates.get(0));
     }
 
     public void testUpdateEvent() throws URISyntaxException, ParseException, FileNotFoundException, CalendarStorageException {
@@ -218,16 +214,16 @@ public class AndroidEventTest extends InstrumentationTestCase {
         event = testEvent.getEvent();
         event.summary = "Updated event";
         // add data rows
-        event.getAlarms().add(new VAlarm(new Dur(-1, -2, -3, -4)));
-        event.getAttendees().add(new Attendee(new URI("mailto:user@example.com")));
+        event.alarms.add(new VAlarm(new Dur(-1, -2, -3, -4)));
+        event.attendees.add(new Attendee(new URI("mailto:user@example.com")));
         uri = testEvent.update(event);
 
         // read again and verify result
         testEvent = new TestEvent(calendar, ContentUris.parseId(uri));
         Event updatedEvent = testEvent.getEvent();
         assertEquals(event.summary, updatedEvent.summary);
-        assertEquals(1, updatedEvent.getAlarms().size());
-        assertEquals(1, updatedEvent.getAttendees().size());
+        assertEquals(1, updatedEvent.alarms.size());
+        assertEquals(1, updatedEvent.attendees.size());
     }
 
     public void testBuildAllDayEntry() throws ParseException, FileNotFoundException, CalendarStorageException {

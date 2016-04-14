@@ -50,7 +50,7 @@ public class AndroidCalendarTest extends InstrumentationTestCase {
     }
 
     public void testManageCalendars() throws CalendarStorageException, FileNotFoundException {
-        // create task list
+        // create calendar
         ContentValues info = new ContentValues();
         info.put(CalendarContract.Calendars.NAME, "TestCalendar");
         info.put(CalendarContract.Calendars.CALENDAR_DISPLAY_NAME, "ical4android Test Calendar");
@@ -58,6 +58,7 @@ public class AndroidCalendarTest extends InstrumentationTestCase {
         info.put(CalendarContract.Calendars.SYNC_EVENTS, 0);
         Uri uri = TestCalendar.create(testAccount, provider, info);
         assertNotNull(uri);
+        Log.i(TAG, "Created calendar: " + uri);
 
         // query task list
         TestCalendar calendar = (TestCalendar)TestCalendar.findByID(testAccount, provider, TestCalendar.Factory.FACTORY, ContentUris.parseId(uri));

@@ -46,3 +46,24 @@ dependencies {
 
     provided 'org.projectlombok:lombok:1.16.8'
 }
+
+// grant permissions for unit tests
+task grantPermissions(dependsOn: 'installDebugAndroidTest') {
+    doFirst {
+        def adb = android.getAdbExe().toString()
+        [
+                'android.permission.READ_CALENDAR',
+                'android.permission.WRITE_CALENDAR',
+                'org.dmfs.permission.READ_TASKS',
+                'org.dmfs.permission.WRITE_TASKS'
+        ].each {
+            "${adb} shell pm grant at.bitfire.ical4android.test ${it}".execute()
+        }
+    }
+}
+
+tasks.whenTaskAdded { task ->
+    if (task.name.startsWith('connectedDebugAndroidTest')) {
+        task.dependsOn grantPermissions
+    }
+}

@@ -16,7 +16,6 @@ import android.test.InstrumentationTestCase;
 import android.util.Log;
 
 import net.fortuna.ical4j.model.PropertyList;
-import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.component.VEvent;
 import net.fortuna.ical4j.model.property.RecurrenceId;
 import net.fortuna.ical4j.model.property.Sequence;
@@ -41,7 +40,6 @@ import lombok.NonNull;
 
 public class EventTest extends InstrumentationTestCase {
     private static final String TAG = "ical4android.EventTest";
-    protected final TimeZone tzVienna = DateUtils.tzRegistry.getTimeZone("Europe/Vienna");
 
     AssetManager assetMgr;
 
@@ -83,26 +81,26 @@ public class EventTest extends InstrumentationTestCase {
 
         Event e = findEvent(events, "multiple-0@ical4android.EventTest");
         assertEquals("Event 0", e.summary);
-        assertEquals(0, e.getExceptions().size());
+        assertEquals(0, e.exceptions.size());
 
         e = findEvent(events, "multiple-1@ical4android.EventTest");
         assertEquals("Event 1", e.summary);
-        assertEquals(1, e.getExceptions().size());
-        assertEquals("Event 1 Exception", e.getExceptions().get(0).summary);
+        assertEquals(1, e.exceptions.size());
+        assertEquals("Event 1 Exception", e.exceptions.get(0).summary);
 
         e = findEvent(events, "multiple-2@ical4android.EventTest");
         assertEquals("Event 2", e.summary);
-        assertEquals(2, e.getExceptions().size());
-        assertTrue("Event 2 Updated Exception 1".equals(e.getExceptions().get(0).summary) || "Event 2 Updated Exception 1".equals(e.getExceptions().get(1).summary));
-        assertTrue("Event 2 Exception 2".equals(e.getExceptions().get(0).summary) || "Event 2 Exception 2".equals(e.getExceptions().get(1).summary));
+        assertEquals(2, e.exceptions.size());
+        assertTrue("Event 2 Updated Exception 1".equals(e.exceptions.get(0).summary) || "Event 2 Updated Exception 1".equals(e.exceptions.get(1).summary));
+        assertTrue("Event 2 Exception 2".equals(e.exceptions.get(0).summary) || "Event 2 Exception 2".equals(e.exceptions.get(1).summary));
     }
 
     public void testRecurringWithException() throws IOException, InvalidCalendarException {
         Event event = parseCalendar("recurring-with-exception1.ics", null);
         assertTrue(event.isAllDay());
 
-        assertEquals(1, event.getExceptions().size());
-        Event exception = event.getExceptions().get(0);
+        assertEquals(1, event.exceptions.size());
+        Event exception = event.exceptions.get(0);
         assertEquals("20150503", exception.recurrenceId.getValue());
         assertEquals("Another summary for the third day", exception.summary);
     }
