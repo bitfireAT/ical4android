@@ -144,14 +144,17 @@ public class AndroidTaskTest extends InstrumentationTestCase {
         // update test event in calendar
         @Cleanup("delete") TestTask testTask = new TestTask(taskList, ContentUris.parseId(uri));
         task = testTask.getTask();
-        task.summary = "Updated event";
-        task.due = new Due("20150501T140000", tzVienna);
+        task.summary = "Updated event";                     // change value
+        task.dtStart = null;                                // remove value
+        task.due = new Due("20150501T140000", tzVienna);    // add value
         testTask.update(task);
 
         // read again and verify result
         testTask = new TestTask(taskList, ContentUris.parseId(uri));
         Task updatedTask = testTask.getTask();
         assertEquals(task.summary, updatedTask.summary);
+        assertEquals(task.dtStart, updatedTask.dtStart);
+        assertEquals(task.due, updatedTask.due);
     }
 
     public void testBuildAllDayTask() throws ParseException, FileNotFoundException, CalendarStorageException {

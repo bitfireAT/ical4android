@@ -255,22 +255,23 @@ public abstract class AndroidTask {
                 .withValue(Tasks.TITLE, task.summary)
                 .withValue(Tasks.LOCATION, task.location);
 
-        if (task.geoPosition != null)
-                builder.withValue(Tasks.GEO, task.geoPosition.getValue());
+        builder.withValue(Tasks.GEO, task.geoPosition != null ? task.geoPosition.getValue() : null);
 
         builder .withValue(Tasks.DESCRIPTION, task.description)
                 .withValue(Tasks.URL, task.url);
 
+        String organizer = null;
         if (task.organizer != null)
             try {
-                URI organizer = new URI(task.organizer.getValue());
-                if ("mailto".equals(organizer.getScheme()))
-                    builder.withValue(Tasks.ORGANIZER, organizer.getSchemeSpecificPart());
+                URI uri = new URI(task.organizer.getValue());
+                if ("mailto".equals(uri.getScheme()))
+                    organizer = uri.getSchemeSpecificPart();
                 else
-                    Constants.log.log(Level.WARNING, "Found non-mailto ORGANIZER URI, ignoring", organizer);
+                    Constants.log.log(Level.WARNING, "Found non-mailto ORGANIZER URI, ignoring", uri);
             } catch (URISyntaxException e) {
-                e.printStackTrace();
+                Constants.log.log(Level.WARNING, "Invalid ORGANIZER URI, ignoring", e);
             }
+        builder.withValue(Tasks.ORGANIZER, organizer);
 
         builder.withValue(Tasks.PRIORITY, task.priority);
 
@@ -281,13 +282,13 @@ public abstract class AndroidTask {
             else if (task.classification == Clazz.CONFIDENTIAL)
                 classCode = Tasks.CLASSIFICATION_CONFIDENTIAL;
             builder.withValue(Tasks.CLASSIFICATION, classCode);
-        }
+        } else
+            builder.withValue(Tasks.CLASSIFICATION, null);
 
-        if (task.completedAt != null) {
-            // COMPLETED must always be a DATE-TIME
-            builder .withValue(Tasks.COMPLETED, task.completedAt.getDate().getTime())
-                    .withValue(Tasks.COMPLETED_IS_ALLDAY, 0);
-        }
+        // COMPLETED must always be a DATE-TIME
+        builder .withValue(Tasks.COMPLETED, task.completedAt != null ? task.completedAt.getDate().getTime() : null)
+                .withValue(Tasks.COMPLETED_IS_ALLDAY, 0);
+
         builder.withValue(Tasks.PERCENT_COMPLETE, task.percentComplete);
 
         int statusCode = Tasks.STATUS_DEFAULT;
@@ -304,41 +305,35 @@ public abstract class AndroidTask {
         builder.withValue(Tasks.STATUS, statusCode);
 
         final boolean allDay = task.isAllDay();
-        if (allDay)
+        if (allDay) {
             builder.withValue(Tasks.IS_ALLDAY, 1);
-        else {
+            builder.withValue(Tasks.TZ, null);
+        } else {
             builder.withValue(Tasks.IS_ALLDAY, 0);
 
             java.util.TimeZone tz = task.getTimeZone();
             builder.withValue(Tasks.TZ, tz.getID());
         }
 
-        if (task.createdAt != null)
-            builder.withValue(Tasks.CREATED, task.createdAt);
-        if (task.lastModified != null)
-            builder.withValue(Tasks.LAST_MODIFIED, task.lastModified);
+        builder.withValue(Tasks.CREATED, task.createdAt);
+        builder.withValue(Tasks.LAST_MODIFIED, task.lastModified);
 
-        if (task.dtStart != null)
-            builder.withValue(Tasks.DTSTART, task.dtStart.getDate().getTime());
-        if (task.due != null)
-            builder.withValue(Tasks.DUE, task.due.getDate().getTime());
-        if (task.duration != null)
-            builder.withValue(Tasks.DURATION, task.duration.getValue());
+        builder.withValue(Tasks.DTSTART, task.dtStart != null ? task.dtStart.getDate().getTime() : null);
+        builder.withValue(Tasks.DUE, task.due != null ? task.due.getDate().getTime() : null);
+        builder.withValue(Tasks.DURATION, task.duration != null ? task.duration.getValue() : null);
 
-        if (!task.rDates.isEmpty())
-            try {
-                builder.withValue(Tasks.RDATE, DateUtils.recurrenceSetsToAndroidString(task.rDates, allDay));
-            } catch (ParseException e) {
-                Constants.log.log(Level.WARNING, "Couldn't parse RDate(s)", e);
-            }
-        if (!task.exDates.isEmpty())
-            try {
-                builder.withValue(Tasks.EXDATE, DateUtils.recurrenceSetsToAndroidString(task.exDates, allDay));
-            } catch (ParseException e) {
-                Constants.log.log(Level.WARNING, "Couldn't parse ExDate(s)", e);
-            }
-        if (task.rRule != null)
-            builder.withValue(Tasks.RRULE, task.rRule.getValue());
+        try {
+            builder.withValue(Tasks.RDATE, !task.rDates.isEmpty() ? DateUtils.recurrenceSetsToAndroidString(task.rDates, allDay) : null);
+        } catch (ParseException e) {
+            Constants.log.log(Level.WARNING, "Couldn't parse RDate(s)", e);
+        }
+        builder.withValue(Tasks.RRULE, task.rRule != null ? task.rRule.getValue() : null);
+
+        try {
+            builder.withValue(Tasks.EXDATE, !task.exDates.isEmpty() ? DateUtils.recurrenceSetsToAndroidString(task.exDates, allDay) : null);
+        } catch (ParseException e) {
+            Constants.log.log(Level.WARNING, "Couldn't parse ExDate(s)", e);
+        }
 
         Constants.log.log(Level.FINE, "Built task object", builder.build());
     }
