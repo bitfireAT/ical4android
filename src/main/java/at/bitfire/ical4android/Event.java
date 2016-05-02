@@ -46,11 +46,14 @@ import net.fortuna.ical4j.model.property.Transp;
 import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.Version;
 
+import org.apache.commons.lang3.math.NumberUtils;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -106,6 +109,7 @@ public class Event extends iCalendar {
      */
     @SuppressWarnings("unchecked")
     public static Event[] fromStream(@NonNull InputStream stream, Charset charset, Map<String, String> properties) throws IOException, InvalidCalendarException {
+        Constants.log.fine("Parsing iCalendar stream");
         final Calendar ical;
         try {
             if (charset != null) {
@@ -133,13 +137,49 @@ public class Event extends iCalendar {
                 vEvent.getProperties().add(uid);
             }
 
-        List<Event> events = new LinkedList<>();
-        for (VEvent masterEvent : findMasterEvents(vEvents)) {
-            Event event = fromVEvent(masterEvent);
-            for (VEvent exception : findExceptions(event.uid, vEvents))
-                event.exceptions.add(fromVEvent(exception));
+        Constants.log.fine("Assigning exceptions to master events");
+        Map<String,VEvent> masterEvents = new HashMap<>(vEvents.size());
+        Map<String,Map<String,VEvent>> exceptions = new HashMap<>();
+
+        for (VEvent vEvent : vEvents) {
+            final String uid = vEvent.getUid().getValue();
+            int sequence = vEvent.getSequence() == null ? 0 : vEvent.getSequence().getSequenceNo();
+
+            if (vEvent.getRecurrenceId() == null) {
+                // master event (no RECURRENCE-ID)
+                VEvent event = masterEvents.get(uid);
+                // If there are multiple entries, compare SEQUENCE and use the one with higher SEQUENCE.
+                // If the SEQUENCE is identical, use latest version.
+                if (event == null || (event.getSequence() != null && sequence >= event.getSequence().getSequenceNo()))
+                    masterEvents.put(uid, vEvent);
+
+            } else {
+                // exception (RECURRENCE-ID)
+                Map<String,VEvent> ex = exceptions.get(uid);
+                if (ex == null) {
+                    ex = new HashMap<>();
+                    exceptions.put(uid, ex);
+                }
+                String recurrenceID = vEvent.getRecurrenceId().getValue();
+                VEvent event = ex.get(recurrenceID);
+                if (event == null || (event.getSequence() != null && sequence >= event.getSequence().getSequenceNo()))
+                    ex.put(recurrenceID, vEvent);
+            }
+        }
+
+        List<Event> events = new ArrayList<>(masterEvents.size());
+        for (Map.Entry<String, VEvent> masterEvent : masterEvents.entrySet()) {
+            String uid = masterEvent.getKey();
+            Event event = fromVEvent(masterEvent.getValue());
+
+            Map<String,VEvent> eventExceptions = exceptions.get(uid);
+            if (eventExceptions != null)
+                for (VEvent ex : eventExceptions.values())
+                    event.exceptions.add(fromVEvent(ex));
+
             events.add(event);
         }
+
         return events.toArray(new Event[events.size()]);
     }
 
@@ -148,69 +188,6 @@ public class Event extends iCalendar {
      */
     public static Event[] fromStream(@NonNull InputStream stream, Charset charset) throws IOException, InvalidCalendarException {
         return fromStream(stream, charset, null);
-    }
-
-
-    /**
-     * Finds events without RECURRENCE-ID ("master events").
-     * If there are multiple versions, use the one with highest SEQUENCE.
-     * @param vEvents  list of VEvents to scan; every VEvent must have an UID
-     */
-    static Collection<VEvent> findMasterEvents(List<VEvent> vEvents) {
-        Map<String, VEvent> vEventMap = new HashMap<>(vEvents.size());
-        for (VEvent vEvent : vEvents) {
-            String uid = vEvent.getUid().getValue();
-
-            if (vEvent.getRecurrenceId() != null)
-                // VEVENT has a RECURRENCE-ID, so it's an exception
-                continue;
-
-            if (vEventMap.containsKey(uid)) {
-                // UID already known, compare SEQUENCE and use the one with higher SEQUENCE.
-                // If the SEQUENCE is identical, use latest version.
-                int seq = 0;
-                if (vEvent.getSequence() != null)
-                    seq = vEvent.getSequence().getSequenceNo();
-
-                int otherSeq = 0;
-                VEvent otherVEvent = vEventMap.get(uid);
-                if (otherVEvent.getSequence() != null)
-                    otherSeq = otherVEvent.getSequence().getSequenceNo();
-
-                if (seq >= otherSeq)
-                    vEventMap.put(uid, vEvent);
-            } else
-                vEventMap.put(uid, vEvent);
-        }
-        return vEventMap.values();
-    }
-
-    static Collection<VEvent> findExceptions(String uid, List<VEvent> vEvents) {
-        Map<String, VEvent> exceptionMap = new HashMap<>();     // map of <recurring-id, exception> for given uid
-        for (VEvent vEvent : vEvents) {
-            if (!uid.equals(vEvent.getUid().getValue()) || vEvent.getRecurrenceId() == null)
-                // ignore VEvents without or with wrong UID or without RECURRENCE-ID
-                continue;
-
-            String recurrenceID = vEvent.getRecurrenceId().getValue();
-            if (exceptionMap.containsKey(recurrenceID)) {
-                // UID already known, compare SEQUENCE and use the one with higher SEQUENCE.
-                // If the SEQUENCE is identical, use latest version.
-                int seq = 0;
-                if (vEvent.getSequence() != null)
-                    seq = vEvent.getSequence().getSequenceNo();
-
-                int otherSeq = 0;
-                VEvent otherVEvent = exceptionMap.get(recurrenceID);
-                if (otherVEvent.getSequence() != null)
-                    otherSeq = otherVEvent.getSequence().getSequenceNo();
-
-                if (seq >= otherSeq)
-                    exceptionMap.put(recurrenceID, vEvent);
-            } else
-                exceptionMap.put(recurrenceID, vEvent);
-        }
-        return exceptionMap.values();
     }
 
 
