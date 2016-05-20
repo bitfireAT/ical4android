@@ -43,15 +43,8 @@ public class EventTest extends InstrumentationTestCase {
 
     AssetManager assetMgr;
 
-    Event eOnThatDay, eAllDay1Day, eAllDay10Days, eAllDay0Sec;
-
     public void setUp() throws IOException, InvalidCalendarException {
         assetMgr = getInstrumentation().getContext().getResources().getAssets();
-
-        eOnThatDay = parseCalendar("event-on-that-day.ics", null);
-        eAllDay1Day = parseCalendar("all-day-1day.ics", null);
-        eAllDay10Days = parseCalendar("all-day-10days.ics", null);
-        eAllDay0Sec = parseCalendar("all-day-0sec.ics", null);
     }
 
 
@@ -60,16 +53,16 @@ public class EventTest extends InstrumentationTestCase {
     public void testCalendarProperties() throws IOException, InvalidCalendarException {
         @Cleanup InputStream is = assetMgr.open("events/multiple.ics", AssetManager.ACCESS_STREAMING);
         Map<String, String> properties = new HashMap<>();
-        Event[] events = Event.fromStream(is, null, properties);
+        Event.fromStream(is, null, properties);
         assertEquals(1, properties.size());
         assertEquals("Test-Kalender", properties.get(Event.CALENDAR_NAME));
     }
 
     public void testCharsets() throws IOException, InvalidCalendarException {
-        Event e = parseCalendar("latin1.ics", Charsets.ISO_8859_1);
+        Event e = parseCalendar("latin1.ics", Charsets.ISO_8859_1)[0];
         assertEquals("äöüß", e.summary);
 
-        e = parseCalendar("utf8.ics", null);
+        e = parseCalendar("utf8.ics", null)[0];
         assertEquals("© äö — üß", e.summary);
         assertEquals("中华人民共和国", e.location);
     }
@@ -96,7 +89,7 @@ public class EventTest extends InstrumentationTestCase {
     }
 
     public void testRecurringWithException() throws IOException, InvalidCalendarException {
-        Event event = parseCalendar("recurring-with-exception1.ics", null);
+        Event event = parseCalendar("recurring-with-exception1.ics", null)[0];
         assertTrue(event.isAllDay());
 
         assertEquals(1, event.exceptions.size());
@@ -107,15 +100,16 @@ public class EventTest extends InstrumentationTestCase {
 
     public void testStartEndTimes() throws IOException, InvalidCalendarException {
         // event with start+end date-time
-        Event eViennaEvolution = parseCalendar("vienna-evolution.ics", null);
+        Event eViennaEvolution = parseCalendar("vienna-evolution.ics", null)[0];
         assertEquals(1381330800000L, eViennaEvolution.getDtStartInMillis());
         assertEquals("Europe/Vienna", eViennaEvolution.getDtStartTzID());
         assertEquals(1381334400000L, eViennaEvolution.getDtEndInMillis());
         assertEquals("Europe/Vienna", eViennaEvolution.getDtEndTzID());
     }
 
-    public void testStartEndTimesAllDay() throws IOException {
+    public void testStartEndTimesAllDay() throws IOException, InvalidCalendarException {
         // event with start date only
+        Event eOnThatDay = parseCalendar("event-on-that-day.ics", null)[0];
         assertEquals(868838400000L, eOnThatDay.getDtStartInMillis());
         assertEquals(TimeZones.UTC_ID, eOnThatDay.getDtStartTzID());
         // DTEND missing in VEVENT, must have been set to DTSTART+1 day
@@ -123,18 +117,21 @@ public class EventTest extends InstrumentationTestCase {
         assertEquals(TimeZones.UTC_ID, eOnThatDay.getDtEndTzID());
 
         // event with start+end date for all-day event (one day)
+        Event eAllDay1Day = parseCalendar("all-day-1day.ics", null)[0];
         assertEquals(868838400000L, eAllDay1Day.getDtStartInMillis());
         assertEquals(TimeZones.UTC_ID, eAllDay1Day.getDtStartTzID());
         assertEquals(868838400000L + 86400000, eAllDay1Day.getDtEndInMillis());
         assertEquals(TimeZones.UTC_ID, eAllDay1Day.getDtEndTzID());
 
         // event with start+end date for all-day event (ten days)
+        Event eAllDay10Days = parseCalendar("all-day-10days.ics", null)[0];
         assertEquals(868838400000L, eAllDay10Days.getDtStartInMillis());
         assertEquals(TimeZones.UTC_ID, eAllDay10Days.getDtStartTzID());
         assertEquals(868838400000L + 10 * 86400000, eAllDay10Days.getDtEndInMillis());
         assertEquals(TimeZones.UTC_ID, eAllDay10Days.getDtEndTzID());
 
         // event with start+end date on some day (0 sec-event)
+        Event eAllDay0Sec = parseCalendar("all-day-0sec.ics", null)[0];
         assertEquals(868838400000L, eAllDay0Sec.getDtStartInMillis());
         assertEquals(TimeZones.UTC_ID, eAllDay0Sec.getDtStartTzID());
         // DTEND is same as DTSTART which is not valid for Android – but this will be handled by AndroidEvent, not Event
@@ -143,64 +140,47 @@ public class EventTest extends InstrumentationTestCase {
     }
 
     public void testUnfolding() throws IOException, InvalidCalendarException {
-        Event e = parseCalendar("two-line-description-without-crlf.ics", null);
+        Event e = parseCalendar("two-line-description-without-crlf.ics", null)[0];
         assertEquals("http://www.tgbornheim.de/index.php?sessionid=&page=&id=&sportcentergroup=&day=6", e.description);
     }
 
 
     /* internal tests */
 
-    public void testFindMasterEventsAndExceptions() throws ParseException {
-        List<VEvent> events;
-        Collection<VEvent> masterEvents;
+    public void testFindMasterEventsAndExceptions() throws ParseException, IOException, InvalidCalendarException {
+        Event[] events;
 
         // two single events
-        masterEvents = Event.findMasterEvents(events = Arrays.asList(new VEvent[]{
-                newVEvent("event1", null, 0),
-                newVEvent("event2", null, 0)
-        }));
-        assertEquals(2, masterEvents.size());
-        for (VEvent event : masterEvents) {
-            Collection<VEvent> exceptions = Event.findExceptions(event.getUid().getValue(), events);
-            assertEquals(0, exceptions.size());
-        }
+        events = parseCalendar("two-events-without-exceptions.ics", null);
+        assertEquals(2, events.length);
+        for (Event event : events)
+            assertTrue(event.exceptions.isEmpty());
 
         // one event with exception, another single event
-        masterEvents = Event.findMasterEvents(events = Arrays.asList(new VEvent[]{
-                newVEvent("event1", null, 0),
-                newVEvent("event2", null, 0),
-                newVEvent("event1", "20150101", 0)
-        }));
-        assertEquals(2, masterEvents.size());
-        for (VEvent event : masterEvents) {
-            String uid = event.getUid().getValue();
-            Collection<VEvent> exceptions = Event.findExceptions(uid, events);
+        events = parseCalendar("one-event-with-exception-one-without.ics", null);
+        assertEquals(2, events.length);
+        for (Event event : events) {
+            String uid = event.uid;
             if ("event1".equals(uid))
-                assertEquals(1, exceptions.size());
+                assertEquals(1, event.exceptions.size());
             else
-                assertEquals(0, exceptions.size());
+                assertTrue(event.exceptions.isEmpty());
         }
 
         // one event two exceptions (thereof one updated two times) and updated exception, another single event
-        masterEvents = Event.findMasterEvents(events = Arrays.asList(new VEvent[]{
-                newVEvent("event1", null, 0),
-                newVEvent("event2", null, 0),
-                newVEvent("event1", "20150101", 1),
-                newVEvent("event1", "20150101", 2),
-                newVEvent("event1", "20150101", 0),
-                newVEvent("event1", "20150102", 0)
-        }));
-        assertEquals(2, masterEvents.size());
-        for (VEvent event : masterEvents) {
-            String uid = event.getUid().getValue();
-            Collection<VEvent> exceptions = Event.findExceptions(uid, events);
+        events = parseCalendar("one-event-with-multiple-exceptions-one-without.ics", null);
+        assertEquals(2, events.length);
+        for (Event event : events) {
+            String uid = event.uid;
             if ("event1".equals(uid)) {
-                assertEquals(2, exceptions.size());
-                for (VEvent exception : exceptions)
-                    if ("20150101".equals(exception.getRecurrenceId().getValue()))
-                        assertEquals(2, exception.getSequence().getSequenceNo());
+                assertEquals(2, event.exceptions.size());
+                for (Event exception : event.exceptions)
+                    if ("20150503".equals(exception.recurrenceId.getValue())) {
+                        assertEquals(2, (int)exception.sequence);
+                        assertEquals("Final summary", exception.summary);
+                    }
             } else
-                assertEquals(0, exceptions.size());
+                assertTrue(event.exceptions.isEmpty());
         }
     }
 
@@ -214,22 +194,11 @@ public class EventTest extends InstrumentationTestCase {
         throw new FileNotFoundException();
     }
 
-    private VEvent newVEvent(String uid, String recurrenceId, int sequence) throws ParseException {
-        VEvent event = new VEvent();
-        PropertyList props = event.getProperties();
-        props.add(new Uid(uid));
-        if (recurrenceId != null)
-            props.add(new RecurrenceId(recurrenceId));
-        if (sequence != 0)
-            props.add(new Sequence(sequence));
-        return event;
-    }
-
-    private Event parseCalendar(String fname, Charset charset) throws IOException, InvalidCalendarException {
+    private Event[] parseCalendar(String fname, Charset charset) throws IOException, InvalidCalendarException {
         fname = "events/" + fname;
         Log.d(TAG, "Loading event file " + fname);
         @Cleanup InputStream is = assetMgr.open(fname, AssetManager.ACCESS_STREAMING);
-        return Event.fromStream(is, charset)[0];
+        return Event.fromStream(is, charset);
     }
 
 }

@@ -156,10 +156,12 @@ public class Event extends iCalendar {
             } else {
                 // exception (RECURRENCE-ID)
                 Map<String,VEvent> ex = exceptions.get(uid);
+                // first index level: UID
                 if (ex == null) {
                     ex = new HashMap<>();
                     exceptions.put(uid, ex);
                 }
+                // second index level: RECURRENCE-ID
                 String recurrenceID = vEvent.getRecurrenceId().getValue();
                 VEvent event = ex.get(recurrenceID);
                 if (event == null || (event.getSequence() != null && sequence >= event.getSequence().getSequenceNo()))
