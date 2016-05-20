@@ -47,6 +47,9 @@ public class BatchOperation {
 			try {
 				Constants.log.fine("Committing " + queue.size() + " operations …");
 				results = providerClient.applyBatch(queue);
+                if (results.length != queue.size())
+                    throw new CalendarStorageException("Batch operation failed partially (only " + results.length + " of " + queue.size() + " operations done)");
+
 				for (ContentProviderResult result : results)
 					if (result != null)                 // will have either .uri or .count set
 						if (result.count != null)
