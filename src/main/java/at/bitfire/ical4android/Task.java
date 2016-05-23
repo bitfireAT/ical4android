@@ -56,7 +56,9 @@ import java.util.logging.Level;
 
 import lombok.Cleanup;
 import lombok.NonNull;
+import lombok.ToString;
 
+@ToString(of={"uid","summary"})
 public class Task extends iCalendar {
 	public Long createdAt, lastModified;
 

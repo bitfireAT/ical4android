@@ -66,7 +66,9 @@ import java.util.logging.Level;
 
 import lombok.Cleanup;
 import lombok.NonNull;
+import lombok.ToString;
 
+@ToString(of={"uid","dtStart","summary"})
 public class Event extends iCalendar {
     public static final String CALENDAR_NAME = "X-WR-CALNAME";
 
