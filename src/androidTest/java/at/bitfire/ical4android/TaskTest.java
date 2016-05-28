@@ -34,6 +34,7 @@ import net.fortuna.ical4j.model.property.Status;
 import org.apache.commons.codec.Charsets;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -131,7 +132,9 @@ public class TaskTest extends InstrumentationTestCase {
     }
 
     private Task regenerate(Task t) throws IOException, InvalidCalendarException {
-        return Task.fromStream(new ByteArrayInputStream(t.toStream().toByteArray()), null)[0];
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        t.write(os);
+        return Task.fromStream(new ByteArrayInputStream(os.toByteArray()), null)[0];
     }
     
 }

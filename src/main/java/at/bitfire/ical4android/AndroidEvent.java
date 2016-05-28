@@ -317,7 +317,19 @@ public abstract class AndroidEvent {
         VAlarm alarm = new VAlarm(new Dur(0, 0, -row.getAsInteger(Reminders.MINUTES), 0));
 
         PropertyList props = alarm.getProperties();
-        props.add(Action.DISPLAY);
+        switch (row.getAsInteger(Reminders.METHOD)) {
+            case Reminders.METHOD_ALARM:
+            case Reminders.METHOD_ALERT:
+                props.add(Action.DISPLAY);
+                break;
+            case Reminders.METHOD_EMAIL:
+            case Reminders.METHOD_SMS:
+                props.add(Action.EMAIL);
+                break;
+            default:
+                // show alarm by default
+                props.add(Action.DISPLAY);
+        }
         props.add(new Description(event.summary));
         event.alarms.add(alarm);
     }
@@ -541,11 +553,22 @@ public abstract class AndroidEvent {
         Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(Reminders.CONTENT_URI));
         builder.withValueBackReference(Reminders.EVENT_ID, idxEvent);
 
-        int minutes = iCalendar.alarmMinBefore(alarm);
-        builder .withValue(Reminders.METHOD, Reminders.METHOD_ALERT)
+        final Action action = alarm.getAction();
+        final int method;
+        if (action == null ||                   // (required) ACTION not set, assume DISPLAY
+            Action.DISPLAY.equals(action) ||    // alarm should be shown on display
+            Action.AUDIO.equals(action))        // alarm should play some sound
+            method = Reminders.METHOD_ALERT;
+        else if (Action.EMAIL.equals(action))
+            method = Reminders.METHOD_EMAIL;
+        else
+            method = Reminders.METHOD_DEFAULT;
+
+        final int minutes = iCalendar.alarmMinBefore(alarm);
+        builder .withValue(Reminders.METHOD, method)
                 .withValue(Reminders.MINUTES, minutes);
 
-        Constants.log.fine("Adding alarm " + minutes + " minutes before event");
+        Constants.log.fine("Adding alarm " + minutes + " minutes before event, method: " + method);
         batch.enqueue(builder.build());
     }
 

@@ -52,6 +52,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -249,7 +250,7 @@ public class Event extends iCalendar {
     }
 
     @SuppressWarnings("unchecked")
-    public ByteArrayOutputStream toStream() throws IOException {
+    public void write(OutputStream os) throws IOException {
         net.fortuna.ical4j.model.Calendar ical = new net.fortuna.ical4j.model.Calendar();
         ical.getProperties().add(Version.VERSION_2_0);
         ical.getProperties().add(prodId);
@@ -285,13 +286,11 @@ public class Event extends iCalendar {
             ical.getComponents().add(timeZone.getVTimeZone());
 
         CalendarOutputter output = new CalendarOutputter(false);
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
         try {
             output.output(ical, os);
         } catch (ValidationException e) {
             Constants.log.log(Level.SEVERE, "Couldn't generate valid VEVENT", e);
         }
-        return os;
     }
 
     protected VEvent toVEvent(Uid uid) {

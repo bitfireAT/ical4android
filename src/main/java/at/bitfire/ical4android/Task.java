@@ -45,6 +45,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -173,7 +174,7 @@ public class Task extends iCalendar {
 	}
 
 
-	public ByteArrayOutputStream toStream() throws IOException {
+	public void write(OutputStream os) throws IOException {
 		final net.fortuna.ical4j.model.Calendar ical = new net.fortuna.ical4j.model.Calendar();
 		ical.getProperties().add(Version.VERSION_2_0);
 		ical.getProperties().add(prodId);
@@ -250,13 +251,11 @@ public class Task extends iCalendar {
 			ical.getComponents().add(timeZone.getVTimeZone());
 
 		CalendarOutputter output = new CalendarOutputter(false);
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			output.output(ical, os);
 		} catch (ValidationException e) {
 			Constants.log.log(Level.SEVERE, "Couldn't generate valid VTODO", e);
 		}
-		return os;
 	}
 
 
