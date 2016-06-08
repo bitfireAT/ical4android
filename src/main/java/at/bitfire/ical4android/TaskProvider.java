@@ -61,6 +61,9 @@ public class TaskProvider implements Closeable {
     /**
      * Acquires a content provider for a given task provider. The content provider will
      * be released when the TaskProvider is closed.
+     * @param resolver will be used to acquire the content provider client
+     * @param name task provider to acquire content provider for
+     * @return content provider for the given task provider (may be {@code null})
      */
     @SuppressWarnings("Recycle")
     public static TaskProvider acquire(ContentResolver resolver, TaskProvider.ProviderName name) {
