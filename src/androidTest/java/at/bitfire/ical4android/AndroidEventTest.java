@@ -226,6 +226,21 @@ public class AndroidEventTest extends InstrumentationTestCase {
         assertEquals(1, updatedEvent.attendees.size());
     }
 
+    public void testLargeTransaction() throws ParseException, CalendarStorageException, URISyntaxException, FileNotFoundException {
+        Event event = new Event();
+        event.uid = "sample1@testLargeTransaction";
+        event.summary = "Large event";
+        event.dtStart = new DtStart("20150502T120000Z");
+        event.dtEnd = new DtEnd("20150502T130000Z");
+        for (int i = 0; i < 4000; i++)
+            event.attendees.add(new Attendee(new URI("mailto:att" + i + "@example.com")));
+        Uri uri = new TestEvent(calendar, event).add();
+
+        @Cleanup("delete") TestEvent testEvent = new TestEvent(calendar, ContentUris.parseId(uri));
+        assertEquals(4000, testEvent.getEvent().attendees.size());
+    }
+
+
     public void testBuildAllDayEntry() throws ParseException, FileNotFoundException, CalendarStorageException {
         // add all-day event to calendar provider
         Event event = new Event();

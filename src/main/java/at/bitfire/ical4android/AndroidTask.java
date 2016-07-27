@@ -222,7 +222,7 @@ public abstract class AndroidTask {
         BatchOperation batch = new BatchOperation(taskList.provider.client);
         Builder builder = ContentProviderOperation.newInsert(taskList.syncAdapterURI(taskList.provider.tasksUri()));
         buildTask(builder, false);
-        batch.enqueue(builder.build());
+        batch.enqueue(new BatchOperation.Operation(builder));
         batch.commit();
         return batch.getResult(0).uri;
     }
@@ -233,7 +233,7 @@ public abstract class AndroidTask {
         BatchOperation batch = new BatchOperation(taskList.provider.client);
         Builder builder = ContentProviderOperation.newUpdate(taskSyncURI());
         buildTask(builder, true);
-        batch.enqueue(builder.build());
+        batch.enqueue(new BatchOperation.Operation(builder));
         batch.commit();
     }
 

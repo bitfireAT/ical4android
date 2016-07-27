@@ -367,7 +367,7 @@ public abstract class AndroidEvent {
 
         final int idxEvent = batch.nextBackrefIdx();
         buildEvent(null, builder);
-        batch.enqueue(builder.build());
+        batch.enqueue(new BatchOperation.Operation(builder));
 
         // add reminders
         for (VAlarm alarm : event.alarms)
@@ -407,12 +407,11 @@ public abstract class AndroidEvent {
                     Constants.log.log(Level.WARNING, "Couldn't parse DATE part of DATE-TIME RECURRENCE-ID", e);
                 }
             }
-            builder .withValueBackReference(Events.ORIGINAL_ID, idxEvent)
-                    .withValue(Events.ORIGINAL_ALL_DAY, event.isAllDay() ? 1 : 0)
+            builder .withValue(Events.ORIGINAL_ALL_DAY, event.isAllDay() ? 1 : 0)
                     .withValue(Events.ORIGINAL_INSTANCE_TIME, date.getTime());
 
             int idxException = batch.nextBackrefIdx();
-            batch.enqueue(builder.build());
+            batch.enqueue(new BatchOperation.Operation(builder, Events.ORIGINAL_ID, idxEvent));
 
             // add exception reminders
             for (VAlarm alarm : exception.alarms)
@@ -450,12 +449,11 @@ public abstract class AndroidEvent {
 
     protected void delete(BatchOperation batch) {
         // remove event
-        batch.enqueue(ContentProviderOperation.newDelete(eventSyncURI()).build());
+        batch.enqueue(new BatchOperation.Operation(ContentProviderOperation.newDelete(eventSyncURI())));
 
         // remove exceptions of that event, too (CalendarProvider doesn't do this)
-        batch.enqueue(ContentProviderOperation.newDelete(eventsSyncURI())
-                .withSelection(Events.ORIGINAL_ID + "=?", new String[] { String.valueOf(id) })
-                .build());
+        batch.enqueue(new BatchOperation.Operation(ContentProviderOperation.newDelete(eventsSyncURI())
+                .withSelection(Events.ORIGINAL_ID + "=?", new String[] { String.valueOf(id) })));
     }
 
     protected void buildEvent(Event recurrence, Builder builder) {
@@ -551,7 +549,6 @@ public abstract class AndroidEvent {
 
     protected void insertReminder(BatchOperation batch, int idxEvent, VAlarm alarm) {
         Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(Reminders.CONTENT_URI));
-        builder.withValueBackReference(Reminders.EVENT_ID, idxEvent);
 
         final Action action = alarm.getAction();
         final int method;
@@ -569,13 +566,12 @@ public abstract class AndroidEvent {
                 .withValue(Reminders.MINUTES, minutes);
 
         Constants.log.fine("Adding alarm " + minutes + " minutes before event, method: " + method);
-        batch.enqueue(builder.build());
+        batch.enqueue(new BatchOperation.Operation(builder, Reminders.EVENT_ID, idxEvent));
     }
 
     @TargetApi(16)
     protected void insertAttendee(BatchOperation batch, int idxEvent, Attendee attendee) {
         Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(Attendees.CONTENT_URI));
-        builder.withValueBackReference(Attendees.EVENT_ID, idxEvent);
 
         final URI member = attendee.getCalAddress();
         if ("mailto".equalsIgnoreCase(member.getScheme()))
@@ -631,7 +627,7 @@ public abstract class AndroidEvent {
         builder .withValue(Attendees.ATTENDEE_TYPE, type)
                 .withValue(Attendees.ATTENDEE_STATUS, status);
 
-        batch.enqueue(builder.build());
+        batch.enqueue(new BatchOperation.Operation(builder, Attendees.EVENT_ID, idxEvent));
     }
 
 
