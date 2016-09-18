@@ -13,8 +13,8 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.3"
+    compileSdkVersion 24
+    buildToolsVersion '24.0.2'
 
     defaultConfig {
         minSdkVersion 14
@@ -42,9 +42,8 @@ dependencies {
         // we don't need content builders, see https://github.com/ical4j/ical4j/wiki/Groovy
         exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }
-    compile 'org.slf4j:slf4j-android:1.7.16'    // used by ical4j
-
-    provided 'org.projectlombok:lombok:1.16.8'
+    compile 'org.slf4j:slf4j-android:1.7.16' // used by ical4j
+    provided 'org.projectlombok:lombok:1.16.10'
 }
 
 // grant permissions for unit tests
