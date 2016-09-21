@@ -25,10 +25,12 @@ import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.ValidationException;
 import net.fortuna.ical4j.model.component.VAlarm;
 import net.fortuna.ical4j.model.component.VEvent;
+import net.fortuna.ical4j.model.property.Attach;
 import net.fortuna.ical4j.model.property.Attendee;
 import net.fortuna.ical4j.model.property.Clazz;
 import net.fortuna.ical4j.model.property.Description;
 import net.fortuna.ical4j.model.property.DtEnd;
+import net.fortuna.ical4j.model.property.DtStamp;
 import net.fortuna.ical4j.model.property.DtStart;
 import net.fortuna.ical4j.model.property.Duration;
 import net.fortuna.ical4j.model.property.ExDate;
@@ -46,16 +48,14 @@ import net.fortuna.ical4j.model.property.Transp;
 import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.Version;
 
-import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -65,6 +65,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 
+import aQute.service.reporter.Messages;
 import lombok.Cleanup;
 import lombok.NonNull;
 import lombok.ToString;
@@ -75,7 +76,6 @@ public class Event extends iCalendar {
 
     // uid and sequence are inherited from iCalendar
     public RecurrenceId recurrenceId;
-    public long lastModified;
 
     public String summary, location, description;
 
@@ -99,6 +99,20 @@ public class Event extends iCalendar {
     public final List<Attendee> attendees = new LinkedList<>();
 
     public final List<VAlarm> alarms = new LinkedList<>();
+
+    // unknown properties
+    protected static final String[] knownPropertyNames = {
+            Uid.UID, Sequence.SEQUENCE,
+            RecurrenceId.RECURRENCE_ID,
+            Summary.SUMMARY, Location.LOCATION, Description.DESCRIPTION,
+            DtStart.DTSTART, DtEnd.DTEND,
+            Duration.DURATION, RRule.RRULE, ExRule.EXRULE, RDate.RDATE, ExDate.EXDATE,
+            Clazz.CLASS,
+            Status.STATUS, Transp.TRANSP,
+            Organizer.ORGANIZER, Attendee.ATTENDEE,
+            DtStamp.DTSTAMP, LastModified.LAST_MODIFIED     // ignore current DTSTAMP and LAST-MODIFIED
+    };
+    public final List<Property> unknownProperties = new LinkedList<>();
 
 
     /**
@@ -206,9 +220,6 @@ public class Event extends iCalendar {
         // sequence must only be null for locally created, not-yet-synchronized events
         e.sequence = (event.getSequence() != null) ? event.getSequence().getSequenceNo() : 0;
 
-        if (event.getLastModified() != null)
-            e.lastModified = event.getLastModified().getDateTime().getTime();
-
         if ((e.dtStart = event.getStartDate()) == null || (e.dtEnd = event.getEndDate()) == null)
             throw new InvalidCalendarException("Invalid start time/end time/duration");
 
@@ -245,6 +256,13 @@ public class Event extends iCalendar {
         }
 
         e.alarms.addAll(event.getAlarms());
+
+        // save unknown properties
+        for (Property prop : event.getProperties())
+            if (!ArrayUtils.contains(knownPropertyNames, prop.getName())) {
+                Constants.log.log(Level.FINER, "Saving unknown iCalendar property", prop);
+                e.unknownProperties.add(prop);
+            }
 
         return e;
     }
@@ -301,8 +319,6 @@ public class Event extends iCalendar {
             props.add(uid);
         if (recurrenceId != null)
             props.add(recurrenceId);
-        if (lastModified != 0)
-            props.add(new LastModified(new DateTime(lastModified)));
         if (sequence != null && sequence != 0)
             props.add(new Sequence(sequence));
 
@@ -339,6 +355,8 @@ public class Event extends iCalendar {
 
         if (forPublic != null)
             event.getProperties().add(forPublic ? Clazz.PUBLIC : Clazz.PRIVATE);
+
+        props.addAll(unknownProperties);
 
         event.getAlarms().addAll(alarms);
         return event;

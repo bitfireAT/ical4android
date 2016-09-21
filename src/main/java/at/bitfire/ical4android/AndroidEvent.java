@@ -26,13 +26,16 @@ import android.os.RemoteException;
 import android.provider.CalendarContract;
 import android.provider.CalendarContract.Attendees;
 import android.provider.CalendarContract.Events;
+import android.provider.CalendarContract.ExtendedProperties;
 import android.provider.CalendarContract.Reminders;
+import android.util.Base64;
 
 import net.fortuna.ical4j.model.Date;
 import net.fortuna.ical4j.model.DateTime;
 import net.fortuna.ical4j.model.Dur;
 import net.fortuna.ical4j.model.Parameter;
 import net.fortuna.ical4j.model.ParameterList;
+import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.component.VAlarm;
@@ -56,7 +59,12 @@ import net.fortuna.ical4j.util.TimeZones;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.DateFormat;
@@ -77,6 +85,11 @@ import lombok.Getter;
  * in populateEvent() / buildEvent. Setting _ID and ORIGINAL_ID is not sufficient.
  */
 public abstract class AndroidEvent {
+
+    /** {@link ExtendedProperties#NAME} for unknown iCal properties */
+    public static final String EXT_UNKNOWN_PROPERTY = "unknown-property";
+    protected static final int MAX_UNKNOWN_PROPERTY_SIZE = 50000;
+
     final protected AndroidCalendar calendar;
 
     @Getter
@@ -118,8 +131,10 @@ public abstract class AndroidEvent {
                 for (Entity.NamedContentValues subValue : subValues) {
                     if (Attendees.CONTENT_URI.equals(subValue.uri))
                         populateAttendee(subValue.values);
-                    if (Reminders.CONTENT_URI.equals(subValue.uri))
+                    else if (Reminders.CONTENT_URI.equals(subValue.uri))
                         populateReminder(subValue.values);
+                    else if (CalendarContract.ExtendedProperties.CONTENT_URI.equals(subValue.uri))
+                        populateExtended(subValue.values);
                 }
                 populateExceptions();
 
@@ -334,6 +349,20 @@ public abstract class AndroidEvent {
         event.alarms.add(alarm);
     }
 
+    protected void populateExtended(ContentValues row) {
+        if (EXT_UNKNOWN_PROPERTY.equals(row.getAsString(ExtendedProperties.NAME))) {
+            // de-serialize unknown property
+            ByteArrayInputStream bais = new ByteArrayInputStream(Base64.decode(row.getAsString(ExtendedProperties.VALUE), Base64.NO_WRAP));
+            try {
+                @Cleanup ObjectInputStream ois = new ObjectInputStream(bais);
+                Property property = (Property)ois.readObject();
+                event.unknownProperties.add(property);
+            } catch(IOException|ClassNotFoundException e) {
+                Constants.log.log(Level.WARNING, "Couldn't de-serialize unknown property", e);
+            }
+        }
+    }
+
     @SuppressWarnings("Recycle")
     protected void populateExceptions() throws FileNotFoundException, RemoteException {
         @Cleanup Cursor c = calendar.provider.query(calendar.syncAdapterURI(Events.CONTENT_URI),
@@ -376,6 +405,10 @@ public abstract class AndroidEvent {
         // add attendees
         for (Attendee attendee : event.attendees)
             insertAttendee(batch, idxEvent, attendee);
+
+        // add unknown properties
+        for (Property unknown : event.unknownProperties)
+            insertUnknownProperty(batch, idxEvent, unknown);
 
         // add exceptions
         for (Event exception : event.exceptions) {
@@ -628,6 +661,27 @@ public abstract class AndroidEvent {
                 .withValue(Attendees.ATTENDEE_STATUS, status);
 
         batch.enqueue(new BatchOperation.Operation(builder, Attendees.EVENT_ID, idxEvent));
+    }
+
+    protected void insertUnknownProperty(BatchOperation batch, int idxEvent, Property property) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            @Cleanup ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(property);
+
+            if (baos.size() > MAX_UNKNOWN_PROPERTY_SIZE) {
+                Constants.log.warning("Ignoring unknown property with " + baos.size() + " octets");
+                return;
+            }
+
+            Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI));
+            builder .withValue(ExtendedProperties.NAME, EXT_UNKNOWN_PROPERTY)
+                    .withValue(ExtendedProperties.VALUE, Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP));
+
+            batch.enqueue(new BatchOperation.Operation(builder, ExtendedProperties.EVENT_ID, idxEvent));
+        } catch(IOException e) {
+            Constants.log.log(Level.WARNING, "Couldn't serialize unknown property", e);
+        }
     }
 
 
