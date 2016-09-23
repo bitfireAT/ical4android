@@ -64,7 +64,7 @@ public class iCalendar {
     // time zone helpers
 
     protected static boolean isDateTime(DateProperty date) {
-        return date.getDate() instanceof DateTime;
+        return date != null && date.getDate() instanceof DateTime;
     }
 
     /**

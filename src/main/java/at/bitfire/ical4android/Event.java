@@ -38,6 +38,7 @@ import net.fortuna.ical4j.model.property.ExRule;
 import net.fortuna.ical4j.model.property.LastModified;
 import net.fortuna.ical4j.model.property.Location;
 import net.fortuna.ical4j.model.property.Organizer;
+import net.fortuna.ical4j.model.property.ProdId;
 import net.fortuna.ical4j.model.property.RDate;
 import net.fortuna.ical4j.model.property.RRule;
 import net.fortuna.ical4j.model.property.RecurrenceId;
@@ -213,56 +214,77 @@ public class Event extends iCalendar {
     protected static Event fromVEvent(VEvent event) throws InvalidCalendarException {
         final Event e = new Event();
 
-        if (event.getUid() != null)
-            e.uid = event.getUid().getValue();
-        e.recurrenceId = event.getRecurrenceId();
+        // default values
+        e.sequence = 0;
+        e.opaque = true;
+        e.forPublic = true;
 
-        // sequence must only be null for locally created, not-yet-synchronized events
-        e.sequence = (event.getSequence() != null) ? event.getSequence().getSequenceNo() : 0;
+        // process properties
+        for (Property prop : event.getProperties()) {
+            if (prop instanceof Uid)
+                e.uid = prop.getValue();
 
-        if ((e.dtStart = event.getStartDate()) == null || (e.dtEnd = event.getEndDate()) == null)
-            throw new InvalidCalendarException("Invalid start time/end time/duration");
+            else if (prop instanceof RecurrenceId)
+                e.recurrenceId = (RecurrenceId)prop;
 
-        validateTimeZone(e.dtStart);
-        validateTimeZone(e.dtEnd);
+            else if (prop instanceof Sequence)
+                e.sequence = ((Sequence)prop).getSequenceNo();
 
-        e.rRule = (RRule) event.getProperty(Property.RRULE);
-        for (RDate rdate : (List<RDate>) (List<?>) event.getProperties(Property.RDATE))
-            e.rDates.add(rdate);
-        e.exRule = (ExRule) event.getProperty(Property.EXRULE);
-        for (ExDate exdate : (List<ExDate>) (List<?>) event.getProperties(Property.EXDATE))
-            e.exDates.add(exdate);
+            else if (prop instanceof DtStart)
+                e.dtStart = (DtStart)prop;
+            else if (prop instanceof DtEnd)
+                e.dtEnd = (DtEnd)prop;
+            else if (prop instanceof Duration)
+                e.duration = (Duration)prop;
 
-        if (event.getSummary() != null)
-            e.summary = event.getSummary().getValue();
-        if (event.getLocation() != null)
-            e.location = event.getLocation().getValue();
-        if (event.getDescription() != null)
-            e.description = event.getDescription().getValue();
+            else if (prop instanceof RRule)
+                e.rRule = (RRule)prop;
+            else if (prop instanceof RDate)
+                e.rDates.add((RDate)prop);
+            else if (prop instanceof ExRule)
+                e.exRule = (ExRule)prop;
+            else if (prop instanceof ExDate)
+                e.exDates.add((ExDate)prop);
 
-        e.status = event.getStatus();
-        e.opaque = event.getTransparency() != Transp.TRANSPARENT;
+            else if (prop instanceof Summary)
+                e.summary = prop.getValue();
+            else if (prop instanceof Location)
+                e.location = prop.getValue();
+            else if (prop instanceof Description)
+                e.description = prop.getValue();
 
-        e.organizer = event.getOrganizer();
-        for (Attendee attendee : (List<Attendee>) (List<?>) event.getProperties(Property.ATTENDEE))
-            e.attendees.add(attendee);
+            else if (prop instanceof Status)
+                e.status = (Status)prop;
+            else if (prop instanceof Transp)
+                e.opaque = prop == Transp.OPAQUE;
 
-        Clazz classification = event.getClassification();
-        if (classification != null) {
-            if (classification == Clazz.PUBLIC)
-                e.forPublic = true;
-            else if (classification == Clazz.CONFIDENTIAL || classification == Clazz.PRIVATE)
-                e.forPublic = false;
+            else if (prop instanceof Clazz)
+                e.forPublic = prop == Clazz.PUBLIC;
+
+            else if (prop instanceof Organizer)
+                e.organizer = (Organizer)prop;
+            else if (prop instanceof Attendee)
+                e.attendees.add((Attendee)prop);
+
+            else if (prop instanceof ProdId || prop instanceof DtStamp || prop instanceof LastModified)
+                /* ignore */;
+
+            else    // retain unknown properties
+                e.unknownProperties.add(prop);
         }
+
+        // calculate DtEnd from Duration
+        if (e.dtEnd == null && e.duration != null)
+            e.dtEnd = event.getEndDate(true);
 
         e.alarms.addAll(event.getAlarms());
 
-        // save unknown properties
-        for (Property prop : event.getProperties())
-            if (!ArrayUtils.contains(knownPropertyNames, prop.getName())) {
-                Constants.log.log(Level.FINER, "Saving unknown iCalendar property", prop);
-                e.unknownProperties.add(prop);
-            }
+        // validation
+        if (e.dtStart == null)
+            throw new InvalidCalendarException("Event without start time");
+
+        validateTimeZone(e.dtStart);
+        validateTimeZone(e.dtEnd);
 
         return e;
     }

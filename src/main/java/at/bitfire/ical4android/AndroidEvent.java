@@ -47,6 +47,7 @@ import net.fortuna.ical4j.model.parameter.Rsvp;
 import net.fortuna.ical4j.model.property.Action;
 import net.fortuna.ical4j.model.property.Attendee;
 import net.fortuna.ical4j.model.property.Description;
+import net.fortuna.ical4j.model.property.DtEnd;
 import net.fortuna.ical4j.model.property.Duration;
 import net.fortuna.ical4j.model.property.ExDate;
 import net.fortuna.ical4j.model.property.ExRule;
@@ -88,7 +89,7 @@ public abstract class AndroidEvent {
 
     /** {@link ExtendedProperties#NAME} for unknown iCal properties */
     public static final String EXT_UNKNOWN_PROPERTY = "unknown-property";
-    protected static final int MAX_UNKNOWN_PROPERTY_SIZE = 50000;
+    protected static final int MAX_UNKNOWN_PROPERTY_SIZE = 25000;
 
     final protected AndroidCalendar calendar;
 
@@ -163,7 +164,7 @@ public abstract class AndroidEvent {
         Long tsEnd = values.getAsLong(Events.DTEND);
         if (allDay) {
             event.setDtStart(tsStart, null);
-            if (tsEnd == null) {
+            if (tsEnd == null && duration != null) {
                 Dur dur = new Dur(duration);
                 java.util.Date dEnd = dur.getTime(new java.util.Date(tsStart));
                 tsEnd = dEnd.getTime();
@@ -252,14 +253,7 @@ public abstract class AndroidEvent {
             }
 
         // classification
-        switch (values.getAsInteger(Events.ACCESS_LEVEL)) {
-            case Events.ACCESS_CONFIDENTIAL:
-            case Events.ACCESS_PRIVATE:
-                event.forPublic = false;
-                break;
-            case Events.ACCESS_PUBLIC:
-                event.forPublic = true;
-        }
+        event.forPublic = Events.ACCESS_PUBLIC == values.getAsInteger(Events.ACCESS_LEVEL);
     }
 
     @TargetApi(16)
@@ -500,13 +494,18 @@ public abstract class AndroidEvent {
                 .withValue(Events.HAS_ATTENDEE_DATA, 1 /* we know information about all attendees and not only ourselves */);
 
         // all-day events and "events on that day" must have a duration (set to one day if zero or missing)
-        if (event.isAllDay() && !event.dtEnd.getDate().after(event.dtStart.getDate())) {
-            Constants.log.log(Level.INFO, "Changing all-day event for Android compatibility: setting DTEND := DTSTART+1");
+        if (event.isAllDay() && (event.dtEnd == null || !event.dtEnd.getDate().after(event.dtStart.getDate()))) {
+            // ical4j is not set to use floating times, so DATEs are UTC times internally
+            Constants.log.log(Level.INFO, "Changing all-day event for Android compatibility: DTEND := DTSTART + 1 day");
             java.util.Calendar c = java.util.Calendar.getInstance(TimeZone.getTimeZone(TimeZones.UTC_ID));
             c.setTime(event.dtStart.getDate());
             c.add(java.util.Calendar.DATE, 1);
-            event.dtEnd.setDate(new Date(c.getTimeInMillis()));
+            event.dtEnd = new DtEnd(new Date(c.getTimeInMillis()));
         }
+
+        // events without dtEnd (events with zero duration)
+        if (event.dtEnd == null)
+            event.dtEnd = new DtEnd(event.dtStart.getDate());
 
         boolean recurring = false;
         if (event.rRule != null) {
@@ -535,7 +534,7 @@ public abstract class AndroidEvent {
         if (recurring) {
             // calculate DURATION from start and end date
             Duration duration = new Duration(event.dtStart.getDate(), event.dtEnd.getDate());
-            builder.withValue(Events.DURATION, duration.getValue());
+            builder .withValue(Events.DURATION, duration.getValue());
         } else
             builder .withValue(Events.DTEND, event.getDtEndInMillis())
                     .withValue(Events.EVENT_END_TIMEZONE, event.getDtEndTzID());

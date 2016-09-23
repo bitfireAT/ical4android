@@ -112,9 +112,6 @@ public class EventTest extends InstrumentationTestCase {
         Event eOnThatDay = parseCalendar("event-on-that-day.ics", null)[0];
         assertEquals(868838400000L, eOnThatDay.getDtStartInMillis());
         assertEquals(TimeZones.UTC_ID, eOnThatDay.getDtStartTzID());
-        // DTEND missing in VEVENT, must have been set to DTSTART+1 day
-        assertEquals(868838400000L + 86400000, eOnThatDay.getDtEndInMillis());
-        assertEquals(TimeZones.UTC_ID, eOnThatDay.getDtEndTzID());
 
         // event with start+end date for all-day event (one day)
         Event eAllDay1Day = parseCalendar("all-day-1day.ics", null)[0];
