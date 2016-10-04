@@ -15,7 +15,6 @@ package at.bitfire.ical4android;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.net.Uri;
-import android.util.Log;
 
 import org.dmfs.provider.tasks.TaskContract;
 

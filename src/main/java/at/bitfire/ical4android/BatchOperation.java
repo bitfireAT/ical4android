@@ -12,13 +12,11 @@
 
 package at.bitfire.ical4android;
 
-import android.annotation.TargetApi;
 import android.content.ContentProviderClient;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.ContentUris;
 import android.content.OperationApplicationException;
-import android.os.Build;
 import android.os.RemoteException;
 import android.os.TransactionTooLargeException;
 
@@ -47,7 +45,6 @@ public class BatchOperation {
         queue.add(operation);
     }
 
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
     public int commit() throws CalendarStorageException {
         int affected = 0;
         if (!queue.isEmpty())
@@ -79,7 +76,6 @@ public class BatchOperation {
     }
 
 
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
     private void runBatch(int start, int end) throws RemoteException, OperationApplicationException, CalendarStorageException {
         try {
             Constants.log.fine("Running operations " + start + " to " + (end - 1));

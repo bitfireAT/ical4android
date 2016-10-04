@@ -25,7 +25,6 @@ import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.ValidationException;
 import net.fortuna.ical4j.model.component.VAlarm;
 import net.fortuna.ical4j.model.component.VEvent;
-import net.fortuna.ical4j.model.property.Attach;
 import net.fortuna.ical4j.model.property.Attendee;
 import net.fortuna.ical4j.model.property.Clazz;
 import net.fortuna.ical4j.model.property.Description;
@@ -49,8 +48,6 @@ import net.fortuna.ical4j.model.property.Transp;
 import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.Version;
 
-import org.apache.commons.lang3.ArrayUtils;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -66,7 +63,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 
-import aQute.service.reporter.Messages;
 import lombok.Cleanup;
 import lombok.NonNull;
 import lombok.ToString;

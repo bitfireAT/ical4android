@@ -12,7 +12,6 @@
 
 package at.bitfire.ical4android;
 
-import android.annotation.TargetApi;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderOperation.Builder;
 import android.content.ContentUris;
@@ -256,7 +255,6 @@ public abstract class AndroidEvent {
         event.forPublic = Events.ACCESS_PUBLIC == values.getAsInteger(Events.ACCESS_LEVEL);
     }
 
-    @TargetApi(16)
     protected void populateAttendee(ContentValues values) {
         try {
             final Attendee attendee;
@@ -601,7 +599,6 @@ public abstract class AndroidEvent {
         batch.enqueue(new BatchOperation.Operation(builder, Reminders.EVENT_ID, idxEvent));
     }
 
-    @TargetApi(16)
     protected void insertAttendee(BatchOperation batch, int idxEvent, Attendee attendee) {
         Builder builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(Attendees.CONTENT_URI));
 
