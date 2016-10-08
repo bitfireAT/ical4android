@@ -1,16 +1,24 @@
-/*
- * Copyright (c) 2013 – 2015 Ricki Hirner (bitfire web engineering).
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU
- * General Public License as published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more details.
- */
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.+'
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        maven {
+            url 'http://oss.sonatype.org/content/repositories/snapshots'
+        }
+    }
+}
 
 apply plugin: 'com.android.library'
+
 
 android {
     compileSdkVersion 24
@@ -42,8 +50,12 @@ dependencies {
         // we don't need content builders, see https://github.com/ical4j/ical4j/wiki/Groovy
         exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }
-    compile 'org.slf4j:slf4j-android:1.7.16' // used by ical4j
+    //compile 'org.slf4j:slf4j-android:1.7.16' // used by ical4j
     provided 'org.projectlombok:lombok:1.16.10'
+
+    androidTestCompile 'junit:junit:4.12'
+    androidTestCompile 'com.android.support.test:runner:0.5'
+    testCompile 'junit:junit:4.12'
 }
 
 // grant permissions for unit tests

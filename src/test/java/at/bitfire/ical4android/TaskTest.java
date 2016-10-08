@@ -1,20 +1,14 @@
 /*
- * Copyright (c) 2013 – 2015 Ricki Hirner (bitfire web engineering).
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU
- * General Public License as published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more details.
+ * Copyright © Ricki Hirner (bitfire web engineering).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Public License v3.0
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/gpl.html
  */
 
 package at.bitfire.ical4android;
 
-import android.content.res.AssetManager;
-import android.test.InstrumentationTestCase;
-import android.util.Log;
+import android.annotation.TargetApi;
 
 import net.fortuna.ical4j.model.Date;
 import net.fortuna.ical4j.model.DateList;
@@ -31,31 +25,31 @@ import net.fortuna.ical4j.model.property.RDate;
 import net.fortuna.ical4j.model.property.RRule;
 import net.fortuna.ical4j.model.property.Status;
 
-import org.apache.commons.codec.Charsets;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 
 import lombok.Cleanup;
 
-public class TaskTest extends InstrumentationTestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class TaskTest {
     private static final String TAG = "ical4android.TaskTest";
-
-    AssetManager assetMgr;
-
-    public void setUp() throws IOException, InvalidCalendarException {
-        assetMgr = getInstrumentation().getContext().getResources().getAssets();
-    }
 
 
     /* public interface tests */
 
+    @Test
     public void testCharsets() throws IOException, InvalidCalendarException {
-        Task t = parseCalendar("latin1.ics", Charsets.ISO_8859_1);
+        Task t = parseCalendar("latin1.ics", Charset.forName("ISO-8859-1"));
         assertEquals("äöüß", t.summary);
 
         t = parseCalendar("utf8.ics", null);
@@ -63,6 +57,7 @@ public class TaskTest extends InstrumentationTestCase {
         assertEquals("中华人民共和国", t.location);
     }
 
+    @Test
     public void testDueBeforeDtStart() throws IOException, InvalidCalendarException {
         Task t = parseCalendar("due-before-dtstart.ics", null);
         assertEquals(t.summary, "DUE before DTSTART");
@@ -71,6 +66,7 @@ public class TaskTest extends InstrumentationTestCase {
         // and ical4android will pass it to the caller
     }
 
+    @Test
     public void testSamples() throws ParseException, IOException, InvalidCalendarException {
         Task t = regenerate(parseCalendar("rfc5545-sample1.ics", null));
         assertEquals(2, (int)t.sequence);
@@ -83,6 +79,7 @@ public class TaskTest extends InstrumentationTestCase {
         assertEquals("Submit Income Taxes", t.summary);
     }
 
+    @Test
     public void testAllFields() throws ParseException, IOException, InvalidCalendarException {
         // 1. parse the VTODO file
         // 2. generate a new VTODO file from the parsed code
@@ -126,8 +123,7 @@ public class TaskTest extends InstrumentationTestCase {
 
     private Task parseCalendar(String fname, Charset charset) throws IOException, InvalidCalendarException {
         fname = "tasks/" + fname;
-        Log.d(TAG, "Loading task file " + fname);
-        @Cleanup InputStream is = assetMgr.open(fname, AssetManager.ACCESS_STREAMING);
+        @Cleanup InputStream is = getClass().getClassLoader().getResourceAsStream(fname);
         return Task.fromStream(is, charset)[0];
     }
 

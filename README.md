@@ -1,4 +1,7 @@
 
+[![build status](https://gitlab.com/bitfireAT/ical4android/badges/master/build.svg)](https://gitlab.com/bitfireAT/ical4android/builds)
+
+
 # ical4android
 
 ical4android is an Android library that brings together iCalendar and Android.
@@ -9,7 +12,7 @@ It's a framework for
   third-party task providers,
 * accessing the Android Calendar Provider (and third-party task providers) over a unified API.
 
-It has been developed for:
+It has been primarily developed for:
 
 * [DAVdroid](https://davdroid.bitfire.at)
 * [ICSdroid](https://icsdroid.bitfire.at)

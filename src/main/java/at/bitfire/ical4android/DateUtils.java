@@ -36,6 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.SimpleTimeZone;
+import java.util.logging.Level;
 
 public class DateUtils {
     public final static TimeZoneRegistry tzRegistry = TimeZoneRegistryFactory.getInstance().createRegistry();
@@ -123,6 +124,11 @@ public class DateUtils {
                     for (Date date : dateList)
                         strDates.add(dateFormatUtcMidnight.format(date));
                 } else {
+                    Constants.log.log(Level.INFO, "TZ = " + dateListProp.getTimeZone());
+                    for (Date date : dateListProp.getDates()) {
+                        Constants.log.info("date: " + date);
+                    }
+                    //dateListProp.setTimeZone(tzRegistry.getTimeZone("UTC"));
                     dateListProp.setUtc(true);
                     strDates.add(dateListProp.getValue());
                 }

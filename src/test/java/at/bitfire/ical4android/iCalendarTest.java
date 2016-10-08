@@ -1,18 +1,12 @@
 /*
- * Copyright (c) 2013 – 2015 Ricki Hirner (bitfire web engineering).
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU
- * General Public License as published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more details.
+ * Copyright © Ricki Hirner (bitfire web engineering).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Public License v3.0
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/gpl.html
  */
 
 package at.bitfire.ical4android;
-
-import junit.framework.TestCase;
 
 import net.fortuna.ical4j.data.CalendarBuilder;
 import net.fortuna.ical4j.model.Date;
@@ -22,12 +16,20 @@ import net.fortuna.ical4j.model.component.VTimeZone;
 import net.fortuna.ical4j.model.property.DtStart;
 import net.fortuna.ical4j.util.TimeZones;
 
-import java.io.StringReader;
+import org.junit.Test;
 
-public class iCalendarTest extends TestCase {
+import java.io.StringReader;
+import java.text.ParseException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
+public class iCalendarTest {
 	protected final TimeZone tzVienna = DateUtils.tzRegistry.getTimeZone("Europe/Vienna");
 
-    public void testGetTzID() throws Exception {
+    @Test
+    public void testGetTzID() throws ParseException {
         // DATE (without time)
         assertEquals(TimeZones.UTC_ID, Event.getTzId(new DtStart(new Date("20150101"))));
 
@@ -41,6 +43,7 @@ public class iCalendarTest extends TestCase {
         assertEquals(tzVienna.getID(), Event.getTzId(new DtStart(new DateTime("20150101T000000", tzVienna))));
     }
 
+    @Test
     public void testTimezoneDefToTzId() {
 		// test valid definition
 		assertEquals("US-Eastern", Event.TimezoneDefToTzId("BEGIN:VCALENDAR\n" +
@@ -76,6 +79,7 @@ public class iCalendarTest extends TestCase {
 				"END:VCALENDAR"));
 	}
 
+    @Test
 	public void testValidateTimeZone() throws Exception {
 		assertNotNull(tzVienna);
 

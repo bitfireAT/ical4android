@@ -11,17 +11,17 @@
  */
 package at.bitfire.ical4android;
 
+import android.Manifest;
 import android.accounts.Account;
-import android.annotation.TargetApi;
 import android.content.ContentProviderClient;
 import android.content.ContentUris;
 import android.content.Context;
 import android.net.Uri;
-import android.os.Build;
 import android.os.RemoteException;
 import android.provider.CalendarContract;
 import android.provider.CalendarContract.Calendars;
-import android.test.InstrumentationTestCase;
+import android.support.annotation.RequiresPermission;
+import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
 
 import net.fortuna.ical4j.model.Date;
@@ -39,6 +39,11 @@ import net.fortuna.ical4j.model.property.RRule;
 import net.fortuna.ical4j.model.property.RecurrenceId;
 import net.fortuna.ical4j.model.property.Status;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -48,7 +53,14 @@ import at.bitfire.ical4android.impl.TestCalendar;
 import at.bitfire.ical4android.impl.TestEvent;
 import lombok.Cleanup;
 
-public class AndroidEventTest extends InstrumentationTestCase {
+import static android.support.test.InstrumentationRegistry.getTargetContext;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+@RunWith(AndroidJUnit4.class)
+public class AndroidEventTest {
     private static final String TAG = "ical4android.CalTest";
 
     private static final TimeZone tzVienna = DateUtils.tzRegistry.getTimeZone("Europe/Vienna");
@@ -75,17 +87,12 @@ public class AndroidEventTest extends InstrumentationTestCase {
 
     // initialization
 
-    @Override
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
-    protected void setUp() throws RemoteException, FileNotFoundException, CalendarStorageException {
-        context = getInstrumentation().getTargetContext();
-        provider = context.getContentResolver().acquireContentProviderClient(CalendarContract.AUTHORITY);
+    @Before
+    @RequiresPermission(allOf = { Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR })
+    public void prepareCalendar() throws RemoteException, FileNotFoundException, CalendarStorageException {
+        provider = getTargetContext().getContentResolver().acquireContentProviderClient(CalendarContract.AUTHORITY);
         assertNotNull("Couldn't access calendar provider", provider);
 
-        prepareTestCalendar();
-    }
-
-    private void prepareTestCalendar() throws RemoteException, FileNotFoundException, CalendarStorageException {
         calendar = TestCalendar.findOrCreate(testAccount, provider);
         assertNotNull("Coulnd't find/create test calendar", calendar);
 
@@ -93,20 +100,16 @@ public class AndroidEventTest extends InstrumentationTestCase {
         Log.i(TAG, "Prepared test calendar " + calendarUri);
     }
 
-    @Override
-    protected void tearDown() throws CalendarStorageException {
+    @After
+    public void deleteCalendar() throws CalendarStorageException {
         Log.i(TAG, "Deleting test calendar");
-
-        // all events should have been removed
-        assertEquals(0, calendar.queryEvents(null, null).length);
-
-        // remove test calendar, too
         calendar.delete();
     }
 
 
     // tests
 
+    @Test
     public void testAddEvent() throws URISyntaxException, ParseException, FileNotFoundException, CalendarStorageException {
         // build and write recurring event to calendar provider
         Event event = new Event();
@@ -199,6 +202,7 @@ public class AndroidEventTest extends InstrumentationTestCase {
         assertEquals(event.exDates.get(0), event2.exDates.get(0));
     }
 
+    @Test
     public void testUpdateEvent() throws URISyntaxException, ParseException, FileNotFoundException, CalendarStorageException {
         // add test event without reminder
         Event event = new Event();
@@ -226,6 +230,7 @@ public class AndroidEventTest extends InstrumentationTestCase {
         assertEquals(1, updatedEvent.attendees.size());
     }
 
+    @Test
     public void testLargeTransaction() throws ParseException, CalendarStorageException, URISyntaxException, FileNotFoundException {
         Event event = new Event();
         event.uid = "sample1@testLargeTransaction";
@@ -240,7 +245,7 @@ public class AndroidEventTest extends InstrumentationTestCase {
         assertEquals(4000, testEvent.getEvent().attendees.size());
     }
 
-
+    @Test
     public void testBuildAllDayEntry() throws ParseException, FileNotFoundException, CalendarStorageException {
         // add all-day event to calendar provider
         Event event = new Event();

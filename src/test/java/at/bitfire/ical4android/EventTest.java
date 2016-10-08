@@ -1,65 +1,50 @@
 /*
- * Copyright (c) 2013 – 2015 Ricki Hirner (bitfire web engineering).
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU
- * General Public License as published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more details.
+ * Copyright © Ricki Hirner (bitfire web engineering).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Public License v3.0
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/gpl.html
  */
 package at.bitfire.ical4android;
 
-import android.content.res.AssetManager;
-import android.test.InstrumentationTestCase;
-import android.util.Log;
-
-import net.fortuna.ical4j.model.PropertyList;
-import net.fortuna.ical4j.model.component.VEvent;
-import net.fortuna.ical4j.model.property.RecurrenceId;
-import net.fortuna.ical4j.model.property.Sequence;
-import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.util.TimeZones;
 
-import org.apache.commons.codec.Charsets;
+import org.junit.Test;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import lombok.Cleanup;
 import lombok.NonNull;
 
-public class EventTest extends InstrumentationTestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+public class EventTest {
     private static final String TAG = "ical4android.EventTest";
-
-    AssetManager assetMgr;
-
-    public void setUp() throws IOException, InvalidCalendarException {
-        assetMgr = getInstrumentation().getContext().getResources().getAssets();
-    }
 
 
     /* public interface tests */
 
+    @Test
     public void testCalendarProperties() throws IOException, InvalidCalendarException {
-        @Cleanup InputStream is = assetMgr.open("events/multiple.ics", AssetManager.ACCESS_STREAMING);
+        @Cleanup InputStream is = getClass().getClassLoader().getResourceAsStream("events/multiple.ics");
+        assertNotNull(is);
         Map<String, String> properties = new HashMap<>();
         Event.fromStream(is, null, properties);
         assertEquals(1, properties.size());
         assertEquals("Test-Kalender", properties.get(Event.CALENDAR_NAME));
     }
 
+    @Test
     public void testCharsets() throws IOException, InvalidCalendarException {
-        Event e = parseCalendar("latin1.ics", Charsets.ISO_8859_1)[0];
+        Event e = parseCalendar("latin1.ics", Charset.forName("ISO-8859-1"))[0];
         assertEquals("äöüß", e.summary);
 
         e = parseCalendar("utf8.ics", null)[0];
@@ -67,9 +52,9 @@ public class EventTest extends InstrumentationTestCase {
         assertEquals("中华人民共和国", e.location);
     }
 
+    @Test
     public void testGrouping() throws IOException, InvalidCalendarException {
-        @Cleanup InputStream is = assetMgr.open("events/multiple.ics", AssetManager.ACCESS_STREAMING);
-        Event[] events = Event.fromStream(is, null);
+        Event[] events = parseCalendar("multiple.ics", null);
         assertEquals(3, events.length);
 
         Event e = findEvent(events, "multiple-0@ical4android.EventTest");
@@ -88,6 +73,7 @@ public class EventTest extends InstrumentationTestCase {
         assertTrue("Event 2 Exception 2".equals(e.exceptions.get(0).summary) || "Event 2 Exception 2".equals(e.exceptions.get(1).summary));
     }
 
+    @Test
     public void testRecurringWithException() throws IOException, InvalidCalendarException {
         Event event = parseCalendar("recurring-with-exception1.ics", null)[0];
         assertTrue(event.isAllDay());
@@ -98,6 +84,7 @@ public class EventTest extends InstrumentationTestCase {
         assertEquals("Another summary for the third day", exception.summary);
     }
 
+    @Test
     public void testStartEndTimes() throws IOException, InvalidCalendarException {
         // event with start+end date-time
         Event eViennaEvolution = parseCalendar("vienna-evolution.ics", null)[0];
@@ -107,6 +94,7 @@ public class EventTest extends InstrumentationTestCase {
         assertEquals("Europe/Vienna", eViennaEvolution.getDtEndTzID());
     }
 
+    @Test
     public void testStartEndTimesAllDay() throws IOException, InvalidCalendarException {
         // event with start date only
         Event eOnThatDay = parseCalendar("event-on-that-day.ics", null)[0];
@@ -136,6 +124,7 @@ public class EventTest extends InstrumentationTestCase {
         assertEquals(TimeZones.UTC_ID, eAllDay0Sec.getDtEndTzID());
     }
 
+    @Test
     public void testUnfolding() throws IOException, InvalidCalendarException {
         Event e = parseCalendar("two-line-description-without-crlf.ics", null)[0];
         assertEquals("http://www.tgbornheim.de/index.php?sessionid=&page=&id=&sportcentergroup=&day=6", e.description);
@@ -144,6 +133,7 @@ public class EventTest extends InstrumentationTestCase {
 
     /* internal tests */
 
+    @Test
     public void testFindMasterEventsAndExceptions() throws ParseException, IOException, InvalidCalendarException {
         Event[] events;
 
@@ -193,8 +183,9 @@ public class EventTest extends InstrumentationTestCase {
 
     private Event[] parseCalendar(String fname, Charset charset) throws IOException, InvalidCalendarException {
         fname = "events/" + fname;
-        Log.d(TAG, "Loading event file " + fname);
-        @Cleanup InputStream is = assetMgr.open(fname, AssetManager.ACCESS_STREAMING);
+        System.err.println("Loading event file " + fname);
+        @Cleanup InputStream is = getClass().getClassLoader().getResourceAsStream(fname);
+        assertNotNull(is);
         return Event.fromStream(is, charset);
     }
 

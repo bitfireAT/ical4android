@@ -12,27 +12,28 @@
 
 package at.bitfire.ical4android;
 
+import android.Manifest;
 import android.accounts.Account;
-import android.annotation.TargetApi;
 import android.content.ContentUris;
 import android.content.Context;
 import android.net.Uri;
-import android.os.Build;
 import android.os.RemoteException;
 import android.provider.CalendarContract;
-import android.test.InstrumentationTestCase;
+import android.support.annotation.RequiresPermission;
+import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
 
 import net.fortuna.ical4j.model.Date;
-import net.fortuna.ical4j.model.Dur;
 import net.fortuna.ical4j.model.TimeZone;
-import net.fortuna.ical4j.model.component.VAlarm;
-import net.fortuna.ical4j.model.property.DtEnd;
 import net.fortuna.ical4j.model.property.DtStart;
 import net.fortuna.ical4j.model.property.Due;
 import net.fortuna.ical4j.model.property.Organizer;
 
 import org.dmfs.provider.tasks.TaskContract;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.FileNotFoundException;
 import java.net.URISyntaxException;
@@ -42,7 +43,14 @@ import at.bitfire.ical4android.impl.TestTask;
 import at.bitfire.ical4android.impl.TestTaskList;
 import lombok.Cleanup;
 
-public class AndroidTaskTest extends InstrumentationTestCase {
+import static android.support.test.InstrumentationRegistry.getTargetContext;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+@RunWith(AndroidJUnit4.class)
+public class AndroidTaskTest {
     private static final String TAG = "ical4android.TaskTest";
 
     private static final TimeZone tzVienna = DateUtils.tzRegistry.getTimeZone("Europe/Vienna");
@@ -69,17 +77,12 @@ public class AndroidTaskTest extends InstrumentationTestCase {
 
     // initialization
 
-    @Override
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
-    protected void setUp() throws RemoteException, FileNotFoundException, CalendarStorageException {
-        context = getInstrumentation().getTargetContext();
-        provider = AndroidTaskList.acquireTaskProvider(context.getContentResolver());
+    @Before
+    @RequiresPermission(allOf = { "org.dmfs.permission.READ_TASKS", "org.dmfs.permission.WRITE_TASKS" })
+    public void prepareTaskList() throws RemoteException, FileNotFoundException, CalendarStorageException {
+        provider = AndroidTaskList.acquireTaskProvider(getTargetContext().getContentResolver());
         assertNotNull("Couldn't access task provider", provider);
 
-        prepareTestTaskList();
-    }
-
-    private void prepareTestTaskList() throws RemoteException, FileNotFoundException, CalendarStorageException {
         taskList = TestTaskList.findOrCreate(testAccount, provider);
         assertNotNull("Couldn't find/create test task list", taskList);
 
@@ -87,20 +90,16 @@ public class AndroidTaskTest extends InstrumentationTestCase {
         Log.i(TAG, "Prepared test task list " + taskListUri);
     }
 
-    @Override
-    protected void tearDown() throws CalendarStorageException {
+    @After
+    public void deleteTaskListDown() throws CalendarStorageException {
         Log.i(TAG, "Deleting test task list");
-
-        // all events should have been removed
-        //assertEquals(0, taskList.queryEvents(null, null).length);
-
-        // remove test calendar, too
         taskList.delete();
     }
 
 
     // tests
 
+    @Test
     public void testAddTask() throws URISyntaxException, ParseException, FileNotFoundException, CalendarStorageException {
         // build and write event to calendar provider
         Task task = new Task();
@@ -130,6 +129,7 @@ public class AndroidTaskTest extends InstrumentationTestCase {
         assertEquals(task.dtStart, task2.dtStart);
     }
 
+    @Test
     public void testUpdateTask() throws URISyntaxException, ParseException, FileNotFoundException, CalendarStorageException {
         // add test event without reminder
         Task task = new Task();
@@ -157,6 +157,7 @@ public class AndroidTaskTest extends InstrumentationTestCase {
         assertEquals(task.due, updatedTask.due);
     }
 
+    @Test
     public void testBuildAllDayTask() throws ParseException, FileNotFoundException, CalendarStorageException {
         // add all-day event to calendar provider
         Task task = new Task();

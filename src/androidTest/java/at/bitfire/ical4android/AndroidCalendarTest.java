@@ -12,43 +12,51 @@
 
 package at.bitfire.ical4android;
 
+import android.Manifest;
 import android.accounts.Account;
 import android.content.ContentProviderClient;
 import android.content.ContentUris;
 import android.content.ContentValues;
-import android.content.Context;
 import android.net.Uri;
 import android.provider.CalendarContract;
-import android.test.InstrumentationTestCase;
+import android.support.annotation.RequiresPermission;
+import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
 
 import org.dmfs.provider.tasks.TaskContract;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.FileNotFoundException;
 
-import at.bitfire.ical4android.AndroidTaskList;
-import at.bitfire.ical4android.CalendarStorageException;
-import at.bitfire.ical4android.TaskProvider;
 import at.bitfire.ical4android.impl.TestCalendar;
 
-public class AndroidCalendarTest extends InstrumentationTestCase {
+import static android.support.test.InstrumentationRegistry.getContext;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+@RunWith(AndroidJUnit4.class)
+public class AndroidCalendarTest {
     private static final String TAG = "ical4android.Calendar";
 
     final Account testAccount = new Account("ical4android.AndroidCalendarTest", TaskContract.LOCAL_ACCOUNT_TYPE);
     ContentProviderClient provider;
 
-    @Override
-    protected void setUp() throws Exception {
-        Context context = getInstrumentation().getContext();
-        provider = context.getContentResolver().acquireContentProviderClient(CalendarContract.AUTHORITY);
+    @Before
+    @RequiresPermission(allOf = { Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR })
+    public void setUp() throws Exception {
+        provider = getContext().getContentResolver().acquireContentProviderClient(CalendarContract.AUTHORITY);
         assertNotNull(provider);
     }
 
-    @Override
+    @After
     public void tearDown() throws Exception {
         provider.release();
     }
 
+    @Test
     public void testManageCalendars() throws CalendarStorageException, FileNotFoundException {
         // create calendar
         ContentValues info = new ContentValues();
