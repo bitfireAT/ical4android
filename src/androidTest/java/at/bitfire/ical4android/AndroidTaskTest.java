@@ -12,15 +12,13 @@
 
 package at.bitfire.ical4android;
 
-import android.Manifest;
 import android.accounts.Account;
 import android.content.ContentUris;
-import android.content.Context;
 import android.net.Uri;
 import android.os.RemoteException;
 import android.provider.CalendarContract;
 import android.support.annotation.RequiresPermission;
-import android.support.test.runner.AndroidJUnit4;
+import android.test.InstrumentationTestCase;
 import android.util.Log;
 
 import net.fortuna.ical4j.model.Date;
@@ -30,10 +28,6 @@ import net.fortuna.ical4j.model.property.Due;
 import net.fortuna.ical4j.model.property.Organizer;
 
 import org.dmfs.provider.tasks.TaskContract;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.io.FileNotFoundException;
 import java.net.URISyntaxException;
@@ -43,18 +37,10 @@ import at.bitfire.ical4android.impl.TestTask;
 import at.bitfire.ical4android.impl.TestTaskList;
 import lombok.Cleanup;
 
-import static android.support.test.InstrumentationRegistry.getTargetContext;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-public class AndroidTaskTest {
+public class AndroidTaskTest extends InstrumentationTestCase {
     private static final String TAG = "ical4android.TaskTest";
 
     private static final TimeZone tzVienna = DateUtils.tzRegistry.getTimeZone("Europe/Vienna");
-
-    Context context;
 
     TaskProvider provider;
     final Account testAccount = new Account("ical4android.AndroidTaskTest", CalendarContract.ACCOUNT_TYPE_LOCAL);
@@ -69,17 +55,17 @@ public class AndroidTaskTest {
         return uri.buildUpon()
                 .appendQueryParameter(TaskContract.ACCOUNT_TYPE, testAccount.type)
                 .appendQueryParameter(TaskContract.ACCOUNT_NAME, testAccount.name)
-                .appendQueryParameter(TaskContract.CALLER_IS_SYNCADAPTER, "true").
-                        build();
+                .appendQueryParameter(TaskContract.CALLER_IS_SYNCADAPTER, "true")
+                .build();
     }
 
 
     // initialization
 
-    @Before
+    @Override
     @RequiresPermission(allOf = { "org.dmfs.permission.READ_TASKS", "org.dmfs.permission.WRITE_TASKS" })
-    public void prepareTaskList() throws RemoteException, FileNotFoundException, CalendarStorageException {
-        provider = AndroidTaskList.acquireTaskProvider(getTargetContext().getContentResolver());
+    public void setUp() throws RemoteException, FileNotFoundException, CalendarStorageException {
+        provider = AndroidTaskList.acquireTaskProvider(getInstrumentation().getTargetContext().getContentResolver());
         assertNotNull("Couldn't access task provider", provider);
 
         taskList = TestTaskList.findOrCreate(testAccount, provider);
@@ -89,8 +75,8 @@ public class AndroidTaskTest {
         Log.i(TAG, "Prepared test task list " + taskListUri);
     }
 
-    @After
-    public void deleteTaskListDown() throws CalendarStorageException {
+    @Override
+    public void tearDown() throws CalendarStorageException {
         Log.i(TAG, "Deleting test task list");
         taskList.delete();
     }
@@ -98,7 +84,6 @@ public class AndroidTaskTest {
 
     // tests
 
-    @Test
     public void testAddTask() throws URISyntaxException, ParseException, FileNotFoundException, CalendarStorageException {
         // build and write event to calendar provider
         Task task = new Task();
@@ -128,7 +113,6 @@ public class AndroidTaskTest {
         assertEquals(task.dtStart, task2.dtStart);
     }
 
-    @Test
     public void testUpdateTask() throws URISyntaxException, ParseException, FileNotFoundException, CalendarStorageException {
         // add test event without reminder
         Task task = new Task();
@@ -156,7 +140,6 @@ public class AndroidTaskTest {
         assertEquals(task.due, updatedTask.due);
     }
 
-    @Test
     public void testBuildAllDayTask() throws ParseException, FileNotFoundException, CalendarStorageException {
         // add all-day event to calendar provider
         Task task = new Task();

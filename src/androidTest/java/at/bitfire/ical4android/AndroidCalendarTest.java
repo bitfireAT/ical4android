@@ -20,42 +20,33 @@ import android.content.ContentValues;
 import android.net.Uri;
 import android.provider.CalendarContract;
 import android.support.annotation.RequiresPermission;
-import android.support.test.runner.AndroidJUnit4;
+import android.test.InstrumentationTestCase;
 import android.util.Log;
 
 import org.dmfs.provider.tasks.TaskContract;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.io.FileNotFoundException;
 
 import at.bitfire.ical4android.impl.TestCalendar;
 
-import static android.support.test.InstrumentationRegistry.getContext;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-public class AndroidCalendarTest {
+public class AndroidCalendarTest extends InstrumentationTestCase {
     private static final String TAG = "ical4android.Calendar";
 
     final Account testAccount = new Account("ical4android.AndroidCalendarTest", TaskContract.LOCAL_ACCOUNT_TYPE);
     ContentProviderClient provider;
 
-    @Before
+    @Override
     @RequiresPermission(allOf = { Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR })
     public void setUp() throws Exception {
-        provider = getContext().getContentResolver().acquireContentProviderClient(CalendarContract.AUTHORITY);
+        provider = getInstrumentation().getContext().getContentResolver().acquireContentProviderClient(CalendarContract.AUTHORITY);
         assertNotNull(provider);
     }
 
-    @After
+    @Override
     public void tearDown() throws Exception {
         provider.release();
     }
 
-    @Test
     public void testManageCalendars() throws CalendarStorageException, FileNotFoundException {
         // create calendar
         ContentValues info = new ContentValues();

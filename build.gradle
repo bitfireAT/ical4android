@@ -43,10 +43,6 @@ android {
         exclude 'META-INF/LICENSE.txt'
         exclude 'META-INF/NOTICE.txt'
     }
-
-    defaultConfig {
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-    }
 }
 
 dependencies {
@@ -57,8 +53,8 @@ dependencies {
     //compile 'org.slf4j:slf4j-android:1.7.16' // used by ical4j
     provided 'org.projectlombok:lombok:1.16.10'
 
-    androidTestCompile 'junit:junit:4.12'
-    androidTestCompile 'com.android.support.test:runner:0.5'
+    androidTestCompile 'com.android.support:support-annotations:24.+'
+
     testCompile 'junit:junit:4.12'
 }
 

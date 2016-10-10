@@ -17,42 +17,35 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.net.Uri;
 import android.support.annotation.RequiresPermission;
-import android.support.test.runner.AndroidJUnit4;
+import android.test.InstrumentationTestCase;
 import android.util.Log;
 
 import org.dmfs.provider.tasks.TaskContract;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.io.FileNotFoundException;
 
 import at.bitfire.ical4android.impl.TestTaskList;
 
-import static android.support.test.InstrumentationRegistry.getContext;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-public class AndroidTaskListTest {
+public class AndroidTaskListTest extends InstrumentationTestCase {
     private static final String TAG = "ical4android.TaskList";
 
     final Account testAccount = new Account("ical4android.AndroidTaskListTest", TaskContract.LOCAL_ACCOUNT_TYPE);
+
     TaskProvider provider;
 
-    @Before
+    @Override
     @RequiresPermission(allOf = { "org.dmfs.permission.READ_TASKS", "org.dmfs.permission.WRITE_TASKS" })
-    public void connect() throws Exception {
-        provider = AndroidTaskList.acquireTaskProvider(getContext().getContentResolver());
+    public void setUp() throws Exception {
+        provider = AndroidTaskList.acquireTaskProvider(getInstrumentation().getContext().getContentResolver());
         assertNotNull(provider);
         Log.i(TAG, "Acquired context for " + provider.name);
     }
 
-    @Before
-    public void disconnect() throws Exception {
+    @Override
+    public void tearDown() throws Exception {
         provider.close();
     }
 
-    @Test
     public void testManageTaskLists() throws CalendarStorageException, FileNotFoundException {
         // create task list
         ContentValues info = new ContentValues();
