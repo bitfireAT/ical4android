@@ -59,7 +59,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(AndroidJUnit4.class)
 public class AndroidEventTest {
     private static final String TAG = "ical4android.CalTest";
 

@@ -37,7 +37,6 @@ import static android.support.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@RunWith(AndroidJUnit4.class)
 public class AndroidCalendarTest {
     private static final String TAG = "ical4android.Calendar";
 
