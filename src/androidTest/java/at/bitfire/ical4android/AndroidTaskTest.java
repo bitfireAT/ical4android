@@ -113,6 +113,22 @@ public class AndroidTaskTest extends InstrumentationTestCase {
         assertEquals(task.dtStart, task2.dtStart);
     }
 
+    public void testAddTaskWithInvalidDue() throws ParseException, CalendarStorageException, FileNotFoundException {
+        Task task = new Task();
+        task.uid = "invalidDUE@ical4android.tests";
+        task.summary = "Task with invalid DUE";
+        task.dtStart = new DtStart(new Date("20150102"));
+        task.due = new Due(new Date("20150101"));
+
+        Uri uri = new TestTask(taskList, task).add();
+        assertNotNull("Couldn't add task", uri);
+
+        @Cleanup("delete") TestTask testTask = new TestTask(taskList, ContentUris.parseId(uri));
+        assertNotNull("Inserted task is not here", testTask);
+        Task task2 = testTask.getTask();
+        assertNull(task.due);
+    }
+
     public void testUpdateTask() throws URISyntaxException, ParseException, FileNotFoundException, CalendarStorageException {
         // add test event without reminder
         Task task = new Task();

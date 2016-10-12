@@ -318,6 +318,12 @@ public abstract class AndroidTask {
         builder.withValue(Tasks.CREATED, task.createdAt);
         builder.withValue(Tasks.LAST_MODIFIED, task.lastModified);
 
+        if (task.dtStart != null && task.due != null && task.due.getDate().before(task.dtStart.getDate())) {
+            // there seem to be many invalid tasks out there because of some defect clients
+            Constants.log.warning("Invalid DUE before DTSTART; ignoring");
+            task.due = null;
+        }
+
         builder.withValue(Tasks.DTSTART, task.dtStart != null ? task.dtStart.getDate().getTime() : null);
         builder.withValue(Tasks.DUE, task.due != null ? task.due.getDate().getTime() : null);
         builder.withValue(Tasks.DURATION, task.duration != null ? task.duration.getValue() : null);
