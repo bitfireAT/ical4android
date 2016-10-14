@@ -252,7 +252,16 @@ public abstract class AndroidEvent {
             }
 
         // classification
-        event.forPublic = Events.ACCESS_PUBLIC == values.getAsInteger(Events.ACCESS_LEVEL);
+        switch (values.getAsInteger(Events.ACCESS_LEVEL)) {
+            case Events.ACCESS_PUBLIC:
+                event.forPublic = true;
+                break;
+            case Events.ACCESS_PRIVATE:
+                event.forPublic = false;
+                break;
+            /*default:
+                event.forPublic = null;*/
+        }
     }
 
     protected void populateAttendee(ContentValues values) {
