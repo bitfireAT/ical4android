@@ -320,8 +320,8 @@ public abstract class AndroidTask {
 
         if (task.dtStart != null && task.due != null && task.due.getDate().before(task.dtStart.getDate())) {
             // there seem to be many invalid tasks out there because of some defect clients
-            Constants.log.warning("Invalid DUE before DTSTART; ignoring");
-            task.due = null;
+            Constants.log.warning("Invalid DTSTART after DUE; ignoring");
+            task.dtStart = null;
         }
 
         builder.withValue(Tasks.DTSTART, task.dtStart != null ? task.dtStart.getDate().getTime() : null);

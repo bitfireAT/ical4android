@@ -126,7 +126,7 @@ public class AndroidTaskTest extends InstrumentationTestCase {
         @Cleanup("delete") TestTask testTask = new TestTask(taskList, ContentUris.parseId(uri));
         assertNotNull("Inserted task is not here", testTask);
         Task task2 = testTask.getTask();
-        assertNull(task.due);
+        assertNull(task.dtStart);
     }
 
     public void testUpdateTask() throws URISyntaxException, ParseException, FileNotFoundException, CalendarStorageException {
