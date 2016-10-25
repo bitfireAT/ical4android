@@ -42,6 +42,7 @@ import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.ParseException;
+import java.util.Arrays;
 
 import at.bitfire.ical4android.impl.TestCalendar;
 import at.bitfire.ical4android.impl.TestEvent;
@@ -213,7 +214,7 @@ public class AndroidEventTest extends InstrumentationTestCase {
         assertEquals(1, updatedEvent.attendees.size());
     }
 
-    public void testLargeTransaction() throws ParseException, CalendarStorageException, URISyntaxException, FileNotFoundException {
+    public void testLargeTransactionManyRows() throws ParseException, CalendarStorageException, URISyntaxException, FileNotFoundException {
         Event event = new Event();
         event.uid = "sample1@testLargeTransaction";
         event.summary = "Large event";
@@ -225,6 +226,25 @@ public class AndroidEventTest extends InstrumentationTestCase {
 
         @Cleanup("delete") TestEvent testEvent = new TestEvent(calendar, ContentUris.parseId(uri));
         assertEquals(4000, testEvent.getEvent().attendees.size());
+    }
+
+    public void testLargeTransactionSingleRow() throws ParseException, CalendarStorageException, URISyntaxException, FileNotFoundException {
+        Event event = new Event();
+        event.uid = "sample1@testLargeTransaction";
+        event.dtStart = new DtStart("20150502T120000Z");
+        event.dtEnd = new DtEnd("20150502T130000Z");
+
+        // 1 MB SUMMARY ... have fun
+        char data[] = new char[1024*1024];
+        Arrays.fill(data, 'x');
+        event.summary = new String(data);
+
+        try {
+            Uri uri = new TestEvent(calendar, event).add();
+            fail();
+        } catch(CalendarStorageException e) {
+            assertTrue(e.getCause() instanceof RemoteException);
+        }
     }
 
     public void testBuildAllDayEntry() throws ParseException, FileNotFoundException, CalendarStorageException {

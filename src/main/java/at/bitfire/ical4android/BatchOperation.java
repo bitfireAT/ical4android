@@ -76,7 +76,18 @@ public class BatchOperation {
     }
 
 
+    /**
+     * Runs a subset of the operations in {@link #queue} using {@link #providerClient} in a transaction.
+     * Catches {@link TransactionTooLargeException} and splits the operations accordingly.
+     * @param start    index of first operation which will be run (inclusive)
+     * @param end      index of last operation which will be run (exclusive!)
+     * @throws RemoteException  if the provider clients throws a {@link RemoteException}, or
+     *                          if the transaction is too large and can't be split
+     */
     private void runBatch(int start, int end) throws RemoteException, OperationApplicationException, CalendarStorageException {
+        if (end == start)
+            return;     // nothing to do
+
         try {
             Constants.log.fine("Running operations " + start + " to " + (end - 1));
             ContentProviderResult partResults[] = providerClient.applyBatch(toCPO(start, end));
@@ -87,6 +98,10 @@ public class BatchOperation {
 
             System.arraycopy(partResults, 0, results, start, n);
         } catch(TransactionTooLargeException e) {
+            if (end <= start + 1)
+                // only one operation, can't be split
+                throw new RemoteException("Can't transfer data to content provider (data row too large)");
+
             Constants.log.warning("Transaction too large, splitting (losing atomicity)");
             int mid = start + (end - start)/2;
             runBatch(start, mid);
