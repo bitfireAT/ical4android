@@ -211,22 +211,6 @@ public abstract class AndroidEvent {
             Constants.log.log(Level.WARNING, "Invalid recurrence rules, ignoring", ex);
         }
 
-        if (values.containsKey(Events.ORIGINAL_INSTANCE_TIME)) {
-            // this event is an exception of a recurring event
-            long originalInstanceTime = values.getAsLong(Events.ORIGINAL_INSTANCE_TIME);
-
-            boolean originalAllDay = false;
-            if (values.containsKey(Events.ORIGINAL_ALL_DAY))
-                originalAllDay = values.getAsInteger(Events.ORIGINAL_ALL_DAY) != 0;
-
-            Date originalDate = originalAllDay ?
-                    new Date(originalInstanceTime) :
-                    new DateTime(originalInstanceTime);
-            if (originalDate instanceof DateTime)
-                ((DateTime)originalDate).setUtc(true);
-            event.recurrenceId = new RecurrenceId(originalDate);
-        }
-
         // status
         if (values.containsKey(Events.STATUS))
             switch (values.getAsInteger(Events.STATUS)) {
@@ -261,6 +245,23 @@ public abstract class AndroidEvent {
                 break;
             /*default:
                 event.forPublic = null;*/
+        }
+
+        // exceptions from recurring events
+        if (values.containsKey(Events.ORIGINAL_INSTANCE_TIME)) {
+            // this event is an exception of a recurring event
+            long originalInstanceTime = values.getAsLong(Events.ORIGINAL_INSTANCE_TIME);
+
+            boolean originalAllDay = false;
+            if (values.containsKey(Events.ORIGINAL_ALL_DAY))
+                originalAllDay = values.getAsInteger(Events.ORIGINAL_ALL_DAY) != 0;
+
+            Date originalDate = originalAllDay ?
+                    new Date(originalInstanceTime) :
+                    new DateTime(originalInstanceTime);
+            if (originalDate instanceof DateTime)
+                ((DateTime)originalDate).setUtc(true);
+            event.recurrenceId = new RecurrenceId(originalDate);
         }
     }
 

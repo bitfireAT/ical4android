@@ -109,10 +109,10 @@ public class DateUtils {
     public static String recurrenceSetsToAndroidString(List<? extends DateListProperty> dates, boolean allDay) throws ParseException {
         List<String> strDates = new LinkedList<>();
 
-		/*        rdate/exdate: DATE                                DATE_TIME
-		    all-day             store as ...T000000Z                cut off time and store as ...T000000Z
-		    event with time     (ignored)                           store as ...ThhmmssZ
-		*/
+        /*  rdate/exdate:       DATE                                DATE_TIME
+            all-day             store as ...T000000Z                cut off time and store as ...T000000Z
+            event with time     (ignored)                           store as ...ThhmmssZ
+        */
         final DateFormat dateFormatUtcMidnight = new SimpleDateFormat("yyyyMMdd'T'000000'Z'", Locale.US);
 
         for (DateListProperty dateListProp : dates) {
@@ -124,11 +124,6 @@ public class DateUtils {
                     for (Date date : dateList)
                         strDates.add(dateFormatUtcMidnight.format(date));
                 } else {
-                    Constants.log.log(Level.INFO, "TZ = " + dateListProp.getTimeZone());
-                    for (Date date : dateListProp.getDates()) {
-                        Constants.log.info("date: " + date);
-                    }
-                    //dateListProp.setTimeZone(tzRegistry.getTimeZone("UTC"));
                     dateListProp.setUtc(true);
                     strDates.add(dateListProp.getValue());
                 }
