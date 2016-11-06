@@ -15,6 +15,7 @@ import android.Manifest;
 import android.accounts.Account;
 import android.content.ContentProviderClient;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.net.Uri;
 import android.os.RemoteException;
 import android.provider.CalendarContract;
@@ -269,6 +270,18 @@ public class AndroidEventTest extends InstrumentationTestCase {
         assertEquals(event.dtStart, event2.dtStart);
         assertEquals(event.dtEnd.getDate(), new Date("20150502"));
         assertTrue(event2.isAllDay());
+    }
+
+    public void testPopulateEventWithoutDuration() throws RemoteException, FileNotFoundException, CalendarStorageException {
+        ContentValues values = new ContentValues();
+        values.put(CalendarContract.Events.CALENDAR_ID, calendar.id);
+        values.put(CalendarContract.Events.DTSTART, 1381330800000L);
+        values.put(CalendarContract.Events.EVENT_TIMEZONE, "Europe/Vienna");
+        values.put(CalendarContract.Events.TITLE, "Without dtend/duration");
+        Uri uri = provider.insert(syncAdapterURI(CalendarContract.Events.CONTENT_URI), values);
+
+        @Cleanup("delete") TestEvent testEvent = new TestEvent(calendar, ContentUris.parseId(uri));
+        assertNull(testEvent.getEvent().dtEnd);
     }
 
 }

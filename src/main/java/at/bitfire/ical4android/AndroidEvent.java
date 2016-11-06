@@ -47,6 +47,7 @@ import net.fortuna.ical4j.model.property.Action;
 import net.fortuna.ical4j.model.property.Attendee;
 import net.fortuna.ical4j.model.property.Description;
 import net.fortuna.ical4j.model.property.DtEnd;
+import net.fortuna.ical4j.model.property.DtStart;
 import net.fortuna.ical4j.model.property.Duration;
 import net.fortuna.ical4j.model.property.ExDate;
 import net.fortuna.ical4j.model.property.ExRule;
@@ -157,27 +158,33 @@ public abstract class AndroidEvent {
 
         final boolean allDay = values.getAsInteger(Events.ALL_DAY) != 0;
         final long tsStart = values.getAsLong(Events.DTSTART);
+        final Long tsEnd = values.getAsLong(Events.DTEND);
         final String duration = values.getAsString(Events.DURATION);
 
-        String tzId;
-        Long tsEnd = values.getAsLong(Events.DTEND);
         if (allDay) {
-            event.setDtStart(tsStart, null);
-            if (tsEnd == null && duration != null) {
-                Dur dur = new Dur(duration);
-                java.util.Date dEnd = dur.getTime(new java.util.Date(tsStart));
-                tsEnd = dEnd.getTime();
-            }
-            event.setDtEnd(tsEnd, null);
+            // use DATE values
+            event.dtStart = new DtStart(new Date(tsStart));
+            if (tsEnd != null)
+                event.dtEnd = new DtEnd(new Date(tsEnd));
+            else if (duration != null)
+                event.duration = new Duration(new Dur(duration));
 
         } else {
-            // use the start time zone for the end time, too
-            // because apps like Samsung Planner allow the user to change "the" time zone but change the start time zone only
-            tzId = values.getAsString(Events.EVENT_TIMEZONE);
-            event.setDtStart(tsStart, tzId);
-            if (tsEnd != null)
-                event.setDtEnd(tsEnd, tzId);
-            else if (!StringUtils.isEmpty(duration))
+            // use DATE-TIME values
+            TimeZone tz = null;
+            String tzId = values.getAsString(Events.EVENT_TIMEZONE);
+            if (tzId != null)
+                tz = DateUtils.tzRegistry.getTimeZone(tzId);
+
+            DateTime start = new DateTime(tsStart);
+            start.setTimeZone(tz);
+            event.dtStart = new DtStart(start);
+
+            if (tsEnd != null) {
+                DateTime end = new DateTime(tsEnd);
+                end.setTimeZone(tz);
+                event.dtEnd = new DtEnd(end);
+            } else if (duration != null)
                 event.duration = new Duration(new Dur(duration));
         }
 
@@ -497,23 +504,25 @@ public abstract class AndroidEvent {
 
         builder .withValue(Events.CALENDAR_ID, calendar.getId())
                 .withValue(Events.ALL_DAY, event.isAllDay() ? 1 : 0)
-                .withValue(Events.DTSTART, event.getDtStartInMillis())
+                .withValue(Events.DTSTART, event.dtStart.getDate().getTime())
                 .withValue(Events.EVENT_TIMEZONE, event.getDtStartTzID())
                 .withValue(Events.HAS_ATTENDEE_DATA, 1 /* we know information about all attendees and not only ourselves */);
 
         // all-day events and "events on that day" must have a duration (set to one day if zero or missing)
         if (event.isAllDay() && (event.dtEnd == null || !event.dtEnd.getDate().after(event.dtStart.getDate()))) {
             // ical4j is not set to use floating times, so DATEs are UTC times internally
-            Constants.log.log(Level.INFO, "Changing all-day event for Android compatibility: DTEND := DTSTART + 1 day");
+            Constants.log.log(Level.INFO, "Changing all-day event for Android compatibility: dtend := dtstart + 1 day");
             java.util.Calendar c = java.util.Calendar.getInstance(TimeZone.getTimeZone(TimeZones.UTC_ID));
             c.setTime(event.dtStart.getDate());
             c.add(java.util.Calendar.DATE, 1);
             event.dtEnd = new DtEnd(new Date(c.getTimeInMillis()));
         }
 
-        // events without dtEnd (events with zero duration)
-        if (event.dtEnd == null)
+        // fix events with zero or negative duration
+        else if (event.dtEnd == null || event.dtEnd.getDate().getTime() < event.dtStart.getDate().getTime()) {
+            Constants.log.info("Event without duration, setting dtend := dtstart");
             event.dtEnd = new DtEnd(event.dtStart.getDate());
+        }
 
         boolean recurring = false;
         if (event.rRule != null) {
@@ -541,10 +550,12 @@ public abstract class AndroidEvent {
         // because that's the way Android likes it
         if (recurring) {
             // calculate DURATION from start and end date
-            Duration duration = new Duration(event.dtStart.getDate(), event.dtEnd.getDate());
+            Duration duration = (event.duration != null) ?
+                    event.duration :
+                    new Duration(event.dtStart.getDate(), event.dtEnd.getDate());
             builder .withValue(Events.DURATION, duration.getValue());
         } else
-            builder .withValue(Events.DTEND, event.getDtEndInMillis())
+            builder .withValue(Events.DTEND, event.dtEnd.getDate().getTime())
                     .withValue(Events.EVENT_END_TIMEZONE, event.getDtEndTzID());
 
         if (event.summary != null)

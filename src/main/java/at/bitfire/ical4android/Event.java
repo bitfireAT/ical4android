@@ -17,8 +17,6 @@ import net.fortuna.ical4j.data.ParserException;
 import net.fortuna.ical4j.model.Calendar;
 import net.fortuna.ical4j.model.Component;
 import net.fortuna.ical4j.model.ComponentList;
-import net.fortuna.ical4j.model.Date;
-import net.fortuna.ical4j.model.DateTime;
 import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.TimeZone;
@@ -387,41 +385,11 @@ public class Event extends iCalendar {
         return !isDateTime(dtStart);
     }
 
-    public long getDtStartInMillis() {
-        return dtStart.getDate().getTime();
-    }
-
     public String getDtStartTzID() {
         return getTzId(dtStart);
     }
-
-    public void setDtStart(long tsStart, String tzID) {
-        if (tzID == null) {    // all-day
-            dtStart = new DtStart(new Date(tsStart));
-        } else {
-            DateTime start = new DateTime(tsStart);
-            start.setTimeZone(DateUtils.tzRegistry.getTimeZone(tzID));
-            dtStart = new DtStart(start);
-        }
-    }
-
-
-    public long getDtEndInMillis() {
-        return dtEnd.getDate().getTime();
-    }
-
     public String getDtEndTzID() {
         return getTzId(dtEnd);
-    }
-
-    public void setDtEnd(long tsEnd, String tzID) {
-        if (tzID == null) {    // all-day
-            dtEnd = new DtEnd(new Date(tsEnd));
-        } else {
-            DateTime end = new DateTime(tsEnd);
-            end.setTimeZone(DateUtils.tzRegistry.getTimeZone(tzID));
-            dtEnd = new DtEnd(end);
-        }
     }
 
 }
