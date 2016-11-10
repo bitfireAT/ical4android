@@ -508,7 +508,10 @@ public abstract class AndroidEvent {
                 .withValue(Events.EVENT_TIMEZONE, event.getDtStartTzID())
                 .withValue(Events.HAS_ATTENDEE_DATA, 1 /* we know information about all attendees and not only ourselves */);
 
-        // all-day events and "events on that day" must have a duration (set to one day if zero or missing)
+        /* For cases where a "VEVENT" calendar component
+           specifies a "DTSTART" property with a DATE value type but no
+           "DTEND" nor "DURATION" property, the event's duration is taken to
+           be one day. [RFC 5545 3.6.1] */
         if (event.isAllDay() && (event.dtEnd == null || !event.dtEnd.getDate().after(event.dtStart.getDate()))) {
             // ical4j is not set to use floating times, so DATEs are UTC times internally
             Constants.log.log(Level.INFO, "Changing all-day event for Android compatibility: dtend := dtstart + 1 day");
@@ -518,7 +521,10 @@ public abstract class AndroidEvent {
             event.dtEnd = new DtEnd(new Date(c.getTimeInMillis()));
         }
 
-        // fix events with zero or negative duration
+        /* For cases where a "VEVENT" calendar component
+           specifies a "DTSTART" property with a DATE-TIME value type but no
+           "DTEND" property, the event ends on the same calendar date and
+           time of day specified by the "DTSTART" property. [RFC 5545 3.6.1] */
         else if (event.dtEnd == null || event.dtEnd.getDate().getTime() < event.dtStart.getDate().getTime()) {
             Constants.log.info("Event without duration, setting dtend := dtstart");
             event.dtEnd = new DtEnd(event.dtStart.getDate());

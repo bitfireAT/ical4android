@@ -318,9 +318,9 @@ public abstract class AndroidTask {
         builder.withValue(Tasks.CREATED, task.createdAt);
         builder.withValue(Tasks.LAST_MODIFIED, task.lastModified);
 
-        if (task.dtStart != null && task.due != null && task.due.getDate().before(task.dtStart.getDate())) {
+        if (task.dtStart != null && task.due != null && !task.due.getDate().after(task.dtStart.getDate())) {
             // there seem to be many invalid tasks out there because of some defect clients
-            Constants.log.warning("Invalid DTSTART after DUE; ignoring");
+            Constants.log.warning("Invalid DTSTART >= DUE; ignoring");
             task.dtStart = null;
         }
 
