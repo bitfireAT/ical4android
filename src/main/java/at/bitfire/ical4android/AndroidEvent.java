@@ -139,7 +139,7 @@ public abstract class AndroidEvent {
                 }
                 populateExceptions();
 
-                // remove ORGANIZER if there are not attendees (i.e. this is not a group-scheduled calendar entity)
+                // remove ORGANIZER if there are no attendees (i.e. this is not a group-scheduled calendar entity)
                 if (event.attendees.isEmpty())
                     event.organizer = null;
 
@@ -381,7 +381,12 @@ public abstract class AndroidEvent {
             long exceptionId = c.getLong(0);
             try {
                 AndroidEvent exception = calendar.eventFactory.newInstance(calendar, exceptionId, null);
-                event.exceptions.add(exception.getEvent());
+
+                // make sure that all components have the same ORGANIZER [RFC 6638 3.1]
+                Event exceptionEvent = exception.getEvent();
+                exceptionEvent.organizer = getEvent().organizer;
+
+                event.exceptions.add(exceptionEvent);
             } catch (CalendarStorageException e) {
                 Constants.log.log(Level.WARNING, "Couldn't find exception details, ignoring", e);
             }
