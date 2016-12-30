@@ -272,6 +272,33 @@ public class AndroidEventTest extends InstrumentationTestCase {
         assertTrue(event2.isAllDay());
     }
 
+    public void testNoOrganizerWithoutAttendees() throws ParseException, URISyntaxException, CalendarStorageException, FileNotFoundException {
+        Event event = new Event();
+        event.summary = "Not a group-scheduled event";
+        event.dtStart = new DtStart(new Date("20150501"));
+        event.dtEnd = new DtEnd(new Date("20150502"));
+        event.rRule = new RRule("FREQ=DAILY;COUNT=10;INTERVAL=1");
+        event.organizer = new Organizer("mailto:test@test.at");
+
+        Event exception = new Event();
+        exception.recurrenceId = new RecurrenceId(new Date("20150502"));
+        exception.dtStart = new DtStart(new Date("20150502"));
+        exception.dtEnd = new DtEnd(new Date("20150503"));
+        exception.status = Status.VEVENT_CANCELLED;
+        exception.organizer = event.organizer;
+        event.exceptions.add(exception);
+
+        Uri uri = new TestEvent(calendar, event).add();
+        assertNotNull("Couldn't add event", uri);
+
+        // read again and verify result
+        @Cleanup("delete") TestEvent testEvent = new TestEvent(calendar, ContentUris.parseId(uri));
+        event = testEvent.getEvent();
+        assertNull(event.organizer);
+        exception = event.exceptions.get(0);
+        assertNull(exception.organizer);
+    }
+
     public void testPopulateEventWithoutDuration() throws RemoteException, FileNotFoundException, CalendarStorageException {
         ContentValues values = new ContentValues();
         values.put(CalendarContract.Events.CALENDAR_ID, calendar.id);

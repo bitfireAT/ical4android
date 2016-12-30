@@ -139,9 +139,13 @@ public abstract class AndroidEvent {
                 }
                 populateExceptions();
 
-                // remove ORGANIZER if there are no attendees (i.e. this is not a group-scheduled calendar entity)
-                if (event.attendees.isEmpty())
+                /* remove ORGANIZER from all components if there are no attendees
+                   (i.e. this is not a group-scheduled calendar entity) */
+                if (event.attendees.isEmpty()) {
                     event.organizer = null;
+                    for (Event exception : event.exceptions)
+                        exception.organizer = null;
+                }
 
 	            return event;
             } else
