@@ -49,7 +49,9 @@ import java.util.logging.Level;
 
 import lombok.Cleanup;
 import lombok.Getter;
+import lombok.ToString;
 
+@ToString(of={ "id", "task" }, doNotUseGetters=true)
 public abstract class AndroidTask {
     final protected AndroidTaskList taskList;
 

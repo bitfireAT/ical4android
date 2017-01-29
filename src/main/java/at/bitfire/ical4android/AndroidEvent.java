@@ -77,6 +77,7 @@ import java.util.logging.Level;
 
 import lombok.Cleanup;
 import lombok.Getter;
+import lombok.ToString;
 
 /**
  * Extend this class for your local implementation of the
@@ -85,6 +86,7 @@ import lombok.Getter;
  * Important: To use recurrence exceptions, you MUST set _SYNC_ID and ORIGINAL_SYNC_ID
  * in populateEvent() / buildEvent. Setting _ID and ORIGINAL_ID is not sufficient.
  */
+@ToString(of={ "id", "event" }, doNotUseGetters=true)
 public abstract class AndroidEvent {
 
     /** {@link ExtendedProperties#NAME} for unknown iCal properties */
