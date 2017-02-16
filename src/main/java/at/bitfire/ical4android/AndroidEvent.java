@@ -620,11 +620,11 @@ public abstract class AndroidEvent {
 
         final Action action = alarm.getAction();
         final int method;
-        if (action == null ||                   // (required) ACTION not set, assume DISPLAY
-            Action.DISPLAY.equals(action) ||    // alarm should be shown on display
-            Action.AUDIO.equals(action))        // alarm should play some sound
+        if (action == null ||                                         // (required) ACTION not set, assume DISPLAY
+            Action.DISPLAY.getValue().equals(action.getValue()) ||    // alarm should be shown on display
+            Action.AUDIO.getValue().equals(action.getValue()))        // alarm should play some sound
             method = Reminders.METHOD_ALERT;
-        else if (Action.EMAIL.equals(action))
+        else if (Action.EMAIL.getValue().equals(action.getValue()))
             method = Reminders.METHOD_EMAIL;
         else
             method = Reminders.METHOD_DEFAULT;
