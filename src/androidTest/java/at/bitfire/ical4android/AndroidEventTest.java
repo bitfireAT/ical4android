@@ -33,6 +33,7 @@ import net.fortuna.ical4j.model.parameter.Value;
 import net.fortuna.ical4j.model.property.Attendee;
 import net.fortuna.ical4j.model.property.DtEnd;
 import net.fortuna.ical4j.model.property.DtStart;
+import net.fortuna.ical4j.model.property.Duration;
 import net.fortuna.ical4j.model.property.ExDate;
 import net.fortuna.ical4j.model.property.Organizer;
 import net.fortuna.ical4j.model.property.RRule;
@@ -248,7 +249,7 @@ public class AndroidEventTest extends InstrumentationTestCase {
         }
     }
 
-    public void testBuildAllDayEntry() throws ParseException, FileNotFoundException, CalendarStorageException {
+    public void testAllDay() throws ParseException, FileNotFoundException, CalendarStorageException {
         // add all-day event to calendar provider
         Event event = new Event();
         event.summary = "All-day event";
@@ -269,6 +270,24 @@ public class AndroidEventTest extends InstrumentationTestCase {
         assertEquals(event.location, event2.location);
         assertEquals(event.dtStart, event2.dtStart);
         assertEquals(event.dtEnd.getDate(), new Date("20150502"));
+        assertTrue(event2.isAllDay());
+    }
+
+    public void testAllDayWithoutDuration() throws ParseException, FileNotFoundException, CalendarStorageException {
+        // add all-day event with 0 sec duration to calendar provider
+        Event event = new Event();
+        event.summary = "Event without duration";
+        event.dtStart = new DtStart(new Date("20150501"));
+        event.duration = new Duration(new Dur("PT0S"));
+        Uri uri = new TestEvent(calendar, event).add();
+        assertNotNull("Couldn't add event", uri);
+
+        // read again and verify result
+        @Cleanup("delete") TestEvent testEvent = new TestEvent(calendar, ContentUris.parseId(uri));
+        Event event2 = testEvent.getEvent();
+        // should now be an all-day event (converted by ical4android because events without duration don't show up in Android calendar)
+        assertEquals(event.dtStart, event2.dtStart);
+        assertEquals(event.dtStart.getDate().getTime() + 86400000, event2.dtEnd.getDate().getTime());
         assertTrue(event2.isAllDay());
     }
 
@@ -310,5 +329,24 @@ public class AndroidEventTest extends InstrumentationTestCase {
         @Cleanup("delete") TestEvent testEvent = new TestEvent(calendar, ContentUris.parseId(uri));
         assertNull(testEvent.getEvent().dtEnd);
     }
+
+    public void testWithoutDuration() throws ParseException, FileNotFoundException, CalendarStorageException {
+        // add event with 0 sec duration to calendar provider
+        Event event = new Event();
+        event.summary = "Event without duration";
+        event.dtStart = new DtStart(new Date("20150501T152010Z"));
+        event.duration = new Duration(new Dur("PT0S"));
+        Uri uri = new TestEvent(calendar, event).add();
+        assertNotNull("Couldn't add event", uri);
+
+        // read again and verify result
+        @Cleanup("delete") TestEvent testEvent = new TestEvent(calendar, ContentUris.parseId(uri));
+        Event event2 = testEvent.getEvent();
+        // should now be an all-day event (converted by ical4android because events without duration don't show up in Android calendar)
+        assertEquals(event.dtStart, event2.dtStart);
+        assertEquals(event.dtStart.getDate().getTime() + 86400000, event2.dtEnd.getDate().getTime());
+        assertTrue(event2.isAllDay());
+    }
+
 
 }

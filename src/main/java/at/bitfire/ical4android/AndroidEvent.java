@@ -530,6 +530,7 @@ public abstract class AndroidEvent {
             c.setTime(event.dtStart.getDate());
             c.add(java.util.Calendar.DATE, 1);
             event.dtEnd = new DtEnd(new Date(c.getTimeInMillis()));
+            event.duration = null;
         }
 
         /* For cases where a "VEVENT" calendar component
