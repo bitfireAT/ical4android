@@ -95,6 +95,8 @@ public class Event extends iCalendar {
 
     public final List<VAlarm> alarms = new LinkedList<>();
 
+    public LastModified lastModified;
+
     // unknown properties
     protected static final String[] knownPropertyNames = {
             Uid.UID, Sequence.SEQUENCE,
@@ -260,7 +262,10 @@ public class Event extends iCalendar {
             else if (prop instanceof Attendee)
                 e.attendees.add((Attendee)prop);
 
-            else if (prop instanceof ProdId || prop instanceof DtStamp || prop instanceof LastModified)
+            else if (prop instanceof LastModified)
+                e.lastModified = (LastModified)prop;
+
+            else if (prop instanceof ProdId || prop instanceof DtStamp)
                 /* ignore */;
 
             else    // retain unknown properties
@@ -371,6 +376,9 @@ public class Event extends iCalendar {
 
         if (forPublic != null)
             event.getProperties().add(forPublic ? Clazz.PUBLIC : Clazz.PRIVATE);
+
+        if (lastModified != null)
+            props.add(lastModified);
 
         props.addAll(unknownProperties);
 
