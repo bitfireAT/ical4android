@@ -119,7 +119,7 @@ abstract class AndroidEvent(
     }
 
     @Throws(FileNotFoundException::class, CalendarStorageException::class)
-    open protected fun populateEvent(row: ContentValues) {
+    protected open fun populateEvent(row: ContentValues) {
         val event = requireNotNull(event)
         event.summary = row.getAsString(Events.TITLE)
         event.location = row.getAsString(Events.EVENT_LOCATION)
@@ -189,10 +189,11 @@ abstract class AndroidEvent(
         }
 
         // status
-        when (row.getAsInteger(Events.STATUS)) {
-            Events.STATUS_CONFIRMED -> event.status = Status.VEVENT_CONFIRMED
-            Events.STATUS_TENTATIVE -> event.status = Status.VEVENT_TENTATIVE
-            Events.STATUS_CANCELED  -> event.status = Status.VEVENT_CANCELLED
+        event.status = when (row.getAsInteger(Events.STATUS)) {
+            Events.STATUS_CONFIRMED -> Status.VEVENT_CONFIRMED
+            Events.STATUS_TENTATIVE -> Status.VEVENT_TENTATIVE
+            Events.STATUS_CANCELED  -> Status.VEVENT_CANCELLED
+            else                    -> null
         }
 
         // availability

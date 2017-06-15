@@ -33,11 +33,11 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
         val id: Long
 ) {
 
-    private var name: String? = null
-    private var displayName: String? = null
-    private var color: Int? = null
-    private var isSynced = true
-    private var isVisible = true
+    var name: String? = null
+    var displayName: String? = null
+    var color: Int? = null
+    var isSynced = true
+    var isVisible = true
 
     /**
      * Those CalendarContract.Events columns will always be fetched by queryEvents().
@@ -153,12 +153,9 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 
 
     @Throws(CalendarStorageException::class)
-    protected fun queryEvents(where: String?, whereArgs: Array<String>? = null): List<T> {
-        val where = if (where == null)
-            ""
-        else
-            "($where) AND " + Events.CALENDAR_ID + "=?"
-        val whereArgs = ArrayUtils.add(whereArgs, id.toString())
+    protected fun queryEvents(where: String? = null, whereArgs: Array<String>? = null): List<T> {
+        val where = "(${where ?: "1"}) AND " + Events.CALENDAR_ID + "=?"
+        val whereArgs = (whereArgs ?: arrayOf()) + id.toString()
 
         try {
             provider.query(

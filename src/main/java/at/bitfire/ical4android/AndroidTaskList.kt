@@ -41,7 +41,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
 
     /** Those columns will always be fetched when tasks are queried by {@link #queryTasks(String, String[])}.
      *  Must include Tasks._ID as the first element! */
-    protected fun taskBaseInfoColumns() = arrayOf(Tasks._ID)
+    protected open fun taskBaseInfoColumns() = arrayOf(Tasks._ID)
 
 	
 	companion object {
@@ -98,8 +98,9 @@ abstract class AndroidTaskList<out T: AndroidTask>(
             throw FileNotFoundException()
         }
 
+        @JvmStatic
         @Throws(CalendarStorageException::class)
-        fun<T: AndroidTaskList<AndroidTask>> find(account: Account, provider: TaskProvider, factory: AndroidTaskListFactory<T>, where: String, whereArgs: Array<String>): List<T> {
+        fun<T: AndroidTaskList<AndroidTask>> find(account: Account, provider: TaskProvider, factory: AndroidTaskListFactory<T>, where: String?, whereArgs: Array<String>?): List<T> {
             val taskLists = LinkedList<T>()
             try {
                 provider.client.query(syncAdapterURI(provider.taskListsUri(), account), null, where, whereArgs, null)?.use { cursor ->
@@ -156,9 +157,9 @@ abstract class AndroidTaskList<out T: AndroidTask>(
 
 
     @Throws(CalendarStorageException::class)
-    protected fun queryTasks(where: String, whereArgs: Array<String> = arrayOf()): List<T> {
-        val where = "($where) AND ${Tasks.LIST_ID}=?"
-        val whereArgs = whereArgs + id.toString()
+    protected fun queryTasks(where: String? = null, whereArgs: Array<String>? = null): List<T> {
+        val where = "(${where ?: "1"}) AND ${Tasks.LIST_ID}=?"
+        val whereArgs = (whereArgs ?: arrayOf()) + id.toString()
 
         val tasks = LinkedList<T>()
         try {

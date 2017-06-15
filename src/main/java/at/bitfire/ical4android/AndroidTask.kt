@@ -74,7 +74,7 @@ abstract class AndroidTask(
     }
 
     @Throws(FileNotFoundException::class, RemoteException::class, ParseException::class)
-    protected fun populateTask(values: ContentValues) {
+    protected open fun populateTask(values: ContentValues) {
         val task = requireNotNull(task)
         task.uid = values.getAsString(Tasks._UID)
         task.summary = values.getAsString(Tasks.TITLE)
@@ -186,7 +186,7 @@ abstract class AndroidTask(
         }
     }
 
-    protected fun buildTask(builder: Builder, update: Boolean) {
+    protected open fun buildTask(builder: Builder, update: Boolean) {
         if (!update)
             builder .withValue(Tasks.LIST_ID, taskList.id)
                     .withValue(Tasks._DIRTY, 0)

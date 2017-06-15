@@ -55,9 +55,9 @@ class TaskProvider private constructor(
     }
 
 
-    fun taskListsUri() = TaskContract.TaskLists.getContentUri(name.authority)
-    fun tasksUri() = TaskContract.Tasks.getContentUri(name.authority)
-    fun alarmsUri() = TaskContract.Alarms.getContentUri(name.authority)
+    fun taskListsUri() = TaskContract.TaskLists.getContentUri(name.authority)!!
+    fun tasksUri() = TaskContract.Tasks.getContentUri(name.authority)!!
+    fun alarmsUri() = TaskContract.Alarms.getContentUri(name.authority)!!
 
     override fun close() {
         if (Build.VERSION.SDK_INT >= 24)
