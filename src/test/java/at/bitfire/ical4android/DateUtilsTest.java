@@ -8,9 +8,7 @@
 
 package at.bitfire.ical4android;
 
-import net.fortuna.ical4j.model.Date;
 import net.fortuna.ical4j.model.DateList;
-import net.fortuna.ical4j.model.DateTime;
 import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.parameter.Value;
 import net.fortuna.ical4j.model.property.ExDate;

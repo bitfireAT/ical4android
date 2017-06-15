@@ -8,27 +8,18 @@
 
 package at.bitfire.ical4android
 
-import android.accounts.Account;
-import android.annotation.SuppressLint;
-import android.content.ContentResolver;
-import android.content.ContentUris;
-import android.content.ContentValues;
-import android.database.Cursor;
-import android.database.DatabaseUtils;
-import android.net.Uri;
-import android.os.RemoteException;
-import at.bitfire.ical4android.AndroidTaskList.Companion.syncAdapterURI
-
-import org.apache.commons.lang3.ArrayUtils;
-import org.dmfs.provider.tasks.TaskContract;
-import org.dmfs.provider.tasks.TaskContract.TaskLists;
-import org.dmfs.provider.tasks.TaskContract.Tasks;
-
-import java.io.FileNotFoundException;
-import java.util.LinkedList;
-
-import lombok.Cleanup;
-import lombok.Getter;
+import android.accounts.Account
+import android.content.ContentResolver
+import android.content.ContentUris
+import android.content.ContentValues
+import android.database.DatabaseUtils
+import android.net.Uri
+import android.os.RemoteException
+import org.dmfs.provider.tasks.TaskContract
+import org.dmfs.provider.tasks.TaskContract.TaskLists
+import org.dmfs.provider.tasks.TaskContract.Tasks
+import java.io.FileNotFoundException
+import java.util.*
 
 /**
  * Represents a locally stored task list, containing AndroidTasks (whose data objects are Tasks).

@@ -8,8 +8,6 @@
 
 package at.bitfire.ical4android;
 
-import android.annotation.TargetApi;
-
 import net.fortuna.ical4j.model.Date;
 import net.fortuna.ical4j.model.DateList;
 import net.fortuna.ical4j.model.DateTime;
@@ -32,14 +30,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 
 import lombok.Cleanup;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
 
 public class TaskTest {
     private static final String TAG = "ical4android.TaskTest";
@@ -61,9 +60,8 @@ public class TaskTest {
     public void testDueBeforeDtStart() throws IOException, InvalidCalendarException {
         Task t = parseCalendar("due-before-dtstart.ics", null);
         assertEquals(t.getSummary(), "DUE before DTSTART");
-        assertTrue(t.getDue().getDate().before(t.getDtStart().getDate()));
-        // no error handling is expected here, the tasks provider will throw an exception
-        // and ical4android will pass it to the caller
+        // invalid tasks with DUE before DTSTART: DTSTART should be set to null
+        assertNull(t.getDtStart());
     }
 
     @Test

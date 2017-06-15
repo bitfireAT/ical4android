@@ -53,11 +53,12 @@ dependencies {
         exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }
     compile 'org.slf4j:slf4j-jdk14:1.7.25'        // used by ical4j
-    provided 'org.projectlombok:lombok:1.16.16'
 
     androidTestCompile 'com.android.support:support-annotations:25.+'
+    androidTestCompile 'org.projectlombok:lombok:1.16.16'
 
     testCompile 'junit:junit:4.12'
+    testCompile 'org.projectlombok:lombok:1.16.16'
 }
 
 // grant permissions for unit tests

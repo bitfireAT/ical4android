@@ -8,44 +8,24 @@
 
 package at.bitfire.ical4android
 
-import android.content.ContentProviderOperation;
-import android.content.ContentProviderOperation.Builder;
-import android.content.ContentUris;
-import android.content.ContentValues;
-import android.database.Cursor;
-import android.database.DatabaseUtils;
-import android.net.Uri;
-import android.os.RemoteException;
-import android.text.TextUtils;
-
-import net.fortuna.ical4j.model.Date;
-import net.fortuna.ical4j.model.DateTime;
-import net.fortuna.ical4j.model.Dur;
-import net.fortuna.ical4j.model.TimeZone;
-import net.fortuna.ical4j.model.property.Clazz;
-import net.fortuna.ical4j.model.property.Completed;
-import net.fortuna.ical4j.model.property.DtStart;
-import net.fortuna.ical4j.model.property.Due;
-import net.fortuna.ical4j.model.property.Duration;
-import net.fortuna.ical4j.model.property.ExDate;
-import net.fortuna.ical4j.model.property.Geo;
-import net.fortuna.ical4j.model.property.Organizer;
-import net.fortuna.ical4j.model.property.RDate;
-import net.fortuna.ical4j.model.property.RRule;
-import net.fortuna.ical4j.model.property.Status;
-
-import org.apache.commons.lang3.StringUtils;
-import org.dmfs.provider.tasks.TaskContract.Tasks;
-
-import java.io.FileNotFoundException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.text.ParseException;
-import java.util.logging.Level;
-
-import lombok.Cleanup;
-import lombok.Getter;
-import lombok.ToString;
+import android.content.ContentProviderOperation
+import android.content.ContentProviderOperation.Builder
+import android.content.ContentUris
+import android.content.ContentValues
+import android.database.DatabaseUtils
+import android.net.Uri
+import android.os.RemoteException
+import net.fortuna.ical4j.model.Date
+import net.fortuna.ical4j.model.DateTime
+import net.fortuna.ical4j.model.Dur
+import net.fortuna.ical4j.model.property.*
+import org.apache.commons.lang3.StringUtils
+import org.dmfs.provider.tasks.TaskContract.Tasks
+import java.io.FileNotFoundException
+import java.net.URI
+import java.net.URISyntaxException
+import java.text.ParseException
+import java.util.logging.Level
 
 // TODO @ToString(of={ "id", "task" }, doNotUseGetters=true)
 abstract class AndroidTask(
