@@ -10,7 +10,7 @@ package at.bitfire.ical4android
 
 import android.accounts.Account
 
-interface AndroidTaskListFactory<out T: AndroidTaskList> {
+interface AndroidTaskListFactory<out T: AndroidTaskList<AndroidTask>> {
 
     fun newInstance(account: Account, provider: TaskProvider, id: Long): T
 

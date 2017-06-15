@@ -29,16 +29,16 @@ import java.util.logging.Level
 
 // TODO @ToString(of={ "id", "task" }, doNotUseGetters=true)
 abstract class AndroidTask(
-        val taskList: AndroidTaskList
+        val taskList: AndroidTaskList<AndroidTask>
 ) {
 
     var id: Long? = null
 
-    constructor(taskList: AndroidTaskList, id: Long): this(taskList) {
+    constructor(taskList: AndroidTaskList<AndroidTask>, id: Long): this(taskList) {
         this.id = id
     }
 
-    constructor(taskList: AndroidTaskList, task: Task): this(taskList) {
+    constructor(taskList: AndroidTaskList<AndroidTask>, task: Task): this(taskList) {
         this.task = task
     }
 

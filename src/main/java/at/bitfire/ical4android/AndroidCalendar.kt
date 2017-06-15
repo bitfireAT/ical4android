@@ -26,10 +26,10 @@ import java.util.*
  * Communicates with the Android Contacts Provider which uses an SQLite
  * database to store the events.
  */
-abstract class AndroidCalendar(
+abstract class AndroidCalendar<out T: AndroidEvent>(
         val account: Account,
         val provider: ContentProviderClient,
-        val eventFactory: AndroidEventFactory<AndroidEvent>,
+        val eventFactory: AndroidEventFactory<T>,
         val id: Long
 ) {
 
@@ -47,9 +47,6 @@ abstract class AndroidCalendar(
 
 
     companion object {
-
-
-        /* class methods, constructor */
 
         @JvmStatic
         @Throws(CalendarStorageException::class)
@@ -71,7 +68,7 @@ abstract class AndroidCalendar(
 
         @JvmStatic
         @Throws(FileNotFoundException::class, CalendarStorageException::class)
-        fun<T: AndroidCalendar> findByID(account: Account, provider: ContentProviderClient, factory: AndroidCalendarFactory<T>, id: Long): T {
+        fun<T: AndroidCalendar<AndroidEvent>> findByID(account: Account, provider: ContentProviderClient, factory: AndroidCalendarFactory<T>, id: Long): T {
             var iterCalendars: EntityIterator? = null
             try {
                 iterCalendars = CalendarContract.CalendarEntity.newEntityIterator(
@@ -95,7 +92,7 @@ abstract class AndroidCalendar(
 
         @JvmStatic
         @Throws(CalendarStorageException::class)
-        fun<T: AndroidCalendar> find(account: Account, provider: ContentProviderClient, factory: AndroidCalendarFactory<T>, where: String?, whereArgs: Array<String>?): List<T> {
+        fun<T: AndroidCalendar<AndroidEvent>> find(account: Account, provider: ContentProviderClient, factory: AndroidCalendarFactory<T>, where: String?, whereArgs: Array<String>?): List<T> {
             var iterCalendars: EntityIterator? = null
             try {
                 iterCalendars = CalendarContract.CalendarEntity.newEntityIterator(
@@ -156,7 +153,7 @@ abstract class AndroidCalendar(
 
 
     @Throws(CalendarStorageException::class)
-    protected fun queryEvents(where: String?, whereArgs: Array<String>? = null): List<AndroidEvent> {
+    protected fun queryEvents(where: String?, whereArgs: Array<String>? = null): List<T> {
         val where = if (where == null)
             ""
         else
@@ -168,7 +165,7 @@ abstract class AndroidCalendar(
                     syncAdapterURI(Events.CONTENT_URI),
                     eventBaseInfoColumns(),
                     where, whereArgs, null).use { cursor ->
-                val events = LinkedList<AndroidEvent>()
+                val events = LinkedList<T>()
                 while (cursor != null && cursor.moveToNext()) {
                     val baseInfo = ContentValues(cursor.columnCount)
                     DatabaseUtils.cursorRowToContentValues(cursor, baseInfo)

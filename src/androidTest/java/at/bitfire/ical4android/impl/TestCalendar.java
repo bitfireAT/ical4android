@@ -28,7 +28,7 @@ import at.bitfire.ical4android.AndroidCalendar;
 import at.bitfire.ical4android.AndroidCalendarFactory;
 import at.bitfire.ical4android.CalendarStorageException;
 
-public class TestCalendar extends AndroidCalendar {
+public class TestCalendar extends AndroidCalendar<TestEvent> {
     private static final String TAG = "ical4android.TestCal";
 
     public TestCalendar(Account account, ContentProviderClient provider, long id) {

@@ -25,7 +25,7 @@ import at.bitfire.ical4android.AndroidTaskListFactory;
 import at.bitfire.ical4android.CalendarStorageException;
 import at.bitfire.ical4android.TaskProvider;
 
-public class TestTaskList extends AndroidTaskList {
+public class TestTaskList extends AndroidTaskList<TestTask> {
 
     private static final String TAG = "ical4android.TestCal";
 

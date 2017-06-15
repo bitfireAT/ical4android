@@ -26,10 +26,10 @@ import java.util.*
  * Communicates with third-party content providers to store the tasks.
  * Currently, only the OpenTasks tasks provider (org.dmfs.provider.tasks) is supported.
  */
-abstract class AndroidTaskList(
+abstract class AndroidTaskList<out T: AndroidTask>(
         val account: Account,
         val provider: TaskProvider,
-        val taskFactory: AndroidTaskFactory<AndroidTask>,
+        val taskFactory: AndroidTaskFactory<T>,
         val id: Long
 ) {
 
@@ -80,7 +80,7 @@ abstract class AndroidTaskList(
 
         @JvmStatic
         @Throws(FileNotFoundException::class, CalendarStorageException::class)
-        fun<T: AndroidTaskList> findByID(account: Account, provider: TaskProvider, factory: AndroidTaskListFactory<T>, id: Long): T {
+        fun<T: AndroidTaskList<AndroidTask>> findByID(account: Account, provider: TaskProvider, factory: AndroidTaskListFactory<T>, id: Long): T {
             try {
                 provider.client.query(syncAdapterURI(ContentUris.withAppendedId(provider.taskListsUri(), id), account), null, null, null, null)?.use { cursor ->
                     if (cursor.moveToNext()) {
@@ -99,7 +99,7 @@ abstract class AndroidTaskList(
         }
 
         @Throws(CalendarStorageException::class)
-        fun<T: AndroidTaskList> find(account: Account, provider: TaskProvider, factory: AndroidTaskListFactory<T>, where: String, whereArgs: Array<String>): List<T> {
+        fun<T: AndroidTaskList<AndroidTask>> find(account: Account, provider: TaskProvider, factory: AndroidTaskListFactory<T>, where: String, whereArgs: Array<String>): List<T> {
             val taskLists = LinkedList<T>()
             try {
                 provider.client.query(syncAdapterURI(provider.taskListsUri(), account), null, where, whereArgs, null)?.use { cursor ->
@@ -156,11 +156,11 @@ abstract class AndroidTaskList(
 
 
     @Throws(CalendarStorageException::class)
-    protected fun queryTasks(where: String, whereArgs: Array<String> = arrayOf()): List<AndroidTask> {
+    protected fun queryTasks(where: String, whereArgs: Array<String> = arrayOf()): List<T> {
         val where = "($where) AND ${Tasks.LIST_ID}=?"
         val whereArgs = whereArgs + id.toString()
 
-        val tasks = LinkedList<AndroidTask>()
+        val tasks = LinkedList<T>()
         try {
             provider.client.query(
                     syncAdapterURI(provider.tasksUri()),

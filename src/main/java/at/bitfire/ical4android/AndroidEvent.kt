@@ -43,7 +43,7 @@ import java.util.logging.Level
  */
 // TODO @ToString(of={ "id", "event" }, doNotUseGetters=true)
 abstract class AndroidEvent(
-        val calendar: AndroidCalendar
+        val calendar: AndroidCalendar<AndroidEvent>
 ) {
 
     companion object {
@@ -56,12 +56,12 @@ abstract class AndroidEvent(
 
     var id: Long? = null
 
-    constructor(calendar: AndroidCalendar, id: Long, baseInfo: ContentValues?): this(calendar) {
+    constructor(calendar: AndroidCalendar<AndroidEvent>, id: Long, baseInfo: ContentValues?): this(calendar) {
         this.id = id
         // baseInfo is used by derived classes which process SYNC1 etc.
     }
 
-    constructor(calendar: AndroidCalendar, event: Event): this(calendar) {
+    constructor(calendar: AndroidCalendar<AndroidEvent>, event: Event): this(calendar) {
         this.event = event
     }
 
