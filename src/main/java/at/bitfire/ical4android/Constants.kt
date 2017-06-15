@@ -10,15 +10,13 @@
  * PURPOSE.  See the GNU General Public License for more details.
  */
 
-package at.bitfire.ical4android;
+package at.bitfire.ical4android
 
-import android.content.ContentValues;
+import java.util.logging.Logger
 
-public interface AndroidTaskFactory {
+object Constants {
 
-    AndroidTask newInstance(AndroidTaskList calendar, long id, ContentValues baseInfo);
-    AndroidTask newInstance(AndroidTaskList calendar, Task task);
-
-    AndroidTask[] newArray(int size);
+    @JvmField
+    val log = Logger.getLogger("davdroid.ical4android")!!
 
 }

@@ -51,18 +51,13 @@ public class TestTaskList extends AndroidTaskList {
     }
 
 
-    public static class Factory implements AndroidTaskListFactory {
+    public static class Factory implements AndroidTaskListFactory<TestTaskList> {
 
         public static final Factory FACTORY = new Factory();
 
         @Override
-        public AndroidTaskList newInstance(Account account, TaskProvider provider, long id) {
+        public TestTaskList newInstance(Account account, TaskProvider provider, long id) {
             return new TestTaskList(account, provider, id);
-        }
-
-        @Override
-        public AndroidTaskList[] newArray(int size) {
-            return new TestTaskList[size];
         }
 
     }

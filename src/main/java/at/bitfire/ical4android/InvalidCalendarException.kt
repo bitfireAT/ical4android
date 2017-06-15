@@ -10,16 +10,11 @@
  * PURPOSE.  See the GNU General Public License for more details.
  */
 
-package at.bitfire.ical4android;
+package at.bitfire.ical4android
 
-public class CalendarStorageException extends Exception {
+class InvalidCalendarException: Exception {
 
-    public CalendarStorageException(String message) {
-        super(message);
-    }
-
-    public CalendarStorageException(String message, Throwable ex) {
-        super(message, ex);
-    }
+    constructor(message: String): super(message)
+    constructor(message: String, ex: Throwable): super(message, ex)
 
 }

@@ -10,12 +10,13 @@
  * PURPOSE.  See the GNU General Public License for more details.
  */
 
-package at.bitfire.ical4android;
+package at.bitfire.ical4android
 
-import java.util.logging.Logger;
+import android.accounts.Account
+import android.content.ContentProviderClient
 
-public class Constants {
+interface AndroidCalendarFactory<out T: AndroidCalendar> {
 
-    static final Logger log = Logger.getLogger("davdroid.ical4android");
+    fun newInstance(account: Account, provider: ContentProviderClient, id: Long): T
 
 }

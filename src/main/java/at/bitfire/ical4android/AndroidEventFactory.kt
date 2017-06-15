@@ -10,15 +10,13 @@
  * PURPOSE.  See the GNU General Public License for more details.
  */
 
-package at.bitfire.ical4android;
+package at.bitfire.ical4android
 
-import android.content.ContentValues;
+import android.content.ContentValues
 
-public interface AndroidEventFactory {
+interface AndroidEventFactory<out T: AndroidEvent> {
 
-    AndroidEvent newInstance(AndroidCalendar calendar, long id, ContentValues baseInfo);
-    AndroidEvent newInstance(AndroidCalendar calendar, Event event);
-
-    AndroidEvent[] newArray(int size);
+    fun newInstance(calendar: AndroidCalendar, id: Long, baseInfo: ContentValues? = null): T
+    fun newInstance(calendar: AndroidCalendar, event: Event): T
 
 }

@@ -45,11 +45,11 @@ public class EventTest {
     @Test
     public void testCharsets() throws IOException, InvalidCalendarException {
         Event e = parseCalendar("latin1.ics", Charset.forName("ISO-8859-1"))[0];
-        assertEquals("äöüß", e.summary);
+        assertEquals("äöüß", e.getSummary());
 
         e = parseCalendar("utf8.ics", null)[0];
-        assertEquals("© äö — üß", e.summary);
-        assertEquals("中华人民共和国", e.location);
+        assertEquals("© äö — üß", e.getSummary());
+        assertEquals("中华人民共和国", e.getLocation());
     }
 
     @Test
@@ -58,19 +58,19 @@ public class EventTest {
         assertEquals(3, events.length);
 
         Event e = findEvent(events, "multiple-0@ical4android.EventTest");
-        assertEquals("Event 0", e.summary);
-        assertEquals(0, e.exceptions.size());
+        assertEquals("Event 0", e.getSummary());
+        assertEquals(0, e.getExceptions().size());
 
         e = findEvent(events, "multiple-1@ical4android.EventTest");
-        assertEquals("Event 1", e.summary);
-        assertEquals(1, e.exceptions.size());
-        assertEquals("Event 1 Exception", e.exceptions.get(0).summary);
+        assertEquals("Event 1", e.getSummary());
+        assertEquals(1, e.getExceptions().size());
+        assertEquals("Event 1 Exception", e.getExceptions().get(0).getSummary());
 
         e = findEvent(events, "multiple-2@ical4android.EventTest");
-        assertEquals("Event 2", e.summary);
-        assertEquals(2, e.exceptions.size());
-        assertTrue("Event 2 Updated Exception 1".equals(e.exceptions.get(0).summary) || "Event 2 Updated Exception 1".equals(e.exceptions.get(1).summary));
-        assertTrue("Event 2 Exception 2".equals(e.exceptions.get(0).summary) || "Event 2 Exception 2".equals(e.exceptions.get(1).summary));
+        assertEquals("Event 2", e.getSummary());
+        assertEquals(2, e.getExceptions().size());
+        assertTrue("Event 2 Updated Exception 1".equals(e.getExceptions().get(0).getSummary()) || "Event 2 Updated Exception 1".equals(e.getExceptions().get(1).getSummary()));
+        assertTrue("Event 2 Exception 2".equals(e.getExceptions().get(0).getSummary()) || "Event 2 Exception 2".equals(e.getExceptions().get(1).getSummary()));
     }
 
     @Test
@@ -78,19 +78,19 @@ public class EventTest {
         Event event = parseCalendar("recurring-with-exception1.ics", null)[0];
         assertTrue(event.isAllDay());
 
-        assertEquals(1, event.exceptions.size());
-        Event exception = event.exceptions.get(0);
-        assertEquals("20150503", exception.recurrenceId.getValue());
-        assertEquals("Another summary for the third day", exception.summary);
+        assertEquals(1, event.getExceptions().size());
+        Event exception = event.getExceptions().get(0);
+        assertEquals("20150503", exception.getRecurrenceId().getValue());
+        assertEquals("Another summary for the third day", exception.getSummary());
     }
 
     @Test
     public void testStartEndTimes() throws IOException, InvalidCalendarException {
         // event with start+end date-time
         Event eViennaEvolution = parseCalendar("vienna-evolution.ics", null)[0];
-        assertEquals(1381330800000L, eViennaEvolution.dtStart.getDate().getTime());
+        assertEquals(1381330800000L, eViennaEvolution.getDtStart().getDate().getTime());
         assertEquals("Europe/Vienna", eViennaEvolution.getDtStartTzID());
-        assertEquals(1381334400000L, eViennaEvolution.dtEnd.getDate().getTime());
+        assertEquals(1381334400000L, eViennaEvolution.getDtEnd().getDate().getTime());
         assertEquals("Europe/Vienna", eViennaEvolution.getDtEndTzID());
     }
 
@@ -98,36 +98,36 @@ public class EventTest {
     public void testStartEndTimesAllDay() throws IOException, InvalidCalendarException {
         // event with start date only
         Event eOnThatDay = parseCalendar("event-on-that-day.ics", null)[0];
-        assertEquals(868838400000L, eOnThatDay.dtStart.getDate().getTime());
+        assertEquals(868838400000L, eOnThatDay.getDtStart().getDate().getTime());
         assertEquals(TimeZones.UTC_ID, eOnThatDay.getDtStartTzID());
 
         // event with start+end date for all-day event (one day)
         Event eAllDay1Day = parseCalendar("all-day-1day.ics", null)[0];
-        assertEquals(868838400000L, eAllDay1Day.dtStart.getDate().getTime());
+        assertEquals(868838400000L, eAllDay1Day.getDtStart().getDate().getTime());
         assertEquals(TimeZones.UTC_ID, eAllDay1Day.getDtStartTzID());
-        assertEquals(868838400000L + 86400000, eAllDay1Day.dtEnd.getDate().getTime());
+        assertEquals(868838400000L + 86400000, eAllDay1Day.getDtEnd().getDate().getTime());
         assertEquals(TimeZones.UTC_ID, eAllDay1Day.getDtEndTzID());
 
         // event with start+end date for all-day event (ten days)
         Event eAllDay10Days = parseCalendar("all-day-10days.ics", null)[0];
-        assertEquals(868838400000L, eAllDay10Days.dtStart.getDate().getTime());
+        assertEquals(868838400000L, eAllDay10Days.getDtStart().getDate().getTime());
         assertEquals(TimeZones.UTC_ID, eAllDay10Days.getDtStartTzID());
-        assertEquals(868838400000L + 10 * 86400000, eAllDay10Days.dtEnd.getDate().getTime());
+        assertEquals(868838400000L + 10 * 86400000, eAllDay10Days.getDtEnd().getDate().getTime());
         assertEquals(TimeZones.UTC_ID, eAllDay10Days.getDtEndTzID());
 
         // event with start+end date on some day (0 sec-event)
         Event eAllDay0Sec = parseCalendar("all-day-0sec.ics", null)[0];
-        assertEquals(868838400000L, eAllDay0Sec.dtStart.getDate().getTime());
+        assertEquals(868838400000L, eAllDay0Sec.getDtStart().getDate().getTime());
         assertEquals(TimeZones.UTC_ID, eAllDay0Sec.getDtStartTzID());
         // DTEND is same as DTSTART which is not valid for Android – but this will be handled by AndroidEvent, not Event
-        assertEquals(868838400000L, eAllDay0Sec.dtEnd.getDate().getTime());
+        assertEquals(868838400000L, eAllDay0Sec.getDtEnd().getDate().getTime());
         assertEquals(TimeZones.UTC_ID, eAllDay0Sec.getDtEndTzID());
     }
 
     @Test
     public void testUnfolding() throws IOException, InvalidCalendarException {
         Event e = parseCalendar("two-line-description-without-crlf.ics", null)[0];
-        assertEquals("http://www.tgbornheim.de/index.php?sessionid=&page=&id=&sportcentergroup=&day=6", e.description);
+        assertEquals("http://www.tgbornheim.de/index.php?sessionid=&page=&id=&sportcentergroup=&day=6", e.getDescription());
     }
 
 
@@ -141,33 +141,33 @@ public class EventTest {
         events = parseCalendar("two-events-without-exceptions.ics", null);
         assertEquals(2, events.length);
         for (Event event : events)
-            assertTrue(event.exceptions.isEmpty());
+            assertTrue(event.getExceptions().isEmpty());
 
         // one event with exception, another single event
         events = parseCalendar("one-event-with-exception-one-without.ics", null);
         assertEquals(2, events.length);
         for (Event event : events) {
-            String uid = event.uid;
+            String uid = event.getUid();
             if ("event1".equals(uid))
-                assertEquals(1, event.exceptions.size());
+                assertEquals(1, event.getExceptions().size());
             else
-                assertTrue(event.exceptions.isEmpty());
+                assertTrue(event.getExceptions().isEmpty());
         }
 
         // one event two exceptions (thereof one updated two times) and updated exception, another single event
         events = parseCalendar("one-event-with-multiple-exceptions-one-without.ics", null);
         assertEquals(2, events.length);
         for (Event event : events) {
-            String uid = event.uid;
+            String uid = event.getUid();
             if ("event1".equals(uid)) {
-                assertEquals(2, event.exceptions.size());
-                for (Event exception : event.exceptions)
-                    if ("20150503".equals(exception.recurrenceId.getValue())) {
-                        assertEquals(2, (int)exception.sequence);
-                        assertEquals("Final summary", exception.summary);
+                assertEquals(2, event.getExceptions().size());
+                for (Event exception : event.getExceptions())
+                    if ("20150503".equals(exception.getRecurrenceId().getValue())) {
+                        assertEquals(2, (int)exception.getSequence());
+                        assertEquals("Final summary", exception.getSummary());
                     }
             } else
-                assertTrue(event.exceptions.isEmpty());
+                assertTrue(event.getExceptions().isEmpty());
         }
     }
 
@@ -176,7 +176,7 @@ public class EventTest {
 
     private Event findEvent(@NonNull Event[] events, @NonNull String uid) throws FileNotFoundException {
         for (Event event : events)
-            if (uid.equals(event.uid))
+            if (uid.equals(event.getUid()))
                 return event;
         throw new FileNotFoundException();
     }

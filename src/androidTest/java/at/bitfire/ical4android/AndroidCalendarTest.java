@@ -59,7 +59,7 @@ public class AndroidCalendarTest extends InstrumentationTestCase {
         Log.i(TAG, "Created calendar: " + uri);
 
         // query task list
-        TestCalendar calendar = (TestCalendar)TestCalendar.findByID(testAccount, provider, TestCalendar.Factory.FACTORY, ContentUris.parseId(uri));
+        TestCalendar calendar = (TestCalendar)TestCalendar.findByID(testAccount, provider, TestCalendar.Factory.INSTANCE, ContentUris.parseId(uri));
         assertNotNull(calendar);
 
         // delete task list

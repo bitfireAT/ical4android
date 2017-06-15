@@ -20,6 +20,10 @@ import android.net.Uri;
 import android.provider.CalendarContract;
 import android.util.Log;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+
 import at.bitfire.ical4android.AndroidCalendar;
 import at.bitfire.ical4android.AndroidCalendarFactory;
 import at.bitfire.ical4android.CalendarStorageException;
@@ -27,13 +31,13 @@ import at.bitfire.ical4android.CalendarStorageException;
 public class TestCalendar extends AndroidCalendar {
     private static final String TAG = "ical4android.TestCal";
 
-    protected TestCalendar(Account account, ContentProviderClient provider, long id) {
-        super(account, provider, TestEvent.Factory.FACTORY, id);
+    public TestCalendar(Account account, ContentProviderClient provider, long id) {
+        super(account, provider, TestEvent.Factory.INSTANCE, id);
     }
 
     static public TestCalendar findOrCreate(Account account, ContentProviderClient provider) throws CalendarStorageException {
-        TestCalendar[] calendars = (TestCalendar[])AndroidCalendar.find(account, provider, Factory.FACTORY, null, null);
-        if (calendars.length == 0) {
+        List<TestCalendar> calendars = AndroidCalendar.find(account, provider, Factory.INSTANCE, null, null);
+        if (calendars.size() == 0) {
             Log.i(TAG, "Test calendar not found, creating");
 
             ContentValues values = new ContentValues();
@@ -45,22 +49,18 @@ public class TestCalendar extends AndroidCalendar {
 
             return new TestCalendar(account, provider, ContentUris.parseId(uri));
         } else
-            return calendars[0];
+            return calendars.get(0);
     }
 
 
-    public static class Factory implements AndroidCalendarFactory {
+    public static class Factory implements AndroidCalendarFactory<TestCalendar> {
 
-        public static final Factory FACTORY = new Factory();
+        public static final Factory INSTANCE = new Factory();
 
+        @NotNull
         @Override
-        public AndroidCalendar newInstance(Account account, ContentProviderClient provider, long id) {
+        public TestCalendar newInstance(@NotNull Account account, @NotNull ContentProviderClient provider, long id) {
             return new TestCalendar(account, provider, id);
-        }
-
-        @Override
-        public AndroidCalendar[] newArray(int size) {
-            return new TestCalendar[size];
         }
 
     }

@@ -87,13 +87,13 @@ public class AndroidTaskTest extends InstrumentationTestCase {
     public void testAddTask() throws URISyntaxException, ParseException, FileNotFoundException, CalendarStorageException {
         // build and write event to calendar provider
         Task task = new Task();
-        task.uid = "sample1@testAddEvent";
-        task.summary = "Sample event";
-        task.description = "Sample event with date/time";
-        task.location = "Sample location";
-        task.dtStart = new DtStart("20150501T120000", tzVienna);
-        task.due = new Due("20150501T140000", tzVienna);
-        task.organizer = new Organizer("mailto:organizer@example.com");
+        task.setUid("sample1@testAddEvent");
+        task.setSummary("Sample event");
+        task.setDescription("Sample event with date/time");
+        task.setLocation("Sample location");
+        task.setDtStart(new DtStart("20150501T120000", tzVienna));
+        task.setDue(new Due("20150501T140000", tzVienna));
+        task.setOrganizer(new Organizer("mailto:organizer@example.com"));
         assertFalse(task.isAllDay());
 
         // add to task list
@@ -107,63 +107,60 @@ public class AndroidTaskTest extends InstrumentationTestCase {
         assertNotNull("Inserted task is empty", task2);
 
         // compare with original event
-        assertEquals(task.summary, task2.summary);
-        assertEquals(task.description, task2.description);
-        assertEquals(task.location, task2.location);
-        assertEquals(task.dtStart, task2.dtStart);
+        assertEquals(task.getSummary(), task2.getSummary());
+        assertEquals(task.getDescription(), task2.getDescription());
+        assertEquals(task.getLocation(), task2.getLocation());
+        assertEquals(task.getDtStart(), task2.getDtStart());
     }
 
-    public void testAddTaskWithInvalidDue() throws ParseException, CalendarStorageException, FileNotFoundException {
+    public void testAddTaskWithInvalidDue() throws ParseException, FileNotFoundException {
         Task task = new Task();
-        task.uid = "invalidDUE@ical4android.tests";
-        task.summary = "Task with invalid DUE";
-        task.dtStart = new DtStart(new Date("20150102"));
-        task.due = new Due(new Date("20150101"));
+        task.setUid("invalidDUE@ical4android.tests");
+        task.setSummary("Task with invalid DUE");
+        task.setDtStart(new DtStart(new Date("20150102")));
+        task.setDue(new Due(new Date("20150101")));
 
-        Uri uri = new TestTask(taskList, task).add();
-        assertNotNull("Couldn't add task", uri);
-
-        @Cleanup("delete") TestTask testTask = new TestTask(taskList, ContentUris.parseId(uri));
-        assertNotNull("Inserted task is not here", testTask);
-        Task task2 = testTask.getTask();
-        assertNull(task.dtStart);
+        try {
+            Uri uri = new TestTask(taskList, task).add();
+            fail();
+        } catch(CalendarStorageException ignored) {}
     }
 
     public void testUpdateTask() throws URISyntaxException, ParseException, FileNotFoundException, CalendarStorageException {
         // add test event without reminder
         Task task = new Task();
-        task.uid = "sample1@testAddEvent";
-        task.summary = "Sample event";
-        task.description = "Sample event with date/time";
-        task.location = "Sample location";
-        task.dtStart = new DtStart("20150501T120000", tzVienna);
+        task.setUid("sample1@testAddEvent");
+        task.setSummary("Sample event");
+        task.setDescription("Sample event with date/time");
+        task.setLocation("Sample location");
+        task.setDtStart(new DtStart("20150501T120000", tzVienna));
         assertFalse(task.isAllDay());
         Uri uri = new TestTask(taskList, task).add();
 
         // update test event in calendar
         @Cleanup("delete") TestTask testTask = new TestTask(taskList, ContentUris.parseId(uri));
         task = testTask.getTask();
-        task.summary = "Updated event";                     // change value
-        task.dtStart = null;                                // remove value
-        task.due = new Due("20150501T140000", tzVienna);    // add value
+        task.setSummary("Updated event");                     // change value
+        task.setDtStart(null);                                // remove value
+        task.setDue(new Due("20150501T140000", tzVienna));    // add value
         testTask.update(task);
 
         // read again and verify result
         testTask = new TestTask(taskList, ContentUris.parseId(uri));
         Task updatedTask = testTask.getTask();
-        assertEquals(task.summary, updatedTask.summary);
-        assertEquals(task.dtStart, updatedTask.dtStart);
-        assertEquals(task.due, updatedTask.due);
+        assertEquals(task.getSummary(), updatedTask.getSummary());
+        assertEquals(task.getDtStart(), updatedTask.getDtStart());
+        assertEquals(task.getDue(), updatedTask.getDue());
     }
 
     public void testBuildAllDayTask() throws ParseException, FileNotFoundException, CalendarStorageException {
         // add all-day event to calendar provider
         Task task = new Task();
-        task.summary = "All-day task";
-        task.description = "All-day task for testing";
-        task.location = "Sample location testBuildAllDayTask";
-        task.dtStart = new DtStart(new Date("20150501"));
-        task.due = new Due(new Date("20150502"));
+        task.setSummary("All-day task");
+        task.setDescription("All-day task for testing");
+        task.setLocation("Sample location testBuildAllDayTask");
+        task.setDtStart(new DtStart(new Date("20150501")));
+        task.setDue(new Due(new Date("20150502")));
         assertTrue(task.isAllDay());
         Uri uri = new TestTask(taskList, task).add();
         assertNotNull("Couldn't add event", uri);
@@ -172,11 +169,11 @@ public class AndroidTaskTest extends InstrumentationTestCase {
         @Cleanup("delete") TestTask testTask = new TestTask(taskList, ContentUris.parseId(uri));
         Task task2 = testTask.getTask();
         // compare with original event
-        assertEquals(task.summary, task2.summary);
-        assertEquals(task.description, task2.description);
-        assertEquals(task.location, task2.location);
-        assertEquals(task.dtStart.getDate(), task2.dtStart.getDate());
-        assertEquals(task.due.getDate(), task2.due.getDate());
+        assertEquals(task.getSummary(), task2.getSummary());
+        assertEquals(task.getDescription(), task2.getDescription());
+        assertEquals(task.getLocation(), task2.getLocation());
+        assertEquals(task.getDtStart().getDate(), task2.getDtStart().getDate());
+        assertEquals(task.getDue().getDate(), task2.getDue().getDate());
         assertTrue(task2.isAllDay());
     }
 

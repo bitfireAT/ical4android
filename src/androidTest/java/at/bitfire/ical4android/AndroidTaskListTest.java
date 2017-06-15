@@ -38,7 +38,7 @@ public class AndroidTaskListTest extends InstrumentationTestCase {
     public void setUp() throws Exception {
         provider = AndroidTaskList.acquireTaskProvider(getInstrumentation().getContext().getContentResolver());
         assertNotNull(provider);
-        Log.i(TAG, "Acquired context for " + provider.name);
+        Log.i(TAG, "Acquired context for " + provider.getName());
     }
 
     @Override
@@ -58,7 +58,7 @@ public class AndroidTaskListTest extends InstrumentationTestCase {
         assertNotNull(uri);
 
         // query task list
-        TestTaskList taskList = (TestTaskList)TestTaskList.findByID(testAccount, provider, TestTaskList.Factory.FACTORY, ContentUris.parseId(uri));
+        TestTaskList taskList = TestTaskList.findByID(testAccount, provider, TestTaskList.Factory.FACTORY, ContentUris.parseId(uri));
         assertNotNull(taskList);
 
         // delete task list

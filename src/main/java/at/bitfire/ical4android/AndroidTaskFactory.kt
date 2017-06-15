@@ -10,13 +10,13 @@
  * PURPOSE.  See the GNU General Public License for more details.
  */
 
-package at.bitfire.ical4android;
+package at.bitfire.ical4android
 
-import android.accounts.Account;
+import android.content.ContentValues
 
-public interface AndroidTaskListFactory {
+interface AndroidTaskFactory<out T: AndroidTask> {
 
-    AndroidTaskList newInstance(Account account, TaskProvider provider, long id);
-    AndroidTaskList[] newArray(int size);
+    fun newInstance(calendar: AndroidTaskList, id: Long, baseInfo: ContentValues): T
+    fun newInstance(calendar: AndroidTaskList, task: Task): T
 
 }

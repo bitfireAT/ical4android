@@ -31,24 +31,20 @@ public class TestTask extends AndroidTask {
     }
 
 
-    public static class Factory implements AndroidTaskFactory {
+    public static class Factory implements AndroidTaskFactory<TestTask> {
 
         public static final Factory FACTORY = new Factory();
 
         @Override
-        public AndroidTask newInstance(AndroidTaskList taskList, long id, ContentValues baseInfo) {
+        public TestTask newInstance(AndroidTaskList taskList, long id, ContentValues baseInfo) {
             return new TestTask(taskList, id);
         }
 
         @Override
-        public AndroidTask newInstance(AndroidTaskList taskList, Task task) {
+        public TestTask newInstance(AndroidTaskList taskList, Task task) {
             return new TestTask(taskList, task);
         }
 
-        @Override
-        public AndroidTask[] newArray(int size) {
-            return new TestTask[size];
-        }
     }
 
 }

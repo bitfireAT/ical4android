@@ -14,6 +14,9 @@ package at.bitfire.ical4android.impl;
 
 import android.content.ContentValues;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import at.bitfire.ical4android.AndroidCalendar;
 import at.bitfire.ical4android.AndroidEvent;
 import at.bitfire.ical4android.AndroidEventFactory;
@@ -24,29 +27,25 @@ public class TestEvent extends AndroidEvent {
     public TestEvent(AndroidCalendar calendar, long id) {
         super(calendar, id, null);
     }
-
     public TestEvent(AndroidCalendar calendar, Event event) {
         super(calendar, event);
     }
 
 
-    public static class Factory implements AndroidEventFactory {
+    public static class Factory implements AndroidEventFactory<TestEvent> {
 
-        public static final Factory FACTORY = new Factory();
+        public static final Factory INSTANCE = new Factory();
 
+        @NotNull
         @Override
-        public AndroidEvent newInstance(AndroidCalendar calendar, long id, ContentValues baseInfo) {
+        public TestEvent newInstance(@NotNull AndroidCalendar calendar, long id, @Nullable ContentValues baseInfo) {
             return new TestEvent(calendar, id);
         }
 
+        @NotNull
         @Override
-        public AndroidEvent newInstance(AndroidCalendar calendar, Event event) {
+        public TestEvent newInstance(@NotNull AndroidCalendar calendar, @NotNull Event event) {
             return new TestEvent(calendar, event);
-        }
-
-        @Override
-        public AndroidEvent[] newArray(int size) {
-            return new TestEvent[size];
         }
     }
 

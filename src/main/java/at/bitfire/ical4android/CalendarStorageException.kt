@@ -10,14 +10,11 @@
  * PURPOSE.  See the GNU General Public License for more details.
  */
 
-package at.bitfire.ical4android;
+package at.bitfire.ical4android
 
-import android.accounts.Account;
-import android.content.ContentProviderClient;
+class CalendarStorageException: Exception {
 
-public interface AndroidCalendarFactory {
-
-    AndroidCalendar newInstance(Account account, ContentProviderClient provider, long id);
-    AndroidCalendar[] newArray(int size);
+    constructor(message: String): super(message)
+    constructor(message: String, ex: Throwable): super(message, ex)
 
 }

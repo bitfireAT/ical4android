@@ -89,7 +89,7 @@ public class iCalendarTest {
 		assertNull(date.getTimeZone());
 
 		// date-time (Europe/Vienna) should be unchanged
-		DtStart dtStart = new DtStart("20150101", tzVienna);
+		DtStart dtStart = new DtStart("20150101T230350", tzVienna);
 		iCalendar.validateTimeZone(dtStart);
 		assertEquals(tzVienna, dtStart.getTimeZone());
 

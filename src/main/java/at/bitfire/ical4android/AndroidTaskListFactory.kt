@@ -10,16 +10,12 @@
  * PURPOSE.  See the GNU General Public License for more details.
  */
 
-package at.bitfire.ical4android;
+package at.bitfire.ical4android
 
-public class InvalidCalendarException extends Exception {
+import android.accounts.Account
 
-    public InvalidCalendarException(String message) {
-        super(message);
-    }
+interface AndroidTaskListFactory<out T: AndroidTaskList> {
 
-    public InvalidCalendarException(String message, Throwable ex) {
-        super(message, ex);
-    }
+    fun newInstance(account: Account, provider: TaskProvider, id: Long): T
 
 }
