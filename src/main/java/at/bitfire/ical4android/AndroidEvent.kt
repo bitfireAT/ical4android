@@ -26,6 +26,8 @@ import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
 import net.fortuna.ical4j.util.TimeZones
+import org.apache.commons.lang3.builder.ToStringBuilder
+import org.apache.commons.lang3.builder.ToStringStyle
 import java.io.*
 import java.net.URI
 import java.net.URISyntaxException
@@ -41,7 +43,6 @@ import java.util.logging.Level
  * Important: To use recurrence exceptions, you MUST set _SYNC_ID and ORIGINAL_SYNC_ID
  * in populateEvent() / buildEvent. Setting _ID and ORIGINAL_ID is not sufficient.
  */
-// TODO @ToString(of={ "id", "event" }, doNotUseGetters=true)
 abstract class AndroidEvent(
         val calendar: AndroidCalendar<AndroidEvent>
 ) {
@@ -167,7 +168,7 @@ abstract class AndroidEvent(
             val strRDate = row.getAsString(Events.RDATE)
             if (!strRDate.isNullOrEmpty()) {
                 val rDate = DateUtils.androidStringToRecurrenceSet(strRDate, RDate::class.java, allDay)
-                event.rDates.add(rDate)
+                event.rDates += rDate
             }
 
             val strExRule = row.getAsString(Events.EXRULE)
@@ -180,7 +181,7 @@ abstract class AndroidEvent(
             val strExDate = row.getAsString(Events.EXDATE)
             if (!strExDate.isNullOrEmpty()) {
                 val exDate = DateUtils.androidStringToRecurrenceSet(strExDate, ExDate::class.java, allDay)
-                event.exDates.add(exDate)
+                event.exDates += exDate
             }
         } catch (e: ParseException) {
             Constants.log.log(Level.WARNING, "Couldn't parse recurrence rules, ignoring", e)
@@ -268,7 +269,7 @@ abstract class AndroidEvent(
                 Attendees.RELATIONSHIP_PERFORMER,
                 Attendees.RELATIONSHIP_SPEAKER -> {
                     params.add(if (type == Attendees.TYPE_REQUIRED) Role.REQ_PARTICIPANT else Role.OPT_PARTICIPANT)
-                    params.add(Rsvp (true))     // ask server to send invitations
+                    params.add(Rsvp(true))     // ask server to send invitations
                 }
                 else /* RELATIONSHIP_NONE */ ->
                     params.add(Role.NON_PARTICIPANT)
@@ -296,16 +297,16 @@ abstract class AndroidEvent(
         when (row.getAsInteger(Reminders.METHOD)) {
             Reminders.METHOD_ALARM,
             Reminders.METHOD_ALERT ->
-                props.add(Action.DISPLAY)
+                props += Action.DISPLAY
             Reminders.METHOD_EMAIL,
             Reminders.METHOD_SMS ->
-                props.add(Action.EMAIL)
+                props += Action.EMAIL
             else ->
                 // show alarm by default
-                props.add(Action.DISPLAY)
+                props += Action.DISPLAY
         }
-        props.add(Description(event.summary))
-        event.alarms.add(alarm)
+        props += Description(event.summary)
+        event.alarms += alarm
     }
 
     protected fun populateExtended(row: ContentValues) {
@@ -315,7 +316,7 @@ abstract class AndroidEvent(
             try {
                 ObjectInputStream(stream).use { stream ->
                     val property = stream.readObject() as Property
-                    event!!.unknownProperties.add(property)
+                    event!!.unknownProperties += property
                 }
             } catch(e: Exception) {
                 Constants.log.log(Level.WARNING, "Couldn't de-serialize unknown property", e)
@@ -331,8 +332,8 @@ abstract class AndroidEvent(
 
         calendar.provider.query(calendar.syncAdapterURI(Events.CONTENT_URI),
                 arrayOf(Events._ID),
-                Events.ORIGINAL_ID + "=?", arrayOf(id.toString()), null).use { c ->
-            while (c != null && c.moveToNext()) {
+                Events.ORIGINAL_ID + "=?", arrayOf(id.toString()), null)?.use { c ->
+            while (c.moveToNext()) {
                 val exceptionId = c.getLong(0)
                 try {
                     val exception = calendar.eventFactory.newInstance(calendar, exceptionId)
@@ -340,7 +341,7 @@ abstract class AndroidEvent(
                     // make sure that all components have the same ORGANIZER [RFC 6638 3.1]
                     val exceptionEvent = exception.event!!
                     exceptionEvent.organizer = event.organizer
-                    event.exceptions.add(exceptionEvent)
+                    event.exceptions += exceptionEvent
                 } catch (e: Exception) {
                     Constants.log.log(Level.WARNING, "Couldn't find exception details", e)
                 }
@@ -663,5 +664,8 @@ abstract class AndroidEvent(
         val id = requireNotNull(id)
         return calendar.syncAdapterURI(ContentUris.withAppendedId(Events.CONTENT_URI, id))
     }
+
+
+    override fun toString() = ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE)!!
 
 }

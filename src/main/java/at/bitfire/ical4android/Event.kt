@@ -26,7 +26,6 @@ import java.nio.charset.Charset
 import java.util.*
 import java.util.logging.Level
 
-//@ToString(of={"uid","dtStart","summary"})
 class Event: iCalendar() {
 
     // uid and sequence are inherited from iCalendar
@@ -107,7 +106,7 @@ class Event: iCalendar() {
                 if (vEvent.uid == null) {
                     val uid = Uid(UUID.randomUUID().toString())
                     Constants.log.warning("Found VEVENT without UID, using a random one: ${uid.value}")
-                    vEvent.properties.add(uid)
+                    vEvent.properties += uid
                 }
 
             Constants.log.fine("Assigning exceptions to master events")
@@ -149,7 +148,7 @@ class Event: iCalendar() {
                 exceptions[uid]?.let { eventExceptions ->
                     event.exceptions.addAll(eventExceptions.map { (_,it) -> fromVEvent(it) })
                 }
-                events.add(event)
+                events += event
             }
 
             return events.toTypedArray()
@@ -173,9 +172,9 @@ class Event: iCalendar() {
                     is DtEnd -> e.dtEnd = prop
                     is Duration -> e.duration = prop
                     is RRule -> e.rRule = prop
-                    is RDate -> e.rDates.add(prop)
+                    is RDate -> e.rDates += prop
                     is ExRule -> e.exRule = prop
-                    is ExDate -> e.exDates.add(prop)
+                    is ExDate -> e.exDates += prop
                     is Summary -> e.summary = prop.value
                     is Location -> e.location = prop.value
                     is Description -> e.description = prop.value
@@ -183,10 +182,10 @@ class Event: iCalendar() {
                     is Transp -> e.opaque = prop == Transp.OPAQUE
                     is Clazz -> e.forPublic = prop == Clazz.PUBLIC
                     is Organizer -> e.organizer = prop
-                    is Attendee -> e.attendees.add(prop)
+                    is Attendee -> e.attendees += prop
                     is LastModified -> e.lastModified = prop
                     is ProdId, is DtStamp -> { /* don't save those as unknown properties */ }
-                    else -> e.unknownProperties.add(prop)
+                    else -> e.unknownProperties += prop
                 }
 
             // calculate DtEnd from Duration
@@ -210,13 +209,13 @@ class Event: iCalendar() {
     @Throws(IOException::class)
     fun write(os: OutputStream) {
         val ical = Calendar()
-        ical.properties.add(Version.VERSION_2_0)
-        ical.properties.add(prodId)
+        ical.properties += Version.VERSION_2_0
+        ical.properties += prodId
 
         // "master event" (without exceptions)
         val components = ical.components
         val master = toVEvent(Uid(uid))
-        components.add(master)
+        components += master
 
         // remember used time zones
         val usedTimeZones = mutableSetOf<TimeZone>()
@@ -227,8 +226,7 @@ class Event: iCalendar() {
         for (exception in exceptions) {
             // create VEVENT for exception
             val vException = exception.toVEvent(master.uid)
-
-            components.add(vException)
+            components += vException
 
             // remember used time zones
             exception.dtStart?.timeZone?.let(usedTimeZones::add)
@@ -236,7 +234,7 @@ class Event: iCalendar() {
         }
 
         // add VTIMEZONE components
-        usedTimeZones.forEach { ical.components.add(it.vTimeZone) }
+        usedTimeZones.forEach { ical.components += it.vTimeZone }
 
         try {
             ical.validate()
@@ -251,11 +249,11 @@ class Event: iCalendar() {
         val event = VEvent()
         val props = event.properties
 
-        props.add(uid)
+        props += uid
         recurrenceId?.let(props::add)
-        sequence?.let { if (it != 0) props.add(Sequence(it)) }
+        sequence?.let { if (it != 0) props+= Sequence(it) }
 
-        props.add(dtStart)
+        props += dtStart
         dtEnd?.let(props::add)
         duration?.let(props::add)
 
@@ -264,18 +262,18 @@ class Event: iCalendar() {
         exRule?.let(props::add)
         props.addAll(exDates)
 
-        summary?.let { if (it.isNotEmpty()) props.add(Summary(it)) }
-        location?.let { if (it.isNotEmpty()) props.add(Location(it)) }
-        description?.let { if (it.isNotEmpty()) props.add(Description(it)) }
+        summary?.let { if (it.isNotEmpty()) props += Summary(it) }
+        location?.let { if (it.isNotEmpty()) props += Location(it) }
+        description?.let { if (it.isNotEmpty()) props += Description(it) }
 
         status?.let(props::add)
         if (!opaque)
-            props.add(Transp.TRANSPARENT)
+            props += Transp.TRANSPARENT
 
         organizer?.let(props::add)
         props.addAll(attendees)
 
-        forPublic?.let { props.add(if (it) Clazz.PUBLIC else Clazz.PRIVATE) }
+        forPublic?.let { props += if (it) Clazz.PUBLIC else Clazz.PRIVATE }
 
         lastModified?.let(props::add)
         props.addAll(unknownProperties)
@@ -284,10 +282,8 @@ class Event: iCalendar() {
         return event
     }
 
-    // TODO toString
 
-
-    // time helpers
+    // helpers
 
     fun isAllDay() = !isDateTime(dtStart)
 

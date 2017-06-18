@@ -82,7 +82,7 @@ public class AndroidEventTest extends InstrumentationTestCase {
         assertNotNull("Couldn't access calendar provider", provider);
 
         calendar = TestCalendar.findOrCreate(testAccount, provider);
-        assertNotNull("Coulnd't find/create test calendar", calendar);
+        assertNotNull("Couldn't find/create test calendar", calendar);
 
         calendarUri = ContentUris.withAppendedId(Calendars.CONTENT_URI, calendar.getId());
         Log.i(TAG, "Prepared test calendar " + calendarUri);

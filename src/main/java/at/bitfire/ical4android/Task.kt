@@ -27,7 +27,6 @@ import java.nio.charset.Charset
 import java.util.*
 import java.util.logging.Level
 
-// TODO @ToString(of={"uid","summary"})
 class Task: iCalendar() {
 
 	var createdAt: Long? = null
@@ -116,8 +115,8 @@ class Task: iCalendar() {
                     is Completed -> { t.completedAt = prop; validateTimeZone(t.completedAt) }
                     is PercentComplete -> t.percentComplete = prop.percentage
                     is RRule -> t.rRule = prop
-                    is RDate -> t.rDates.add(prop)
-                    is ExDate -> t.exDates.add(prop)
+                    is RDate -> t.rDates += prop
+                    is ExDate -> t.exDates += prop
                 }
 
             // there seem to be many invalid tasks out there because of some defect clients,
@@ -138,27 +137,27 @@ class Task: iCalendar() {
     @Throws(IOException::class)
 	fun write(os: OutputStream) {
 		val ical = net.fortuna.ical4j.model.Calendar()
-		ical.properties.add(Version.VERSION_2_0)
-		ical.properties.add(prodId)
+		ical.properties += Version.VERSION_2_0
+		ical.properties += prodId
 
 		val todo = VToDo()
-		ical.components.add(todo)
+		ical.components += todo
 		val props = todo.properties
 
-        uid?.let { props.add(Uid(it)) }
+        uid?.let { props += Uid(it) }
         if (sequence != null && sequence != 0)
-            props.add(Sequence(sequence as Int))
+            props += Sequence(sequence as Int)
 
-		createdAt?.let { props.add(Created(DateTime(it))) }
-        lastModified?.let { props.add(LastModified(DateTime(it))) }
+		createdAt?.let { props += Created(DateTime(it)) }
+        lastModified?.let { props += LastModified(DateTime(it)) }
 
-        summary?.let { props.add(Summary(it)) }
-        location?.let { props.add(Location(it)) }
+        summary?.let { props += Summary(it) }
+        location?.let { props += Location(it) }
         geoPosition?.let(props::add)
-        description?.let { props.add(Description(it)) }
+        description?.let { props += Description(it) }
 		url?.let {
             try {
-                props.add(Url(URI(it)))
+                props += Url(URI(it))
             } catch (e: URISyntaxException) {
                 Constants.log.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
             }
@@ -166,33 +165,33 @@ class Task: iCalendar() {
         organizer?.let(props::add)
 
 		if (priority != Priority.UNDEFINED.level)
-			props.add(Priority(priority))
+			props += Priority(priority)
         classification?.let(props::add)
         status?.let(props::add)
 
         rRule?.let(props::add)
-        rDates.forEach { props.add(it) }
-        exDates.forEach { props.add(it) }
+        rDates.forEach { props += it }
+        exDates.forEach { props += it }
 
 		// remember used time zones
 		val usedTimeZones = HashSet<TimeZone>()
 		due?.let {
-            props.add(it)
+            props += it
             it.timeZone?.let(usedTimeZones::add)
 		}
         duration?.let(props::add)
         dtStart?.let {
-            props.add(it)
+            props += it
             it.timeZone?.let(usedTimeZones::add)
         }
         completedAt?.let {
-            props.add(it)
+            props += it
             it.timeZone?.let(usedTimeZones::add)
         }
-		percentComplete?.let { props.add(PercentComplete(it)) }
+		percentComplete?.let { props += PercentComplete(it) }
 
 		// add VTIMEZONE components
-        usedTimeZones.forEach { ical.components.add(it.vTimeZone) }
+        usedTimeZones.forEach { ical.components += it.vTimeZone }
 
         try {
             ical.validate()

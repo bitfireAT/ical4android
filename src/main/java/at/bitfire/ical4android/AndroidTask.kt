@@ -20,6 +20,8 @@ import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.Dur
 import net.fortuna.ical4j.model.property.*
 import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.builder.ToStringBuilder
+import org.apache.commons.lang3.builder.ToStringStyle
 import org.dmfs.provider.tasks.TaskContract.Tasks
 import java.io.FileNotFoundException
 import java.net.URI
@@ -27,7 +29,6 @@ import java.net.URISyntaxException
 import java.text.ParseException
 import java.util.logging.Level
 
-// TODO @ToString(of={ "id", "task" }, doNotUseGetters=true)
 abstract class AndroidTask(
         val taskList: AndroidTaskList<AndroidTask>
 ) {
@@ -146,8 +147,8 @@ abstract class AndroidTask(
 
         values.getAsString(Tasks.DURATION)?.let { task.duration = Duration(Dur(it)) }
 
-        values.getAsString(Tasks.RDATE)?.let { task.rDates.add(DateUtils.androidStringToRecurrenceSet(it, RDate::class.java, allDay)) }
-        values.getAsString(Tasks.EXDATE)?.let { task.exDates.add(DateUtils.androidStringToRecurrenceSet(it, ExDate::class.java, allDay)) }
+        values.getAsString(Tasks.RDATE)?.let { task.rDates += DateUtils.androidStringToRecurrenceSet(it, RDate::class.java, allDay) }
+        values.getAsString(Tasks.EXDATE)?.let { task.exDates += DateUtils.androidStringToRecurrenceSet(it, ExDate::class.java, allDay) }
 
         values.getAsString(Tasks.RRULE)?.let { task.rRule = RRule(it) }
     }
@@ -264,5 +265,8 @@ abstract class AndroidTask(
         val id = requireNotNull(id)
         return taskList.syncAdapterURI(ContentUris.withAppendedId(taskList.provider.tasksUri(), id))
     }
+
+
+    override fun toString() = ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE)!!
 
 }

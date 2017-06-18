@@ -21,7 +21,7 @@ class BatchOperation(
     private lateinit var results: Array<ContentProviderResult?>
 
 
-    fun nextBackrefIdx()= queue.size
+    fun nextBackrefIdx() = queue.size
 
     fun enqueue(operation: Operation) = queue.add(operation)
 
@@ -38,7 +38,7 @@ class BatchOperation(
                 for (result in results.filterNotNull())
                     when {
                         result.count != null -> affected += result.count
-                        result.uri != null -> affected += 1
+                        result.uri != null   -> affected += 1
                     }
                 Constants.log.fine("… $affected record(s) affected")
 
@@ -94,17 +94,17 @@ class BatchOperation(
         for (op in queue.subList(start, end)) {
             val builder = op.builder
             op.backrefKey?.let { key ->
-                if (op.backrefIdx < start) {
+                if (op.backrefIdx < start)
                     // back reference is outside of the current batch
                     results[op.backrefIdx]?.let { result ->
                         builder.withValueBackReferences(null)
                                 .withValue(key, ContentUris.parseId(result.uri))
                     }
-                } else
+                else
                     // back reference is in current batch, apply offset
                     builder.withValueBackReference(key, op.backrefIdx - start)
             }
-            cpo.add(builder.build())
+            cpo += builder.build()
         }
         return cpo
     }

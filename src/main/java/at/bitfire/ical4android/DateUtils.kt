@@ -15,6 +15,8 @@ import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.DateListProperty
+import net.fortuna.ical4j.model.property.ExDate
+import net.fortuna.ical4j.model.property.RDate
 import org.apache.commons.lang3.StringUtils
 import java.io.StringReader
 import java.text.ParseException
@@ -104,11 +106,9 @@ object DateUtils {
             when (dateListProp.dates.type) {
                 Value.DATE_TIME -> {
                     // DATE-TIME values will be stored in UTC format for Android
-                    if (allDay) {
-                        val dateList = dateListProp.dates
-                        for (date in dateList)
-                            strDates.add(dateFormatUtcMidnight.format(date))
-                    } else {
+                    if (allDay)
+                        dateListProp.dates.mapTo(strDates) { dateFormatUtcMidnight.format(it) }
+                    else {
                         dateListProp.setUtc(true)
                         strDates.add(dateListProp.value)
                     }
@@ -126,7 +126,7 @@ object DateUtils {
      * constructed from these values.
      * @param dbStr     formatted string from Android calendar provider (RDATE/EXDATE field)
      *                  expected format: "[TZID;]date1,date2,date3" where date is "yyyymmddThhmmss[Z]"
-     * @param type      subclass of DateListProperty, e.g. RDate or ExDate
+     * @param type      subclass of DateListProperty, e.g. [RDate] or [ExDate]
      * @param allDay    true: list will contain DATE values; false: list will contain DATE_TIME values
      * @return          instance of "type" containing the parsed dates/times from the string
      * @throws ParseException

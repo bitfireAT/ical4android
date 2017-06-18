@@ -102,10 +102,9 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
                 val calendars = LinkedList<T>()
                 while (iterCalendars.hasNext()) {
                     val values = iterCalendars.next().entityValues
-
                     val calendar = factory.newInstance(account, provider, values.getAsLong(Calendars._ID))
                     calendar.populate(values)
-                    calendars.add(calendar)
+                    calendars += calendar
                 }
                 return calendars
             } catch(e: RemoteException) {
@@ -157,24 +156,22 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
         val where = "(${where ?: "1"}) AND " + Events.CALENDAR_ID + "=?"
         val whereArgs = (whereArgs ?: arrayOf()) + id.toString()
 
+        val events = LinkedList<T>()
         try {
             provider.query(
                     syncAdapterURI(Events.CONTENT_URI),
                     eventBaseInfoColumns(),
-                    where, whereArgs, null).use { cursor ->
-                val events = LinkedList<T>()
-                while (cursor != null && cursor.moveToNext()) {
+                    where, whereArgs, null)?.use { cursor ->
+                while (cursor.moveToNext()) {
                     val baseInfo = ContentValues(cursor.columnCount)
                     DatabaseUtils.cursorRowToContentValues(cursor, baseInfo)
-
-                    val event = eventFactory.newInstance(this, cursor.getLong(0), baseInfo)
-                    events.add(event)
+                    events += eventFactory.newInstance(this, baseInfo.getAsLong(Events._ID), baseInfo)
                 }
-                return events
             }
         } catch (e: RemoteException) {
             throw CalendarStorageException("Couldn't query calendar events", e)
         }
+        return events
     }
 
 

@@ -109,7 +109,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
                         DatabaseUtils.cursorRowToContentValues(cursor, values)
                         val taskList = factory.newInstance(account, provider, values.getAsLong(TaskLists._ID))
                         taskList.populate(values)
-                        taskLists.add(taskList)
+                        taskLists += taskList
                     }
                 }
             } catch(e: RemoteException) {
@@ -170,7 +170,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
                 while (cursor.moveToNext()) {
                     val baseInfo = ContentValues(cursor.getColumnCount())
                     DatabaseUtils.cursorRowToContentValues(cursor, baseInfo)
-                    tasks.add(taskFactory.newInstance(this, cursor.getLong(0), baseInfo))
+                    tasks += taskFactory.newInstance(this, cursor.getLong(0), baseInfo)
                 }
             }
         } catch (e: RemoteException) {

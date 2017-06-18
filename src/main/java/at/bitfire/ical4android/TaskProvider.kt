@@ -40,15 +40,15 @@ class TaskProvider private constructor(
         @SuppressLint("Recycle")
         @JvmStatic
         fun acquire(resolver: ContentResolver, name: TaskProvider.ProviderName): TaskProvider? {
-            try {
+            return try {
                 val client = resolver.acquireContentProviderClient(name.authority)
-                return if (client != null)
+                if (client != null)
                     TaskProvider(name, client)
                 else
                     null
             } catch(e: SecurityException) {
                 Constants.log.log(Level.WARNING, "Not allowed to access task provider", e);
-                return null
+                null
             }
         }
 
@@ -57,7 +57,7 @@ class TaskProvider private constructor(
 
     fun taskListsUri() = TaskContract.TaskLists.getContentUri(name.authority)!!
     fun tasksUri() = TaskContract.Tasks.getContentUri(name.authority)!!
-    fun alarmsUri() = TaskContract.Alarms.getContentUri(name.authority)!!
+    //fun alarmsUri() = TaskContract.Alarms.getContentUri(name.authority)!!
 
     override fun close() {
         if (Build.VERSION.SDK_INT >= 24)

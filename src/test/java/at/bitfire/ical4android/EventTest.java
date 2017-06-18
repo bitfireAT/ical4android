@@ -130,6 +130,15 @@ public class EventTest {
         assertEquals("http://www.tgbornheim.de/index.php?sessionid=&page=&id=&sportcentergroup=&day=6", e.getDescription());
     }
 
+    @Test
+    public void testToString() {
+        Event e = new Event();
+        e.setUid("SAMPLEUID");
+        String s = e.toString();
+        assertTrue(s.contains(Event.class.getSimpleName()));
+        assertTrue(s.contains("uid=SAMPLEUID"));
+    }
+
 
     /* internal tests */
 

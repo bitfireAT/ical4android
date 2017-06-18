@@ -19,6 +19,8 @@ import net.fortuna.ical4j.model.property.ProdId
 import net.fortuna.ical4j.util.CompatibilityHints
 import net.fortuna.ical4j.util.Strings
 import net.fortuna.ical4j.util.TimeZones
+import org.apache.commons.lang3.builder.ToStringBuilder
+import org.apache.commons.lang3.builder.ToStringStyle
 import java.io.StringReader
 import java.net.URISyntaxException
 import java.util.*
@@ -125,6 +127,9 @@ open class iCalendar {
     }
 
 
+    override fun toString() = ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE)!!
+
+
     // ical4j helpers and extensions
 
     /** EMAIL property for ATTENDEE properties, as used by iCloud:
@@ -142,8 +147,7 @@ open class iCalendar {
         var email: String? = null
         override fun getValue() = email
 
-        constructor(aValue: String)
-            : this()
+        constructor(aValue: String): this()
         {
             email = Strings.unquote(aValue)
         }
