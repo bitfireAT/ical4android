@@ -111,7 +111,7 @@ class Task: iCalendar() {
                     is Status -> t.status = prop
                     is Due -> { t.due = prop; validateTimeZone(t.due) }
                     is Duration -> t.duration = prop
-                    is DtStart -> { t.dtStart= prop; validateTimeZone(t.dtStart) }
+                    is DtStart -> { t.dtStart = prop; validateTimeZone(t.dtStart) }
                     is Completed -> { t.completedAt = prop; validateTimeZone(t.completedAt) }
                     is PercentComplete -> t.percentComplete = prop.percentage
                     is RRule -> t.rRule = prop
@@ -136,7 +136,7 @@ class Task: iCalendar() {
 
     @Throws(IOException::class)
 	fun write(os: OutputStream) {
-		val ical = net.fortuna.ical4j.model.Calendar()
+		val ical = Calendar()
 		ical.properties += Version.VERSION_2_0
 		ical.properties += prodId
 
@@ -145,15 +145,14 @@ class Task: iCalendar() {
 		val props = todo.properties
 
         uid?.let { props += Uid(it) }
-        if (sequence != null && sequence != 0)
-            props += Sequence(sequence as Int)
+        sequence?.let { if (it != 0) props += Sequence(sequence as Int) }
 
 		createdAt?.let { props += Created(DateTime(it)) }
         lastModified?.let { props += LastModified(DateTime(it)) }
 
         summary?.let { props += Summary(it) }
         location?.let { props += Location(it) }
-        geoPosition?.let(props::add)
+        geoPosition?.let { props += it }
         description?.let { props += Description(it) }
 		url?.let {
             try {
@@ -162,14 +161,14 @@ class Task: iCalendar() {
                 Constants.log.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
             }
         }
-        organizer?.let(props::add)
+        organizer?.let { props += it }
 
-		if (priority != Priority.UNDEFINED.level)
+        if (priority != Priority.UNDEFINED.level)
 			props += Priority(priority)
-        classification?.let(props::add)
-        status?.let(props::add)
+        classification?.let { props += it }
+        status?.let { props += it }
 
-        rRule?.let(props::add)
+        rRule?.let { props += it }
         rDates.forEach { props += it }
         exDates.forEach { props += it }
 
@@ -196,7 +195,7 @@ class Task: iCalendar() {
         try {
             ical.validate()
         } catch (e: ValidationException) {
-            Constants.log.log(Level.INFO, "VTODO validation result", e)
+            Constants.log.log(Level.WARNING, "VTODO validation result", e)
         }
 
         CalendarOutputter(false).output(ical, os)

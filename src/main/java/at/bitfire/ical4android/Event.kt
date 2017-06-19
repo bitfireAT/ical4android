@@ -239,7 +239,7 @@ class Event: iCalendar() {
         try {
             ical.validate()
         } catch (e: ValidationException) {
-            Constants.log.log(Level.INFO, "VEVENT validation result", e);
+            Constants.log.log(Level.WARNING, "VEVENT validation result", e);
         }
 
         CalendarOutputter(false).output(ical, os)
@@ -250,32 +250,32 @@ class Event: iCalendar() {
         val props = event.properties
 
         props += uid
-        recurrenceId?.let(props::add)
-        sequence?.let { if (it != 0) props+= Sequence(it) }
+        recurrenceId?.let { props += it }
+        sequence?.let { if (it != 0) props += Sequence(it) }
 
         props += dtStart
-        dtEnd?.let(props::add)
-        duration?.let(props::add)
+        dtEnd?.let { props += it }
+        duration?.let { props += it }
 
-        rRule?.let(props::add)
+        rRule?.let { props += it }
         props.addAll(rDates)
-        exRule?.let(props::add)
+        exRule?.let { props += it }
         props.addAll(exDates)
 
         summary?.let { if (it.isNotEmpty()) props += Summary(it) }
         location?.let { if (it.isNotEmpty()) props += Location(it) }
         description?.let { if (it.isNotEmpty()) props += Description(it) }
 
-        status?.let(props::add)
+        status?.let { props += it }
         if (!opaque)
             props += Transp.TRANSPARENT
 
-        organizer?.let(props::add)
+        organizer?.let { props += it }
         props.addAll(attendees)
 
         forPublic?.let { props += if (it) Clazz.PUBLIC else Clazz.PRIVATE }
 
-        lastModified?.let(props::add)
+        lastModified?.let { props += it }
         props.addAll(unknownProperties)
 
         event.alarms.addAll(alarms)
