@@ -84,9 +84,9 @@ class Event: iCalendar() {
             var ical = Calendar()
             try {
                 if (charset != null)
-                    InputStreamReader(stream, charset).use { ical = calendarBuilder.build(it) }
+                    InputStreamReader(stream, charset).use { ical = calendarBuilder().build(it) }
                 else
-                    ical = calendarBuilder.build(stream)
+                    ical = calendarBuilder().build(stream)
             } catch (e: ParserException) {
                 throw InvalidCalendarException("Couldn't parse iCalendar resource", e)
             }
@@ -236,12 +236,6 @@ class Event: iCalendar() {
         // add VTIMEZONE components
         usedTimeZones.forEach { ical.components += it.vTimeZone }
 
-        try {
-            ical.validate()
-        } catch (e: ValidationException) {
-            Constants.log.log(Level.WARNING, "VEVENT validation result", e);
-        }
-
         CalendarOutputter(false).output(ical, os)
     }
 
@@ -262,9 +256,9 @@ class Event: iCalendar() {
         exRule?.let { props += it }
         props.addAll(exDates)
 
-        summary?.let { if (it.isNotEmpty()) props += Summary(it) }
-        location?.let { if (it.isNotEmpty()) props += Location(it) }
-        description?.let { if (it.isNotEmpty()) props += Description(it) }
+        summary?.let { props += Summary(it) }
+        location?.let { props += Location(it) }
+        description?.let { props += Description(it) }
 
         status?.let { props += it }
         if (!opaque)

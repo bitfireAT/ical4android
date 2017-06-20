@@ -36,8 +36,8 @@ abstract class AndroidTaskList<out T: AndroidTask>(
     var syncId: String? = null
     var name: String? = null
     var color: Int? = null
-    var isSynced = true
-    var isVisible = true
+    var isSynced = false
+    var isVisible = false
 
     /** Those columns will always be fetched when tasks are queried by {@link #queryTasks(String, String[])}.
      *  Must include Tasks._ID as the first element! */
@@ -131,10 +131,8 @@ abstract class AndroidTaskList<out T: AndroidTask>(
         syncId = values.getAsString(TaskLists._SYNC_ID)
         name = values.getAsString(TaskLists.LIST_NAME)
         color = values.getAsInteger(TaskLists.LIST_COLOR)
-        if (values.containsKey(TaskLists.SYNC_ENABLED))
-            isSynced = values.getAsInteger(TaskLists.SYNC_ENABLED) != 0
-        if (values.containsKey(TaskLists.VISIBLE))
-            isVisible = values.getAsInteger(TaskLists.VISIBLE) != 0
+        values.getAsInteger(TaskLists.SYNC_ENABLED)?.let { isSynced = it != 0 }
+        values.getAsInteger(TaskLists.VISIBLE)?.let { isVisible = it != 0 }
     }
 
     @Throws(CalendarStorageException::class)

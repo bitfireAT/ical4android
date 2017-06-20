@@ -49,7 +49,7 @@ open class iCalendar {
         }
 
         @JvmStatic
-        protected val calendarBuilder = CalendarBuilder(
+        protected fun calendarBuilder() = CalendarBuilder(
                 CalendarParserFactory.getInstance().createParser(),
                 PropertyFactoryRegistry(), parameterFactoryRegistry, DateUtils.tzRegistry)
 
@@ -127,7 +127,7 @@ open class iCalendar {
     }
 
 
-    override fun toString() = ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE)!!
+    override fun toString() = MiscUtils.reflectionToString(this)
 
 
     // ical4j helpers and extensions

@@ -47,7 +47,6 @@ android {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
 
-    compile 'org.apache.commons:commons-lang3:3.5'
     compile('org.mnode.ical4j:ical4j:2.0.0') {
         // we don't need content builders, see https://github.com/ical4j/ical4j/wiki/Groovy
         exclude group: 'org.codehaus.groovy', module: 'groovy-all'

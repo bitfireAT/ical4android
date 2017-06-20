@@ -19,7 +19,6 @@ import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.Dur
 import net.fortuna.ical4j.model.property.*
-import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.apache.commons.lang3.builder.ToStringStyle
 import org.dmfs.provider.tasks.TaskContract.Tasks
@@ -77,14 +76,17 @@ abstract class AndroidTask(
     @Throws(FileNotFoundException::class, RemoteException::class, ParseException::class)
     protected open fun populateTask(values: ContentValues) {
         val task = requireNotNull(task)
+
+        MiscUtils.removeEmptyStrings(values)
+
         task.uid = values.getAsString(Tasks._UID)
         task.summary = values.getAsString(Tasks.TITLE)
         task.location = values.getAsString(Tasks.LOCATION)
 
         values.getAsString(Tasks.GEO)?.let { task.geoPosition = Geo(it) }
 
-        task.description = StringUtils.stripToNull(values.getAsString(Tasks.DESCRIPTION))
-        task.url = StringUtils.stripToNull(values.getAsString(Tasks.URL))
+        task.description = values.getAsString(Tasks.DESCRIPTION)
+        task.url = values.getAsString(Tasks.URL)
 
         values.getAsString(Tasks.ORGANIZER)?.let {
             try {
@@ -98,8 +100,9 @@ abstract class AndroidTask(
 
         task.classification = when (values.getAsInteger(Tasks.CLASSIFICATION)) {
             Tasks.CLASSIFICATION_PUBLIC ->       Clazz.PUBLIC
+            Tasks.CLASSIFICATION_PRIVATE ->      Clazz.PRIVATE
             Tasks.CLASSIFICATION_CONFIDENTIAL -> Clazz.CONFIDENTIAL
-            else ->                              Clazz.PRIVATE
+            else ->                              null
         }
 
         values.getAsLong(Tasks.COMPLETED)?.let { task.completedAt = Completed(DateTime(it)) }
@@ -267,6 +270,6 @@ abstract class AndroidTask(
     }
 
 
-    override fun toString() = ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE)!!
+    override fun toString() = MiscUtils.reflectionToString(this)
 
 }

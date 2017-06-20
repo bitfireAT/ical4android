@@ -122,11 +122,14 @@ abstract class AndroidEvent(
     @Throws(FileNotFoundException::class, CalendarStorageException::class)
     protected open fun populateEvent(row: ContentValues) {
         val event = requireNotNull(event)
+
+        MiscUtils.removeEmptyStrings(row)
+
         event.summary = row.getAsString(Events.TITLE)
         event.location = row.getAsString(Events.EVENT_LOCATION)
         event.description = row.getAsString(Events.DESCRIPTION)
 
-        val allDay = row.getAsInteger(Events.ALL_DAY) != 0
+        val allDay = (row.getAsInteger(Events.ALL_DAY) ?: 0) != 0
         val tsStart = row.getAsLong(Events.DTSTART)
         val tsEnd = row.getAsLong(Events.DTEND)
         val duration = row.getAsString(Events.DURATION)
@@ -161,26 +164,19 @@ abstract class AndroidEvent(
 
         // recurrence
         try {
-            val strRRule = row.getAsString(Events.RRULE)
-            if (!strRRule.isNullOrEmpty())
-                event.rRule = RRule(strRRule)
-
-            val strRDate = row.getAsString(Events.RDATE)
-            if (!strRDate.isNullOrEmpty()) {
-                val rDate = DateUtils.androidStringToRecurrenceSet(strRDate, RDate::class.java, allDay)
+            row.getAsString(Events.RRULE)?.let { event.rRule = RRule(it) }
+            row.getAsString(Events.RDATE)?.let {
+                val rDate = DateUtils.androidStringToRecurrenceSet(it, RDate::class.java, allDay)
                 event.rDates += rDate
             }
 
-            val strExRule = row.getAsString(Events.EXRULE)
-            if (!strExRule.isNullOrEmpty()) {
+            row.getAsString(Events.EXRULE)?.let {
                 val exRule = ExRule()
-                exRule.value = strExRule
+                exRule.value = it
                 event.exRule = exRule
             }
-
-            val strExDate = row.getAsString(Events.EXDATE)
-            if (!strExDate.isNullOrEmpty()) {
-                val exDate = DateUtils.androidStringToRecurrenceSet(strExDate, ExDate::class.java, allDay)
+            row.getAsString(Events.EXDATE)?.let {
+                val exDate = DateUtils.androidStringToRecurrenceSet(it, ExDate::class.java, allDay)
                 event.exDates += exDate
             }
         } catch (e: ParseException) {
@@ -216,10 +212,7 @@ abstract class AndroidEvent(
         }
 
         // exceptions from recurring events
-        if (row.containsKey(Events.ORIGINAL_INSTANCE_TIME)) {
-            // this event is an exception of a recurring event
-            val originalInstanceTime = row.getAsLong(Events.ORIGINAL_INSTANCE_TIME)
-
+        row.getAsLong(Events.ORIGINAL_INSTANCE_TIME)?.let { originalInstanceTime ->
             var originalAllDay = false
             row.getAsInteger(Events.ORIGINAL_ALL_DAY)?.let { originalAllDay = it != 0 }
 
@@ -233,6 +226,8 @@ abstract class AndroidEvent(
     }
 
     protected fun populateAttendee(row: ContentValues) {
+        MiscUtils.removeEmptyStrings(row)
+
         try {
             val attendee: Attendee
             val email = row.getAsString(Attendees.ATTENDEE_EMAIL)
@@ -574,7 +569,7 @@ abstract class AndroidEvent(
         builder .withValue(Reminders.METHOD, method)
                 .withValue(Reminders.MINUTES, minutes)
 
-        Constants.log.fine("Adding alarm $minutes minutes before event, method: $method")
+        Constants.log.log(Level.FINE, "Built alarm $minutes minutes before event", builder.build())
         batch.enqueue(BatchOperation.Operation(builder, Reminders.EVENT_ID, idxEvent))
     }
 
@@ -632,6 +627,7 @@ abstract class AndroidEvent(
         builder .withValue(Attendees.ATTENDEE_TYPE, type)
                 .withValue(Attendees.ATTENDEE_STATUS, status)
 
+        Constants.log.log(Level.FINE, "Built attendee", builder.build())
         batch.enqueue(BatchOperation.Operation(builder, Attendees.EVENT_ID, idxEvent))
     }
 
@@ -666,6 +662,6 @@ abstract class AndroidEvent(
     }
 
 
-    override fun toString() = ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE)!!
+    override fun toString() = MiscUtils.reflectionToString(this)
 
 }

@@ -5,6 +5,7 @@
  * which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/gpl.html
  */
+
 package at.bitfire.ical4android
 
 import android.accounts.Account

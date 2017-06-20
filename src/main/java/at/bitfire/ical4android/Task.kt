@@ -70,9 +70,9 @@ class Task: iCalendar() {
             var ical = Calendar()
             try {
                 if (charset != null)
-                    InputStreamReader(stream, charset).use { ical = calendarBuilder.build(it) }
+                    InputStreamReader(stream, charset).use { ical = calendarBuilder().build(it) }
                 else
-                    ical = calendarBuilder.build(stream)
+                    ical = calendarBuilder().build(stream)
             } catch (e: ParserException) {
                 throw InvalidCalendarException("Couldn't parse iCalendar resource", e)
             }
@@ -191,12 +191,6 @@ class Task: iCalendar() {
 
 		// add VTIMEZONE components
         usedTimeZones.forEach { ical.components += it.vTimeZone }
-
-        try {
-            ical.validate()
-        } catch (e: ValidationException) {
-            Constants.log.log(Level.WARNING, "VTODO validation result", e)
-        }
 
         CalendarOutputter(false).output(ical, os)
 	}
