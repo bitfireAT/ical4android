@@ -18,6 +18,7 @@ object MiscUtils {
      * Removes empty [String] values from [values].
      * @param values set of values to be processed
      */
+    @JvmStatic
     fun removeEmptyStrings(values: ContentValues) {
         val it = values.keySet().iterator()
         while (it.hasNext()) {
@@ -27,6 +28,7 @@ object MiscUtils {
         }
     }
 
+    @JvmStatic
     fun reflectionToString(obj: Any): String {
         val s = LinkedList<String>()
         var clazz: Class<in Any>? = obj.javaClass

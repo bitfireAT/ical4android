@@ -55,7 +55,6 @@ abstract class AndroidTaskList<out T: AndroidTask>(
         @JvmStatic
         fun acquireTaskProvider(resolver: ContentResolver): TaskProvider? {
             val byPriority = arrayOf(
-                //TaskProvider.ProviderName.Mirakel,
                 TaskProvider.ProviderName.OpenTasks
             )
             for (name in byPriority)
@@ -85,7 +84,6 @@ abstract class AndroidTaskList<out T: AndroidTask>(
                 provider.client.query(syncAdapterURI(ContentUris.withAppendedId(provider.taskListsUri(), id), account), null, null, null, null)?.use { cursor ->
                     if (cursor.moveToNext()) {
                         val taskList = factory.newInstance(account, provider, id)
-
                         val values = ContentValues(cursor.columnCount)
                         DatabaseUtils.cursorRowToContentValues(cursor, values)
                         taskList.populate(values)
@@ -166,7 +164,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
                     taskBaseInfoColumns(),
                     where, whereArgs, null)?.use { cursor ->
                 while (cursor.moveToNext()) {
-                    val baseInfo = ContentValues(cursor.getColumnCount())
+                    val baseInfo = ContentValues(cursor.columnCount)
                     DatabaseUtils.cursorRowToContentValues(cursor, baseInfo)
                     tasks += taskFactory.newInstance(this, cursor.getLong(0), baseInfo)
                 }

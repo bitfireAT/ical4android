@@ -59,7 +59,7 @@ abstract class AndroidTask(
             task = Task()
             taskList.provider.client.query(taskSyncURI(), null, null, null, null)?.use { cursor ->
                 if (cursor.moveToFirst()) {
-                    val values = ContentValues(cursor.getColumnCount())
+                    val values = ContentValues(cursor.columnCount)
                     DatabaseUtils.cursorRowToContentValues(cursor, values)
                     populateTask(values)
                     return task
