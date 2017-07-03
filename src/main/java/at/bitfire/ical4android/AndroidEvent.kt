@@ -14,7 +14,6 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.content.EntityIterator
 import android.net.Uri
-import android.os.Build
 import android.os.RemoteException
 import android.provider.CalendarContract
 import android.provider.CalendarContract.*
@@ -26,8 +25,6 @@ import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
 import net.fortuna.ical4j.util.TimeZones
-import org.apache.commons.lang3.builder.ToStringBuilder
-import org.apache.commons.lang3.builder.ToStringStyle
 import java.io.*
 import java.net.URI
 import java.net.URISyntaxException
@@ -231,15 +228,8 @@ abstract class AndroidEvent(
         try {
             val attendee: Attendee
             val email = row.getAsString(Attendees.ATTENDEE_EMAIL)
-            val idNS: String?
-            val id: String?
-            if (Build.VERSION.SDK_INT >= 16) {
-                idNS = row.getAsString(Attendees.ATTENDEE_ID_NAMESPACE)
-                id = row.getAsString(Attendees.ATTENDEE_IDENTITY)
-            } else {
-                idNS = null
-                id = null
-            }
+            val idNS = row.getAsString(Attendees.ATTENDEE_ID_NAMESPACE)
+            val id = row.getAsString(Attendees.ATTENDEE_IDENTITY)
 
             if (idNS != null || id != null) {
                 // attendee identified by namespace and ID
@@ -580,7 +570,7 @@ abstract class AndroidEvent(
         if (member.scheme.equals("mailto", true))
             // attendee identified by email
             builder.withValue(Attendees.ATTENDEE_EMAIL, member.schemeSpecificPart)
-        else if (Build.VERSION.SDK_INT >= 16) {
+        else {
             // attendee identified by other URI
             builder .withValue(Attendees.ATTENDEE_ID_NAMESPACE, member.scheme)
                     .withValue(Attendees.ATTENDEE_IDENTITY, member.schemeSpecificPart)
@@ -595,7 +585,7 @@ abstract class AndroidEvent(
 
         var type = Attendees.TYPE_NONE
         val cutype = attendee.getParameter(Parameter.CUTYPE) as CuType?
-        if (cutype in arrayOf(CuType.RESOURCE, CuType.ROOM) && Build.VERSION.SDK_INT >= 16)
+        if (cutype in arrayOf(CuType.RESOURCE, CuType.ROOM))
             // "attendee" is a (physical) resource
             type = Attendees.TYPE_RESOURCE
         else {
