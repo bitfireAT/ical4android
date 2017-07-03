@@ -14,7 +14,6 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.database.DatabaseUtils
 import android.net.Uri
-import android.os.RemoteException
 import org.dmfs.provider.tasks.TaskContract
 import org.dmfs.provider.tasks.TaskContract.TaskLists
 import org.dmfs.provider.tasks.TaskContract.Tasks
@@ -72,7 +71,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
             Constants.log.info("Creating local task list: " + info.toString())
             try {
                 return provider.client.insert(syncAdapterURI(provider.taskListsUri(), account), info)
-            } catch(e: RemoteException) {
+            } catch(e: Exception) {
                 throw CalendarStorageException("Couldn't create local task list", e)
             }
         }
@@ -90,7 +89,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
                         return taskList
                     }
                 }
-            } catch(e: RemoteException) {
+            } catch(e: Exception) {
                 throw CalendarStorageException("Couldn't query task list by ID", e)
             }
             throw FileNotFoundException()
@@ -110,7 +109,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
                         taskLists += taskList
                     }
                 }
-            } catch(e: RemoteException) {
+            } catch(e: Exception) {
                 throw CalendarStorageException("Couldn't query task list by ID", e)
             }
             return taskLists
@@ -137,7 +136,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
     fun update(info: ContentValues): Int {
         try {
             return provider.client.update(taskListSyncUri(), info, null, null)
-        } catch (e: RemoteException) {
+        } catch (e: Exception) {
             throw CalendarStorageException("Couldn't update local task list", e)
         }
     }
@@ -146,7 +145,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
     fun delete(): Int {
         try {
             return provider.client.delete(taskListSyncUri(), null, null)
-        } catch (e: RemoteException) {
+        } catch (e: Exception) {
             throw CalendarStorageException("Couldn't delete local task list", e)
         }
     }
@@ -169,7 +168,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
                     tasks += taskFactory.newInstance(this, cursor.getLong(0), baseInfo)
                 }
             }
-        } catch (e: RemoteException) {
+        } catch (e: Exception) {
             throw CalendarStorageException("Couldn't query calendar events", e)
         }
         return tasks
