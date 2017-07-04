@@ -19,8 +19,7 @@ import net.fortuna.ical4j.model.property.ProdId
 import net.fortuna.ical4j.util.CompatibilityHints
 import net.fortuna.ical4j.util.Strings
 import net.fortuna.ical4j.util.TimeZones
-import org.apache.commons.lang3.builder.ToStringBuilder
-import org.apache.commons.lang3.builder.ToStringStyle
+import org.apache.log4j.Logger
 import java.io.StringReader
 import java.net.URISyntaxException
 import java.util.*
@@ -35,6 +34,9 @@ open class iCalendar {
     companion object {
         // static ical4j initialization
         init {
+            Logger.getRootLogger().addAppender(AndroidAppender())
+
+            Constants.log.info("Enabling ical4j releaxed unfolding, relaxed parsing, Outlook compatibility")
             CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_RELAXED_UNFOLDING, true)
             CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_RELAXED_PARSING, true)
             CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_OUTLOOK_COMPATIBILITY, true)

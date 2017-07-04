@@ -16,7 +16,6 @@ import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.property.*
-import net.fortuna.ical4j.validate.ValidationException
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader

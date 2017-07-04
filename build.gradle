@@ -38,20 +38,19 @@ android {
         disable 'InvalidPackage'
     }
     packagingOptions {
-        exclude 'LICENSE'
-        exclude 'META-INF/LICENSE.txt'
-        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/LICENSE'
     }
 }
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
 
-    compile('org.mnode.ical4j:ical4j:2.0.0') {
+    //compile('org.mnode.ical4j:ical4j:2.0.0') {
+    compile('net.oneandone.ical4j:ical4j:2.0.4') {
         // we don't need content builders, see https://github.com/ical4j/ical4j/wiki/Groovy
         exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }
-    compile 'org.slf4j:slf4j-jdk14:1.7.25'        // used by ical4j
 
     androidTestCompile 'com.android.support:support-annotations:26.+'
     androidTestCompile 'org.projectlombok:lombok:1.16.16'

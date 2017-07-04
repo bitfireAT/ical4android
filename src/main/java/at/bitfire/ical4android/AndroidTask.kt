@@ -19,8 +19,6 @@ import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.Dur
 import net.fortuna.ical4j.model.property.*
-import org.apache.commons.lang3.builder.ToStringBuilder
-import org.apache.commons.lang3.builder.ToStringStyle
 import org.dmfs.provider.tasks.TaskContract.Tasks
 import java.io.FileNotFoundException
 import java.net.URI

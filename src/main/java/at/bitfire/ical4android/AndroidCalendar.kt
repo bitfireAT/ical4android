@@ -18,7 +18,6 @@ import android.net.Uri
 import android.os.RemoteException
 import android.provider.CalendarContract
 import android.provider.CalendarContract.*
-import org.apache.commons.lang3.ArrayUtils
 import java.io.FileNotFoundException
 import java.util.*
 
