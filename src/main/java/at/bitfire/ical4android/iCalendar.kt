@@ -27,18 +27,19 @@ import java.util.*
 import java.util.logging.Level
 
 open class iCalendar {
-    // static ical4j initialization
-    init {
-        CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_RELAXED_UNFOLDING, true)
-        CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_RELAXED_PARSING, true)
-        CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_OUTLOOK_COMPATIBILITY, true)
-    }
 
     var uid: String? = null
     var sequence: Int? = null
 
 
     companion object {
+        // static ical4j initialization
+        init {
+            CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_RELAXED_UNFOLDING, true)
+            CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_RELAXED_PARSING, true)
+            CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_OUTLOOK_COMPATIBILITY, true)
+        }
+
         @JvmStatic
         var prodId = ProdId("+//IDN bitfire.at//ical4android")
 

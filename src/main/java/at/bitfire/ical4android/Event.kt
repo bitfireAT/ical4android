@@ -78,7 +78,7 @@ class Event: iCalendar() {
         @JvmOverloads
         @Throws(IOException::class, InvalidCalendarException::class)
         fun fromStream(stream: InputStream, charset: Charset?, properties: MutableMap<String, String>? = null): Array<Event> {
-            Constants.log.fine("Parsing iCalendar stream")
+            Constants.log.fine("Parsing iCalendar stream (${charset ?: "default"} charset)")
 
             // parse stream
             var ical = Calendar()
