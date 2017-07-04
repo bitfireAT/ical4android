@@ -120,6 +120,7 @@ abstract class AndroidEvent(
     protected open fun populateEvent(row: ContentValues) {
         val event = requireNotNull(event)
 
+        Constants.log.log(Level.FINE, "Read event entity from calender provider", row)
         MiscUtils.removeEmptyStrings(row)
 
         event.summary = row.getAsString(Events.TITLE)
@@ -223,6 +224,7 @@ abstract class AndroidEvent(
     }
 
     protected fun populateAttendee(row: ContentValues) {
+        Constants.log.log(Level.FINE, "Read event attendee from calender provider", row)
         MiscUtils.removeEmptyStrings(row)
 
         try {
@@ -275,6 +277,8 @@ abstract class AndroidEvent(
     }
 
     protected fun populateReminder(row: ContentValues) {
+        Constants.log.log(Level.FINE, "Read event reminder from calender provider", row)
+
         val event = requireNotNull(event)
         val alarm = VAlarm(Dur(0, 0, -row.getAsInteger(Reminders.MINUTES), 0))
 
@@ -295,6 +299,8 @@ abstract class AndroidEvent(
     }
 
     protected fun populateExtended(row: ContentValues) {
+        Constants.log.log(Level.FINE, "Read extended property from calender provider", row.getAsString(ExtendedProperties.NAME))
+
         if (row.getAsString(ExtendedProperties.NAME) == EXT_UNKNOWN_PROPERTY) {
             // de-serialize unknown property
             val stream = ByteArrayInputStream(Base64.decode(row.getAsString(ExtendedProperties.VALUE), Base64.NO_WRAP))
