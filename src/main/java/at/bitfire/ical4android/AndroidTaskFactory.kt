@@ -12,7 +12,7 @@ import android.content.ContentValues
 
 interface AndroidTaskFactory<out T: AndroidTask> {
 
-    fun newInstance(calendar: AndroidTaskList<AndroidTask>, id: Long, baseInfo: ContentValues): T
+    fun newInstance(calendar: AndroidTaskList<AndroidTask>, id: Long, baseInfo: ContentValues?): T
     fun newInstance(calendar: AndroidTaskList<AndroidTask>, task: Task): T
 
 }

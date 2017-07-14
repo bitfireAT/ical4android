@@ -63,15 +63,13 @@ abstract class AndroidTask(
                     return task
                 }
             }
-        } catch(e: RemoteException) {
+        } catch(e: Exception) {
             throw CalendarStorageException("Couldn't read locally stored event", e)
-        } catch(e: ParseException) {
-            throw CalendarStorageException("Couldn't parse locally stored event", e)
         }
         throw FileNotFoundException("Couldn't find task #" + id)
     }
 
-    @Throws(FileNotFoundException::class, RemoteException::class, ParseException::class)
+    @Throws(ParseException::class)
     protected open fun populateTask(values: ContentValues) {
         val task = requireNotNull(task)
 
@@ -188,6 +186,7 @@ abstract class AndroidTask(
         }
     }
 
+    @Throws(FileNotFoundException::class, CalendarStorageException::class)
     protected open fun buildTask(builder: Builder, update: Boolean) {
         if (!update)
             builder .withValue(Tasks.LIST_ID, taskList.id)
