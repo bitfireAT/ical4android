@@ -9,6 +9,7 @@
 package at.bitfire.ical4android
 
 import android.accounts.Account
+import android.annotation.SuppressLint
 import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.ContentValues
@@ -69,15 +70,12 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
         @JvmStatic
         @Throws(FileNotFoundException::class, CalendarStorageException::class)
         fun<T: AndroidCalendar<AndroidEvent>> findByID(account: Account, provider: ContentProviderClient, factory: AndroidCalendarFactory<T>, id: Long): T {
-            var iterCalendars: EntityIterator? = null
+            val iterCalendars = CalendarContract.CalendarEntity.newEntityIterator(
+                    provider.query(syncAdapterURI(ContentUris.withAppendedId(CalendarContract.CalendarEntity.CONTENT_URI, id), account), null, null, null, null)
+            )
             try {
-                iterCalendars = CalendarContract.CalendarEntity.newEntityIterator(
-                        provider.query(syncAdapterURI(ContentUris.withAppendedId(CalendarContract.CalendarEntity.CONTENT_URI, id), account), null, null, null, null)
-                )
-
                 if (iterCalendars.hasNext()) {
                     val values = iterCalendars.next().entityValues
-
                     val calendar = factory.newInstance(account, provider, id)
                     calendar.populate(values)
                     return calendar
@@ -85,20 +83,19 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             } catch(e: RemoteException) {
                 throw CalendarStorageException("Couldn't query calendars", e)
             } finally {
-                iterCalendars?.close()
+                iterCalendars.close()
             }
             throw FileNotFoundException()
         }
 
+        @SuppressLint("Recycle")
         @JvmStatic
         @Throws(CalendarStorageException::class)
         fun<T: AndroidCalendar<AndroidEvent>> find(account: Account, provider: ContentProviderClient, factory: AndroidCalendarFactory<T>, where: String?, whereArgs: Array<String>?): List<T> {
-            var iterCalendars: EntityIterator? = null
+            val iterCalendars = CalendarContract.CalendarEntity.newEntityIterator(
+                    provider.query(syncAdapterURI(CalendarContract.CalendarEntity.CONTENT_URI, account), null, where, whereArgs, null)
+            )
             try {
-                iterCalendars = CalendarContract.CalendarEntity.newEntityIterator(
-                        provider.query(syncAdapterURI(CalendarContract.CalendarEntity.CONTENT_URI, account), null, where, whereArgs, null)
-                )
-
                 val calendars = LinkedList<T>()
                 while (iterCalendars.hasNext()) {
                     val values = iterCalendars.next().entityValues
@@ -110,7 +107,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             } catch(e: RemoteException) {
                 throw CalendarStorageException("Couldn't query calendars", e)
             } finally {
-                iterCalendars?.close()
+                iterCalendars.close()
             }
         }
 
