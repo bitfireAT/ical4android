@@ -29,9 +29,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.text.ParseException;
 
+import kotlin.text.Charsets;
 import lombok.Cleanup;
 
 import static org.junit.Assert.assertEquals;
@@ -122,13 +124,13 @@ public class TaskTest {
     private Task parseCalendar(String fname, Charset charset) throws IOException, InvalidCalendarException {
         fname = "tasks/" + fname;
         @Cleanup InputStream is = getClass().getClassLoader().getResourceAsStream(fname);
-        return Task.fromStream(is, charset).get(0);
+        return Task.fromReader(new InputStreamReader(is, charset == null ? Charsets.UTF_8 : charset)).get(0);
     }
 
     private Task regenerate(Task t) throws IOException, InvalidCalendarException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         t.write(os);
-        return Task.fromStream(new ByteArrayInputStream(os.toByteArray()), null).get(0);
+        return Task.fromReader(new InputStreamReader(new ByteArrayInputStream(os.toByteArray()), Charsets.UTF_8)).get(0);
     }
     
 }

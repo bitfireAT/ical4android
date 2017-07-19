@@ -14,11 +14,14 @@ import org.junit.Test;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import kotlin.text.Charsets;
 import lombok.Cleanup;
 import lombok.NonNull;
 
@@ -37,7 +40,7 @@ public class EventTest {
         @Cleanup InputStream is = getClass().getClassLoader().getResourceAsStream("events/multiple.ics");
         assertNotNull(is);
         Map<String, String> properties = new HashMap<>();
-        Event.fromStream(is, null, properties);
+        Event.fromReader(new InputStreamReader(is, Charsets.UTF_8), properties);
         assertEquals(1, properties.size());
         assertEquals("Test-Kalender", properties.get(Event.CALENDAR_NAME));
     }
@@ -195,7 +198,8 @@ public class EventTest {
         System.err.println("Loading event file " + fname);
         @Cleanup InputStream is = getClass().getClassLoader().getResourceAsStream(fname);
         assertNotNull(is);
-        return Event.fromStream(is, charset);
+        List<Event> events = Event.fromReader(new InputStreamReader(is, charset == null ? Charsets.UTF_8 : charset));
+        return events.toArray(new Event[events.size()]);
     }
 
 }

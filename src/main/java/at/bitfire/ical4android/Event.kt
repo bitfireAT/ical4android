@@ -18,10 +18,8 @@ import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VEvent
 import net.fortuna.ical4j.model.property.*
 import java.io.IOException
-import java.io.InputStream
-import java.io.InputStreamReader
 import java.io.OutputStream
-import java.nio.charset.Charset
+import java.io.Reader
 import java.util.*
 
 class Event: iCalendar() {
@@ -65,8 +63,7 @@ class Event: iCalendar() {
         /**
          * Parses an InputStream that contains iCalendar VEVENTs.
          *
-         * @param stream        input stream containing the VEVENTs
-         * @param charset       charset of the input stream or null (will assume UTF-8)
+         * @param reader        reader for the input stream containing the VEVENTs (pay attention to the charset)
          * @param properties    map of properties, will be filled with CALENDAR_* values, if applicable (may be null)
          * @return              array of filled Event data objects (may have size 0) – doesn't return null
          * @throws IOException on I/O errors
@@ -75,16 +72,13 @@ class Event: iCalendar() {
         @JvmStatic
         @JvmOverloads
         @Throws(IOException::class, InvalidCalendarException::class)
-        fun fromStream(stream: InputStream, charset: Charset?, properties: MutableMap<String, String>? = null): Array<Event> {
-            Constants.log.fine("Parsing iCalendar stream (${charset ?: "default"} charset)")
+        fun fromReader(reader: Reader, properties: MutableMap<String, String>? = null): List<Event> {
+            Constants.log.fine("Parsing iCalendar stream")
 
             // parse stream
-            var ical = Calendar()
+            val ical: Calendar
             try {
-                if (charset != null)
-                    InputStreamReader(stream, charset).use { ical = calendarBuilder().build(it) }
-                else
-                    ical = calendarBuilder().build(stream)
+                ical = calendarBuilder().build(reader)
             } catch (e: ParserException) {
                 throw InvalidCalendarException("Couldn't parse iCalendar resource", e)
             }
@@ -149,7 +143,7 @@ class Event: iCalendar() {
                 events += event
             }
 
-            return events.toTypedArray()
+            return events
         }
 
 

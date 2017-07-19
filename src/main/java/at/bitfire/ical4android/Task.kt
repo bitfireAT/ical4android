@@ -17,12 +17,10 @@ import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.property.*
 import java.io.IOException
-import java.io.InputStream
-import java.io.InputStreamReader
 import java.io.OutputStream
+import java.io.Reader
 import java.net.URI
 import java.net.URISyntaxException
-import java.nio.charset.Charset
 import java.util.*
 import java.util.logging.Level
 
@@ -56,22 +54,18 @@ class Task: iCalendar() {
         /**
          * Parses an InputStream that contains iCalendar VTODOs.
          *
-         * @param stream  input stream containing the VTODOs
-         * @param charset charset of the input stream or null (will assume UTF-8)
+         * @param reader  reader for the input stream containing the VTODOs (pay attention to the charset)
          * @return array of filled Task data objects (may have size 0) – doesn't return null
          * @throws IOException
          * @throws InvalidCalendarException on parser exceptions
          */
         @JvmStatic
         @Throws(IOException::class, InvalidCalendarException::class)
-        fun fromStream(stream: InputStream, charset: Charset?): List<Task>
+        fun fromReader(reader: Reader): List<Task>
         {
-            var ical = Calendar()
+            val ical: Calendar
             try {
-                if (charset != null)
-                    InputStreamReader(stream, charset).use { ical = calendarBuilder().build(it) }
-                else
-                    ical = calendarBuilder().build(stream)
+                ical = calendarBuilder().build(reader)
             } catch (e: ParserException) {
                 throw InvalidCalendarException("Couldn't parse iCalendar resource", e)
             }

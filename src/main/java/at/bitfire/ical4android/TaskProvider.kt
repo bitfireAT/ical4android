@@ -25,7 +25,7 @@ class TaskProvider private constructor(
             val authority: String
     ) {
         //Mirakel("de.azapps.mirakel.provider"),
-        OpenTasks("org.dmfs.tasks");
+        OpenTasks("org.dmfs.tasks")
     }
 
     companion object {
@@ -47,10 +47,15 @@ class TaskProvider private constructor(
                 else
                     null
             } catch(e: SecurityException) {
-                Constants.log.log(Level.WARNING, "Not allowed to access task provider", e);
+                Constants.log.log(Level.WARNING, "Not allowed to access task provider", e)
                 null
             }
         }
+
+        @JvmStatic
+        fun fromProviderClient(client: ContentProviderClient) =
+                // at the moment, only OpenTasks is supported
+                TaskProvider(ProviderName.OpenTasks, client)
 
     }
 
@@ -63,6 +68,7 @@ class TaskProvider private constructor(
         if (Build.VERSION.SDK_INT >= 24)
             client.close()
         else
+            @Suppress("DEPRECATION")
             client.release()
     }
 
