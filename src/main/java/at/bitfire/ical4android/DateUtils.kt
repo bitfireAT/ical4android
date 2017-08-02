@@ -17,7 +17,6 @@ import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.DateListProperty
 import net.fortuna.ical4j.model.property.ExDate
 import net.fortuna.ical4j.model.property.RDate
-import org.apache.commons.lang3.StringUtils
 import java.io.StringReader
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -45,7 +44,7 @@ object DateUtils {
         // if that doesn't work, try to find something else that matches
         if (deviceTZ == null)
             for (availableTZ in availableTZs)
-                if (StringUtils.indexOfIgnoreCase(tzID, availableTZ) != -1) {
+                if (availableTZ.contains(tzID, true) || tzID.contains(availableTZ, true)) {
                     deviceTZ = availableTZ
                     Constants.log.warning("Couldn't find system time zone \"$tzID\", assuming $deviceTZ")
                     break
