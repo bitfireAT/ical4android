@@ -8,6 +8,7 @@
 
 package at.bitfire.ical4android
 
+import android.annotation.SuppressLint
 import android.content.ContentProviderOperation
 import android.content.ContentProviderOperation.Builder
 import android.content.ContentUris
@@ -70,6 +71,7 @@ abstract class AndroidEvent(
      * @throws FileNotFoundException if there's no event with [id] in the calendar storage
      * @throws CalendarStorageException on calendar storage I/O errors
      */
+    @SuppressLint("Recycle")
     @Throws(FileNotFoundException::class, CalendarStorageException::class)
     get() {
         if (field != null)
@@ -126,6 +128,14 @@ abstract class AndroidEvent(
         event.summary = row.getAsString(Events.TITLE)
         event.location = row.getAsString(Events.EVENT_LOCATION)
         event.description = row.getAsString(Events.DESCRIPTION)
+
+        row.getAsString(Events.CALENDAR_COLOR_KEY)?.let { name ->
+            try {
+                event.color = EventColor.valueOf(name)
+            } catch(e: IllegalArgumentException) {
+                Constants.log.warning("Ignoring unknown color $name from Calendar Provider")
+            }
+        }
 
         val allDay = (row.getAsInteger(Events.ALL_DAY) ?: 0) != 0
         val tsStart = row.getAsLong(Events.DTSTART)
@@ -517,6 +527,7 @@ abstract class AndroidEvent(
         event.summary?.let { builder.withValue(Events.TITLE, it) }
         event.location?.let { builder.withValue(Events.EVENT_LOCATION, it) }
         event.description?.let { builder.withValue(Events.DESCRIPTION, it) }
+        event.color?.let { builder.withValue(Events.EVENT_COLOR_KEY, it.name) }
 
         event.organizer?.let { organizer ->
             val email: String?

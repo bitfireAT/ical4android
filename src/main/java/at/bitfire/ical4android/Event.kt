@@ -30,6 +30,7 @@ class Event: iCalendar() {
     var summary: String? = null
     var location: String? = null
     var description: String? = null
+    var color: EventColor? = null
 
     var dtStart: DtStart? = null
     var dtEnd: DtEnd? = null
@@ -160,6 +161,10 @@ class Event: iCalendar() {
                     is Uid -> e.uid = prop.value
                     is RecurrenceId -> e.recurrenceId = prop
                     is Sequence -> e.sequence = prop.sequenceNo
+                    is Summary -> e.summary = prop.value
+                    is Location -> e.location = prop.value
+                    is Description -> e.description = prop.value
+                    is Color -> e.color = prop.value
                     is DtStart -> e.dtStart = prop
                     is DtEnd -> e.dtEnd = prop
                     is Duration -> e.duration = prop
@@ -167,12 +172,9 @@ class Event: iCalendar() {
                     is RDate -> e.rDates += prop
                     is ExRule -> e.exRule = prop
                     is ExDate -> e.exDates += prop
-                    is Summary -> e.summary = prop.value
-                    is Location -> e.location = prop.value
-                    is Description -> e.description = prop.value
+                    is Clazz -> e.forPublic = prop == Clazz.PUBLIC
                     is Status -> e.status = prop
                     is Transp -> e.opaque = prop == Transp.OPAQUE
-                    is Clazz -> e.forPublic = prop == Clazz.PUBLIC
                     is Organizer -> e.organizer = prop
                     is Attendee -> e.attendees += prop
                     is LastModified -> e.lastModified = prop
@@ -239,6 +241,11 @@ class Event: iCalendar() {
         recurrenceId?.let { props += it }
         sequence?.let { if (it != 0) props += Sequence(it) }
 
+        summary?.let { props += Summary(it) }
+        location?.let { props += Location(it) }
+        description?.let { props += Description(it) }
+        color?.let { props += Color(it) }
+
         props += dtStart
         dtEnd?.let { props += it }
         duration?.let { props += it }
@@ -247,10 +254,6 @@ class Event: iCalendar() {
         props.addAll(rDates)
         exRule?.let { props += it }
         props.addAll(exDates)
-
-        summary?.let { props += Summary(it) }
-        location?.let { props += Location(it) }
-        description?.let { props += Description(it) }
 
         status?.let { props += it }
         if (!opaque)

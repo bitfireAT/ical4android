@@ -13,7 +13,6 @@ import android.annotation.SuppressLint
 import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.ContentValues
-import android.content.EntityIterator
 import android.database.DatabaseUtils
 import android.net.Uri
 import android.os.RemoteException
@@ -67,6 +66,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             }
         }
 
+        @SuppressLint("Recycle")
         @JvmStatic
         @Throws(FileNotFoundException::class, CalendarStorageException::class)
         fun<T: AndroidCalendar<AndroidEvent>> findByID(account: Account, provider: ContentProviderClient, factory: AndroidCalendarFactory<T>, id: Long): T {

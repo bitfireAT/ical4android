@@ -42,19 +42,22 @@ open class iCalendar {
             CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_OUTLOOK_COMPATIBILITY, true)
         }
 
-        @JvmStatic
         var prodId = ProdId("+//IDN bitfire.at//ical4android")
 
-        @JvmStatic
         private val parameterFactoryRegistry = ParameterFactoryRegistry()
         init {
             parameterFactoryRegistry.register(Email.PARAMETER_NAME, Email.FACTORY)
         }
 
+        private val propertyFactoryRegistry = PropertyFactoryRegistry()
+        init {
+            propertyFactoryRegistry.register(Color.PROPERTY_NAME, Color.FACTORY)
+        }
+
         @JvmStatic
         protected fun calendarBuilder() = CalendarBuilder(
                 CalendarParserFactory.getInstance().createParser(),
-                PropertyFactoryRegistry(), parameterFactoryRegistry, DateUtils.tzRegistry)
+                propertyFactoryRegistry, parameterFactoryRegistry, DateUtils.tzRegistry)
 
 
         // time zone helpers
@@ -102,7 +105,7 @@ open class iCalendar {
                 val timezone = cal.getComponent(VTimeZone.VTIMEZONE) as VTimeZone?
                 timezone?.timeZoneId?.let { return it.value }
             } catch (e: ParserException) {
-                Constants.log.log(Level.SEVERE, "Can't understand time zone definition", e);
+                Constants.log.log(Level.SEVERE, "Can't understand time zone definition", e)
             }
             return null
         }
@@ -135,15 +138,47 @@ open class iCalendar {
 
     // ical4j helpers and extensions
 
-    /** EMAIL property for ATTENDEE properties, as used by iCloud:
+    /** COLOR property for VEVENT components [RFC 7986 5.9 COLOR] */
+    class Color(
+            var value: EventColor? = null
+    ): Property(PROPERTY_NAME, PropertyFactoryImpl.getInstance()) {
+        companion object {
+            val FACTORY = Factory()
+            val PROPERTY_NAME = "COLOR"
+        }
+
+        override fun getValue() = value?.name
+
+        override fun setValue(name: String?) {
+            name?.let {
+                try {
+                    value = EventColor.valueOf(name.toLowerCase())
+                } catch(e: IllegalArgumentException) {
+                    Constants.log.warning("Ignoring unknown COLOR $name")
+                }
+            }
+        }
+
+        class Factory: PropertyFactory<Color> {
+            override fun createProperty() = Color()
+
+            override fun createProperty(params: ParameterList?, value: String?): Color {
+                val c = Color()
+                c.setValue(value)
+                return c
+            }
+
+            override fun supports(property: String?) = property == PROPERTY_NAME
+        }
+
+    }
+
+    /** EMAIL parameter for ATTENDEE properties, as used by iCloud:
         ATTENDEE;EMAIL=bla@domain.tld;/path/to/principal
     */
     class Email(): Parameter(PARAMETER_NAME, ParameterFactoryImpl.getInstance()) {
-
         companion object {
             val FACTORY = Factory()
-
-            @JvmField
             val PARAMETER_NAME = "EMAIL"
         }
 
@@ -155,14 +190,11 @@ open class iCalendar {
             email = Strings.unquote(aValue)
         }
 
-
         class Factory: ParameterFactory<Email> {
-
             @Throws(URISyntaxException::class)
             override fun createParameter(value: String) = Email(value)
 
             override fun supports(name: String) = name == PARAMETER_NAME
-
         }
     }
 
