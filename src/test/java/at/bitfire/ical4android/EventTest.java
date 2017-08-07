@@ -77,6 +77,16 @@ public class EventTest {
     }
 
     @Test
+    public void testParseAndWrite() throws IOException, InvalidCalendarException {
+        Event event = parseCalendar("utf8.ics", null)[0];
+        assertEquals("utf8@ical4android.EventTest", event.getUid());
+        assertEquals("© äö — üß", event.getSummary());
+        assertEquals("Test Description", event.getDescription());
+        assertEquals("中华人民共和国", event.getLocation());
+        assertEquals(EventColor.aliceblue, event.getColor());
+    }
+
+    @Test
     public void testRecurringWithException() throws IOException, InvalidCalendarException {
         Event event = parseCalendar("recurring-with-exception1.ics", null)[0];
         assertTrue(event.isAllDay());

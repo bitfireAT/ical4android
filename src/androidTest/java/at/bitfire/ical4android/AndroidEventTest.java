@@ -17,6 +17,7 @@ import android.content.ContentProviderClient;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.net.Uri;
+import android.os.Build;
 import android.os.RemoteException;
 import android.provider.CalendarContract;
 import android.provider.CalendarContract.Calendars;
@@ -81,6 +82,8 @@ public class AndroidEventTest extends InstrumentationTestCase {
         provider = getInstrumentation().getTargetContext().getContentResolver().acquireContentProviderClient(CalendarContract.AUTHORITY);
         assertNotNull("Couldn't access calendar provider", provider);
 
+        AndroidCalendar.insertColors(provider, testAccount);
+
         calendar = TestCalendar.findOrCreate(testAccount, provider);
         assertNotNull("Couldn't find/create test calendar", calendar);
 
@@ -110,6 +113,7 @@ public class AndroidEventTest extends InstrumentationTestCase {
         event.setRRule(new RRule("FREQ=DAILY;COUNT=10"));
         event.setForPublic(false);
         event.setStatus(Status.VEVENT_CONFIRMED);
+        event.setColor(EventColor.aliceblue);
         assertFalse(event.isAllDay());
 
         // TODO test rDates, exDate, duration
@@ -154,6 +158,10 @@ public class AndroidEventTest extends InstrumentationTestCase {
         assertEquals(event.getRRule(), event2.getRRule());
         assertEquals(event.getForPublic(), event2.getForPublic());
         assertEquals(event.getStatus(), event2.getStatus());
+
+        if (Build.VERSION.SDK_INT >= 23)
+            // doesn't work on Android 4.1
+            assertEquals(event.getColor(), event2.getColor());
 
         // compare alarm
         assertEquals(1, event2.getAlarms().size());

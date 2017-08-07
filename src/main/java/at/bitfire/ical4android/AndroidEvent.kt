@@ -129,7 +129,7 @@ abstract class AndroidEvent(
         event.location = row.getAsString(Events.EVENT_LOCATION)
         event.description = row.getAsString(Events.DESCRIPTION)
 
-        row.getAsString(Events.CALENDAR_COLOR_KEY)?.let { name ->
+        row.getAsString(Events.EVENT_COLOR_KEY)?.let { name ->
             try {
                 event.color = EventColor.valueOf(name)
             } catch(e: IllegalArgumentException) {

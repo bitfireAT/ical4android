@@ -66,6 +66,26 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             }
         }
 
+        @JvmStatic
+        fun insertColors(provider: ContentProviderClient, account: Account) {
+            provider.query(syncAdapterURI(Colors.CONTENT_URI, account), arrayOf(Colors.COLOR_KEY), null, null, null)?.use { cursor ->
+                if (cursor.count == EventColor.values().size)
+                // colors already inserted and up to date
+                    return
+            }
+
+            Constants.log.info("Inserting event colors for $account")
+            val values = ContentValues(5)
+            values.put(CalendarContract.Colors.ACCOUNT_NAME, account.name)
+            values.put(CalendarContract.Colors.ACCOUNT_TYPE, account.type)
+            values.put(Colors.COLOR_TYPE, Colors.TYPE_EVENT)
+            for (color in EventColor.values()) {
+                values.put(Colors.COLOR_KEY, color.name)
+                values.put(Colors.COLOR, color.rgba)
+                provider.insert(syncAdapterURI(Colors.CONTENT_URI, account), values)
+            }
+        }
+
         @SuppressLint("Recycle")
         @JvmStatic
         @Throws(FileNotFoundException::class, CalendarStorageException::class)
