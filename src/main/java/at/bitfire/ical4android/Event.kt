@@ -80,7 +80,7 @@ class Event: iCalendar() {
             val ical: Calendar
             try {
                 ical = calendarBuilder().build(reader)
-            } catch (e: ParserException) {
+            } catch(e: ParserException) {
                 throw InvalidCalendarException("Couldn't parse iCalendar resource", e)
             }
 
@@ -192,9 +192,6 @@ class Event: iCalendar() {
             if (e.dtStart == null)
                 throw InvalidCalendarException("Event without start time")
 
-            validateTimeZone(e.dtStart)
-            validateTimeZone(e.dtEnd)
-
             return e
         }
     }
@@ -275,8 +272,5 @@ class Event: iCalendar() {
     // helpers
 
     fun isAllDay() = !isDateTime(dtStart)
-
-    fun getDtStartTzID() = getTzId(dtStart)
-    fun getDtEndTzID() = getTzId(dtEnd)
 
 }

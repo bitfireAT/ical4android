@@ -102,10 +102,10 @@ class Task: iCalendar() {
                     is Priority -> t.priority = prop.level
                     is Clazz -> t.classification = prop
                     is Status -> t.status = prop
-                    is Due -> { t.due = prop; validateTimeZone(t.due) }
+                    is Due -> { t.due = prop }
                     is Duration -> t.duration = prop
-                    is DtStart -> { t.dtStart = prop; validateTimeZone(t.dtStart) }
-                    is Completed -> { t.completedAt = prop; validateTimeZone(t.completedAt) }
+                    is DtStart -> { t.dtStart = prop }
+                    is Completed -> { t.completedAt = prop }
                     is PercentComplete -> t.percentComplete = prop.percentage
                     is RRule -> t.rRule = prop
                     is RDate -> t.rDates += prop
@@ -194,19 +194,6 @@ class Task: iCalendar() {
         val due = due
         return (dtStart != null && !(dtStart.date is DateTime)) ||
                (due != null && !(due.date is DateTime))
-    }
-
-    fun getTimeZone(): java.util.TimeZone {
-        var tz: java.util.TimeZone? = null
-        dtStart?.timeZone?.let { tz = it }
-
-        tz = tz ?: due?.timeZone
-
-        // fallback
-        if (tz == null)
-            tz = TimeZone.getDefault()
-
-        return tz!!
     }
 
 }

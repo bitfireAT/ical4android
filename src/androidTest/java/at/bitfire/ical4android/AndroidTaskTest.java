@@ -177,4 +177,20 @@ public class AndroidTaskTest extends InstrumentationTestCase {
         assertTrue(task2.isAllDay());
     }
 
+    public void testGetTimeZone() throws Exception {
+        // no date/time
+        TestTask t = new TestTask(taskList, new Task());
+        assertEquals(TimeZone.getDefault(), t.getTimeZone());
+
+        // dtstart with date (no time)
+        t = new TestTask(taskList, new Task());
+        t.getTask().setDtStart(new DtStart("20150101"));
+        assertEquals(TimeZone.getDefault(), t.getTimeZone());
+
+        // dtstart with time
+        t = new TestTask(taskList, new Task());
+        t.getTask().setDtStart(new DtStart("20150101", tzVienna));
+        assertEquals(tzVienna, t.getTimeZone());
+    }
+
 }

@@ -466,12 +466,14 @@ abstract class AndroidEvent(
         else
             requireNotNull(event)
 
+        val dtStart = event.dtStart ?: throw CalendarStorageException("Events must have dtStart")
+        MiscUtils.androidifyTimeZone(dtStart)
+
         builder .withValue(Events.CALENDAR_ID, calendar.id)
                 .withValue(Events.ALL_DAY, if (event.isAllDay()) 1 else 0)
-                .withValue(Events.EVENT_TIMEZONE, event.getDtStartTzID())
+                .withValue(Events.EVENT_TIMEZONE, MiscUtils.getTzId(dtStart))
                 .withValue(Events.HAS_ATTENDEE_DATA, 1 /* we know information about all attendees and not only ourselves */)
 
-        val dtStart = event.dtStart ?: throw CalendarStorageException("Events must have dtStart")
         dtStart.date?.time.let { builder.withValue(Events.DTSTART, it) }
 
         /* For cases where a "VEVENT" calendar component
@@ -500,6 +502,7 @@ abstract class AndroidEvent(
             dtEnd = event.dtEnd
         }
         dtEnd = requireNotNull(dtEnd)     // dtEnd is now guaranteed to not be null
+        MiscUtils.androidifyTimeZone(dtEnd)
 
         var recurring = false
         event.rRule?.let { rRule ->
@@ -522,7 +525,7 @@ abstract class AndroidEvent(
             builder .withValue(Events.DURATION, duration.value)
         } else
             builder .withValue(Events.DTEND, dtEnd.date.time)
-                    .withValue(Events.EVENT_END_TIMEZONE, event.getDtEndTzID())
+                    .withValue(Events.EVENT_END_TIMEZONE, MiscUtils.getTzId(dtEnd))
 
         event.summary?.let { builder.withValue(Events.TITLE, it) }
         event.location?.let { builder.withValue(Events.EVENT_LOCATION, it) }

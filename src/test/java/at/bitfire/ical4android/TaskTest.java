@@ -12,7 +12,6 @@ import net.fortuna.ical4j.model.Date;
 import net.fortuna.ical4j.model.DateList;
 import net.fortuna.ical4j.model.DateTime;
 import net.fortuna.ical4j.model.Dur;
-import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.parameter.Value;
 import net.fortuna.ical4j.model.property.Clazz;
 import net.fortuna.ical4j.model.property.DtStart;
@@ -73,7 +72,6 @@ public class TaskTest {
         assertEquals("uid4@example.com", t.getUid());
         assertEquals("mailto:unclesam@example.com", t.getOrganizer().getValue());
         assertEquals(new Due("19980415T000000"), t.getDue());
-        assertEquals(TimeZone.getDefault(), t.getTimeZone());
         assertFalse(t.isAllDay());
         assertEquals(Status.VTODO_NEEDS_ACTION, t.getStatus());
         assertEquals("Submit Income Taxes", t.getSummary());

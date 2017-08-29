@@ -18,7 +18,6 @@ import net.fortuna.ical4j.model.property.DateProperty
 import net.fortuna.ical4j.model.property.ProdId
 import net.fortuna.ical4j.util.CompatibilityHints
 import net.fortuna.ical4j.util.Strings
-import net.fortuna.ical4j.util.TimeZones
 import java.io.StringReader
 import java.net.URISyntaxException
 import java.util.*
@@ -29,7 +28,6 @@ open class iCalendar {
 
     var uid: String? = null
     var sequence: Int? = null
-
 
     companion object {
         // static ical4j initialization
@@ -67,34 +65,7 @@ open class iCalendar {
         // time zone helpers
 
         @JvmStatic
-        protected fun isDateTime(date: DateProperty?) = date != null && date.date is DateTime
-
-        /**
-         * Ensures that a given DateProperty has a time zone with an ID that is available in Android.
-         * @param date DateProperty to validate. Values which are not DATE-TIME will be ignored.
-         */
-        @JvmStatic
-        protected fun validateTimeZone(date: DateProperty?) {
-            if (isDateTime(date)) {
-                val tz = date!!.timeZone ?: return
-                val tzID = tz.id ?: return
-                val deviceTzID = DateUtils.findAndroidTimezoneID(tzID)
-                if (tzID != deviceTzID)
-                    date.timeZone = DateUtils.tzRegistry.getTimeZone(deviceTzID)
-            }
-        }
-
-        /**
-         * Returns the time-zone ID for a given date-time, or TIMEZONE_UTC for dates (without time).
-         * TIMEZONE_UTC is also returned for DATE-TIMEs in UTC representation.
-         * @param date DateProperty (DATE or DATE-TIME) whose time-zone information is used
-         */
-        @JvmStatic
-        protected fun getTzId(date: DateProperty?) =
-                if (isDateTime(date!!) && !date.isUtc && date.timeZone != null)
-                    date.timeZone.id!!
-                else
-                    TimeZones.UTC_ID
+        fun isDateTime(date: DateProperty?) = date != null && date.date is DateTime
 
         /**
          * Takes a string with a timezone definition and returns the time zone ID.

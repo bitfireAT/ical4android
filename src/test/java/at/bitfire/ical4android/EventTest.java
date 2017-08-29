@@ -7,8 +7,6 @@
  */
 package at.bitfire.ical4android;
 
-import net.fortuna.ical4j.util.TimeZones;
-
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
@@ -27,6 +25,7 @@ import lombok.NonNull;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class EventTest {
@@ -53,6 +52,13 @@ public class EventTest {
         e = parseCalendar("utf8.ics", null)[0];
         assertEquals("© äö — üß", e.getSummary());
         assertEquals("中华人民共和国", e.getLocation());
+    }
+
+    public void testParsingCustomTimezone() throws IOException, InvalidCalendarException {
+        Event[] events = parseCalendar("custom-timezone.ics", null);
+        assertEquals(1, events.length);
+        Event e = events[0];
+        assertEquals("XXX", e.getDtStart().getTimeZone().getID());
     }
 
     @Test
@@ -102,9 +108,9 @@ public class EventTest {
         // event with start+end date-time
         Event eViennaEvolution = parseCalendar("vienna-evolution.ics", null)[0];
         assertEquals(1381330800000L, eViennaEvolution.getDtStart().getDate().getTime());
-        assertEquals("Europe/Vienna", eViennaEvolution.getDtStartTzID());
+        assertEquals("/freeassociation.sourceforge.net/Tzfile/Europe/Vienna", eViennaEvolution.getDtStart().getTimeZone().getID());
         assertEquals(1381334400000L, eViennaEvolution.getDtEnd().getDate().getTime());
-        assertEquals("Europe/Vienna", eViennaEvolution.getDtEndTzID());
+        assertEquals("/freeassociation.sourceforge.net/Tzfile/Europe/Vienna", eViennaEvolution.getDtEnd().getTimeZone().getID());
     }
 
     @Test
@@ -112,29 +118,29 @@ public class EventTest {
         // event with start date only
         Event eOnThatDay = parseCalendar("event-on-that-day.ics", null)[0];
         assertEquals(868838400000L, eOnThatDay.getDtStart().getDate().getTime());
-        assertEquals(TimeZones.UTC_ID, eOnThatDay.getDtStartTzID());
+        assertNull(eOnThatDay.getDtStart().getTimeZone());
 
         // event with start+end date for all-day event (one day)
         Event eAllDay1Day = parseCalendar("all-day-1day.ics", null)[0];
         assertEquals(868838400000L, eAllDay1Day.getDtStart().getDate().getTime());
-        assertEquals(TimeZones.UTC_ID, eAllDay1Day.getDtStartTzID());
+        assertNull(eAllDay1Day.getDtStart().getTimeZone());
         assertEquals(868838400000L + 86400000, eAllDay1Day.getDtEnd().getDate().getTime());
-        assertEquals(TimeZones.UTC_ID, eAllDay1Day.getDtEndTzID());
+        assertNull(eAllDay1Day.getDtEnd().getTimeZone());
 
         // event with start+end date for all-day event (ten days)
         Event eAllDay10Days = parseCalendar("all-day-10days.ics", null)[0];
         assertEquals(868838400000L, eAllDay10Days.getDtStart().getDate().getTime());
-        assertEquals(TimeZones.UTC_ID, eAllDay10Days.getDtStartTzID());
+        assertNull(eAllDay10Days.getDtStart().getTimeZone());
         assertEquals(868838400000L + 10 * 86400000, eAllDay10Days.getDtEnd().getDate().getTime());
-        assertEquals(TimeZones.UTC_ID, eAllDay10Days.getDtEndTzID());
+        assertNull(eAllDay10Days.getDtEnd().getTimeZone());
 
         // event with start+end date on some day (0 sec-event)
         Event eAllDay0Sec = parseCalendar("all-day-0sec.ics", null)[0];
         assertEquals(868838400000L, eAllDay0Sec.getDtStart().getDate().getTime());
-        assertEquals(TimeZones.UTC_ID, eAllDay0Sec.getDtStartTzID());
+        assertNull(eAllDay0Sec.getDtStart().getTimeZone());
         // DTEND is same as DTSTART which is not valid for Android – but this will be handled by AndroidEvent, not Event
         assertEquals(868838400000L, eAllDay0Sec.getDtEnd().getDate().getTime());
-        assertEquals(TimeZones.UTC_ID, eAllDay0Sec.getDtEndTzID());
+        assertNull(eAllDay0Sec.getDtEnd().getTimeZone());
     }
 
     @Test

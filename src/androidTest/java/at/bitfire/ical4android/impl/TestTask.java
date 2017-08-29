@@ -17,7 +17,6 @@ import android.content.ContentValues;
 import at.bitfire.ical4android.AndroidTask;
 import at.bitfire.ical4android.AndroidTaskFactory;
 import at.bitfire.ical4android.AndroidTaskList;
-import at.bitfire.ical4android.Event;
 import at.bitfire.ical4android.Task;
 
 public class TestTask extends AndroidTask {

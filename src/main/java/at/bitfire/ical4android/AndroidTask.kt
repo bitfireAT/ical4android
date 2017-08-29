@@ -24,6 +24,7 @@ import java.io.FileNotFoundException
 import java.net.URI
 import java.net.URISyntaxException
 import java.text.ParseException
+import java.util.*
 import java.util.logging.Level
 
 abstract class AndroidTask(
@@ -241,9 +242,12 @@ abstract class AndroidTask(
         if (allDay)
             builder .withValue(Tasks.IS_ALLDAY, 1)
                     .withValue(Tasks.TZ, null)
-        else
+        else {
+            MiscUtils.androidifyTimeZone(task.dtStart)
+            MiscUtils.androidifyTimeZone(task.due)
             builder .withValue(Tasks.IS_ALLDAY, 0)
-                    .withValue(Tasks.TZ, task.getTimeZone().id)
+                    .withValue(Tasks.TZ, getTimeZone().id)
+        }
 
         builder .withValue(Tasks.CREATED, task.createdAt)
                 .withValue(Tasks.LAST_MODIFIED, task.lastModified)
@@ -260,6 +264,17 @@ abstract class AndroidTask(
         Constants.log.log(Level.FINE, "Built task object", builder.build())
     }
 
+
+    protected fun getTimeZone(): TimeZone {
+        val task = requireNotNull(task)
+
+        var tz: java.util.TimeZone? = null
+        task.dtStart?.timeZone?.let { tz = it }
+
+        tz = tz ?: task.due?.timeZone
+
+        return tz ?: TimeZone.getDefault()
+    }
 
     protected fun taskSyncURI(): Uri {
         val id = requireNotNull(id)
