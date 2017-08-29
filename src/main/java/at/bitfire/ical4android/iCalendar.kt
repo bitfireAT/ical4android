@@ -19,11 +19,11 @@ import net.fortuna.ical4j.model.property.ProdId
 import net.fortuna.ical4j.util.CompatibilityHints
 import net.fortuna.ical4j.util.Strings
 import net.fortuna.ical4j.util.TimeZones
-import org.apache.log4j.Logger
 import java.io.StringReader
 import java.net.URISyntaxException
 import java.util.*
 import java.util.logging.Level
+import java.util.logging.Logger
 
 open class iCalendar {
 
@@ -34,12 +34,16 @@ open class iCalendar {
     companion object {
         // static ical4j initialization
         init {
-            Logger.getRootLogger().addAppender(AndroidAppender())
-
             Constants.log.info("Enabling ical4j releaxed unfolding, relaxed parsing, Outlook compatibility")
             CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_RELAXED_UNFOLDING, true)
             CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_RELAXED_PARSING, true)
             CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_OUTLOOK_COMPATIBILITY, true)
+
+            // reduce verbosity of those two loggers
+            org.slf4j.LoggerFactory.getLogger(net.fortuna.ical4j.data.CalendarParserImpl::class.java)
+            Logger.getLogger(net.fortuna.ical4j.data.CalendarParserImpl::class.java.name).level = Level.CONFIG
+            org.slf4j.LoggerFactory.getLogger(net.fortuna.ical4j.model.Recur::class.java)
+            Logger.getLogger(net.fortuna.ical4j.model.Recur::class.java.name).level = Level.CONFIG
         }
 
         var prodId = ProdId("+//IDN bitfire.at//ical4android")
@@ -157,6 +161,9 @@ open class iCalendar {
                     Constants.log.warning("Ignoring unknown COLOR $name")
                 }
             }
+        }
+
+        override fun validate() {
         }
 
         class Factory: PropertyFactory<Color> {
