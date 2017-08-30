@@ -74,7 +74,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
                     return
             }
 
-            Constants.log.info("Inserting event colors for $account")
+            Constants.log.info("Inserting event colors for account $account")
             val values = ContentValues(5)
             values.put(CalendarContract.Colors.ACCOUNT_NAME, account.name)
             values.put(CalendarContract.Colors.ACCOUNT_TYPE, account.type)
@@ -84,6 +84,19 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
                 values.put(Colors.COLOR, color.rgba)
                 provider.insert(syncAdapterURI(Colors.CONTENT_URI, account), values)
             }
+        }
+
+        @JvmStatic
+        fun removeColors(provider: ContentProviderClient, account: Account) {
+            Constants.log.info("Removing event colors from account $account")
+
+            // unassign colors from events
+            val values = ContentValues(1)
+            values.putNull(Events.EVENT_COLOR_KEY)
+            provider.update(syncAdapterURI(Events.CONTENT_URI, account), values, "${Events.EVENT_COLOR_KEY} IS NOT NULL", null)
+
+            // remove color entries
+            provider.delete(syncAdapterURI(Colors.CONTENT_URI, account), null, null)
         }
 
         @SuppressLint("Recycle")

@@ -530,7 +530,17 @@ abstract class AndroidEvent(
         event.summary?.let { builder.withValue(Events.TITLE, it) }
         event.location?.let { builder.withValue(Events.EVENT_LOCATION, it) }
         event.description?.let { builder.withValue(Events.DESCRIPTION, it) }
-        event.color?.let { builder.withValue(Events.EVENT_COLOR_KEY, it.name) }
+        event.color?.let {
+            val colorName = it.name
+            // set event color (if it's available for this account)
+            calendar.provider.query(calendar.syncAdapterURI(Colors.CONTENT_URI), arrayOf(Colors.COLOR_KEY),
+                    "${Colors.COLOR_KEY}=? AND ${Colors.COLOR_TYPE}=${Colors.TYPE_EVENT}", arrayOf(colorName), null)?.use { cursor ->
+                if (cursor.moveToNext())
+                    builder.withValue(Events.EVENT_COLOR_KEY, colorName)
+                else
+                    Constants.log.fine("Ignoring event color: $colorName (not available for this account)")
+            }
+        }
 
         event.organizer?.let { organizer ->
             val email: String?
