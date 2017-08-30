@@ -11,7 +11,6 @@
  */
 package at.bitfire.ical4android;
 
-import android.Manifest;
 import android.accounts.Account;
 import android.content.ContentProviderClient;
 import android.content.ContentUris;
@@ -21,7 +20,6 @@ import android.os.Build;
 import android.os.RemoteException;
 import android.provider.CalendarContract;
 import android.provider.CalendarContract.Calendars;
-import android.support.annotation.RequiresPermission;
 import android.test.InstrumentationTestCase;
 import android.util.Log;
 
@@ -77,7 +75,6 @@ public class AndroidEventTest extends InstrumentationTestCase {
     // initialization
 
     @Override
-    @RequiresPermission(allOf = { Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR })
     public void setUp() throws RemoteException, FileNotFoundException, CalendarStorageException {
         provider = getInstrumentation().getTargetContext().getContentResolver().acquireContentProviderClient(CalendarContract.AUTHORITY);
         assertNotNull("Couldn't access calendar provider", provider);

@@ -49,8 +49,6 @@ dependencies {
     compile 'org.mnode.ical4j:ical4j:2.0.4'
     compile 'org.slf4j:slf4j-jdk14:1.7.25'
 
-    //noinspection GradleDynamicVersion
-    androidTestCompile 'com.android.support:support-annotations:26.+'
     androidTestCompile 'org.projectlombok:lombok:1.16.16'
 
     testCompile 'junit:junit:4.12'

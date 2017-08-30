@@ -16,7 +16,6 @@ import android.accounts.Account;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.net.Uri;
-import android.support.annotation.RequiresPermission;
 import android.test.InstrumentationTestCase;
 import android.util.Log;
 
@@ -34,7 +33,6 @@ public class AndroidTaskListTest extends InstrumentationTestCase {
     TaskProvider provider;
 
     @Override
-    @RequiresPermission(allOf = { "org.dmfs.permission.READ_TASKS", "org.dmfs.permission.WRITE_TASKS" })
     public void setUp() throws Exception {
         provider = AndroidTaskList.acquireTaskProvider(getInstrumentation().getContext().getContentResolver());
         assertNotNull(provider);

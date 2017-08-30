@@ -17,7 +17,6 @@ import android.content.ContentUris;
 import android.net.Uri;
 import android.os.RemoteException;
 import android.provider.CalendarContract;
-import android.support.annotation.RequiresPermission;
 import android.test.InstrumentationTestCase;
 import android.util.Log;
 
@@ -63,7 +62,6 @@ public class AndroidTaskTest extends InstrumentationTestCase {
     // initialization
 
     @Override
-    @RequiresPermission(allOf = { "org.dmfs.permission.READ_TASKS", "org.dmfs.permission.WRITE_TASKS" })
     public void setUp() throws RemoteException, FileNotFoundException, CalendarStorageException {
         provider = AndroidTaskList.acquireTaskProvider(getInstrumentation().getTargetContext().getContentResolver());
         assertNotNull("Couldn't access task provider", provider);

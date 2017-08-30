@@ -12,14 +12,12 @@
 
 package at.bitfire.ical4android;
 
-import android.Manifest;
 import android.accounts.Account;
 import android.content.ContentProviderClient;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.net.Uri;
 import android.provider.CalendarContract;
-import android.support.annotation.RequiresPermission;
 import android.test.InstrumentationTestCase;
 import android.util.Log;
 
@@ -36,7 +34,6 @@ public class AndroidCalendarTest extends InstrumentationTestCase {
     ContentProviderClient provider;
 
     @Override
-    @RequiresPermission(allOf = { Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR })
     public void setUp() throws Exception {
         provider = getInstrumentation().getContext().getContentResolver().acquireContentProviderClient(CalendarContract.AUTHORITY);
         assertNotNull(provider);
