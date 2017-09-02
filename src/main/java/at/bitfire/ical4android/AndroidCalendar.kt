@@ -153,7 +153,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
     }
 
 
-    protected fun populate(info: ContentValues) {
+    open protected fun populate(info: ContentValues) {
         name = info.getAsString(Calendars.NAME)
         displayName = info.getAsString(Calendars.CALENDAR_DISPLAY_NAME)
 
