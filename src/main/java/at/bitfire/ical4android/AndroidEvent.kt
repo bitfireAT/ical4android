@@ -450,12 +450,12 @@ abstract class AndroidEvent(
     }
 
     protected fun delete(batch: BatchOperation) {
-        // remove event
-        batch.enqueue(BatchOperation.Operation(ContentProviderOperation.newDelete(eventSyncURI())))
-
-        // remove exceptions of that event, too (CalendarProvider doesn't do this)
+        // remove exceptions of event, too (CalendarProvider doesn't do this)
         batch.enqueue(BatchOperation.Operation(ContentProviderOperation.newDelete(eventsSyncURI())
                 .withSelection(Events.ORIGINAL_ID + "=?", arrayOf(id.toString()))))
+
+        // remove event
+        batch.enqueue(BatchOperation.Operation(ContentProviderOperation.newDelete(eventSyncURI())))
     }
 
     @Throws(FileNotFoundException::class, CalendarStorageException::class)
