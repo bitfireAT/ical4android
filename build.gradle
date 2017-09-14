@@ -46,7 +46,7 @@ android {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
 
-    compile 'org.mnode.ical4j:ical4j:2.0.4'
+    compile 'org.mnode.ical4j:ical4j:2.0.5'
     compile 'org.slf4j:slf4j-jdk14:1.7.25'
 
     androidTestCompile 'org.projectlombok:lombok:1.16.16'
