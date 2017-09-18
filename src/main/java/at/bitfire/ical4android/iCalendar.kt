@@ -93,7 +93,7 @@ open class iCalendar {
             var minutes = 0
             alarm.trigger?.duration?.let { duration ->
                 // negative value in TRIGGER means positive value in Reminders.MINUTES and vice versa
-                minutes = -(((duration.weeks * 7 + duration.days) * 24 + duration.hours) * 60 + duration.minutes)
+                minutes = -(((duration.weeks * 7 + duration.days) * 24 + duration.hours) * 60 + duration.minutes + duration.seconds/60)
                 if (duration.isNegative)
                     minutes *= -1
             }
