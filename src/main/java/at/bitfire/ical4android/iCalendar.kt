@@ -48,12 +48,12 @@ open class iCalendar {
 
         private val parameterFactoryRegistry = ParameterFactoryRegistry()
         init {
-            parameterFactoryRegistry.register(Email.PARAMETER_NAME, Email.FACTORY)
+            parameterFactoryRegistry.register(Email.PARAMETER_NAME, Email.Factory)
         }
 
         private val propertyFactoryRegistry = PropertyFactoryRegistry()
         init {
-            propertyFactoryRegistry.register(Color.PROPERTY_NAME, Color.FACTORY)
+            propertyFactoryRegistry.register(Color.PROPERTY_NAME, Color.Factory)
         }
 
         @JvmStatic
@@ -116,9 +116,8 @@ open class iCalendar {
     /** COLOR property for VEVENT components [RFC 7986 5.9 COLOR] */
     class Color(
             var value: EventColor? = null
-    ): Property(PROPERTY_NAME, PropertyFactoryImpl.getInstance()) {
+    ): Property(PROPERTY_NAME, Factory) {
         companion object {
-            val FACTORY = Factory()
             val PROPERTY_NAME = "COLOR"
         }
 
@@ -137,7 +136,7 @@ open class iCalendar {
         override fun validate() {
         }
 
-        class Factory: PropertyFactory<Color> {
+        object Factory: PropertyFactory<Color> {
             override fun createProperty() = Color()
 
             override fun createProperty(params: ParameterList?, value: String?): Color {
@@ -154,9 +153,8 @@ open class iCalendar {
     /** EMAIL parameter for ATTENDEE properties, as used by iCloud:
         ATTENDEE;EMAIL=bla@domain.tld;/path/to/principal
     */
-    class Email(): Parameter(PARAMETER_NAME, ParameterFactoryImpl.getInstance()) {
+    class Email(): Parameter(PARAMETER_NAME, Factory) {
         companion object {
-            val FACTORY = Factory()
             val PARAMETER_NAME = "EMAIL"
         }
 
@@ -168,7 +166,7 @@ open class iCalendar {
             email = Strings.unquote(aValue)
         }
 
-        class Factory: ParameterFactory<Email> {
+        object Factory: ParameterFactory<Email> {
             @Throws(URISyntaxException::class)
             override fun createParameter(value: String) = Email(value)
 
