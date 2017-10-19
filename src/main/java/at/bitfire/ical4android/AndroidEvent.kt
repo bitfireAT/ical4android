@@ -101,6 +101,8 @@ abstract class AndroidEvent(
                     }
                 populateExceptions()
 
+                useRetainedClassification()
+
                 /* remove ORGANIZER from all components if there are no attendees
                    (i.e. this is not a group-scheduled calendar entity) */
                 if (event.attendees.isEmpty()) {
@@ -194,11 +196,10 @@ abstract class AndroidEvent(
         }
 
         // status
-        event.status = when (row.getAsInteger(Events.STATUS)) {
-            Events.STATUS_CONFIRMED -> Status.VEVENT_CONFIRMED
-            Events.STATUS_TENTATIVE -> Status.VEVENT_TENTATIVE
-            Events.STATUS_CANCELED  -> Status.VEVENT_CANCELLED
-            else                    -> null
+        when (row.getAsInteger(Events.STATUS)) {
+            Events.STATUS_CONFIRMED -> event.status = Status.VEVENT_CONFIRMED
+            Events.STATUS_TENTATIVE -> event.status = Status.VEVENT_TENTATIVE
+            Events.STATUS_CANCELED  -> event.status = Status.VEVENT_CANCELLED
         }
 
         // availability
@@ -213,10 +214,10 @@ abstract class AndroidEvent(
             }
 
         // classification
-        event.forPublic = when (row.getAsInteger(Events.ACCESS_LEVEL)) {
-            Events.ACCESS_PUBLIC  -> true
-            Events.ACCESS_PRIVATE -> false
-            else                  -> null
+        when (row.getAsInteger(Events.ACCESS_LEVEL)) {
+            Events.ACCESS_PUBLIC       -> event.classification = Clazz.PUBLIC
+            Events.ACCESS_PRIVATE      -> event.classification = Clazz.PRIVATE
+            Events.ACCESS_CONFIDENTIAL -> event.classification = Clazz.CONFIDENTIAL
         }
 
         // exceptions from recurring events
@@ -350,6 +351,16 @@ abstract class AndroidEvent(
         }
     }
 
+    private fun retainClassification() {
+        /* retain classification other than PUBLIC and PRIVATE as unknown property so
+           that it can be reused when "server default" is selected */
+        val event = requireNotNull(event)
+        event.classification?.let {
+            if (it != Clazz.PUBLIC && it != Clazz.PRIVATE)
+                event.unknownProperties += it
+        }
+    }
+
 
     @Throws(CalendarStorageException::class)
     fun add(): Uri {
@@ -377,6 +388,7 @@ abstract class AndroidEvent(
         event.attendees.forEach { insertAttendee(batch, idxEvent, it) }
 
         // add unknown properties
+        retainClassification()
         event.unknownProperties.forEach { insertUnknownProperty(batch, idxEvent, it) }
 
         // add exceptions
@@ -567,8 +579,10 @@ abstract class AndroidEvent(
 
         builder.withValue(Events.AVAILABILITY, if (event.opaque) Events.AVAILABILITY_BUSY else Events.AVAILABILITY_FREE)
 
-        event.forPublic?.let { forPublic ->
-            builder.withValue(Events.ACCESS_LEVEL, if (forPublic) Events.ACCESS_PUBLIC else Events.ACCESS_PRIVATE)
+        when (event.classification) {
+            Clazz.PUBLIC       -> builder.withValue(Events.ACCESS_LEVEL, Events.ACCESS_PUBLIC)
+            Clazz.PRIVATE      -> builder.withValue(Events.ACCESS_LEVEL, Events.ACCESS_PRIVATE)
+            Clazz.CONFIDENTIAL -> builder.withValue(Events.ACCESS_LEVEL, Events.ACCESS_CONFIDENTIAL)
         }
 
         Constants.log.log(Level.FINE, "Built event object", builder.build())
@@ -671,6 +685,24 @@ abstract class AndroidEvent(
         } catch(e: IOException) {
             Constants.log.log(Level.WARNING, "Couldn't serialize unknown property", e)
         }
+    }
+
+    private fun useRetainedClassification() {
+        val event = requireNotNull(event)
+
+        var retainedClazz: Clazz? = null
+        val it = event.unknownProperties.iterator()
+        while (it.hasNext()) {
+            val prop = it.next()
+            if (prop is Clazz) {
+                retainedClazz = prop
+                it.remove()
+            }
+        }
+
+        if (event.classification == null)
+            // no classification, use retained one if possible
+            event.classification = retainedClazz
     }
 
 

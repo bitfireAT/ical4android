@@ -43,7 +43,7 @@ class Event: iCalendar() {
 
     val exceptions = LinkedList<Event>()
 
-    var forPublic: Boolean? = null
+    var classification: Clazz? = null
     var status: Status? = null
 
     var opaque = true
@@ -172,7 +172,7 @@ class Event: iCalendar() {
                     is RDate -> e.rDates += prop
                     is ExRule -> e.exRule = prop
                     is ExDate -> e.exDates += prop
-                    is Clazz -> e.forPublic = prop == Clazz.PUBLIC
+                    is Clazz -> e.classification = prop
                     is Status -> e.status = prop
                     is Transp -> e.opaque = prop == Transp.OPAQUE
                     is Organizer -> e.organizer = prop
@@ -252,6 +252,7 @@ class Event: iCalendar() {
         exRule?.let { props += it }
         props.addAll(exDates)
 
+        classification?.let { props += it }
         status?.let { props += it }
         if (!opaque)
             props += Transp.TRANSPARENT
@@ -259,10 +260,9 @@ class Event: iCalendar() {
         organizer?.let { props += it }
         props.addAll(attendees)
 
-        forPublic?.let { props += if (it) Clazz.PUBLIC else Clazz.PRIVATE }
+        props.addAll(unknownProperties)
 
         lastModified?.let { props += it }
-        props.addAll(unknownProperties)
 
         event.alarms.addAll(alarms)
         return event

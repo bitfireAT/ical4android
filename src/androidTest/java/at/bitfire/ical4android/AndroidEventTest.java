@@ -30,6 +30,7 @@ import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.component.VAlarm;
 import net.fortuna.ical4j.model.parameter.Value;
 import net.fortuna.ical4j.model.property.Attendee;
+import net.fortuna.ical4j.model.property.Clazz;
 import net.fortuna.ical4j.model.property.DtEnd;
 import net.fortuna.ical4j.model.property.DtStart;
 import net.fortuna.ical4j.model.property.Duration;
@@ -108,7 +109,7 @@ public class AndroidEventTest extends InstrumentationTestCase {
         event.setDtEnd(new DtEnd("20150501T130000", tzVienna));
         event.setOrganizer(new Organizer(new URI("mailto:organizer@example.com")));
         event.setRRule(new RRule("FREQ=DAILY;COUNT=10"));
-        event.setForPublic(false);
+        event.setClassification(Clazz.PRIVATE);
         event.setStatus(Status.VEVENT_CONFIRMED);
         event.setColor(EventColor.aliceblue);
         assertFalse(event.isAllDay());
@@ -153,7 +154,7 @@ public class AndroidEventTest extends InstrumentationTestCase {
         assertFalse(event2.isAllDay());
         assertEquals(event.getOrganizer(), event2.getOrganizer());
         assertEquals(event.getRRule(), event2.getRRule());
-        assertEquals(event.getForPublic(), event2.getForPublic());
+        assertEquals(event.getClassification(), event2.getClassification());
         assertEquals(event.getStatus(), event2.getStatus());
 
         if (Build.VERSION.SDK_INT >= 23)
@@ -311,6 +312,63 @@ public class AndroidEventTest extends InstrumentationTestCase {
         assertEquals(event.getDtStart(), event2.getDtStart());
         assertEquals(event.getDtStart().getDate().getTime() + 86400000, event2.getDtEnd().getDate().getTime());
         assertTrue(event2.isAllDay());
+    }
+
+    public void testClassificationConfidential() throws Exception {
+        Event event = new Event();
+        event.setSummary("Confidential event");
+        event.setDtStart(new DtStart(new Date("20150501")));
+        event.setDtEnd(new DtEnd(new Date("20150502")));
+        event.setClassification(Clazz.CONFIDENTIAL);
+        Uri uri = new TestEvent(calendar, event).add();
+        assertNotNull("Couldn't add event", uri);
+        long id = ContentUris.parseId(uri);
+
+        // now, the calendar app changes to ACCESS_DEFAULT
+        ContentValues values = new ContentValues(1);
+        values.put(CalendarContract.Events.ACCESS_LEVEL, CalendarContract.Events.ACCESS_DEFAULT);
+        calendar.getProvider().update(calendar.syncAdapterURI(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id)),
+                values, null, null);
+
+        // read again and verify result
+        @Cleanup("delete") TestEvent testEvent = new TestEvent(calendar, id);
+        Event event2 = testEvent.getEvent();
+        // CONFIDENTIAL has been retained
+        assertTrue(event.getUnknownProperties().contains(Clazz.CONFIDENTIAL));
+        // should still be CONFIDENTIAL
+        assertEquals(event.getClassification(), event2.getClassification());
+
+        // now, the calendar app changes to ACCESS_PRIVATE
+        values.put(CalendarContract.Events.ACCESS_LEVEL, CalendarContract.Events.ACCESS_PRIVATE);
+        calendar.getProvider().update(calendar.syncAdapterURI(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id)),
+                values, null, null);
+
+        // read again and verify result
+        TestEvent testEventPrivate = new TestEvent(calendar, id);
+        Event eventPrivate = testEventPrivate.getEvent();
+        // should be PRIVATE
+        assertEquals(Clazz.PRIVATE, eventPrivate.getClassification());
+        // the retained value is not used in this case
+        assertFalse(eventPrivate.getUnknownProperties().contains(Clazz.CONFIDENTIAL));
+    }
+
+    public void testClassificationPrivate() throws Exception {
+        Event event = new Event();
+        event.setSummary("Private event");
+        event.setDtStart(new DtStart(new Date("20150501")));
+        event.setDtEnd(new DtEnd(new Date("20150502")));
+        event.setClassification(Clazz.PRIVATE);
+        Uri uri = new TestEvent(calendar, event).add();
+        assertNotNull("Couldn't add event", uri);
+        long id = ContentUris.parseId(uri);
+
+        // read again and verify result
+        @Cleanup("delete") TestEvent testEvent = new TestEvent(calendar, id);
+        Event event2 = testEvent.getEvent();
+        // PRIVATE has not been retained
+        assertFalse(event.getUnknownProperties().contains(Clazz.PRIVATE));
+        // should still be PRIVATE
+        assertEquals(Clazz.PRIVATE, event2.getClassification());
     }
 
     public void testNoOrganizerWithoutAttendees() throws ParseException, URISyntaxException, CalendarStorageException, FileNotFoundException {
