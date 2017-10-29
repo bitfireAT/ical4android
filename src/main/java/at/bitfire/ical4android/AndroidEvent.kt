@@ -159,13 +159,13 @@ abstract class AndroidEvent(
             }
 
             val start = DateTime(tsStart)
-            start.timeZone = tz
+            tz?.let { start.timeZone = it }
             event.dtStart = DtStart(start)
 
             when {
                 tsEnd != null -> {
                     val end = DateTime(tsEnd)
-                    end.timeZone = tz
+                    tz?.let { end.timeZone = it }
                     event.dtEnd = DtEnd(end)
                 }
                 duration != null -> event.duration = Duration(Dur(duration))
