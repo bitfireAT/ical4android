@@ -16,7 +16,6 @@ import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.property.DateProperty
 import net.fortuna.ical4j.model.property.ProdId
-import net.fortuna.ical4j.util.CompatibilityHints
 import net.fortuna.ical4j.util.Strings
 import java.io.StringReader
 import java.net.URISyntaxException
@@ -32,11 +31,6 @@ open class iCalendar {
     companion object {
         // static ical4j initialization
         init {
-            Constants.log.info("Enabling ical4j releaxed unfolding, relaxed parsing, Outlook compatibility")
-            CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_RELAXED_UNFOLDING, true)
-            CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_RELAXED_PARSING, true)
-            CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_OUTLOOK_COMPATIBILITY, true)
-
             // reduce verbosity of those two loggers
             org.slf4j.LoggerFactory.getLogger(net.fortuna.ical4j.data.CalendarParserImpl::class.java)
             Logger.getLogger(net.fortuna.ical4j.data.CalendarParserImpl::class.java.name).level = Level.CONFIG
