@@ -22,13 +22,14 @@ import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * Date utilities
+ *
+ * Before this object is accessed the first time, the accessing thread's contextClassLoader
+ * must be set to an Android Context.classLoader!
+ */
 object DateUtils {
-    init {
-        // disable automatic time-zone updates (causes unwanted network traffic)
-        System.setProperty("net.fortuna.ical4j.timezone.update.enabled", "false")
-    }
 
-    @JvmField
     val tzRegistry = TimeZoneRegistryFactory.getInstance().createRegistry()!!
 
 
