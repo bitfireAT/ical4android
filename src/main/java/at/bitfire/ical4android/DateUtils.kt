@@ -30,6 +30,7 @@ import java.util.*
  */
 object DateUtils {
 
+    @JvmField
     val tzRegistry = TimeZoneRegistryFactory.getInstance().createRegistry()!!
 
 
