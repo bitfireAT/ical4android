@@ -2,17 +2,28 @@ image: registry.gitlab.com/bitfireat/davdroid:latest
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle; chmod +x gradlew
-  - (cd /sdk/emulator; ./emulator @test -no-audio -no-window & wait-for-emulator.sh)
-  - wget -q https://f-droid.org/repo/org.dmfs.tasks_481.apk && adb install org.dmfs.tasks_481.apk
 
 cache:
   paths:
      - .gradle/
+     - apk/
 
 test:
   script:
+    - (cd /sdk/emulator; ./emulator @test -no-audio -no-window & wait-for-emulator.sh)
+    - (mkdir -p apk && cd apk && wget -q https://f-droid.org/repo/org.dmfs.tasks_481.apk && adb install org.dmfs.tasks_481.apk)
     - ./gradlew check connectedCheck
   artifacts:
     paths:
       - build/outputs/lint-results-debug.html
       - build/reports/
+
+pages:
+  script:
+    - ./gradlew dokka
+    - mkdir public && mv build/dokka public
+  artifacts:
+    paths:
+      - public
+  only:
+    - master
