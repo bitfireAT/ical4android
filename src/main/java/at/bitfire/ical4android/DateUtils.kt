@@ -8,16 +8,13 @@
 
 package at.bitfire.ical4android
 
-import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.TimeZone
-import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.DateListProperty
 import net.fortuna.ical4j.model.property.ExDate
 import net.fortuna.ical4j.model.property.RDate
-import java.io.StringReader
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
@@ -30,12 +27,27 @@ import java.util.*
  */
 object DateUtils {
 
+    /**
+     * global ical4j time zone registry used for event/task processing
+     */
     @JvmField
     val tzRegistry = TimeZoneRegistryFactory.getInstance().createRegistry()!!
 
 
     // time zones
 
+    /**
+     * For a given time zone ID taken from an iCalendar resource, find the matching
+     * Android time zone ID (if possible):
+     * 1. Use a case-insensitive match ("EUROPE/VIENNA" will return "Europe/Vienna",
+     *    assuming "Europe/Vienna") is available in Android
+     * 2. Find partial matches (case-sensitive) in both directions, so both "Vienna"
+     *    and "MyClient: Europe/Vienna" will return "Europe/Vienna". This shouldn't be
+     *    case-sensitive, because that would (for instance) return "EST" for "Westeuropäische Sommerzeit"
+     * 3. If nothing can be found, use the system default time zone
+     * @param tzID time zone ID to be converted into Android time zone ID
+     * @return best matching Android time zone ID
+     */
     @JvmStatic
     fun findAndroidTimezoneID(tzID: String): String {
         val availableTZs = SimpleTimeZone.getAvailableIDs()
@@ -46,36 +58,19 @@ object DateUtils {
         // if that doesn't work, try to find something else that matches
         if (deviceTZ == null)
             for (availableTZ in availableTZs)
-                if (availableTZ.contains(tzID, true) || tzID.contains(availableTZ, true)) {
+                if (availableTZ.contains(tzID) || tzID.contains(availableTZ)) {
                     deviceTZ = availableTZ
                     Constants.log.warning("Couldn't find system time zone \"$tzID\", assuming $deviceTZ")
                     break
                 }
 
-        // if that doesn't work, use UTC as fallback
+        // if that doesn't work, use device default as fallback
         if (deviceTZ == null) {
             val defaultTZ = TimeZone.getDefault().id!!
-            Constants.log.warning("Couldn't find system time zone \"$tzID\", using system default ($defaultTZ) as fallback")
             deviceTZ = defaultTZ
         }
 
         return deviceTZ
-    }
-
-    /**
-     * @param timezoneDef VTIMEZONE definition
-     * @return parsed VTimeZone
-     * @throws IllegalArgumentException when the timezone definition can't be parsed
-     */
-    @JvmStatic
-    fun parseVTimeZone(timezoneDef: String): VTimeZone {
-        val builder = CalendarBuilder(tzRegistry)
-        try {
-            val cal = builder.build(StringReader(timezoneDef))
-            return cal.getComponent(VTimeZone.VTIMEZONE) as VTimeZone
-        } catch (e: Exception) {
-            throw IllegalArgumentException("Couldn't parse timezone definition")
-        }
     }
 
 

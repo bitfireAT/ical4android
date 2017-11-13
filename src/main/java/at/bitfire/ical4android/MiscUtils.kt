@@ -26,8 +26,10 @@ object MiscUtils {
             val tz = date!!.timeZone ?: return
             val tzID = tz.id ?: return
             val deviceTzID = DateUtils.findAndroidTimezoneID(tzID)
-            if (tzID != deviceTzID)
+            if (tzID != deviceTzID) {
+                Constants.log.warning("Android doesn't know time zone \"$tzID\", storing event in time zone \"$deviceTzID\"")
                 date.timeZone = DateUtils.tzRegistry.getTimeZone(deviceTzID)
+            }
         }
     }
 

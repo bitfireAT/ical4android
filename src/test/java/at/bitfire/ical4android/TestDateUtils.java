@@ -17,6 +17,9 @@ public class TestDateUtils {
     @Test
     public void testTimeZoneRegistry() {
         assertNotNull(DateUtils.tzRegistry.getTimeZone("Europe/Vienna"));
+
+        // https://github.com/ical4j/ical4j/issues/207
+        // assertNotNull(DateUtils.tzRegistry.getTimeZone("EST"));
     }
 
 }
