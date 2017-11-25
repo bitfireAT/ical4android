@@ -8,13 +8,16 @@
 
 package at.bitfire.ical4android
 
+import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.TimeZone
+import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.DateListProperty
 import net.fortuna.ical4j.model.property.ExDate
 import net.fortuna.ical4j.model.property.RDate
+import java.io.StringReader
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
@@ -71,6 +74,23 @@ object DateUtils {
         }
 
         return deviceTZ
+    }
+
+    /**
+     * Parses a VTIMEZONE definition to a VTimeZone object.
+     * @param timezoneDef VTIMEZONE definition
+     * @return parsed VTimeZone
+     * @throws IllegalArgumentException when the timezone definition can't be parsed
+     */
+    @JvmStatic
+    fun parseVTimeZone(timezoneDef: String): VTimeZone {
+        val builder = CalendarBuilder(tzRegistry)
+        try {
+            val cal = builder.build(StringReader(timezoneDef))
+            return cal.getComponent(VTimeZone.VTIMEZONE) as VTimeZone
+        } catch (e: Exception) {
+            throw IllegalArgumentException("Couldn't parse timezone definition")
+        }
     }
 
 
