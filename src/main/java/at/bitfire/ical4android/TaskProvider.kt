@@ -30,6 +30,9 @@ class TaskProvider private constructor(
 
     companion object {
 
+        @JvmField val PERMISSION_READ_TASKS = "org.dmfs.permission.READ_TASKS"
+        @JvmField val PERMISSION_WRITE_TASKS = "org.dmfs.permission.WRITE_TASKS"
+
         /**
          * Acquires a content provider for a given task provider. The content provider will
          * be released when the TaskProvider is closed.
