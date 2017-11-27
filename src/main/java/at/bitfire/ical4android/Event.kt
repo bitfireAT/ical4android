@@ -141,6 +141,10 @@ class Event: iCalendar() {
                 exceptions[uid]?.let { eventExceptions ->
                     event.exceptions.addAll(eventExceptions.map { (_,it) -> fromVEvent(it) })
                 }
+
+                // make sure that exceptions have at least a SUMMARY
+                event.exceptions.forEach { it.summary = it.summary ?: event.summary }
+
                 events += event
             }
 
