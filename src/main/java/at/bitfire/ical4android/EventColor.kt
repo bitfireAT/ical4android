@@ -8,9 +8,10 @@
 
 package at.bitfire.ical4android
 
+/**
+ * Represents an RGBA COLOR value, as specified in https://tools.ietf.org/html/rfc7986#section-5.9
+ */
 enum class EventColor(val rgba: Int) {
-    // for use as COLOR property [https://tools.ietf.org/html/rfc7986#section-5.9]
-
     // values taken from https://www.w3.org/TR/2011/REC-css3-color-20110607/#svg-color
     aliceblue(0xfff0f8ff.toInt()),
     antiquewhite(0xfffaebd7.toInt()),
@@ -158,5 +159,33 @@ enum class EventColor(val rgba: Int) {
     white(0xffffffff.toInt()),
     whitesmoke(0xfff5f5f5.toInt()),
     yellow(0xffffff00.toInt()),
-    yellowgreen(0xff9acd32.toInt())
+    yellowgreen(0xff9acd32.toInt());
+
+
+    companion object {
+
+        /**
+         * Finds the best matching [EventColor] for a given RGBA value using a weighted Euclidian
+         * distance formula for RGB (A is being ignored).
+         */
+        fun nearestMatch(rgba: Int): EventColor {
+            val rgb = rgba and 0xFFFFFF
+            val distance = values().map {
+                val cssColor = it.rgba and 0xFFFFFF
+                val r1 = rgb shr 16
+                val r2 = cssColor shr 16
+                val r = (r1 + r2)/2.0
+                val deltaR = r1 - r2
+                val deltaG = ((rgb shr 8) and 0xFF) - ((cssColor shr 8) and 0xFF)
+                val deltaB = (rgb and 0xFF) - (cssColor and 0xFF)
+                val deltaR2 = deltaR*deltaR
+                val deltaG2 = deltaG*deltaG
+                Math.sqrt(2.0*deltaR2 + 4.0*deltaG2 + 3.0*deltaB*deltaB + (r*(deltaR2 - deltaG2))/256.0)
+            }
+            val idx = distance.withIndex().minBy { it.value }!!.index
+            return values()[idx]
+        }
+
+    }
+
 }

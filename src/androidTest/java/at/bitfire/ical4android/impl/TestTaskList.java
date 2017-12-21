@@ -18,7 +18,7 @@ import android.content.ContentValues;
 import android.net.Uri;
 import android.util.Log;
 
-import org.dmfs.provider.tasks.TaskContract;
+import org.dmfs.tasks.contract.TaskContract;
 
 import at.bitfire.ical4android.AndroidTaskList;
 import at.bitfire.ical4android.AndroidTaskListFactory;

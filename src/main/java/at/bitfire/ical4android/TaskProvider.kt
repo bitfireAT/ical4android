@@ -10,9 +10,10 @@ package at.bitfire.ical4android
 
 import android.annotation.SuppressLint
 import android.content.ContentProviderClient
-import android.content.ContentResolver
+import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
-import org.dmfs.provider.tasks.TaskContract
+import org.dmfs.tasks.contract.TaskContract
 import java.io.Closeable
 import java.util.logging.Level
 
@@ -22,10 +23,13 @@ class TaskProvider private constructor(
 ): Closeable {
 
     enum class ProviderName(
-            val authority: String
+            val authority: String,
+            val packageName: String,
+            val minVersionCode: Int,
+            val minVersionName: String
     ) {
         //Mirakel("de.azapps.mirakel.provider"),
-        OpenTasks("org.dmfs.tasks")
+        OpenTasks("org.dmfs.tasks", "org.dmfs.tasks", 103, "1.1.8.2")
     }
 
     companion object {
@@ -42,9 +46,11 @@ class TaskProvider private constructor(
          */
         @SuppressLint("Recycle")
         @JvmStatic
-        fun acquire(resolver: ContentResolver, name: TaskProvider.ProviderName): TaskProvider? {
+        fun acquire(context: Context, name: TaskProvider.ProviderName): TaskProvider? {
             return try {
-                val client = resolver.acquireContentProviderClient(name.authority)
+                checkVersion(context, name)
+
+                val client = context.contentResolver.acquireContentProviderClient(name.authority)
                 if (client != null)
                     TaskProvider(name, client)
                 else
@@ -52,13 +58,33 @@ class TaskProvider private constructor(
             } catch(e: SecurityException) {
                 Constants.log.log(Level.WARNING, "Not allowed to access task provider", e)
                 null
+            } catch(e: PackageManager.NameNotFoundException) {
+                Constants.log.warning("Package ${name.packageName} not installed")
+                null
             }
         }
 
         @JvmStatic
-        fun fromProviderClient(client: ContentProviderClient) =
-                // at the moment, only OpenTasks is supported
-                TaskProvider(ProviderName.OpenTasks, client)
+        fun fromProviderClient(context: Context, client: ContentProviderClient): TaskProvider {
+            // at the moment, only OpenTasks is supported
+            checkVersion(context, ProviderName.OpenTasks)
+            return TaskProvider(ProviderName.OpenTasks, client)
+        }
+
+        /**
+         * Checks the version code of an installed tasks provider.
+         * @throws PackageManager.NameNotFoundException if the tasks provider is not installed
+         * @throws IllegalArgumentException if the tasks provider is installed, but doesn't meet the minimum version requirement
+         * */
+        private fun checkVersion(context: Context, name: ProviderName) {
+            // check whether package is available with required minimum version
+            val info = context.packageManager.getPackageInfo(name.packageName, 0)
+            if (info.versionCode < name.minVersionCode) {
+                val exception = ProviderTooOldException(name, info.versionCode, info.versionName)
+                Constants.log.log(Level.WARNING, "Task provider too old", exception)
+                throw exception
+            }
+        }
 
     }
 
@@ -74,5 +100,13 @@ class TaskProvider private constructor(
             @Suppress("DEPRECATION")
             client.release()
     }
+
+
+    class ProviderTooOldException(
+            val provider: ProviderName,
+            val installedVersionCode: Int,
+            val installedVersionName: String
+    ): Exception("Package ${provider.packageName} has version $installedVersionName ($installedVersionCode), " +
+            "required: ${provider.minVersionName} (${provider.minVersionCode})")
 
 }

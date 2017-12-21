@@ -19,7 +19,7 @@ import android.net.Uri;
 import android.test.InstrumentationTestCase;
 import android.util.Log;
 
-import org.dmfs.provider.tasks.TaskContract;
+import org.dmfs.tasks.contract.TaskContract;
 
 import java.io.FileNotFoundException;
 
@@ -34,7 +34,7 @@ public class AndroidTaskListTest extends InstrumentationTestCase {
 
     @Override
     public void setUp() throws Exception {
-        provider = AndroidTaskList.acquireTaskProvider(getInstrumentation().getContext().getContentResolver());
+        provider = AndroidTaskList.acquireTaskProvider(getInstrumentation().getContext());
         assertNotNull(provider);
         Log.i(TAG, "Acquired context for " + provider.getName());
     }

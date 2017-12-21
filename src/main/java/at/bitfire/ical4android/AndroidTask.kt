@@ -19,7 +19,7 @@ import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.Dur
 import net.fortuna.ical4j.model.property.*
-import org.dmfs.provider.tasks.TaskContract.Tasks
+import org.dmfs.tasks.contract.TaskContract.Tasks
 import java.io.FileNotFoundException
 import java.net.URI
 import java.net.URISyntaxException
@@ -77,12 +77,14 @@ abstract class AndroidTask(
         MiscUtils.removeEmptyStrings(values)
 
         task.uid = values.getAsString(Tasks._UID)
+        task.sequence = values.getAsInteger(Tasks.SYNC_VERSION)
         task.summary = values.getAsString(Tasks.TITLE)
         task.location = values.getAsString(Tasks.LOCATION)
 
         values.getAsString(Tasks.GEO)?.let { task.geoPosition = Geo(it) }
 
         task.description = values.getAsString(Tasks.DESCRIPTION)
+        task.color = values.getAsInteger(Tasks.TASK_COLOR)
         task.url = values.getAsString(Tasks.URL)
 
         values.getAsString(Tasks.ORGANIZER)?.let {
@@ -195,13 +197,15 @@ abstract class AndroidTask(
 
         val task = requireNotNull(task)
         builder
-                //.withValue(Tasks._UID, task.uid)          // not available in F-Droid OpenTasks version yet (15 Oct 2015)
+                .withValue(Tasks._UID, task.uid)
+                .withValue(Tasks.SYNC_VERSION, task.sequence)
                 .withValue(Tasks.TITLE, task.summary)
                 .withValue(Tasks.LOCATION, task.location)
 
         builder .withValue(Tasks.GEO, task.geoPosition?.value)
 
         builder .withValue(Tasks.DESCRIPTION, task.description)
+                .withValue(Tasks.TASK_COLOR, task.color)
                 .withValue(Tasks.URL, task.url)
 
         var organizer: String? = null

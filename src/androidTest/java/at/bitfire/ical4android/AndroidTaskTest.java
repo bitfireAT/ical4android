@@ -26,7 +26,7 @@ import net.fortuna.ical4j.model.property.DtStart;
 import net.fortuna.ical4j.model.property.Due;
 import net.fortuna.ical4j.model.property.Organizer;
 
-import org.dmfs.provider.tasks.TaskContract;
+import org.dmfs.tasks.contract.TaskContract;
 
 import java.io.FileNotFoundException;
 import java.net.URISyntaxException;
@@ -63,7 +63,7 @@ public class AndroidTaskTest extends InstrumentationTestCase {
 
     @Override
     public void setUp() throws RemoteException, FileNotFoundException, CalendarStorageException {
-        provider = AndroidTaskList.acquireTaskProvider(getInstrumentation().getTargetContext().getContentResolver());
+        provider = AndroidTaskList.acquireTaskProvider(getInstrumentation().getTargetContext());
         assertNotNull("Couldn't access task provider", provider);
 
         taskList = TestTaskList.findOrCreate(testAccount, provider);

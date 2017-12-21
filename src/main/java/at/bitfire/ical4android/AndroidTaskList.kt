@@ -9,14 +9,14 @@
 package at.bitfire.ical4android
 
 import android.accounts.Account
-import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
+import android.content.Context
 import android.database.DatabaseUtils
 import android.net.Uri
-import org.dmfs.provider.tasks.TaskContract
-import org.dmfs.provider.tasks.TaskContract.TaskLists
-import org.dmfs.provider.tasks.TaskContract.Tasks
+import org.dmfs.tasks.contract.TaskContract
+import org.dmfs.tasks.contract.TaskContract.TaskLists
+import org.dmfs.tasks.contract.TaskContract.Tasks
 import java.io.FileNotFoundException
 import java.util.*
 
@@ -46,18 +46,18 @@ abstract class AndroidTaskList<out T: AndroidTask>(
 	companion object {
 
         /**
-         * Acquires a ContentProviderClient for a supported task provider. If multiple providers are
+         * Acquires a [ContentProviderClient] for a supported task provider. If multiple providers are
          * available, a pre-defined priority list is taken into account.
-         * @return A TaskProvider, or null if task storage is not available/accessible.
+         * @return A [TaskProvider], or null if task storage is not available/accessible.
          *         Caller is responsible for calling release()!
          */
         @JvmStatic
-        fun acquireTaskProvider(resolver: ContentResolver): TaskProvider? {
+        fun acquireTaskProvider(context: Context): TaskProvider? {
             val byPriority = arrayOf(
                 TaskProvider.ProviderName.OpenTasks
             )
             for (name in byPriority)
-                TaskProvider.acquire(resolver, name)?.let { return it }
+                TaskProvider.acquire(context, name)?.let { return it }
             return null
         }
 

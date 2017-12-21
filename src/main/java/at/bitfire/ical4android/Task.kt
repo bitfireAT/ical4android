@@ -32,6 +32,7 @@ class Task: iCalendar() {
     var summary: String? = null
     var location: String? = null
     var description: String? = null
+    var color: Int? = null
     var url: String? = null
     var organizer: Organizer? = null
     var geoPosition: Geo? = null
@@ -97,6 +98,7 @@ class Task: iCalendar() {
                     is Location -> t.location = prop.value
                     is Geo -> t.geoPosition = prop
                     is Description -> t.description = prop.value
+                    is Color -> t.color = prop.value?.rgba
                     is Url -> t.url = prop.value
                     is Organizer -> t.organizer = prop
                     is Priority -> t.priority = prop.level
@@ -147,6 +149,7 @@ class Task: iCalendar() {
         location?.let { props += Location(it) }
         geoPosition?.let { props += it }
         description?.let { props += Description(it) }
+        color?.let { props += Color(EventColor.nearestMatch(it)) }
 		url?.let {
             try {
                 props += Url(URI(it))

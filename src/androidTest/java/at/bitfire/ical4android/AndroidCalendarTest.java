@@ -21,7 +21,7 @@ import android.provider.CalendarContract;
 import android.test.InstrumentationTestCase;
 import android.util.Log;
 
-import org.dmfs.provider.tasks.TaskContract;
+import org.dmfs.tasks.contract.TaskContract;
 
 import java.io.FileNotFoundException;
 
