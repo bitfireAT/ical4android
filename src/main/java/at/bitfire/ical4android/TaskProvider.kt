@@ -8,10 +8,12 @@
 
 package at.bitfire.ical4android
 
+import android.accounts.Account
 import android.annotation.SuppressLint
 import android.content.ContentProviderClient
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import org.dmfs.tasks.contract.TaskContract
 import java.io.Closeable
@@ -40,9 +42,10 @@ class TaskProvider private constructor(
         /**
          * Acquires a content provider for a given task provider. The content provider will
          * be released when the TaskProvider is closed.
-         * @param resolver will be used to acquire the content provider client
+         * @param context will be used to acquire the content provider client
          * @param name task provider to acquire content provider for
          * @return content provider for the given task provider (may be {@code null})
+         * @throws [ProviderTooOldException] if the tasks provider is installed, but doesn't meet the minimum version requirement
          */
         @SuppressLint("Recycle")
         @JvmStatic
@@ -74,7 +77,7 @@ class TaskProvider private constructor(
         /**
          * Checks the version code of an installed tasks provider.
          * @throws PackageManager.NameNotFoundException if the tasks provider is not installed
-         * @throws IllegalArgumentException if the tasks provider is installed, but doesn't meet the minimum version requirement
+         * @throws [ProviderTooOldException] if the tasks provider is installed, but doesn't meet the minimum version requirement
          * */
         private fun checkVersion(context: Context, name: ProviderName) {
             // check whether package is available with required minimum version
@@ -86,12 +89,20 @@ class TaskProvider private constructor(
             }
         }
 
+        @JvmStatic
+        fun syncAdapterUri(uri: Uri, account: Account) = uri.buildUpon()
+                .appendQueryParameter(TaskContract.ACCOUNT_NAME, account.name)
+                .appendQueryParameter(TaskContract.ACCOUNT_TYPE, account.type)
+                .appendQueryParameter(TaskContract.CALLER_IS_SYNCADAPTER, "true")
+                .build()!!
+
     }
 
 
     fun taskListsUri() = TaskContract.TaskLists.getContentUri(name.authority)!!
     fun tasksUri() = TaskContract.Tasks.getContentUri(name.authority)!!
     //fun alarmsUri() = TaskContract.Alarms.getContentUri(name.authority)!!
+
 
     override fun close() {
         if (Build.VERSION.SDK_INT >= 24)

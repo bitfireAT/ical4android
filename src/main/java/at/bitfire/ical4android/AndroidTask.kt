@@ -159,7 +159,7 @@ abstract class AndroidTask(
     @Throws(CalendarStorageException::class)
     fun add(): Uri? {
         val batch = BatchOperation(taskList.provider.client)
-        val builder = ContentProviderOperation.newInsert(taskList.syncAdapterURI(taskList.provider.tasksUri()))
+        val builder = ContentProviderOperation.newInsert(taskList.tasksSyncUri())
         buildTask(builder, false)
         batch.enqueue(BatchOperation.Operation(builder))
         batch.commit()
@@ -171,7 +171,7 @@ abstract class AndroidTask(
 
     @Throws(CalendarStorageException::class)
     fun update(task: Task) {
-        this.task = task;
+        this.task = task
 
         val batch = BatchOperation(taskList.provider.client)
         val builder = ContentProviderOperation.newUpdate(taskSyncURI())
@@ -282,7 +282,7 @@ abstract class AndroidTask(
 
     protected fun taskSyncURI(): Uri {
         val id = requireNotNull(id)
-        return taskList.syncAdapterURI(ContentUris.withAppendedId(taskList.provider.tasksUri(), id))
+        return ContentUris.withAppendedId(taskList.tasksSyncUri(), id)
     }
 
 

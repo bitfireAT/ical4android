@@ -51,11 +51,7 @@ public class AndroidTaskTest extends InstrumentationTestCase {
     // helpers
 
     private Uri syncAdapterURI(Uri uri) {
-        return uri.buildUpon()
-                .appendQueryParameter(TaskContract.ACCOUNT_TYPE, testAccount.type)
-                .appendQueryParameter(TaskContract.ACCOUNT_NAME, testAccount.name)
-                .appendQueryParameter(TaskContract.CALLER_IS_SYNCADAPTER, "true")
-                .build();
+        return TaskProvider.syncAdapterUri(uri, testAccount);
     }
 
 

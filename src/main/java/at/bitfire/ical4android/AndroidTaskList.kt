@@ -70,7 +70,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
 
             Constants.log.info("Creating local task list: " + info.toString())
             try {
-                return provider.client.insert(syncAdapterURI(provider.taskListsUri(), account), info)
+                return provider.client.insert(TaskProvider.syncAdapterUri(provider.taskListsUri(), account), info)
             } catch(e: Exception) {
                 throw CalendarStorageException("Couldn't create local task list", e)
             }
@@ -80,7 +80,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
         @Throws(FileNotFoundException::class, CalendarStorageException::class)
         fun<T: AndroidTaskList<AndroidTask>> findByID(account: Account, provider: TaskProvider, factory: AndroidTaskListFactory<T>, id: Long): T {
             try {
-                provider.client.query(syncAdapterURI(ContentUris.withAppendedId(provider.taskListsUri(), id), account), null, null, null, null)?.use { cursor ->
+                provider.client.query(TaskProvider.syncAdapterUri(ContentUris.withAppendedId(provider.taskListsUri(), id), account), null, null, null, null)?.use { cursor ->
                     if (cursor.moveToNext()) {
                         val taskList = factory.newInstance(account, provider, id)
                         val values = ContentValues(cursor.columnCount)
@@ -100,7 +100,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
         fun<T: AndroidTaskList<AndroidTask>> find(account: Account, provider: TaskProvider, factory: AndroidTaskListFactory<T>, where: String?, whereArgs: Array<String>?): List<T> {
             val taskLists = LinkedList<T>()
             try {
-                provider.client.query(syncAdapterURI(provider.taskListsUri(), account), null, where, whereArgs, null)?.use { cursor ->
+                provider.client.query(TaskProvider.syncAdapterUri(provider.taskListsUri(), account), null, where, whereArgs, null)?.use { cursor ->
                     while (cursor.moveToNext()) {
                         val values = ContentValues(cursor.columnCount)
                         DatabaseUtils.cursorRowToContentValues(cursor, values)
@@ -114,13 +114,6 @@ abstract class AndroidTaskList<out T: AndroidTask>(
             }
             return taskLists
         }
-
-        @JvmStatic
-        fun syncAdapterURI(uri: Uri, account: Account) = uri.buildUpon()
-                .appendQueryParameter(TaskContract.ACCOUNT_NAME, account.name)
-                .appendQueryParameter(TaskContract.ACCOUNT_TYPE, account.type)
-                .appendQueryParameter(TaskContract.CALLER_IS_SYNCADAPTER, "true")
-                .build()!!
 
     }
 
@@ -159,7 +152,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
         val tasks = LinkedList<T>()
         try {
             provider.client.query(
-                    syncAdapterURI(provider.tasksUri()),
+                    tasksSyncUri(),
                     taskBaseInfoColumns(),
                     where, whereArgs, null)?.use { cursor ->
                 while (cursor.moveToNext()) {
@@ -174,14 +167,10 @@ abstract class AndroidTaskList<out T: AndroidTask>(
         return tasks
     }
 
-
-    fun syncAdapterURI(uri: Uri) = uri.buildUpon()
-                .appendQueryParameter(TaskContract.ACCOUNT_NAME, account.name)
-                .appendQueryParameter(TaskContract.ACCOUNT_TYPE, account.type)
-                .appendQueryParameter(TaskContract.CALLER_IS_SYNCADAPTER, "true")
-                .build()!!
-
     fun taskListSyncUri() =
-        syncAdapterURI(ContentUris.withAppendedId(provider.taskListsUri(), id))
+        TaskProvider.syncAdapterUri(ContentUris.withAppendedId(provider.taskListsUri(), id), account)
+
+    fun tasksSyncUri() =
+            TaskProvider.syncAdapterUri(provider.tasksUri(), account)
 
 }
