@@ -93,7 +93,9 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             // unassign colors from events
             val values = ContentValues(1)
             values.putNull(Events.EVENT_COLOR_KEY)
-            provider.update(syncAdapterURI(Events.CONTENT_URI, account), values, "${Events.EVENT_COLOR_KEY} IS NOT NULL", null)
+            provider.update(syncAdapterURI(Events.CONTENT_URI, account), values,
+                    "${Events.EVENT_COLOR_KEY} IS NOT NULL AND ${Events.ACCOUNT_TYPE}=? AND ${Events.ACCOUNT_NAME}=?",
+                    arrayOf(account.type, account.name))
 
             // remove color entries
             provider.delete(syncAdapterURI(Colors.CONTENT_URI, account), null, null)
