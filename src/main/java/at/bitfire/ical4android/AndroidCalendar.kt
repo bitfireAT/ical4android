@@ -91,11 +91,13 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             Constants.log.info("Removing event colors from account $account")
 
             // unassign colors from events
-            val values = ContentValues(1)
+            // ANDROID BUG: affects events of all accounts, not just the selected one;
+            // account_type and account_name can't be specified in selection, causes
+            // SQLiteException: no such column: account_type (code 1): , while compiling: SELECT * FROM Events WHERE eventColor_index IS NOT NULL AND account_type=? AND account_name=?
+            /* val values = ContentValues(1)
             values.putNull(Events.EVENT_COLOR_KEY)
             provider.update(syncAdapterURI(Events.CONTENT_URI, account), values,
-                    "${Events.EVENT_COLOR_KEY} IS NOT NULL AND ${Events.ACCOUNT_TYPE}=? AND ${Events.ACCOUNT_NAME}=?",
-                    arrayOf(account.type, account.name))
+                    "${Events.EVENT_COLOR_KEY} IS NOT NULL", null) */
 
             // remove color entries
             provider.delete(syncAdapterURI(Colors.CONTENT_URI, account), null, null)
