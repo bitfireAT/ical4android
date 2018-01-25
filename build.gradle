@@ -69,6 +69,8 @@ dependencies {
 task grantPermissions(dependsOn: 'installDebugAndroidTest') {
     doFirst {
         def adb = android.getAdbExe().toString()
+
+        // grant permissions
         [
                 'android.permission.READ_CALENDAR',
                 'android.permission.WRITE_CALENDAR',

@@ -6,12 +6,11 @@ before_script:
 cache:
   paths:
      - .gradle/
-     - apk/
 
 test:
   script:
     - (cd /sdk/emulator; ./emulator @test -no-audio -no-window & wait-for-emulator.sh)
-    - (mkdir -p apk && cd apk && wget -nc -q https://f-droid.org/repo/org.dmfs.tasks_481.apk && adb install org.dmfs.tasks_481.apk)
+    - adb install src/androidTest/resources/org.dmfs.tasks_6760.apk
     - ./gradlew check connectedCheck
   artifacts:
     paths:
