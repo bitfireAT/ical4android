@@ -269,7 +269,7 @@ abstract class AndroidTask(
     }
 
 
-    protected fun getTimeZone(): TimeZone {
+    fun getTimeZone(): TimeZone {
         val task = requireNotNull(task)
 
         var tz: java.util.TimeZone? = null
