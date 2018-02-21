@@ -24,7 +24,7 @@ import java.net.URISyntaxException
 import java.util.*
 import java.util.logging.Level
 
-class Task: iCalendar() {
+class Task: ICalendar() {
 
 	var createdAt: Long? = null
     var lastModified: Long? = null

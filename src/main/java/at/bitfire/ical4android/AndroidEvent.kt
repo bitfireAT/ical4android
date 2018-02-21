@@ -247,7 +247,7 @@ abstract class AndroidEvent(
             if (idNS != null || id != null) {
                 // attendee identified by namespace and ID
                 attendee = Attendee(URI(idNS, id, null))
-                email?.let { attendee.parameters.add(iCalendar.Email(it)) }
+                email?.let { attendee.parameters.add(ICalendar.Email(it)) }
             } else
                 // attendee identified by email address
                 attendee = Attendee(URI("mailto", email, null))
@@ -560,7 +560,7 @@ abstract class AndroidEvent(
             if (uri.scheme.equals("mailto", true))
                 email = uri.schemeSpecificPart
             else {
-                val emailParam = organizer.getParameter(iCalendar.Email.PARAMETER_NAME) as iCalendar.Email?
+                val emailParam = organizer.getParameter(ICalendar.Email.PARAMETER_NAME) as ICalendar.Email?
                 email = emailParam?.value
             }
             if (email != null)
@@ -599,7 +599,7 @@ abstract class AndroidEvent(
             else               -> Reminders.METHOD_DEFAULT
         }
 
-        val minutes = iCalendar.alarmMinBefore(alarm)
+        val minutes = ICalendar.alarmMinBefore(alarm)
         builder .withValue(Reminders.METHOD, method)
                 .withValue(Reminders.MINUTES, minutes)
 
@@ -618,7 +618,7 @@ abstract class AndroidEvent(
             // attendee identified by other URI
             builder .withValue(Attendees.ATTENDEE_ID_NAMESPACE, member.scheme)
                     .withValue(Attendees.ATTENDEE_IDENTITY, member.schemeSpecificPart)
-            (attendee.getParameter(iCalendar.Email.PARAMETER_NAME) as iCalendar.Email?)?.let { email ->
+            (attendee.getParameter(ICalendar.Email.PARAMETER_NAME) as ICalendar.Email?)?.let { email ->
                 builder.withValue(Attendees.ATTENDEE_EMAIL, email.value)
             }
         }

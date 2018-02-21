@@ -23,7 +23,7 @@ import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
-open class iCalendar {
+open class ICalendar {
 
     var uid: String? = null
     var sequence: Int? = null

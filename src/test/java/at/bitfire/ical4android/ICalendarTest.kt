@@ -6,19 +6,18 @@
  * http://www.gnu.org/licenses/gpl.html
  */
 
-package at.bitfire.ical4android;
+package at.bitfire.ical4android
 
-import org.junit.Test;
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Test
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
-public class iCalendarTest {
+class ICalendarTest {
 
     @Test
-    public void testTimezoneDefToTzId() {
+    fun testTimezoneDefToTzId() {
 		// test valid definition
-		assertEquals("US-Eastern", Event.TimezoneDefToTzId("BEGIN:VCALENDAR\n" +
+		assertEquals("US-Eastern", ICalendar.TimezoneDefToTzId("BEGIN:VCALENDAR\n" +
 				"PRODID:-//Example Corp.//CalDAV Client//EN\n" +
 				"VERSION:2.0\n" +
 				"BEGIN:VTIMEZONE\n" +
@@ -39,16 +38,16 @@ public class iCalendarTest {
 				"TZNAME:Eastern Daylight Time (US &amp; Canada)\n" +
 				"END:DAYLIGHT\n" +
 				"END:VTIMEZONE\n" +
-				"END:VCALENDAR"));
+				"END:VCALENDAR"))
 
-		// test invalid time zone
-		assertNull(iCalendar.TimezoneDefToTzId("/* invalid content */"));
+        // test invalid time zone
+		assertNull(ICalendar.TimezoneDefToTzId("/* invalid content */"))
 
-		// test time zone without TZID
-		assertNull(iCalendar.TimezoneDefToTzId("BEGIN:VCALENDAR\n" +
+        // test time zone without TZID
+		assertNull(ICalendar.TimezoneDefToTzId("BEGIN:VCALENDAR\n" +
 				"PRODID:-//Inverse inc./SOGo 2.2.10//EN\n" +
 				"VERSION:2.0\n" +
-				"END:VCALENDAR"));
-	}
+				"END:VCALENDAR"))
+    }
 
 }

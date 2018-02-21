@@ -24,11 +24,14 @@ Generated KDoc: https://bitfireAT.gitlab.io/ical4android/dokka/ical4android/
 
 ```
 bitfire web engineering – Stockmann, Hirner GesnbR
-Liniengasse 6/3/28
+Florastraße 27
 2540 Bad Vöslau, AUSTRIA
 ```
 
-Email: [play@bitfire.at](mailto:play@bitfire.at)
+Email: [play@bitfire.at](mailto:play@bitfire.at) (do not use this)
+
+For questions, suggestions etc. please use the DAVdroid forum:
+https://www.davdroid.com/forums/
 
 
 ## License 

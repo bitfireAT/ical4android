@@ -22,7 +22,7 @@ object MiscUtils {
      */
     @JvmStatic
     fun androidifyTimeZone(date: DateProperty?) {
-        if (iCalendar.isDateTime(date)) {
+        if (ICalendar.isDateTime(date)) {
             val tz = date!!.timeZone ?: return
             val tzID = tz.id ?: return
             val deviceTzID = DateUtils.findAndroidTimezoneID(tzID)
@@ -40,7 +40,7 @@ object MiscUtils {
      */
     @JvmStatic
     fun getTzId(date: DateProperty?) =
-            if (iCalendar.isDateTime(date!!) && !date.isUtc && date.timeZone != null)
+            if (ICalendar.isDateTime(date!!) && !date.isUtc && date.timeZone != null)
                 date.timeZone.id!!
             else
                 TimeZones.UTC_ID

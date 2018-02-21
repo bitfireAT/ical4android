@@ -22,7 +22,7 @@ import java.io.OutputStream
 import java.io.Reader
 import java.util.*
 
-class Event: iCalendar() {
+class Event: ICalendar() {
 
     // uid and sequence are inherited from iCalendar
     var recurrenceId: RecurrenceId? = null
@@ -153,7 +153,7 @@ class Event: iCalendar() {
 
 
         @Throws(InvalidCalendarException::class)
-        fun fromVEvent(event: VEvent): Event {
+        private fun fromVEvent(event: VEvent): Event {
             val e = Event()
 
             // sequence must only be null for locally created, not-yet-synchronized events

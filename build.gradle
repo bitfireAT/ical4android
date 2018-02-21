@@ -5,9 +5,7 @@ buildscript {
 
     repositories {
         jcenter()
-        maven {
-            url "https://maven.google.com"
-        }
+        google()
     }
 
     dependencies {
@@ -19,9 +17,7 @@ buildscript {
 
 repositories {
     jcenter()
-    maven {
-        url "https://maven.google.com"
-    }
+    google()
 }
 
 apply plugin: 'com.android.library'
@@ -68,28 +64,4 @@ dependencies {
     androidTestCompile 'com.android.support.test:rules:1.0.1'
 
     testCompile 'junit:junit:4.12'
-    testCompileOnly 'org.projectlombok:lombok:1.16.20'
-}
-
-// grant permissions for unit tests
-task grantPermissions(dependsOn: 'installDebugAndroidTest') {
-    doFirst {
-        def adb = android.getAdbExe().toString()
-
-        // grant permissions
-        [
-                'android.permission.READ_CALENDAR',
-                'android.permission.WRITE_CALENDAR',
-                'org.dmfs.permission.READ_TASKS',
-                'org.dmfs.permission.WRITE_TASKS'
-        ].each {
-            "${adb} shell pm grant at.bitfire.ical4android.test ${it}".execute()
-        }
-    }
-}
-
-tasks.whenTaskAdded { task ->
-    if (task.name.startsWith('connectedDebugAndroidTest')) {
-        task.dependsOn grantPermissions
-    }
 }
