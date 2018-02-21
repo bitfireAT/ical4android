@@ -167,10 +167,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
         return tasks
     }
 
-    fun taskListSyncUri() =
-        TaskProvider.syncAdapterUri(ContentUris.withAppendedId(provider.taskListsUri(), id), account)
-
-    fun tasksSyncUri() =
-            TaskProvider.syncAdapterUri(provider.tasksUri(), account)
+    fun taskListSyncUri() = TaskProvider.syncAdapterUri(ContentUris.withAppendedId(provider.taskListsUri(), id), account)
+    fun tasksSyncUri() = TaskProvider.syncAdapterUri(provider.tasksUri(), account)
 
 }

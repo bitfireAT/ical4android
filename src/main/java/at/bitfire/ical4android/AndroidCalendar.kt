@@ -157,7 +157,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
     }
 
 
-    open protected fun populate(info: ContentValues) {
+    protected open fun populate(info: ContentValues) {
         name = info.getAsString(Calendars.NAME)
         displayName = info.getAsString(Calendars.CALENDAR_DISPLAY_NAME)
 
@@ -171,7 +171,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
     @Throws(CalendarStorageException::class)
     fun update(info: ContentValues) {
         try {
-            provider.update(syncAdapterURI(calendarSyncURI()), info, null, null)
+            provider.update(calendarSyncURI(), info, null, null)
         } catch (e: RemoteException) {
             throw CalendarStorageException("Couldn't update calendar", e)
         }
@@ -193,7 +193,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
         val events = LinkedList<T>()
         try {
             provider.query(
-                    syncAdapterURI(Events.CONTENT_URI),
+                    eventsSyncURI(),
                     eventBaseInfoColumns(),
                     where, whereArgs, null)?.use { cursor ->
                 while (cursor.moveToNext()) {
@@ -210,11 +210,12 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 
 
     fun syncAdapterURI(uri: Uri) = uri.buildUpon()
+            .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
             .appendQueryParameter(Calendars.ACCOUNT_NAME, account.name)
             .appendQueryParameter(Calendars.ACCOUNT_TYPE, account.type)
-            .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
             .build()!!
 
     fun calendarSyncURI() = syncAdapterURI(ContentUris.withAppendedId(Calendars.CONTENT_URI, id))
+    fun eventsSyncURI() = syncAdapterURI(Events.CONTENT_URI)
 
 }

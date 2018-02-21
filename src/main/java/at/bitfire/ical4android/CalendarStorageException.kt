@@ -8,6 +8,7 @@
 
 package at.bitfire.ical4android
 
+@Deprecated("Do not wrap calendar IPC exceptions if you don't need to.")
 class CalendarStorageException: Exception {
 
     constructor(message: String): super(message)
