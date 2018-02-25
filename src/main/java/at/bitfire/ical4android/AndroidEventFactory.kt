@@ -12,7 +12,6 @@ import android.content.ContentValues
 
 interface AndroidEventFactory<out T: AndroidEvent> {
 
-    fun newInstance(calendar: AndroidCalendar<AndroidEvent>, id: Long, baseInfo: ContentValues? = null): T
-    fun newInstance(calendar: AndroidCalendar<AndroidEvent>, event: Event): T
+    fun fromProvider(calendar: AndroidCalendar<AndroidEvent>, values: ContentValues): T
 
 }

@@ -60,10 +60,7 @@ class Task: ICalendar() {
          * @throws IOException
          * @throws InvalidCalendarException on parser exceptions
          */
-        @JvmStatic
-        @Throws(IOException::class, InvalidCalendarException::class)
-        fun fromReader(reader: Reader): List<Task>
-        {
+        fun fromReader(reader: Reader): List<Task> {
             val ical: Calendar
             try {
                 ical = calendarBuilder().build(reader)
@@ -72,10 +69,9 @@ class Task: ICalendar() {
             }
 
             val vToDos = ical.getComponents<VToDo>(Component.VTODO)
-            return vToDos.mapTo(LinkedList<Task>(), this::fromVToDo)
+            return vToDos.mapTo(LinkedList()) { this.fromVToDo(it) }
         }
 
-        @Throws(InvalidCalendarException::class)
         private fun fromVToDo(todo: VToDo): Task {
             val t = Task()
 
@@ -129,7 +125,6 @@ class Task: ICalendar() {
     }
 
 
-    @Throws(IOException::class)
 	fun write(os: OutputStream) {
 		val ical = Calendar()
 		ical.properties += Version.VERSION_2_0

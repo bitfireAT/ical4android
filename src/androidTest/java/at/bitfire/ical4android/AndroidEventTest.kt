@@ -118,7 +118,7 @@ class AndroidEventTest {
         val uri = TestEvent(calendar, event).add()
         assertNotNull(uri)
 
-        val testEvent = TestEvent(calendar, ContentUris.parseId(uri))
+        val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
 
             // read and parse event from calendar provider
@@ -189,7 +189,7 @@ class AndroidEventTest {
         val uri = TestEvent(calendar, event).add()
 
         // update test event in calendar
-        val testEvent = TestEvent(calendar, ContentUris.parseId(uri))
+        val testEvent = calendar.findById(ContentUris.parseId(uri))
         val event2 = testEvent.event!!
         event2.summary = "Updated event"
         // add data rows
@@ -198,7 +198,7 @@ class AndroidEventTest {
         val uri2 = testEvent.update(event2)
 
         // read again and verify result
-        val updatedEvent = TestEvent(calendar, ContentUris.parseId(uri2))
+        val updatedEvent = calendar.findById(ContentUris.parseId(uri2))
         try {
             val event3 = updatedEvent.event!!
             assertEquals(event2.summary, event3.summary)
@@ -221,7 +221,7 @@ class AndroidEventTest {
             event.attendees += Attendee(URI("mailto:att$i@example.com"))
         val uri = TestEvent(calendar, event).add()
 
-        val testEvent = TestEvent(calendar, ContentUris.parseId(uri))
+        val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
             assertEquals(4000, testEvent.event!!.attendees.size)
         } finally {
@@ -259,7 +259,7 @@ class AndroidEventTest {
         val uri = TestEvent(calendar, event).add()
         assertNotNull(uri)
 
-        val testEvent = TestEvent(calendar, ContentUris.parseId(uri))
+        val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
             // read again and verify result
             val event2 = testEvent.event!!
@@ -285,7 +285,7 @@ class AndroidEventTest {
         val uri = TestEvent(calendar, event).add()
         assertNotNull(uri)
 
-        val testEvent = TestEvent(calendar, ContentUris.parseId(uri))
+        val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
             // read again and verify result
             val event2 = testEvent.event!!
@@ -309,7 +309,7 @@ class AndroidEventTest {
         val uri = TestEvent(calendar, event).add()
         assertNotNull(uri)
 
-        val testEvent = TestEvent(calendar, ContentUris.parseId(uri))
+        val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
             // read again and verify result
             val event2 = testEvent.event!!
@@ -340,7 +340,7 @@ class AndroidEventTest {
         calendar.provider.update(calendar.syncAdapterURI(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id)),
                 values, null, null)
 
-        val testEvent = TestEvent(calendar, id)
+        val testEvent = calendar.findById(id)
         try {
             // read again and verify result
             val event2 = testEvent.event!!
@@ -355,7 +355,7 @@ class AndroidEventTest {
                     values, null, null)
 
             // read again and verify result
-            val testEventPrivate = TestEvent(calendar, id)
+            val testEventPrivate = calendar.findById(id)
             val eventPrivate = testEventPrivate.event!!
             // should be PRIVATE
             assertEquals(Clazz.PRIVATE, eventPrivate.classification)
@@ -378,7 +378,7 @@ class AndroidEventTest {
         assertNotNull(uri)
         val id = ContentUris.parseId(uri)
 
-        val testEvent = TestEvent(calendar, id)
+        val testEvent = calendar.findById(id)
         try {
             // read again and verify result
             val event2 = testEvent.event!!
@@ -412,7 +412,7 @@ class AndroidEventTest {
         val uri = TestEvent(calendar, event).add()
         assertNotNull(uri)
 
-        val testEvent = TestEvent(calendar, ContentUris.parseId(uri))
+        val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
             // read again and verify result
             val event2 = testEvent.event!!
@@ -434,7 +434,7 @@ class AndroidEventTest {
         values.put(CalendarContract.Events.TITLE, "Without dtend/duration")
         val uri = provider.insert(syncAdapterURI(CalendarContract.Events.CONTENT_URI, testAccount), values)
 
-        val testEvent = TestEvent(calendar, ContentUris.parseId(uri))
+        val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
             assertNull(testEvent.event!!.dtEnd)
         } finally {
@@ -453,7 +453,7 @@ class AndroidEventTest {
         val uri = TestEvent(calendar, event).add()
         assertNotNull(uri)
 
-        val testEvent = TestEvent(calendar, ContentUris.parseId(uri))
+        val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
             // read again and verify result
             val event2 = testEvent.event!!

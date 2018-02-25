@@ -48,7 +48,7 @@ class AndroidTaskTest {
         assumeNotNull(providerOrNull)
         provider = providerOrNull!!
 
-        taskList = TestTaskList.findOrCreate(testAccount, provider)
+        taskList = TestTaskList.create(testAccount, providerOrNull)
         assertNotNull("Couldn't find/create test task list", taskList)
 
         taskListUri = ContentUris.withAppendedId(provider!!.taskListsUri(), taskList!!.id)
@@ -78,11 +78,11 @@ class AndroidTaskTest {
         assertFalse(task.isAllDay())
 
         // add to task list
-        val uri = TestTask(taskList, task).add()
+        val uri = TestTask(taskList!!, task).add()
         assertNotNull("Couldn't add task", uri)
 
         // read and parse event from calendar provider
-        val testTask = TestTask(taskList, ContentUris.parseId(uri))
+        val testTask = taskList!!.findById(ContentUris.parseId(uri))
         try {
             assertNotNull("Inserted task is not here", testTask)
             val task2 = testTask.task
@@ -107,7 +107,7 @@ class AndroidTaskTest {
         task.dtStart = DtStart(Date("20150102"))
 
         task.due = Due(Date("20150101"))
-        TestTask(taskList, task).add()
+        TestTask(taskList!!, task).add()
     }
 
     @MediumTest
@@ -121,10 +121,10 @@ class AndroidTaskTest {
         task.location = "Sample location"
         task.dtStart = DtStart("20150501T120000", tzVienna)
         assertFalse(task.isAllDay())
-        val uri = TestTask(taskList, task).add()
+        val uri = TestTask(taskList!!, task).add()
         assertNotNull(uri)
 
-        val testTask = TestTask(taskList, ContentUris.parseId(uri))
+        val testTask = taskList!!.findById(ContentUris.parseId(uri))
         try {
             // update test event in calendar
             val task2 = testTask.task!!
@@ -134,7 +134,7 @@ class AndroidTaskTest {
             testTask.update(task)
 
             // read again and verify result
-            val updatedTask = TestTask(taskList, ContentUris.parseId(uri)).task!!
+            val updatedTask = taskList!!.findById(ContentUris.parseId(uri)).task!!
             assertEquals(task.summary, updatedTask.summary)
             assertEquals(task.dtStart, updatedTask.dtStart)
             assertEquals(task.due, updatedTask.due)
@@ -154,10 +154,10 @@ class AndroidTaskTest {
         task.dtStart = DtStart(Date("20150501"))
         task.due = Due(Date("20150502"))
         assertTrue(task.isAllDay())
-        val uri = TestTask(taskList, task).add()
+        val uri = TestTask(taskList!!, task).add()
         assertNotNull(uri)
 
-        val testTask = TestTask(taskList, ContentUris.parseId(uri))
+        val testTask = taskList!!.findById(ContentUris.parseId(uri))
         try {
             // read again and verify result
             val task2 = testTask.task!!
@@ -176,16 +176,16 @@ class AndroidTaskTest {
     @Test
     fun testGetTimeZone() {
         // no date/time
-        var t = TestTask(taskList, Task())
+        var t = TestTask(taskList!!, Task())
         assertEquals(TimeZone.getDefault(), t.getTimeZone())
 
         // dtstart with date (no time)
-        t = TestTask(taskList, Task())
+        t = TestTask(taskList!!, Task())
         t.task!!.dtStart = DtStart("20150101")
         assertEquals(TimeZone.getDefault(), t.getTimeZone())
 
         // dtstart with time
-        t = TestTask(taskList, Task())
+        t = TestTask(taskList!!, Task())
         t.task!!.dtStart = (DtStart("20150101", tzVienna))
         assertEquals(tzVienna, t.getTimeZone())
     }

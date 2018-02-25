@@ -33,7 +33,6 @@ object DateUtils {
     /**
      * global ical4j time zone registry used for event/task processing
      */
-    @JvmField
     val tzRegistry = TimeZoneRegistryFactory.getInstance().createRegistry()!!
 
 
@@ -51,7 +50,6 @@ object DateUtils {
      * @param tzID time zone ID to be converted into Android time zone ID
      * @return best matching Android time zone ID
      */
-    @JvmStatic
     fun findAndroidTimezoneID(tzID: String): String {
         val availableTZs = SimpleTimeZone.getAvailableIDs()
 
@@ -82,7 +80,6 @@ object DateUtils {
      * @return parsed VTimeZone
      * @throws IllegalArgumentException when the timezone definition can't be parsed
      */
-    @JvmStatic
     fun parseVTimeZone(timezoneDef: String): VTimeZone {
         val builder = CalendarBuilder(tzRegistry)
         try {
@@ -108,7 +105,6 @@ object DateUtils {
      *                  - in case of all-day events, all dates/times are returned as yyyymmddT000000Z
      *                  - in case of timed events, all dates/times are returned as UTC time: yyyymmddThhmmssZ
      */
-    @JvmStatic
     fun recurrenceSetsToAndroidString(dates: List<DateListProperty>, allDay: Boolean): String
     {
         /*  rdate/exdate:       DATE                                DATE_TIME
@@ -145,10 +141,8 @@ object DateUtils {
      * @param type      subclass of DateListProperty, e.g. [RDate] or [ExDate]
      * @param allDay    true: list will contain DATE values; false: list will contain DATE_TIME values
      * @return          instance of "type" containing the parsed dates/times from the string
-     * @throws ParseException
+     * @throws ParseException when the string cannot be parsed
      */
-    @JvmStatic
-    @Throws(ParseException::class)
     fun<T: DateListProperty> androidStringToRecurrenceSet(dbStr: String, type: Class<T>, allDay: Boolean): T
     {
         // 1. split string into time zone and actual dates

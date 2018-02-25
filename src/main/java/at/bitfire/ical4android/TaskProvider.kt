@@ -9,7 +9,6 @@
 package at.bitfire.ical4android
 
 import android.accounts.Account
-import android.annotation.SuppressLint
 import android.content.ContentProviderClient
 import android.content.Context
 import android.content.pm.PackageManager
@@ -36,8 +35,8 @@ class TaskProvider private constructor(
 
     companion object {
 
-        @JvmField val PERMISSION_READ_TASKS = "org.dmfs.permission.READ_TASKS"
-        @JvmField val PERMISSION_WRITE_TASKS = "org.dmfs.permission.WRITE_TASKS"
+        const val PERMISSION_READ_TASKS = "org.dmfs.permission.READ_TASKS"
+        const val PERMISSION_WRITE_TASKS = "org.dmfs.permission.WRITE_TASKS"
 
         /**
          * Acquires a content provider for a given task provider. The content provider will
@@ -47,8 +46,6 @@ class TaskProvider private constructor(
          * @return content provider for the given task provider (may be {@code null})
          * @throws [ProviderTooOldException] if the tasks provider is installed, but doesn't meet the minimum version requirement
          */
-        @SuppressLint("Recycle")
-        @JvmStatic
         fun acquire(context: Context, name: TaskProvider.ProviderName): TaskProvider? {
             return try {
                 checkVersion(context, name)
@@ -67,7 +64,6 @@ class TaskProvider private constructor(
             }
         }
 
-        @JvmStatic
         fun fromProviderClient(context: Context, client: ContentProviderClient): TaskProvider {
             // at the moment, only OpenTasks is supported
             checkVersion(context, ProviderName.OpenTasks)
@@ -89,7 +85,6 @@ class TaskProvider private constructor(
             }
         }
 
-        @JvmStatic
         fun syncAdapterUri(uri: Uri, account: Account) = uri.buildUpon()
                 .appendQueryParameter(TaskContract.ACCOUNT_NAME, account.name)
                 .appendQueryParameter(TaskContract.ACCOUNT_TYPE, account.type)

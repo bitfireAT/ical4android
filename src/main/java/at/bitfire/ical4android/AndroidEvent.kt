@@ -8,12 +8,12 @@
 
 package at.bitfire.ical4android
 
-import android.annotation.SuppressLint
 import android.content.ContentProviderOperation
 import android.content.ContentProviderOperation.Builder
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.EntityIterator
+import android.database.DatabaseUtils
 import android.net.Uri
 import android.os.RemoteException
 import android.provider.CalendarContract
@@ -47,80 +47,89 @@ abstract class AndroidEvent(
 
     companion object {
 
-        /** {@link ExtendedProperties#NAME} for unknown iCal properties */
-        @JvmField val EXT_UNKNOWN_PROPERTY = "unknown-property"
-        @JvmField val MAX_UNKNOWN_PROPERTY_SIZE = 25000
+        /** [ExtendedProperties.NAME] for unknown iCal properties */
+        const val EXT_UNKNOWN_PROPERTY = "unknown-property"
+        const val MAX_UNKNOWN_PROPERTY_SIZE = 25000
 
     }
 
     var id: Long? = null
+        protected set
 
-    constructor(calendar: AndroidCalendar<AndroidEvent>, id: Long, baseInfo: ContentValues?): this(calendar) {
-        this.id = id
-        // baseInfo is used by derived classes which process SYNC1 etc.
+    /**
+     * Creates a new object from an event which already exists in the calendar storage.
+     * @param values database row with all columns, as returned by the calendar provider
+     */
+    constructor(calendar: AndroidCalendar<AndroidEvent>, values: ContentValues): this(calendar) {
+        this.id = values.getAsLong(Events._ID)
+        // derived classes process SYNC1 etc.
     }
 
+    /**
+     * Creates a new object from an event which doesn't exist in the calendar storage yet.
+     * @param event event that can be saved into the calendar storage
+     */
     constructor(calendar: AndroidCalendar<AndroidEvent>, event: Event): this(calendar) {
         this.event = event
     }
 
     var event: Event? = null
-    /**
-     * This getter returns the full event data, either from [event] or, if [event] is null, by reading event
-     * number [id] from the Android calendar storage
-     * @throws FileNotFoundException if there's no event with [id] in the calendar storage
-     * @throws CalendarStorageException on calendar storage I/O errors
-     */
-    @SuppressLint("Recycle")
-    @Throws(FileNotFoundException::class, CalendarStorageException::class)
-    get() {
-        if (field != null)
-            return field
-        val id = requireNotNull(id)
-
-        var iterEvents: EntityIterator? = null
-        try {
-            iterEvents = CalendarContract.EventsEntity.newEntityIterator(
-                    calendar.provider.query(
-                            calendar.syncAdapterURI(ContentUris.withAppendedId(CalendarContract.EventsEntity.CONTENT_URI, id)),
-                            null, null, null, null),
-                    calendar.provider
-            )
-            if (iterEvents.hasNext()) {
-                val event = Event()
-                field = event
-
-                val e = iterEvents.next()
-                populateEvent(e.entityValues)
-
-                for (subValue in e.subValues)
-                    when (subValue.uri) {
-                        Attendees.CONTENT_URI -> populateAttendee(subValue.values)
-                        Reminders.CONTENT_URI -> populateReminder(subValue.values)
-                        CalendarContract.ExtendedProperties.CONTENT_URI -> populateExtended(subValue.values)
-                    }
-                populateExceptions()
-
-                useRetainedClassification()
-
-                /* remove ORGANIZER from all components if there are no attendees
-                   (i.e. this is not a group-scheduled calendar entity) */
-                if (event.attendees.isEmpty()) {
-                    event.organizer = null
-                    event.exceptions.forEach { it.organizer = null }
-                }
-
+        /**
+         * This getter returns the full event data, either from [event] or, if [event] is null, by reading event
+         * number [id] from the Android calendar storage
+         * @throws IllegalArgumentException if event has not been saved yet
+         * @throws FileNotFoundException if there's no event with [id] in the calendar storage
+         * @throws RemoteException on calendar provider errors
+         */
+        get() {
+            if (field != null)
                 return field
-            }
-        } catch(e: RemoteException) {
-            throw CalendarStorageException("Couldn't read locally stored event", e)
-        } finally {
-            iterEvents?.close()
-        }
-        throw FileNotFoundException("Couldn't find event $id")
-    }
+            val id = requireNotNull(id)
 
-    @Throws(FileNotFoundException::class, CalendarStorageException::class)
+            var iterEvents: EntityIterator? = null
+            try {
+                iterEvents = CalendarContract.EventsEntity.newEntityIterator(
+                        calendar.provider.query(
+                                calendar.syncAdapterURI(ContentUris.withAppendedId(CalendarContract.EventsEntity.CONTENT_URI, id)),
+                                null, null, null, null),
+                        calendar.provider
+                )
+                if (iterEvents.hasNext()) {
+                    val event = Event()
+                    field = event
+
+                    val e = iterEvents.next()
+                    populateEvent(e.entityValues)
+
+                    for (subValue in e.subValues)
+                        when (subValue.uri) {
+                            Attendees.CONTENT_URI -> populateAttendee(subValue.values)
+                            Reminders.CONTENT_URI -> populateReminder(subValue.values)
+                            CalendarContract.ExtendedProperties.CONTENT_URI -> populateExtended(subValue.values)
+                        }
+                    populateExceptions()
+
+                    useRetainedClassification()
+
+                    /* remove ORGANIZER from all components if there are no attendees
+                       (i.e. this is not a group-scheduled calendar entity) */
+                    if (event.attendees.isEmpty()) {
+                        event.organizer = null
+                        event.exceptions.forEach { it.organizer = null }
+                    }
+
+                    return field
+                }
+            } finally {
+                iterEvents?.close()
+            }
+            throw FileNotFoundException("Couldn't find event $id")
+        }
+
+    /**
+     * Reads event data from the calendar provider.
+     * @param row values of an [Events] row, as returned by the calendar provider
+     */
     protected open fun populateEvent(row: ContentValues) {
         val event = requireNotNull(event)
 
@@ -234,7 +243,7 @@ abstract class AndroidEvent(
         }
     }
 
-    protected fun populateAttendee(row: ContentValues) {
+    protected open fun populateAttendee(row: ContentValues) {
         Constants.log.log(Level.FINE, "Read event attendee from calender provider", row)
         MiscUtils.removeEmptyStrings(row)
 
@@ -287,38 +296,37 @@ abstract class AndroidEvent(
         }
     }
 
-    protected fun populateReminder(row: ContentValues) {
+    protected open fun populateReminder(row: ContentValues) {
         Constants.log.log(Level.FINE, "Read event reminder from calender provider", row)
 
         val event = requireNotNull(event)
         val alarm = VAlarm(Dur(0, 0, -row.getAsInteger(Reminders.MINUTES), 0))
 
         val props = alarm.properties
-        when (row.getAsInteger(Reminders.METHOD)) {
+        props += when (row.getAsInteger(Reminders.METHOD)) {
             Reminders.METHOD_ALARM,
             Reminders.METHOD_ALERT ->
-                props += Action.DISPLAY
+                Action.DISPLAY
             Reminders.METHOD_EMAIL,
             Reminders.METHOD_SMS ->
-                props += Action.EMAIL
+                Action.EMAIL
             else ->
                 // show alarm by default
-                props += Action.DISPLAY
+                Action.DISPLAY
         }
         props += Description(event.summary)
         event.alarms += alarm
     }
 
-    protected fun populateExtended(row: ContentValues) {
+    protected open fun populateExtended(row: ContentValues) {
         Constants.log.log(Level.FINE, "Read extended property from calender provider", row.getAsString(ExtendedProperties.NAME))
 
         if (row.getAsString(ExtendedProperties.NAME) == EXT_UNKNOWN_PROPERTY) {
             // de-serialize unknown property
             val stream = ByteArrayInputStream(Base64.decode(row.getAsString(ExtendedProperties.VALUE), Base64.NO_WRAP))
             try {
-                ObjectInputStream(stream).use { stream ->
-                    val property = stream.readObject() as Property
-                    event!!.unknownProperties += property
+                ObjectInputStream(stream).use {
+                    event!!.unknownProperties += it.readObject() as Property
                 }
             } catch(e: Exception) {
                 Constants.log.log(Level.WARNING, "Couldn't de-serialize unknown property", e)
@@ -326,19 +334,18 @@ abstract class AndroidEvent(
         }
     }
 
-    @SuppressWarnings("Recycle")
-    @Throws(FileNotFoundException::class, RemoteException::class)
-    protected fun populateExceptions() {
+    protected open fun populateExceptions() {
         requireNotNull(id)
         val event = requireNotNull(event)
 
         calendar.provider.query(calendar.syncAdapterURI(Events.CONTENT_URI),
-                arrayOf(Events._ID),
+                null,
                 Events.ORIGINAL_ID + "=?", arrayOf(id.toString()), null)?.use { c ->
             while (c.moveToNext()) {
-                val exceptionId = c.getLong(0)
+                val values = ContentValues(c.columnCount)
+                DatabaseUtils.cursorRowToContentValues(c, values)
                 try {
-                    val exception = calendar.eventFactory.newInstance(calendar, exceptionId)
+                    val exception = calendar.eventFactory.fromProvider(calendar, values)
 
                     // make sure that all components have the same ORGANIZER [RFC 6638 3.1]
                     val exceptionEvent = exception.event!!
@@ -362,7 +369,11 @@ abstract class AndroidEvent(
     }
 
 
-    @Throws(CalendarStorageException::class)
+    /**
+     * Saves an unsaved instance into the calendar storage.
+     * @throws CalendarStorageException when the calendar provider doesn't return a result row
+     * @throws RemoteException on calendar provider errors
+     */
     fun add(): Uri {
         val batch = BatchOperation(calendar.provider)
         val idxEvent = add(batch)
@@ -408,8 +419,8 @@ abstract class AndroidEvent(
                the exception will appear additionally (and not *instead* of the instance).
              */
 
-            val builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(eventsSyncURI()))
-            buildEvent(exception, builder)
+            val exBuilder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(eventsSyncURI()))
+            buildEvent(exception, exBuilder)
 
             var date = exception.recurrenceId!!.date
             if (event.isAllDay() && date is DateTime) {       // correct VALUE=DATE-TIME RECURRENCE-IDs to VALUE=DATE for all-day events
@@ -421,11 +432,11 @@ abstract class AndroidEvent(
                     Constants.log.log(Level.WARNING, "Couldn't parse DATE part of DATE-TIME RECURRENCE-ID", e)
                 }
             }
-            builder .withValue(Events.ORIGINAL_ALL_DAY, if (event.isAllDay()) 1 else 0)
+            exBuilder.withValue(Events.ORIGINAL_ALL_DAY, if (event.isAllDay()) 1 else 0)
                     .withValue(Events.ORIGINAL_INSTANCE_TIME, date.time)
 
             val idxException = batch.nextBackrefIdx()
-            batch.enqueue(BatchOperation.Operation(builder, Events.ORIGINAL_ID, idxEvent))
+            batch.enqueue(BatchOperation.Operation(exBuilder, Events.ORIGINAL_ID, idxEvent))
 
             // add exception reminders
             exception.alarms.forEach { insertReminder(batch, idxException, it) }
@@ -437,7 +448,12 @@ abstract class AndroidEvent(
         return idxEvent
     }
 
-    @Throws(CalendarStorageException::class)
+    /**
+     * Updates an already existing event in the calendar storage with the values
+     * from the instance.
+     * @throws CalendarStorageException when the calendar provider doesn't return a result row
+     * @throws RemoteException on calendar provider errors
+     */
     fun update(event: Event): Uri {
         this.event = event
 
@@ -454,7 +470,10 @@ abstract class AndroidEvent(
         return uri
     }
 
-    @Throws(CalendarStorageException::class)
+    /**
+     * Deletes an existing event from the calendar storage.
+     * @throws RemoteException on calendar provider errors
+     */
     fun delete(): Int {
         val batch = BatchOperation(calendar.provider)
         delete(batch)
@@ -470,8 +489,8 @@ abstract class AndroidEvent(
         batch.enqueue(BatchOperation.Operation(ContentProviderOperation.newDelete(eventSyncURI())))
     }
 
-    @Throws(FileNotFoundException::class, CalendarStorageException::class)
-    open protected fun buildEvent(recurrence: Event?, builder: Builder) {
+
+    protected open fun buildEvent(recurrence: Event?, builder: Builder) {
         val isException = recurrence != null
         val event = if (isException)
             recurrence!!
@@ -588,7 +607,7 @@ abstract class AndroidEvent(
         Constants.log.log(Level.FINE, "Built event object", builder.build())
     }
 
-    protected fun insertReminder(batch: BatchOperation, idxEvent: Int, alarm: VAlarm) {
+    protected open fun insertReminder(batch: BatchOperation, idxEvent: Int, alarm: VAlarm) {
         val builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(Reminders.CONTENT_URI))
 
         val action = alarm.action
@@ -607,7 +626,7 @@ abstract class AndroidEvent(
         batch.enqueue(BatchOperation.Operation(builder, Reminders.EVENT_ID, idxEvent))
     }
 
-    protected fun insertAttendee(batch: BatchOperation, idxEvent: Int, attendee: Attendee) {
+    protected open fun insertAttendee(batch: BatchOperation, idxEvent: Int, attendee: Attendee) {
         val builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(Attendees.CONTENT_URI))
 
         val member = attendee.calAddress
@@ -665,7 +684,7 @@ abstract class AndroidEvent(
         batch.enqueue(BatchOperation.Operation(builder, Attendees.EVENT_ID, idxEvent))
     }
 
-    fun insertUnknownProperty(batch: BatchOperation, idxEvent: Int, property: Property) {
+    protected open fun insertUnknownProperty(batch: BatchOperation, idxEvent: Int, property: Property) {
         val baos = ByteArrayOutputStream()
         try {
             ObjectOutputStream(baos).use { oos ->

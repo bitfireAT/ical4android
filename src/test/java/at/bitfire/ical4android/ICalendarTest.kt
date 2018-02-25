@@ -17,7 +17,7 @@ class ICalendarTest {
     @Test
     fun testTimezoneDefToTzId() {
 		// test valid definition
-		assertEquals("US-Eastern", ICalendar.TimezoneDefToTzId("BEGIN:VCALENDAR\n" +
+		assertEquals("US-Eastern", ICalendar.timezoneDefToTzId("BEGIN:VCALENDAR\n" +
 				"PRODID:-//Example Corp.//CalDAV Client//EN\n" +
 				"VERSION:2.0\n" +
 				"BEGIN:VTIMEZONE\n" +
@@ -41,10 +41,10 @@ class ICalendarTest {
 				"END:VCALENDAR"))
 
         // test invalid time zone
-		assertNull(ICalendar.TimezoneDefToTzId("/* invalid content */"))
+		assertNull(ICalendar.timezoneDefToTzId("/* invalid content */"))
 
         // test time zone without TZID
-		assertNull(ICalendar.TimezoneDefToTzId("BEGIN:VCALENDAR\n" +
+		assertNull(ICalendar.timezoneDefToTzId("BEGIN:VCALENDAR\n" +
 				"PRODID:-//Inverse inc./SOGo 2.2.10//EN\n" +
 				"VERSION:2.0\n" +
 				"END:VCALENDAR"))

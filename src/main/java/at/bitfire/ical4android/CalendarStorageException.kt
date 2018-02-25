@@ -8,7 +8,6 @@
 
 package at.bitfire.ical4android
 
-@Deprecated("Unnecessary generic wrapper around RemoteException")
 class CalendarStorageException: Exception {
 
     constructor(message: String): super(message)

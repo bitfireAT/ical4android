@@ -18,7 +18,6 @@ import net.fortuna.ical4j.model.property.DateProperty
 import net.fortuna.ical4j.model.property.ProdId
 import net.fortuna.ical4j.util.Strings
 import java.io.StringReader
-import java.net.URISyntaxException
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -58,7 +57,6 @@ open class ICalendar {
 
         // time zone helpers
 
-        @JvmStatic
         fun isDateTime(date: DateProperty?) = date != null && date.date is DateTime
 
         /**
@@ -66,8 +64,7 @@ open class ICalendar {
          * @param timezoneDef time zone definition (VCALENDAR with VTIMEZONE component)
          * @return time zone id (TZID) if VTIMEZONE contains a TZID, null otherwise
          */
-        @JvmStatic
-        fun TimezoneDefToTzId(timezoneDef: String): String? {
+        fun timezoneDefToTzId(timezoneDef: String): String? {
             try {
                 val builder = CalendarBuilder()
                 val cal = builder.build(StringReader(timezoneDef))
@@ -82,7 +79,6 @@ open class ICalendar {
 
         // misc. iCalendar helpers
 
-        @JvmStatic
         internal fun alarmMinBefore(alarm: VAlarm): Int {
             var minutes = 0
             alarm.trigger?.duration?.let { duration ->
@@ -101,7 +97,6 @@ open class ICalendar {
         uid = UUID.randomUUID().toString()
     }
 
-
     override fun toString() = MiscUtils.reflectionToString(this)
 
 
@@ -112,7 +107,7 @@ open class ICalendar {
             var value: EventColor? = null
     ): Property(PROPERTY_NAME, Factory) {
         companion object {
-            val PROPERTY_NAME = "COLOR"
+            const val PROPERTY_NAME = "COLOR"
         }
 
         override fun getValue() = value?.name
@@ -149,7 +144,7 @@ open class ICalendar {
     */
     class Email(): Parameter(PARAMETER_NAME, Factory) {
         companion object {
-            val PARAMETER_NAME = "EMAIL"
+            const val PARAMETER_NAME = "EMAIL"
         }
 
         var email: String? = null
@@ -161,9 +156,7 @@ open class ICalendar {
         }
 
         object Factory: ParameterFactory<Email> {
-            @Throws(URISyntaxException::class)
             override fun createParameter(value: String) = Email(value)
-
             override fun supports(name: String) = name == PARAMETER_NAME
         }
     }

@@ -20,7 +20,6 @@ object MiscUtils {
      * Ensures that a given DateProperty has a time zone with an ID that is available in Android.
      * @param date DateProperty to validate. Values which are not DATE-TIME will be ignored.
      */
-    @JvmStatic
     fun androidifyTimeZone(date: DateProperty?) {
         if (ICalendar.isDateTime(date)) {
             val tz = date!!.timeZone ?: return
@@ -38,7 +37,6 @@ object MiscUtils {
      * TIMEZONE_UTC is also returned for DATE-TIMEs in UTC representation.
      * @param date DateProperty (DATE or DATE-TIME) whose time-zone information is used
      */
-    @JvmStatic
     fun getTzId(date: DateProperty?) =
             if (ICalendar.isDateTime(date!!) && !date.isUtc && date.timeZone != null)
                 date.timeZone.id!!
@@ -48,7 +46,6 @@ object MiscUtils {
     /**
      * Generates useful toString info (fields and values) from [obj] by reflection.
      */
-    @JvmStatic
     fun reflectionToString(obj: Any): String {
         val s = LinkedList<String>()
         var clazz: Class<in Any>? = obj.javaClass
@@ -66,7 +63,6 @@ object MiscUtils {
      * Removes empty [String] values from [values].
      * @param values set of values to be processed
      */
-    @JvmStatic
     fun removeEmptyStrings(values: ContentValues) {
         val it = values.keySet().iterator()
         while (it.hasNext()) {

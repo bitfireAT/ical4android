@@ -23,7 +23,6 @@ import org.dmfs.tasks.contract.TaskContract.Tasks
 import java.io.FileNotFoundException
 import java.net.URI
 import java.net.URISyntaxException
-import java.text.ParseException
 import java.util.*
 import java.util.logging.Level
 
@@ -33,28 +32,29 @@ abstract class AndroidTask(
 
     var id: Long? = null
 
-    constructor(taskList: AndroidTaskList<AndroidTask>, id: Long): this(taskList) {
-        this.id = id
+
+    constructor(taskList: AndroidTaskList<AndroidTask>, values: ContentValues): this(taskList) {
+        id = values.getAsLong(Tasks._ID)
     }
 
     constructor(taskList: AndroidTaskList<AndroidTask>, task: Task): this(taskList) {
         this.task = task
     }
 
-    var task: Task? = null
-    /**
-     * This getter returns the full task data, either from [task] or, if [task] is null, by reading task
-     * number [id] from the task provider
-     * @throws FileNotFoundException if there's no task with [id] in the task provider
-     * @throws CalendarStorageException on task provider I/O errors
-     */
-    @Throws(FileNotFoundException::class, CalendarStorageException::class)
-    get() {
-        if (field != null)
-            return field
-        val id = requireNotNull(id)
 
-        try {
+    var task: Task? = null
+        /**
+         * This getter returns the full task data, either from [task] or, if [task] is null, by reading task
+         * number [id] from the task provider
+         * @throws IllegalArgumentException if task has not been saved yet
+         * @throws FileNotFoundException if there's no task with [id] in the task provider
+         * @throws RemoteException on task provider errors
+         */
+        get() {
+            if (field != null)
+                return field
+            val id = requireNotNull(id)
+
             task = Task()
             taskList.provider.client.query(taskSyncURI(), null, null, null, null)?.use { cursor ->
                 if (cursor.moveToFirst()) {
@@ -64,13 +64,9 @@ abstract class AndroidTask(
                     return task
                 }
             }
-        } catch(e: Exception) {
-            throw CalendarStorageException("Couldn't read locally stored event", e)
+            throw FileNotFoundException("Couldn't find task #" + id)
         }
-        throw FileNotFoundException("Couldn't find task #" + id)
-    }
 
-    @Throws(ParseException::class)
     protected open fun populateTask(values: ContentValues) {
         val task = requireNotNull(task)
 
@@ -156,7 +152,6 @@ abstract class AndroidTask(
     }
 
 
-    @Throws(CalendarStorageException::class)
     fun add(): Uri? {
         val batch = BatchOperation(taskList.provider.client)
         val builder = ContentProviderOperation.newInsert(taskList.tasksSyncUri())
@@ -169,7 +164,6 @@ abstract class AndroidTask(
         return result.uri
     }
 
-    @Throws(CalendarStorageException::class)
     fun update(task: Task) {
         this.task = task
 
@@ -180,7 +174,6 @@ abstract class AndroidTask(
         batch.commit()
     }
 
-    @Throws(CalendarStorageException::class)
     fun delete(): Int {
         try {
             return taskList.provider.client.delete(taskSyncURI(), null, null)
@@ -189,7 +182,6 @@ abstract class AndroidTask(
         }
     }
 
-    @Throws(FileNotFoundException::class, CalendarStorageException::class)
     protected open fun buildTask(builder: Builder, update: Boolean) {
         if (!update)
             builder .withValue(Tasks.LIST_ID, taskList.id)

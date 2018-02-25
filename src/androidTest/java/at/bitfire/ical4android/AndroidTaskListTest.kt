@@ -58,7 +58,7 @@ class AndroidTaskListTest {
         assertNotNull(uri)
 
         // query task list
-        val taskList = AndroidTaskList.findByID(testAccount, provider!!, TestTaskList.Factory.FACTORY, ContentUris.parseId(uri))
+        val taskList = AndroidTaskList.findByID(testAccount, provider!!, TestTaskList.Factory, ContentUris.parseId(uri))
         assertNotNull(taskList)
 
         // delete task list

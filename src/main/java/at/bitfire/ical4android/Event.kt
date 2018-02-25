@@ -58,8 +58,7 @@ class Event: ICalendar() {
     val unknownProperties = LinkedList<Property>()
 
     companion object {
-        @JvmField
-        val CALENDAR_NAME = "X-WR-CALNAME"
+        const val CALENDAR_NAME = "X-WR-CALNAME"
 
         /**
          * Parses an InputStream that contains iCalendar VEVENTs.
@@ -70,9 +69,6 @@ class Event: ICalendar() {
          * @throws IOException on I/O errors
          * @throws InvalidCalendarException on parsing exceptions
          */
-        @JvmStatic
-        @JvmOverloads
-        @Throws(IOException::class, InvalidCalendarException::class)
         fun fromReader(reader: Reader, properties: MutableMap<String, String>? = null): List<Event> {
             Constants.log.fine("Parsing iCalendar stream")
 
@@ -151,8 +147,6 @@ class Event: ICalendar() {
             return events
         }
 
-
-        @Throws(InvalidCalendarException::class)
         private fun fromVEvent(event: VEvent): Event {
             val e = Event()
 
@@ -199,9 +193,8 @@ class Event: ICalendar() {
             return e
         }
     }
-    
 
-    @Throws(IOException::class)
+
     fun write(os: OutputStream) {
         val ical = Calendar()
         ical.properties += Version.VERSION_2_0

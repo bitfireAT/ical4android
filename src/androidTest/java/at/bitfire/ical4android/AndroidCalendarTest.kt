@@ -66,7 +66,7 @@ class AndroidCalendarTest {
         assertNotNull(uri)
 
         // query task list
-        val calendar = AndroidCalendar.findByID(testAccount, provider, TestCalendar.Factory.INSTANCE, ContentUris.parseId(uri))
+        val calendar = AndroidCalendar.findByID(testAccount, provider, TestCalendar.Factory, ContentUris.parseId(uri))
         assertNotNull(calendar)
 
         // delete task list

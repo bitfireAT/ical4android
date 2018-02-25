@@ -9,20 +9,18 @@
 package at.bitfire.ical4android
 
 import android.accounts.Account
-import android.annotation.SuppressLint
 import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.ContentValues
 import android.database.DatabaseUtils
 import android.net.Uri
-import android.os.RemoteException
 import android.provider.CalendarContract
 import android.provider.CalendarContract.*
 import java.io.FileNotFoundException
 import java.util.*
 
 /**
- * Represents a locally stored calendar, containing AndroidEvents (whose data objects are Events).
+ * Represents a locally stored calendar, containing [AndroidEvent]s (whose data objects are [Event]s).
  * Communicates with the Android Contacts Provider which uses an SQLite
  * database to store the events.
  */
@@ -33,23 +31,8 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
         val id: Long
 ) {
 
-    var name: String? = null
-    var displayName: String? = null
-    var color: Int? = null
-    var isSynced = true
-    var isVisible = true
-
-    /**
-     * Those CalendarContract.Events columns will always be fetched by queryEvents().
-     * Must at least contain Events._ID!
-     */
-    protected open fun eventBaseInfoColumns() = arrayOf(Events._ID)
-
-
     companion object {
 
-        @JvmStatic
-        @Throws(CalendarStorageException::class)
         fun create(account: Account, provider: ContentProviderClient, info: ContentValues): Uri {
             info.put(Calendars.ACCOUNT_NAME, account.name)
             info.put(Calendars.ACCOUNT_TYPE, account.type)
@@ -59,14 +42,9 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             info.put(Calendars.ALLOWED_ATTENDEE_TYPES, "${Attendees.TYPE_NONE},${Attendees.TYPE_OPTIONAL},${Attendees.TYPE_REQUIRED},${Attendees.TYPE_RESOURCE}")
 
             Constants.log.info("Creating local calendar: " + info.toString())
-            try {
-                return provider.insert(syncAdapterURI(Calendars.CONTENT_URI, account), info)
-            } catch(e: RemoteException) {
-                throw CalendarStorageException("Couldn't create calendar", e)
-            }
+            return provider.insert(syncAdapterURI(Calendars.CONTENT_URI, account), info)
         }
 
-        @JvmStatic
         fun insertColors(provider: ContentProviderClient, account: Account) {
             provider.query(syncAdapterURI(Colors.CONTENT_URI, account), arrayOf(Colors.COLOR_KEY), null, null, null)?.use { cursor ->
                 if (cursor.count == EventColor.values().size)
@@ -86,7 +64,6 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             }
         }
 
-        @JvmStatic
         fun removeColors(provider: ContentProviderClient, account: Account) {
             Constants.log.info("Removing event colors from account $account")
 
@@ -103,9 +80,6 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             provider.delete(syncAdapterURI(Colors.CONTENT_URI, account), null, null)
         }
 
-        @SuppressLint("Recycle")
-        @JvmStatic
-        @Throws(FileNotFoundException::class, CalendarStorageException::class)
         fun<T: AndroidCalendar<AndroidEvent>> findByID(account: Account, provider: ContentProviderClient, factory: AndroidCalendarFactory<T>, id: Long): T {
             val iterCalendars = CalendarContract.CalendarEntity.newEntityIterator(
                     provider.query(syncAdapterURI(ContentUris.withAppendedId(CalendarContract.CalendarEntity.CONTENT_URI, id), account), null, null, null, null)
@@ -117,17 +91,12 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
                     calendar.populate(values)
                     return calendar
                 }
-            } catch(e: RemoteException) {
-                throw CalendarStorageException("Couldn't query calendars", e)
             } finally {
                 iterCalendars.close()
             }
             throw FileNotFoundException()
         }
 
-        @SuppressLint("Recycle")
-        @JvmStatic
-        @Throws(CalendarStorageException::class)
         fun<T: AndroidCalendar<AndroidEvent>> find(account: Account, provider: ContentProviderClient, factory: AndroidCalendarFactory<T>, where: String?, whereArgs: Array<String>?): List<T> {
             val iterCalendars = CalendarContract.CalendarEntity.newEntityIterator(
                     provider.query(syncAdapterURI(CalendarContract.CalendarEntity.CONTENT_URI, account), null, where, whereArgs, null)
@@ -141,13 +110,10 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
                     calendars += calendar
                 }
                 return calendars
-            } catch(e: RemoteException) {
-                throw CalendarStorageException("Couldn't query calendars", e)
             } finally {
                 iterCalendars.close()
             }
         }
-
 
         fun syncAdapterURI(uri: Uri, account: Account) = uri.buildUpon()
                 .appendQueryParameter(Calendars.ACCOUNT_NAME, account.name)
@@ -155,6 +121,12 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
                 .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
                 .build()!!
     }
+
+    var name: String? = null
+    var displayName: String? = null
+    var color: Int? = null
+    var isSynced = true
+    var isVisible = true
 
 
     protected open fun populate(info: ContentValues) {
@@ -168,45 +140,28 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
     }
 
 
-    @Throws(CalendarStorageException::class)
-    fun update(info: ContentValues) {
-        try {
-            provider.update(calendarSyncURI(), info, null, null)
-        } catch (e: RemoteException) {
-            throw CalendarStorageException("Couldn't update calendar", e)
-        }
-    }
+    fun update(info: ContentValues) = provider.update(calendarSyncURI(), info, null, null)
 
-    @Throws(CalendarStorageException::class)
-    fun delete() = try {
-        provider.delete(calendarSyncURI(), null, null)
-    } catch (e: RemoteException) {
-        throw CalendarStorageException("Couldn't delete calendar", e)
-    }
+    fun delete() = provider.delete(calendarSyncURI(), null, null)
 
 
-    @Throws(CalendarStorageException::class)
-    protected fun queryEvents(where: String? = null, whereArgs: Array<String>? = null): List<T> {
+    fun queryEvents(where: String? = null, whereArgs: Array<String>? = null): List<T> {
         val where = "(${where ?: "1"}) AND " + Events.CALENDAR_ID + "=?"
         val whereArgs = (whereArgs ?: arrayOf()) + id.toString()
 
         val events = LinkedList<T>()
-        try {
-            provider.query(
-                    eventsSyncURI(),
-                    eventBaseInfoColumns(),
-                    where, whereArgs, null)?.use { cursor ->
-                while (cursor.moveToNext()) {
-                    val baseInfo = ContentValues(cursor.columnCount)
-                    DatabaseUtils.cursorRowToContentValues(cursor, baseInfo)
-                    events += eventFactory.newInstance(this, baseInfo.getAsLong(Events._ID), baseInfo)
-                }
+        provider.query(eventsSyncURI(), null, where, whereArgs, null)?.use { cursor ->
+            while (cursor.moveToNext()) {
+                val values = ContentValues(cursor.columnCount)
+                DatabaseUtils.cursorRowToContentValues(cursor, values)
+                events += eventFactory.fromProvider(this, values)
             }
-        } catch (e: RemoteException) {
-            throw CalendarStorageException("Couldn't query calendar events", e)
         }
         return events
     }
+
+    fun findById(id: Long) = queryEvents("${Events._ID}=?", arrayOf(id.toString())).firstOrNull()
+            ?: throw FileNotFoundException()
 
 
     fun syncAdapterURI(uri: Uri) = uri.buildUpon()

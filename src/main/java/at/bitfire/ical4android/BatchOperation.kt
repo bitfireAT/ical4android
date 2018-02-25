@@ -25,14 +25,13 @@ class BatchOperation(
 
     fun enqueue(operation: Operation) = queue.add(operation)
 
-    @Throws(CalendarStorageException::class)
     fun commit(): Int {
         var affected = 0
         if (!queue.isEmpty())
             try {
                 Constants.log.fine("Committing ${queue.size} operations …")
 
-                results = Array<ContentProviderResult?>(queue.size, { null })
+                results = Array(queue.size, { null })
                 runBatch(0, queue.size)
 
                 for (result in results.filterNotNull())
@@ -41,7 +40,6 @@ class BatchOperation(
                         result.uri != null   -> affected += 1
                     }
                 Constants.log.fine("… $affected record(s) affected")
-
             } catch(e: Exception) {
                 throw CalendarStorageException("Couldn't apply batch operation", e)
             }
@@ -54,16 +52,14 @@ class BatchOperation(
 
 
     /**
-     * Runs a subset of the operations in {@link #queue} using {@link #providerClient} in a transaction.
-     * Catches {@link TransactionTooLargeException} and splits the operations accordingly.
-     * @param start    index of first operation which will be run (inclusive)
-     * @param end      index of last operation which will be run (exclusive!)
-     * @throws RemoteException  if the provider clients throws a {@link RemoteException}, or
-     *                          if the transaction is too large and can't be split
-     * @throws OperationApplicationException
-     * @throws CalendarStorageException
+     * Runs a subset of the operations in [queue] using [providerClient] in a transaction.
+     * Catches [TransactionTooLargeException] and splits the operations accordingly.
+     * @param start index of first operation which will be run (inclusive)
+     * @param end   index of last operation which will be run (exclusive!)
+     * @throws RemoteException on calendar provider errors
+     * @throws OperationApplicationException when the batch can't be processed
+     * @throws CalendarStorageException if the transaction is too large or if the batch operation failed partially
      */
-    @Throws(RemoteException::class, OperationApplicationException::class, CalendarStorageException::class)
     private fun runBatch(start: Int, end: Int) {
         if (end == start)
             return     // nothing to do
@@ -79,8 +75,8 @@ class BatchOperation(
             System.arraycopy(partResults, 0, results, start, n)
         } catch(e: TransactionTooLargeException) {
             if (end <= start + 1)
-                // only one operation, can't be split
-                throw RemoteException("Can't transfer data to content provider (data row too large)")
+            // only one operation, can't be split
+                throw CalendarStorageException("Can't transfer data to content provider (data row too large)")
 
             Constants.log.warning("Transaction too large, splitting (losing atomicity)")
             val mid = start + (end - start)/2
@@ -89,9 +85,9 @@ class BatchOperation(
         }
     }
 
-    fun toCPO(start: Int, end: Int): ArrayList<ContentProviderOperation> {
+    private fun toCPO(start: Int, end: Int): ArrayList<ContentProviderOperation> {
         val cpo = ArrayList<ContentProviderOperation>(end - start)
-        for (op in queue.subList(start, end)) {
+        for ((i, op) in queue.subList(start, end).withIndex()) {
             val builder = op.builder
             op.backrefKey?.let { key ->
                 if (op.backrefIdx < start)
@@ -104,13 +100,18 @@ class BatchOperation(
                     // back reference is in current batch, apply offset
                     builder.withValueBackReference(key, op.backrefIdx - start)
             }
+
+            // set a yield point at least every 300 operations
+            if (i % 300 == 0)
+                builder.withYieldAllowed(true)
+
             cpo += builder.build()
         }
         return cpo
     }
 
 
-    class Operation @JvmOverloads constructor(
+    class Operation constructor(
             val builder: ContentProviderOperation.Builder,
             val backrefKey: String? = null,
             val backrefIdx: Int = -1
