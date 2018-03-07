@@ -106,6 +106,13 @@ abstract class AndroidTaskList<out T: AndroidTask>(
     fun delete() = provider.client.delete(taskListSyncUri(), null, null)
 
 
+    /**
+     * Queries tasks from this task list. Adds a WHERE clause that restricts the
+     * query to [Tasks.LIST_ID] = [id].
+     * @param where selection
+     * @param whereArgs arguments for selection
+     * @return events from this task list which match the selection
+     */
     fun queryTasks(where: String? = null, whereArgs: Array<String>? = null): List<T> {
         val where = "(${where ?: "1"}) AND ${Tasks.LIST_ID}=?"
         val whereArgs = (whereArgs ?: arrayOf()) + id.toString()

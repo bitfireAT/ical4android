@@ -28,6 +28,8 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
         val account: Account,
         val provider: ContentProviderClient,
         val eventFactory: AndroidEventFactory<T>,
+
+        /** the calendar ID ([CalendarContract.Calendars._ID]) **/
         val id: Long
 ) {
 
@@ -145,6 +147,13 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
     fun delete() = provider.delete(calendarSyncURI(), null, null)
 
 
+    /**
+     * Queries events from this calendar. Adds a WHERE clause that restricts the
+     * query to [Events.CALENDAR_ID] = [id].
+     * @param where selection
+     * @param whereArgs arguments for selection
+     * @return events from this calendar which match the selection
+     */
     fun queryEvents(where: String? = null, whereArgs: Array<String>? = null): List<T> {
         val where = "(${where ?: "1"}) AND " + Events.CALENDAR_ID + "=?"
         val whereArgs = (whereArgs ?: arrayOf()) + id.toString()
