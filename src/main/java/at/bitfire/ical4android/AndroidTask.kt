@@ -26,6 +26,16 @@ import java.net.URISyntaxException
 import java.util.*
 import java.util.logging.Level
 
+/**
+ * Stores and retrieves VTODO iCalendar objects (represented as [Task]s) to/from the
+ * OpenTasks provider.
+ *
+ * Extend this class to process specific fields of the task.
+ *
+ * The SEQUENCE field is stored in [Tasks.SYNC_VERSION], so don't use [Tasks.SYNC_VERSION]
+ * for anything else.
+ *
+ */
 abstract class AndroidTask(
         val taskList: AndroidTaskList<AndroidTask>
 ) {
@@ -64,7 +74,7 @@ abstract class AndroidTask(
                     return task
                 }
             }
-            throw FileNotFoundException("Couldn't find task #" + id)
+            throw FileNotFoundException("Couldn't find task #$id")
         }
 
     protected open fun populateTask(values: ContentValues) {

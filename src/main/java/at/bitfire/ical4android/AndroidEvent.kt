@@ -35,8 +35,10 @@ import java.util.*
 import java.util.logging.Level
 
 /**
- * Extend this class for your local implementation of the
- * event that's stored in the Android Calendar Provider.
+ * Stores and retrieves VEVENT iCalendar objects (represented as [Event]s) to/from the
+ * Android Calendar provider.
+ *
+ * Extend this class to process specific fields of the event.
  *
  * Important: To use recurrence exceptions, you MUST set _SYNC_ID and ORIGINAL_SYNC_ID
  * in populateEvent() / buildEvent. Setting _ID and ORIGINAL_ID is not sufficient.
