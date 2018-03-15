@@ -195,11 +195,11 @@ abstract class AndroidTask(
     protected open fun buildTask(builder: Builder, update: Boolean) {
         if (!update)
             builder .withValue(Tasks.LIST_ID, taskList.id)
-                    .withValue(Tasks._DIRTY, 0)
 
         val task = requireNotNull(task)
         builder
                 .withValue(Tasks._UID, task.uid)
+                .withValue(Tasks._DIRTY, 0)
                 .withValue(Tasks.SYNC_VERSION, task.sequence)
                 .withValue(Tasks.TITLE, task.summary)
                 .withValue(Tasks.LOCATION, task.location)
