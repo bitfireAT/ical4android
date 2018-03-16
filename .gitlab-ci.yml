@@ -10,7 +10,7 @@ cache:
 test:
   script:
     - (cd /sdk/emulator; ./emulator @test -no-audio -no-window & wait-for-emulator.sh)
-    - adb install src/androidTest/resources/org.dmfs.tasks_6760.apk
+    - adb install src/androidTest/resources/org.dmfs.tasks_6880.apk
     - ./gradlew check connectedCheck
   artifacts:
     paths:

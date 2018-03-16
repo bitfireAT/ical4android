@@ -162,7 +162,7 @@ abstract class AndroidTask(
     }
 
 
-    fun add(): Uri? {
+    fun add(): Uri {
         val batch = BatchOperation(taskList.provider.client)
         val builder = ContentProviderOperation.newInsert(taskList.tasksSyncUri())
         buildTask(builder, false)
@@ -174,14 +174,16 @@ abstract class AndroidTask(
         return result.uri
     }
 
-    fun update(task: Task) {
+    fun update(task: Task): Uri {
         this.task = task
 
         val batch = BatchOperation(taskList.provider.client)
-        val builder = ContentProviderOperation.newUpdate(taskSyncURI())
+        val uri = taskSyncURI()
+        val builder = ContentProviderOperation.newUpdate(uri)
         buildTask(builder, true)
         batch.enqueue(BatchOperation.Operation(builder))
         batch.commit()
+        return uri
     }
 
     fun delete(): Int {

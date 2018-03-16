@@ -61,6 +61,15 @@ class AndroidTaskListTest {
         val taskList = AndroidTaskList.findByID(testAccount, provider!!, TestTaskList.Factory, ContentUris.parseId(uri))
         assertNotNull(taskList)
 
+        // sync URIs
+        assertEquals("true", taskList.taskListSyncUri().getQueryParameter(TaskContract.CALLER_IS_SYNCADAPTER))
+        assertEquals(testAccount.type, taskList.taskListSyncUri().getQueryParameter(TaskContract.ACCOUNT_TYPE))
+        assertEquals(testAccount.name, taskList.taskListSyncUri().getQueryParameter(TaskContract.ACCOUNT_NAME))
+
+        assertEquals("true", taskList.tasksSyncUri().getQueryParameter(TaskContract.CALLER_IS_SYNCADAPTER))
+        assertEquals(testAccount.type, taskList.tasksSyncUri().getQueryParameter(TaskContract.ACCOUNT_TYPE))
+        assertEquals(testAccount.name, taskList.tasksSyncUri().getQueryParameter(TaskContract.ACCOUNT_NAME))
+
         // delete task list
         assertEquals(1, taskList.delete())
     }
