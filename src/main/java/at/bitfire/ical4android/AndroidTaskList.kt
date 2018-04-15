@@ -45,7 +45,11 @@ abstract class AndroidTaskList<out T: AndroidTask>(
                 TaskProvider.ProviderName.OpenTasks
             )
             for (name in byPriority)
-                TaskProvider.acquire(context, name)?.let { return it }
+                try {
+                    TaskProvider.acquire(context, name)?.let { return it }
+                } catch (e: Exception) {
+                    // couldn't acquire task provider
+                }
             return null
         }
 
