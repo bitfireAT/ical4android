@@ -52,7 +52,8 @@ open class ICalendar {
         @JvmStatic
         protected fun calendarBuilder() = CalendarBuilder(
                 CalendarParserFactory.getInstance().createParser(),
-                propertyFactoryRegistry, parameterFactoryRegistry, DateUtils.tzRegistry)
+                propertyFactoryRegistry, parameterFactoryRegistry,
+                TimeZoneRegistryFactory.getInstance().createRegistry())
 
 
         // time zone helpers
