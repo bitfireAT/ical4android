@@ -1,6 +1,6 @@
 
 buildscript {
-    ext.kotlin_version = '1.2.31'
+    ext.kotlin_version = '1.2.40'
     ext.dokka_version = '0.9.16'
 
     repositories {
@@ -24,6 +24,10 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.dokka-android'
 
+ext {
+    ical4j_version = "2.2.0"
+}
+
 android {
     compileSdkVersion 27
     buildToolsVersion '27.0.3'
@@ -33,6 +37,8 @@ android {
         targetSdkVersion 27
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        buildConfigField "String", "version_ical4j", "\"$ical4j_version\""
     }
     buildTypes {
         release {
@@ -55,9 +61,9 @@ android {
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
-    compile 'org.mnode.ical4j:ical4j:2.2.0'
+    compile "org.mnode.ical4j:ical4j:$ical4j_version"
     compile 'org.slf4j:slf4j-jdk14:1.7.25'
 
     androidTestCompile 'com.android.support.test:runner:1.0.1'

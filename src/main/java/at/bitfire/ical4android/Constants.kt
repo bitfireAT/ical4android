@@ -14,4 +14,6 @@ object Constants {
 
     val log = Logger.getLogger("ical4android")!!
 
+    const val ical4jVersion = BuildConfig.version_ical4j
+
 }
