@@ -67,7 +67,7 @@ class BatchOperation(
 
         try {
             val ops = toCPO(start, end)
-            Constants.log.fine("Running {${ops.size}} operations ($start .. ${end-1})")
+            Constants.log.fine("Running ${ops.size} operations ($start .. ${end-1})")
             val partResults = providerClient.applyBatch(ops)
 
             val n = end - start

@@ -113,14 +113,14 @@ class Event: ICalendar() {
                     // If the SEQUENCE is identical, use latest version.
                     val event = masterEvents[uid]
                     if (event == null || (event.sequence != null && sequence >= event.sequence.sequenceNo))
-                        masterEvents.put(uid, vEvent)
+                        masterEvents[uid] = vEvent
 
                 } else {
                     // exception (RECURRENCE-ID)
                     var ex = exceptions[uid]
                     // first index level: UID
                     if (ex == null) {
-                        ex = mutableMapOf<String,VEvent>()
+                        ex = mutableMapOf()
                         exceptions[uid] = ex
                     }
                     // second index level: RECURRENCE-ID

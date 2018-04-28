@@ -9,6 +9,7 @@
 package at.bitfire.ical4android
 
 import android.accounts.Account
+import android.annotation.SuppressLint
 import android.content.ContentProviderClient
 import android.content.Context
 import android.content.pm.PackageManager
@@ -40,12 +41,13 @@ class TaskProvider private constructor(
 
         /**
          * Acquires a content provider for a given task provider. The content provider will
-         * be released when the TaskProvider is closed.
+         * be released when the TaskProvider is closed with [close].
          * @param context will be used to acquire the content provider client
          * @param name task provider to acquire content provider for
          * @return content provider for the given task provider (may be {@code null})
          * @throws [ProviderTooOldException] if the tasks provider is installed, but doesn't meet the minimum version requirement
          */
+        @SuppressLint("Recycle")
         fun acquire(context: Context, name: TaskProvider.ProviderName): TaskProvider? {
             return try {
                 checkVersion(context, name)

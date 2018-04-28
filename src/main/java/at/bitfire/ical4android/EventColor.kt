@@ -11,6 +11,7 @@ package at.bitfire.ical4android
 /**
  * Represents an RGBA COLOR value, as specified in https://tools.ietf.org/html/rfc7986#section-5.9
  */
+@Suppress("EnumEntryName")
 enum class EventColor(val rgba: Int) {
     // values taken from https://www.w3.org/TR/2011/REC-css3-color-20110607/#svg-color
     aliceblue(0xfff0f8ff.toInt()),

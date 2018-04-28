@@ -35,7 +35,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
 	companion object {
 
         /**
-         * Acquires a [ContentProviderClient] for a supported task provider. If multiple providers are
+         * Acquires a [android.content.ContentProviderClient] for a supported task provider. If multiple providers are
          * available, a pre-defined priority list is taken into account.
          * @return A [TaskProvider], or null if task storage is not available/accessible.
          *         Caller is responsible for calling release()!

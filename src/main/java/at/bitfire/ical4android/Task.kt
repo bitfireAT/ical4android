@@ -190,8 +190,8 @@ class Task: ICalendar() {
     fun isAllDay(): Boolean {
         val dtStart = dtStart
         val due = due
-        return (dtStart != null && !(dtStart.date is DateTime)) ||
-               (due != null && !(due.date is DateTime))
+        return (dtStart != null && dtStart.date !is DateTime) ||
+               (due != null && due.date !is DateTime)
     }
 
 }

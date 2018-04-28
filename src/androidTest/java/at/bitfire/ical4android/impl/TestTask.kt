@@ -8,12 +8,12 @@
 
 package at.bitfire.ical4android.impl
 
-import android.content.ContentValues;
+import android.content.ContentValues
 
-import at.bitfire.ical4android.AndroidTask;
-import at.bitfire.ical4android.AndroidTaskFactory;
-import at.bitfire.ical4android.AndroidTaskList;
-import at.bitfire.ical4android.Task;
+import at.bitfire.ical4android.AndroidTask
+import at.bitfire.ical4android.AndroidTaskFactory
+import at.bitfire.ical4android.AndroidTaskList
+import at.bitfire.ical4android.Task
 
 class TestTask: AndroidTask {
 

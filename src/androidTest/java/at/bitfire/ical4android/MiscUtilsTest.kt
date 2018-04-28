@@ -72,7 +72,7 @@ class MiscUtilsTest {
         assertEquals(TimeZones.UTC_ID, MiscUtils.getTzId(DtStart(DateTime(1438607288000L))))
 
         // DATE-TIME with time zone
-        assertEquals(tzVienna.getID(), MiscUtils.getTzId(DtStart(DateTime("20150101T000000", tzVienna))))
+        assertEquals(tzVienna.id, MiscUtils.getTzId(DtStart(DateTime("20150101T000000", tzVienna))))
     }
 
     @Test

@@ -578,11 +578,11 @@ abstract class AndroidEvent(
         event.organizer?.let { organizer ->
             val email: String?
             val uri = organizer.calAddress
-            if (uri.scheme.equals("mailto", true))
-                email = uri.schemeSpecificPart
+            email = if (uri.scheme.equals("mailto", true))
+                uri.schemeSpecificPart
             else {
                 val emailParam = organizer.getParameter(ICalendar.Email.PARAMETER_NAME) as ICalendar.Email?
-                email = emailParam?.value
+                emailParam?.value
             }
             if (email != null)
                 builder.withValue(Events.ORGANIZER, email)

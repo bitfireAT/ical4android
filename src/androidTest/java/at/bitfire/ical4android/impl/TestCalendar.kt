@@ -25,7 +25,7 @@ class TestCalendar(
     companion object {
         fun findOrCreate(account: Account, provider: ContentProviderClient): TestCalendar {
             val calendars = AndroidCalendar.find(account, provider, Factory, null, null)
-            if (calendars.isEmpty()) {
+            return if (calendars.isEmpty()) {
                 val values = ContentValues(3)
                 values.put(CalendarContract.Calendars.NAME, "TestCalendar")
                 values.put(CalendarContract.Calendars.CALENDAR_DISPLAY_NAME, "ical4android Test Calendar")
@@ -33,9 +33,9 @@ class TestCalendar(
                         CalendarContract.Reminders.METHOD_DEFAULT)
                 val uri = AndroidCalendar.create(account, provider, values)
 
-                return TestCalendar(account, provider, ContentUris.parseId(uri))
+                TestCalendar(account, provider, ContentUris.parseId(uri))
             } else
-                return calendars.first()
+                calendars.first()
         }
     }
 
