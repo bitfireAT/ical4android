@@ -221,10 +221,10 @@ class Event: ICalendar() {
             exception.dtEnd?.timeZone?.let(usedTimeZones::add)
         }
 
-        // add minified VTIMEZONE components
+        // add VTIMEZONE components
         usedTimeZones.forEach {
             val tz = it.vTimeZone
-            dtStart?.let { minifyVTimeZone(tz, it.date) }
+            // TODO dtStart?.let { minifyVTimeZone(tz, it.date) }
             ical.components += tz
         }
 
