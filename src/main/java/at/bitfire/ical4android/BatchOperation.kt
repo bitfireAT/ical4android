@@ -18,7 +18,7 @@ class BatchOperation(
 ) {
 
     private val queue = LinkedList<Operation>()
-    private lateinit var results: Array<ContentProviderResult?>
+    private var results = arrayOfNulls<ContentProviderResult?>(0)
 
 
     fun nextBackrefIdx() = queue.size
