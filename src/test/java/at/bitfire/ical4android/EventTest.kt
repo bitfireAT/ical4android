@@ -11,6 +11,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import java.io.FileNotFoundException
 import java.io.InputStreamReader
+import java.lang.AssertionError
 import java.nio.charset.Charset
 
 class EventTest {
@@ -37,11 +38,20 @@ class EventTest {
         assertEquals("中华人民共和国", e.location)
     }
 
-    fun testParsingCustomTimezone() {
-        val events = parseCalendar("custom-timezone.ics")
+    @Test(expected = AssertionError::class)
+    fun testDstOnlyVtimezone() {
+        // Google Calendar (and maybe others) generate iCalendars which contain VTIMEZONE definitions
+        // with only a DAYLIGHT component (and no STANDARD component). This is technically valid,
+        // but results in wrong dates in ical4j:
+        // https://github.com/ical4j/ical4j/issues/230
+        val events = parseCalendar("dst-only-vtimezone.ics")
         assertEquals(1, events.size)
         val e = events.first()
-        assertEquals("XXX", e.dtStart!!.timeZone.id)
+        assertEquals("only-dst@example.com", e.uid)
+        val dtStart = e.dtStart!!
+        assertEquals("Europe/Berlin", dtStart.timeZone.id)
+        // FIXME this should not fail, but it does:
+        assertEquals(1522738800000L, dtStart.date.time)
     }
 
     @Test
