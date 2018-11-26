@@ -11,7 +11,6 @@ import org.junit.Assert.*
 import org.junit.Test
 import java.io.FileNotFoundException
 import java.io.InputStreamReader
-import java.lang.AssertionError
 import java.nio.charset.Charset
 
 class EventTest {
@@ -20,7 +19,7 @@ class EventTest {
 
     @Test
     fun testCalendarProperties() {
-        javaClass.classLoader.getResourceAsStream("events/multiple.ics").use { stream ->
+        javaClass.classLoader!!.getResourceAsStream("events/multiple.ics").use { stream ->
             val properties = mutableMapOf<String, String>()
             Event.fromReader(InputStreamReader(stream, Charsets.UTF_8), properties)
             assertEquals(1, properties.size)
@@ -201,7 +200,7 @@ class EventTest {
     }
 
     private fun parseCalendar(fname: String, charset: Charset = Charsets.UTF_8): List<Event> =
-            javaClass.classLoader.getResourceAsStream("events/$fname").use { stream ->
+            javaClass.classLoader!!.getResourceAsStream("events/$fname").use { stream ->
                 return Event.fromReader(InputStreamReader(stream, charset))
             }
 

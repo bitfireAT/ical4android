@@ -15,9 +15,9 @@ import android.content.ContentValues
 import android.net.Uri
 import android.os.Build
 import android.provider.CalendarContract
-import android.support.test.InstrumentationRegistry.getInstrumentation
-import android.support.test.filters.MediumTest
-import android.support.test.rule.GrantPermissionRule
+import androidx.test.filters.MediumTest
+import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
+import androidx.test.rule.GrantPermissionRule
 import at.bitfire.ical4android.AndroidCalendar.Companion.syncAdapterURI
 import at.bitfire.ical4android.impl.TestCalendar
 import at.bitfire.ical4android.impl.TestEvent
@@ -53,7 +53,7 @@ class AndroidEventTest {
 
     @Before
     fun prepare() {
-        provider = getInstrumentation().targetContext.contentResolver.acquireContentProviderClient(CalendarContract.AUTHORITY)
+        provider = getInstrumentation().targetContext.contentResolver.acquireContentProviderClient(CalendarContract.AUTHORITY)!!
 
         AndroidCalendar.insertColors(provider, testAccount)
 

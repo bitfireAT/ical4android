@@ -15,9 +15,9 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.os.Build
 import android.provider.CalendarContract
-import android.support.test.InstrumentationRegistry
-import android.support.test.filters.MediumTest
-import android.support.test.rule.GrantPermissionRule
+import androidx.test.filters.MediumTest
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.rule.GrantPermissionRule
 import at.bitfire.ical4android.impl.TestCalendar
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -41,7 +41,7 @@ class AndroidCalendarTest {
 
     @Before
     fun prepare() {
-        provider = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver.acquireContentProviderClient(CalendarContract.AUTHORITY)
+        provider = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver.acquireContentProviderClient(CalendarContract.AUTHORITY)!!
     }
 
     @After

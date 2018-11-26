@@ -11,8 +11,8 @@ package at.bitfire.ical4android
 import android.accounts.Account
 import android.content.ContentUris
 import android.content.ContentValues
-import android.support.test.InstrumentationRegistry.getInstrumentation
-import android.support.test.filters.MediumTest
+import androidx.test.filters.MediumTest
+import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import at.bitfire.ical4android.impl.TestTaskList
 import org.dmfs.tasks.contract.TaskContract
 import org.junit.After

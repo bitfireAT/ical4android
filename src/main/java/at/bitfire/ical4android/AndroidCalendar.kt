@@ -44,7 +44,8 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             info.put(Calendars.ALLOWED_ATTENDEE_TYPES, "${Attendees.TYPE_NONE},${Attendees.TYPE_OPTIONAL},${Attendees.TYPE_REQUIRED},${Attendees.TYPE_RESOURCE}")
 
             Constants.log.info("Creating local calendar: " + info.toString())
-            return provider.insert(syncAdapterURI(Calendars.CONTENT_URI, account), info)
+            return provider.insert(syncAdapterURI(Calendars.CONTENT_URI, account), info) ?:
+                    throw Exception("Couldn't create calendar: provider returned null")
         }
 
         fun insertColors(provider: ContentProviderClient, account: Account) {

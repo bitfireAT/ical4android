@@ -11,8 +11,8 @@ package at.bitfire.ical4android
 import android.accounts.Account
 import android.content.ContentUris
 import android.net.Uri
-import android.support.test.InstrumentationRegistry.getInstrumentation
-import android.support.test.filters.MediumTest
+import androidx.test.filters.MediumTest
+import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import at.bitfire.ical4android.impl.TestTask
 import at.bitfire.ical4android.impl.TestTaskList
 import net.fortuna.ical4j.model.Date

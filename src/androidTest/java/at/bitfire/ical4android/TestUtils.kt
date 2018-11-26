@@ -8,7 +8,7 @@
 
 package at.bitfire.ical4android
 
-import android.support.test.runner.permission.PermissionRequester
+import androidx.test.runner.permission.PermissionRequester
 import junit.framework.AssertionFailedError
 
 object TestUtils {

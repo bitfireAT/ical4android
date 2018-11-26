@@ -9,7 +9,7 @@
 package at.bitfire.ical4android
 
 import android.content.ContentValues
-import android.support.test.filters.SmallTest
+import androidx.test.filters.SmallTest
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
@@ -98,6 +98,7 @@ class MiscUtilsTest {
     }
 
 
+    @Suppress("unused")
     private class TestClass {
         private val s = "test"
         val i = 2
