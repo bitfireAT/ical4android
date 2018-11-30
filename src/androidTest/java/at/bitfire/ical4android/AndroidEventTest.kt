@@ -67,6 +67,7 @@ class AndroidEventTest {
     fun shutdown() {
         calendar.delete()
 
+        @Suppress("DEPRECATION")
         if (Build.VERSION.SDK_INT >= 24)
             provider.close()
         else

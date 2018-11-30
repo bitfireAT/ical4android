@@ -46,6 +46,7 @@ class AndroidCalendarTest {
 
     @After
     fun shutdown() {
+        @Suppress("DEPRECATION")
         if (Build.VERSION.SDK_INT >= 24)
             provider.close()
         else

@@ -59,7 +59,8 @@ abstract class AndroidTaskList<out T: AndroidTask>(
             info.put(TaskLists.ACCESS_LEVEL, 0)
 
             Constants.log.info("Creating local task list: " + info.toString())
-            return provider.client.insert(TaskProvider.syncAdapterUri(provider.taskListsUri(), account), info)
+            return provider.client.insert(TaskProvider.syncAdapterUri(provider.taskListsUri(), account), info) ?:
+                    throw CalendarStorageException("Couldn't create task list (empty result from provider)")
         }
 
         fun<T: AndroidTaskList<AndroidTask>> findByID(account: Account, provider: TaskProvider, factory: AndroidTaskListFactory<T>, id: Long): T {
@@ -113,13 +114,13 @@ abstract class AndroidTaskList<out T: AndroidTask>(
     /**
      * Queries tasks from this task list. Adds a WHERE clause that restricts the
      * query to [Tasks.LIST_ID] = [id].
-     * @param where selection
-     * @param whereArgs arguments for selection
+     * @param _where selection
+     * @param _whereArgs arguments for selection
      * @return events from this task list which match the selection
      */
-    fun queryTasks(where: String? = null, whereArgs: Array<String>? = null): List<T> {
-        val where = "(${where ?: "1"}) AND ${Tasks.LIST_ID}=?"
-        val whereArgs = (whereArgs ?: arrayOf()) + id.toString()
+    fun queryTasks(_where: String? = null, _whereArgs: Array<String>? = null): List<T> {
+        val where = "(${_where ?: "1"}) AND ${Tasks.LIST_ID}=?"
+        val whereArgs = (_whereArgs ?: arrayOf()) + id.toString()
 
         val tasks = LinkedList<T>()
         provider.client.query(

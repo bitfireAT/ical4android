@@ -98,7 +98,7 @@ class TaskTest {
     /* helpers */
 
     private fun parseCalendar(fname: String, charset: Charset = Charsets.UTF_8): Task {
-        javaClass.classLoader.getResourceAsStream("tasks/$fname").use { stream ->
+        javaClass.classLoader!!.getResourceAsStream("tasks/$fname").use { stream ->
             return Task.fromReader(InputStreamReader(stream, charset)).first()
         }
     }
