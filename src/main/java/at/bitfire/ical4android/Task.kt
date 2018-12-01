@@ -10,9 +10,8 @@ package at.bitfire.ical4android
 
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
+import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Calendar
-import net.fortuna.ical4j.model.Component
-import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.property.*
@@ -26,7 +25,7 @@ import java.util.logging.Level
 
 class Task: ICalendar() {
 
-	var createdAt: Long? = null
+    var createdAt: Long? = null
     var lastModified: Long? = null
 
     var summary: String? = null
@@ -49,6 +48,8 @@ class Task: ICalendar() {
     var rRule: RRule? = null
     val rDates = LinkedList<RDate>()
     val exDates = LinkedList<ExDate>()
+
+    val unknownProperties = LinkedList<Property>()
 
     companion object {
 
@@ -108,6 +109,8 @@ class Task: ICalendar() {
                     is RRule -> t.rRule = prop
                     is RDate -> t.rDates += prop
                     is ExDate -> t.exDates += prop
+                    is ProdId, is DtStamp -> { /* don't save these as unknown properties */ }
+                    else -> t.unknownProperties += prop
                 }
 
             // there seem to be many invalid tasks out there because of some defect clients,
@@ -125,19 +128,19 @@ class Task: ICalendar() {
     }
 
 
-	fun write(os: OutputStream) {
-		val ical = Calendar()
-		ical.properties += Version.VERSION_2_0
-		ical.properties += prodId
+    fun write(os: OutputStream) {
+        val ical = Calendar()
+        ical.properties += Version.VERSION_2_0
+        ical.properties += prodId
 
-		val todo = VToDo()
-		ical.components += todo
-		val props = todo.properties
+        val todo = VToDo()
+        ical.components += todo
+        val props = todo.properties
 
         uid?.let { props += Uid(it) }
         sequence?.let { if (it != 0) props += Sequence(sequence as Int) }
 
-		createdAt?.let { props += Created(DateTime(it)) }
+        createdAt?.let { props += Created(DateTime(it)) }
         lastModified?.let { props += LastModified(DateTime(it)) }
 
         summary?.let { props += Summary(it) }
@@ -145,7 +148,7 @@ class Task: ICalendar() {
         geoPosition?.let { props += it }
         description?.let { props += Description(it) }
         color?.let { props += Color(EventColor.nearestMatch(it)) }
-		url?.let {
+        url?.let {
             try {
                 props += Url(URI(it))
             } catch (e: URISyntaxException) {
@@ -155,7 +158,7 @@ class Task: ICalendar() {
         organizer?.let { props += it }
 
         if (priority != Priority.UNDEFINED.level)
-			props += Priority(priority)
+            props += Priority(priority)
         classification?.let { props += it }
         status?.let { props += it }
 
@@ -163,12 +166,12 @@ class Task: ICalendar() {
         rDates.forEach { props += it }
         exDates.forEach { props += it }
 
-		// remember used time zones
-		val usedTimeZones = HashSet<TimeZone>()
-		due?.let {
+        // remember used time zones
+        val usedTimeZones = HashSet<TimeZone>()
+        due?.let {
             props += it
             it.timeZone?.let(usedTimeZones::add)
-		}
+        }
         duration?.let(props::add)
         dtStart?.let {
             props += it
@@ -178,13 +181,15 @@ class Task: ICalendar() {
             props += it
             it.timeZone?.let(usedTimeZones::add)
         }
-		percentComplete?.let { props += PercentComplete(it) }
+        percentComplete?.let { props += PercentComplete(it) }
 
-		// add VTIMEZONE components
+        props.addAll(unknownProperties)
+
+        // add VTIMEZONE components
         usedTimeZones.forEach { ical.components += it.vTimeZone }
 
         CalendarOutputter(false).output(ical, os)
-	}
+    }
 
 
     fun isAllDay(): Boolean {

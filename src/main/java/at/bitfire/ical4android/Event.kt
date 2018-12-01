@@ -176,7 +176,7 @@ class Event: ICalendar() {
                     is Organizer -> e.organizer = prop
                     is Attendee -> e.attendees += prop
                     is LastModified -> e.lastModified = prop
-                    is ProdId, is DtStamp -> { /* don't save those as unknown properties */ }
+                    is ProdId, is DtStamp -> { /* don't save these as unknown properties */ }
                     else -> e.unknownProperties += prop
                 }
 
