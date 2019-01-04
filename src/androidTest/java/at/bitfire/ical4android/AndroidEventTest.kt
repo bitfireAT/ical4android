@@ -80,17 +80,17 @@ class AndroidEventTest {
     fun testAddEvent() {
         // build and write recurring event to calendar provider
         val event = Event()
-        event.uid = ("sample1@testAddEvent")
-        event.summary = ("Sample event")
-        event.description = ("Sample event with date/time")
-        event.location = ("Sample location")
-        event.dtStart = (DtStart("20150501T120000", tzVienna))
-        event.dtEnd = (DtEnd("20150501T130000", tzVienna))
-        event.organizer = (Organizer(URI("mailto:organizer@example.com")))
-        event.rRule = (RRule("FREQ=DAILY;COUNT=10"))
-        event.classification = (Clazz.PRIVATE)
-        event.status = (Status.VEVENT_CONFIRMED)
-        event.color = (EventColor.aliceblue)
+        event.uid = "sample1@testAddEvent"
+        event.summary = "Sample event"
+        event.description = "Sample event with date/time"
+        event.location = "Sample location"
+        event.dtStart = DtStart("20150501T120000", tzVienna)
+        event.dtEnd = DtEnd("20150501T130000", tzVienna)
+        event.organizer = Organizer(URI("mailto:organizer@example.com"))
+        event.rRule = RRule("FREQ=DAILY;COUNT=10")
+        event.classification = Clazz.PRIVATE
+        event.status = Status.VEVENT_CONFIRMED
+        event.color = Css3Color.aliceblue
         assertFalse(event.isAllDay())
 
         // TODO test rDates, exDate, duration

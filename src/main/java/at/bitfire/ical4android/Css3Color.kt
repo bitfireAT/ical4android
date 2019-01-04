@@ -10,9 +10,11 @@ package at.bitfire.ical4android
 
 /**
  * Represents an RGBA COLOR value, as specified in https://tools.ietf.org/html/rfc7986#section-5.9
+ *
+ * @property argb   ARGB color value (0xAARRGGBB), alpha is 0xFF for all values
  */
 @Suppress("EnumEntryName")
-enum class EventColor(val rgba: Int) {
+enum class Css3Color(val argb: Int) {
     // values taken from https://www.w3.org/TR/2011/REC-css3-color-20110607/#svg-color
     aliceblue(0xfff0f8ff.toInt()),
     antiquewhite(0xfffaebd7.toInt()),
@@ -166,13 +168,29 @@ enum class EventColor(val rgba: Int) {
     companion object {
 
         /**
-         * Finds the best matching [EventColor] for a given RGBA value using a weighted Euclidian
-         * distance formula for RGB (A is being ignored).
+         * Returns the CSS3 color property of the given name.
+         *
+         * @param name      color name
+         * @return          [Css3Color] object or null if no match was found
          */
-        fun nearestMatch(rgba: Int): EventColor {
-            val rgb = rgba and 0xFFFFFF
+        fun fromString(name: String) =
+                try {
+                    Css3Color.valueOf(name)
+                } catch (e: IllegalArgumentException) {
+                    Constants.log.warning("Unknown color: $name")
+                    null
+                }
+
+        /**
+         * Finds the best matching [Css3Color] for a given RGBA value using a weighted Euclidian
+         * distance formula for RGB.
+         *
+         * @param argb (A)RGB color (A will be ignored)
+         */
+        fun nearestMatch(argb: Int): Css3Color {
+            val rgb = argb and 0xFFFFFF
             val distance = values().map {
-                val cssColor = it.rgba and 0xFFFFFF
+                val cssColor = it.argb and 0xFFFFFF
                 val r1 = rgb shr 16
                 val r2 = cssColor shr 16
                 val r = (r1 + r2)/2.0

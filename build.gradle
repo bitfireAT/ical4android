@@ -25,7 +25,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.dokka-android'
 
 ext {
-    ical4j_version = '2.2.1'
+    ical4j_version = '2.2.3'
 }
 
 android {

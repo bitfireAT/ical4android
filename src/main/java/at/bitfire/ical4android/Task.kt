@@ -95,7 +95,7 @@ class Task: ICalendar() {
                     is Location -> t.location = prop.value
                     is Geo -> t.geoPosition = prop
                     is Description -> t.description = prop.value
-                    is Color -> t.color = prop.value?.rgba
+                    is Color -> t.color = Css3Color.fromString(prop.value)?.argb
                     is Url -> t.url = prop.value
                     is Organizer -> t.organizer = prop
                     is Priority -> t.priority = prop.level
@@ -147,7 +147,7 @@ class Task: ICalendar() {
         location?.let { props += Location(it) }
         geoPosition?.let { props += it }
         description?.let { props += Description(it) }
-        color?.let { props += Color(EventColor.nearestMatch(it)) }
+        color?.let { props += Color(null, Css3Color.nearestMatch(it).name) }
         url?.let {
             try {
                 props += Url(URI(it))

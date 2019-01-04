@@ -81,7 +81,8 @@ class EventTest {
         assertEquals("© äö — üß", event.summary)
         assertEquals("Test Description", event.description)
         assertEquals("中华人民共和国", event.location)
-        assertEquals(EventColor.aliceblue, event.color)
+        assertEquals(Css3Color.aliceblue, event.color)
+        assertEquals("cyrus@example.com", event.attendees.first.parameters.getParameter("EMAIL").value)
     }
 
     @Test

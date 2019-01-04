@@ -30,7 +30,7 @@ class Event: ICalendar() {
     var summary: String? = null
     var location: String? = null
     var description: String? = null
-    var color: EventColor? = null
+    var color: Css3Color? = null
 
     var dtStart: DtStart? = null
     var dtEnd: DtEnd? = null
@@ -162,7 +162,7 @@ class Event: ICalendar() {
                     is Summary -> e.summary = prop.value
                     is Location -> e.location = prop.value
                     is Description -> e.description = prop.value
-                    is Color -> e.color = prop.value
+                    is Color -> e.color = Css3Color.fromString(prop.value)
                     is DtStart -> e.dtStart = prop
                     is DtEnd -> e.dtEnd = prop
                     is Duration -> e.duration = prop
@@ -242,7 +242,7 @@ class Event: ICalendar() {
         summary?.let { props += Summary(it) }
         location?.let { props += Location(it) }
         description?.let { props += Description(it) }
-        color?.let { props += Color(it) }
+        color?.let { props += Color(null, it.name) }
 
         props += dtStart
         dtEnd?.let { props += it }

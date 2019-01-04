@@ -1,4 +1,4 @@
-image: registry.gitlab.com/bitfireat/davdroid:latest
+image: registry.gitlab.com/bitfireat/davx5-ose:latest
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle; chmod +x gradlew

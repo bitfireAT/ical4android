@@ -11,13 +11,13 @@ package at.bitfire.ical4android
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class EventColorTest {
+class Css3ColorTest {
 
     @Test
     fun testNearestMatch() {
         // every color is its own nearest match
-        EventColor.values().forEach {
-            assertEquals(it.rgba, EventColor.nearestMatch(it.rgba).rgba)
+        Css3Color.values().forEach {
+            assertEquals(it.argb, Css3Color.nearestMatch(it.argb).argb)
         }
     }
 

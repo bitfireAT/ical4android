@@ -17,7 +17,6 @@ import net.fortuna.ical4j.model.component.*
 import net.fortuna.ical4j.model.property.DateProperty
 import net.fortuna.ical4j.model.property.ProdId
 import net.fortuna.ical4j.model.property.TzUrl
-import net.fortuna.ical4j.util.Strings
 import java.io.StringReader
 import java.util.*
 import java.util.logging.Level
@@ -39,16 +38,8 @@ open class ICalendar {
         }
 
         var prodId = ProdId("+//IDN bitfire.at//ical4android")
-
-        private val parameterFactoryRegistry = ParameterFactoryRegistry()
-        init {
-            parameterFactoryRegistry.register(Email.PARAMETER_NAME, Email.Factory)
-        }
-
         private val propertyFactoryRegistry = PropertyFactoryRegistry()
-        init {
-            propertyFactoryRegistry.register(Color.PROPERTY_NAME, Color.Factory)
-        }
+        private val parameterFactoryRegistry = ParameterFactoryRegistry()
 
         @JvmStatic
         protected fun calendarBuilder() = CalendarBuilder(
@@ -154,67 +145,5 @@ open class ICalendar {
     }
 
     override fun toString() = MiscUtils.reflectionToString(this)
-
-
-    // ical4j helpers and extensions
-
-    /** COLOR property for VEVENT components [RFC 7986 5.9 COLOR] */
-    class Color(
-            var value: EventColor? = null
-    ): Property(PROPERTY_NAME, Factory) {
-        companion object {
-            const val PROPERTY_NAME = "COLOR"
-        }
-
-        override fun getValue() = value?.name
-
-        override fun setValue(name: String?) {
-            name?.let {
-                try {
-                    value = EventColor.valueOf(name.toLowerCase())
-                } catch(e: IllegalArgumentException) {
-                    Constants.log.warning("Ignoring unknown COLOR $name")
-                }
-            }
-        }
-
-        override fun validate() {
-        }
-
-        object Factory: PropertyFactory<Color> {
-            override fun createProperty() = Color()
-
-            override fun createProperty(params: ParameterList?, value: String?): Color {
-                val c = Color()
-                c.setValue(value)
-                return c
-            }
-
-            override fun supports(property: String?) = property == PROPERTY_NAME
-        }
-
-    }
-
-    /** EMAIL parameter for ATTENDEE properties, as used by iCloud:
-        ATTENDEE;EMAIL=bla@domain.tld;/path/to/principal
-    */
-    class Email(): Parameter(PARAMETER_NAME, Factory) {
-        companion object {
-            const val PARAMETER_NAME = "EMAIL"
-        }
-
-        var email: String? = null
-        override fun getValue() = email
-
-        constructor(aValue: String): this()
-        {
-            email = Strings.unquote(aValue)
-        }
-
-        object Factory: ParameterFactory<Email> {
-            override fun createParameter(value: String) = Email(value)
-            override fun supports(name: String) = name == PARAMETER_NAME
-        }
-    }
 
 }

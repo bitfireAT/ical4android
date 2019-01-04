@@ -53,6 +53,9 @@ abstract class AndroidEvent(
         const val EXT_UNKNOWN_PROPERTY = "unknown-property"
         const val MAX_UNKNOWN_PROPERTY_SIZE = 25000
 
+        // not declared in ical4j Parameters class yet
+        private const val PARAMETER_EMAIL = "EMAIL"
+
     }
 
     var id: Long? = null
@@ -144,7 +147,7 @@ abstract class AndroidEvent(
 
         row.getAsString(Events.EVENT_COLOR_KEY)?.let { name ->
             try {
-                event.color = EventColor.valueOf(name)
+                event.color = Css3Color.valueOf(name)
             } catch(e: IllegalArgumentException) {
                 Constants.log.warning("Ignoring unknown color $name from Calendar Provider")
             }
@@ -258,7 +261,7 @@ abstract class AndroidEvent(
             if (idNS != null || id != null) {
                 // attendee identified by namespace and ID
                 attendee = Attendee(URI(idNS, id, null))
-                email?.let { attendee.parameters.add(ICalendar.Email(it)) }
+                email?.let { attendee.parameters.add(Email(it)) }
             } else
                 // attendee identified by email address
                 attendee = Attendee(URI("mailto", email, null))
@@ -581,7 +584,7 @@ abstract class AndroidEvent(
             email = if (uri.scheme.equals("mailto", true))
                 uri.schemeSpecificPart
             else {
-                val emailParam = organizer.getParameter(ICalendar.Email.PARAMETER_NAME) as ICalendar.Email?
+                val emailParam = organizer.getParameter(PARAMETER_EMAIL) as? Email
                 emailParam?.value
             }
             if (email != null)
@@ -639,7 +642,7 @@ abstract class AndroidEvent(
             // attendee identified by other URI
             builder .withValue(Attendees.ATTENDEE_ID_NAMESPACE, member.scheme)
                     .withValue(Attendees.ATTENDEE_IDENTITY, member.schemeSpecificPart)
-            (attendee.getParameter(ICalendar.Email.PARAMETER_NAME) as ICalendar.Email?)?.let { email ->
+            (attendee.getParameter(PARAMETER_EMAIL) as? Email)?.let { email ->
                 builder.withValue(Attendees.ATTENDEE_EMAIL, email.value)
             }
         }
@@ -649,13 +652,13 @@ abstract class AndroidEvent(
         }
 
         var type = Attendees.TYPE_NONE
-        val cutype = attendee.getParameter(Parameter.CUTYPE) as CuType?
+        val cutype = attendee.getParameter(Parameter.CUTYPE) as? CuType
         if (cutype in arrayOf(CuType.RESOURCE, CuType.ROOM))
             // "attendee" is a (physical) resource
             type = Attendees.TYPE_RESOURCE
         else {
             // attendee is not a (physical) resource
-            val role = attendee.getParameter(Parameter.ROLE) as Role?
+            val role = attendee.getParameter(Parameter.ROLE) as? Role
             val relationship: Int
             if (role == Role.CHAIR)
                 relationship = Attendees.RELATIONSHIP_ORGANIZER
@@ -669,7 +672,7 @@ abstract class AndroidEvent(
             builder.withValue(Attendees.ATTENDEE_RELATIONSHIP, relationship)
         }
 
-        val partStat = attendee.getParameter(Parameter.PARTSTAT) as PartStat?
+        val partStat = attendee.getParameter(Parameter.PARTSTAT) as? PartStat
         val status = when(partStat) {
             null,
             PartStat.NEEDS_ACTION -> Attendees.ATTENDEE_STATUS_INVITED
