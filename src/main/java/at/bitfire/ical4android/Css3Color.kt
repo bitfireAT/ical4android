@@ -13,7 +13,7 @@ package at.bitfire.ical4android
  *
  * @property argb   ARGB color value (0xAARRGGBB), alpha is 0xFF for all values
  */
-@Suppress("EnumEntryName")
+@Suppress("EnumEntryName", "SpellCheckingInspection")
 enum class Css3Color(val argb: Int) {
     // values taken from https://www.w3.org/TR/2011/REC-css3-color-20110607/#svg-color
     aliceblue(0xfff0f8ff.toInt()),

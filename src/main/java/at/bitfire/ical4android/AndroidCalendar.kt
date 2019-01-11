@@ -35,6 +35,17 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 
     companion object {
 
+        /**
+         * Creates a local (Android calendar provider) calendar.
+         *
+         * @param account       account which the calendar should be assigned to
+         * @param provider      client for Android calendar provider
+         * @param info          initial calendar properties ([Calendars.CALENDAR_DISPLAY_NAME] etc.)
+         *
+         * @return              [Uri] of the created calendar
+         *
+         * @throws Exception    if the calendar couldn't be created
+         */
         fun create(account: Account, provider: ContentProviderClient, info: ContentValues): Uri {
             info.put(Calendars.ACCOUNT_NAME, account.name)
             info.put(Calendars.ACCOUNT_TYPE, account.type)

@@ -18,6 +18,7 @@ object MiscUtils {
 
     /**
      * Ensures that a given DateProperty has a time zone with an ID that is available in Android.
+     *
      * @param date DateProperty to validate. Values which are not DATE-TIME will be ignored.
      */
     fun androidifyTimeZone(date: DateProperty?) {
@@ -35,6 +36,7 @@ object MiscUtils {
     /**
      * Returns the time-zone ID for a given date-time, or TIMEZONE_UTC for dates (without time).
      * TIMEZONE_UTC is also returned for DATE-TIMEs in UTC representation.
+     *
      * @param date DateProperty (DATE or DATE-TIME) whose time-zone information is used
      */
     fun getTzId(date: DateProperty?) =
@@ -45,6 +47,9 @@ object MiscUtils {
 
     /**
      * Generates useful toString info (fields and values) from [obj] by reflection.
+     *
+     * @param obj   object to inspect
+     * @return      string containing properties and non-static declared fields
      */
     fun reflectionToString(obj: Any): String {
         val s = LinkedList<String>()
@@ -61,6 +66,7 @@ object MiscUtils {
 
     /**
      * Removes empty [String] values from [values].
+     *
      * @param values set of values to be processed
      */
     fun removeEmptyStrings(values: ContentValues) {

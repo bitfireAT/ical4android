@@ -27,7 +27,7 @@ class TaskTest {
 
     @Test
     fun testCharsets() {
-        var t = parseCalendar("latin1.ics", Charset.forName("ISO-8859-1"))
+        var t = parseCalendar("latin1.ics", Charsets.ISO_8859_1)
         assertEquals("äöüß", t.summary)
 
         t = parseCalendar("utf8.ics")

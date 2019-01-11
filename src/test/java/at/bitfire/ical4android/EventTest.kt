@@ -29,7 +29,7 @@ class EventTest {
 
     @Test
     fun testCharsets() {
-        var e = parseCalendar("latin1.ics", Charset.forName("ISO-8859-1"))[0]
+        var e = parseCalendar("latin1.ics", Charsets.ISO_8859_1)[0]
         assertEquals("äöüß", e.summary)
 
         e = parseCalendar("utf8.ics").first()
