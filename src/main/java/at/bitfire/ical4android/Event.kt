@@ -77,7 +77,9 @@ class Event: ICalendar() {
             try {
                 ical = calendarBuilder().build(reader)
             } catch(e: ParserException) {
-                throw InvalidCalendarException("Couldn't parse iCalendar resource", e)
+                throw InvalidCalendarException("Couldn't parse iCalendar object", e)
+            } catch(e: IllegalArgumentException) {
+                throw InvalidCalendarException("iCalendar object contains invalid value", e)
             }
 
             // fill calendar properties

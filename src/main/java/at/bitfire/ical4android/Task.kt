@@ -65,8 +65,10 @@ class Task: ICalendar() {
             val ical: Calendar
             try {
                 ical = calendarBuilder().build(reader)
-            } catch (e: ParserException) {
-                throw InvalidCalendarException("Couldn't parse iCalendar resource", e)
+            } catch(e: ParserException) {
+                throw InvalidCalendarException("Couldn't parse iCalendar object", e)
+            } catch(e: IllegalArgumentException) {
+                throw InvalidCalendarException("iCalendar object contains invalid value", e)
             }
 
             val vToDos = ical.getComponents<VToDo>(Component.VTODO)
