@@ -15,6 +15,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import androidx.core.content.pm.PackageInfoCompat
 import org.dmfs.tasks.contract.TaskContract
 import java.io.Closeable
 import java.util.logging.Level
@@ -27,7 +28,7 @@ class TaskProvider private constructor(
     enum class ProviderName(
             val authority: String,
             val packageName: String,
-            val minVersionCode: Int,
+            val minVersionCode: Long,
             val minVersionName: String
     ) {
         //Mirakel("de.azapps.mirakel.provider"),
@@ -80,8 +81,9 @@ class TaskProvider private constructor(
         private fun checkVersion(context: Context, name: ProviderName) {
             // check whether package is available with required minimum version
             val info = context.packageManager.getPackageInfo(name.packageName, 0)
-            if (info.versionCode < name.minVersionCode) {
-                val exception = ProviderTooOldException(name, info.versionCode, info.versionName)
+            val installedVersionCode = PackageInfoCompat.getLongVersionCode(info)
+            if (installedVersionCode < name.minVersionCode) {
+                val exception = ProviderTooOldException(name, installedVersionCode, info.versionName)
                 Constants.log.log(Level.WARNING, "Task provider too old", exception)
                 throw exception
             }
@@ -113,7 +115,7 @@ class TaskProvider private constructor(
 
     class ProviderTooOldException(
             val provider: ProviderName,
-            installedVersionCode: Int,
+            installedVersionCode: Long,
             val installedVersionName: String
     ): Exception("Package ${provider.packageName} has version $installedVersionName ($installedVersionCode), " +
             "required: ${provider.minVersionName} (${provider.minVersionCode})")
