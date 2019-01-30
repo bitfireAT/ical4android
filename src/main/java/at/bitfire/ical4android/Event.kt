@@ -100,8 +100,8 @@ class Event: ICalendar() {
                     vEvent.properties += uid
                 }
 
-            Constants.log.fine("Assigning exceptions to master events")
-            val masterEvents = mutableMapOf<String /* UID */,VEvent>()
+            Constants.log.fine("Assigning exceptions to main events")
+            val mainEvents = mutableMapOf<String /* UID */,VEvent>()
             val exceptions = mutableMapOf<String /* UID */,MutableMap<String /* RECURRENCE-ID */,VEvent>>()
 
             for (vEvent in vEvents) {
@@ -109,13 +109,13 @@ class Event: ICalendar() {
                 val sequence = vEvent.sequence?.sequenceNo ?: 0
 
                 if (vEvent.recurrenceId == null) {
-                    // master event (no RECURRENCE-ID)
+                    // main event (no RECURRENCE-ID)
 
                     // If there are multiple entries, compare SEQUENCE and use the one with higher SEQUENCE.
                     // If the SEQUENCE is identical, use latest version.
-                    val event = masterEvents[uid]
+                    val event = mainEvents[uid]
                     if (event == null || (event.sequence != null && sequence >= event.sequence.sequenceNo))
-                        masterEvents[uid] = vEvent
+                        mainEvents[uid] = vEvent
 
                 } else {
                     // exception (RECURRENCE-ID)
@@ -134,7 +134,7 @@ class Event: ICalendar() {
             }
 
             val events = mutableListOf<Event>()
-            for ((uid, vEvent) in masterEvents) {
+            for ((uid, vEvent) in mainEvents) {
                 val event = fromVEvent(vEvent)
                 exceptions[uid]?.let { eventExceptions ->
                     event.exceptions.addAll(eventExceptions.map { (_,it) -> fromVEvent(it) })
@@ -202,25 +202,38 @@ class Event: ICalendar() {
         ical.properties += Version.VERSION_2_0
         ical.properties += prodId
 
-        // "master event" (without exceptions)
+        val dtStart = dtStart ?: throw InvalidCalendarException("Won't generate event without start time")
+
+        // "main event" (without exceptions)
         val components = ical.components
-        val master = toVEvent(Uid(uid))
-        components += master
+        val mainEvent = toVEvent()
+        components += mainEvent
 
         // remember used time zones
         val usedTimeZones = mutableSetOf<TimeZone>()
-        dtStart?.timeZone?.let(usedTimeZones::add)
+        dtStart.timeZone?.let(usedTimeZones::add)
         dtEnd?.timeZone?.let(usedTimeZones::add)
 
         // recurrence exceptions
         for (exception in exceptions) {
-            // create VEVENT for exception
-            val vException = exception.toVEvent(master.uid)
-            components += vException
+            // make sure that
+            //     - exceptions have the same UID as the main event and
+            //     - RECURRENCE-IDs have the same timezone as the main event's DTSTART
+            exception.uid = uid
+            exception.recurrenceId?.let { recurrenceId ->
+                if (recurrenceId.timeZone != dtStart.timeZone) {
+                    recurrenceId.timeZone = dtStart.timeZone
+                    exception.recurrenceId = recurrenceId
+                }
 
-            // remember used time zones
-            exception.dtStart?.timeZone?.let(usedTimeZones::add)
-            exception.dtEnd?.timeZone?.let(usedTimeZones::add)
+                // create VEVENT for exception
+                val vException = exception.toVEvent()
+                components += vException
+
+                // remember used time zones
+                exception.dtStart?.timeZone?.let(usedTimeZones::add)
+                exception.dtEnd?.timeZone?.let(usedTimeZones::add)
+            }
         }
 
         // add VTIMEZONE components
@@ -233,11 +246,16 @@ class Event: ICalendar() {
         CalendarOutputter(false).output(ical, os)
     }
 
-    private fun toVEvent(uid: Uid): VEvent {
+    /**
+     * Generates a VEvent representation of this event.
+     *
+     * @return generated VEvent
+     */
+    private fun toVEvent(): VEvent {
         val event = VEvent()
         val props = event.properties
 
-        props += uid
+        props += Uid(uid)
         recurrenceId?.let { props += it }
         sequence?.let { if (it != 0) props += Sequence(it) }
 
