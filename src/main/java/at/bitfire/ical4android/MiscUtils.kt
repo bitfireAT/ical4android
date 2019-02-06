@@ -34,15 +34,30 @@ object MiscUtils {
     }
 
     /**
-     * Returns the time-zone ID for a given date-time, or TIMEZONE_UTC for dates (without time).
-     * TIMEZONE_UTC is also returned for DATE-TIMEs in UTC representation.
+     * Returns the time-zone ID for a given date or date-time that should be used to store it
+     * in the Android calendar storage.
      *
      * @param date DateProperty (DATE or DATE-TIME) whose time-zone information is used
+     *
+     * @return - UTC for dates and UTC date-times
+     *         - the specified time zone ID for date-times with given time zone
+     *         - the currently set default time zone ID for floating date-times
      */
-    fun getTzId(date: DateProperty?) =
-            if (ICalendar.isDateTime(date!!) && !date.isUtc && date.timeZone != null)
-                date.timeZone.id!!
-            else
+    fun getTzId(date: DateProperty): String =
+            if (ICalendar.isDateTime(date)) {
+                when {
+                    date.isUtc ->
+                        // DATE-TIME in UTC format
+                        TimeZones.UTC_ID
+                    date.timeZone != null ->
+                        // DATE-TIME with given time-zone
+                        date.timeZone.id
+                    else /* date.timeZone == null */ ->
+                        // DATE-TIME in local format (floating)
+                        TimeZone.getDefault().id
+                }
+            } else
+                // DATE
                 TimeZones.UTC_ID
 
     /**
