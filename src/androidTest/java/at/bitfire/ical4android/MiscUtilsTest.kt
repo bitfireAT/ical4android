@@ -65,11 +65,11 @@ class MiscUtilsTest {
         // DATE (without time)
         assertEquals(TimeZones.UTC_ID, MiscUtils.getTzId(DtStart(Date("20150101"))))
 
-        // DATE-TIME without time zone (floating time): should be UTC (because net.fortuna.ical4j.timezone.date.floating=false)
-        assertEquals(TimeZones.UTC_ID, MiscUtils.getTzId(DtStart(DateTime("20150101T000000"))))
+        // DATE-TIME without time zone (floating time): should be local time zone (because Android doesn't support floating times)
+        assertEquals(java.util.TimeZone.getDefault().id, MiscUtils.getTzId(DtStart(DateTime("20150101T000000"))))
 
         // DATE-TIME without time zone (UTC)
-        assertEquals(TimeZones.UTC_ID, MiscUtils.getTzId(DtStart(DateTime(1438607288000L))))
+        assertEquals(TimeZones.UTC_ID, MiscUtils.getTzId(DtStart(DateTime(1438607288000L), true)))
 
         // DATE-TIME with time zone
         assertEquals(tzVienna.id, MiscUtils.getTzId(DtStart(DateTime("20150101T000000", tzVienna))))
