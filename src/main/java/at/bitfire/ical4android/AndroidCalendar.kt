@@ -18,6 +18,7 @@ import android.provider.CalendarContract
 import android.provider.CalendarContract.*
 import java.io.FileNotFoundException
 import java.util.*
+import java.util.logging.Level
 
 /**
  * Represents a locally stored calendar, containing [AndroidEvent]s (whose data objects are [Event]s).
@@ -62,7 +63,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
         fun insertColors(provider: ContentProviderClient, account: Account) {
             provider.query(syncAdapterURI(Colors.CONTENT_URI, account), arrayOf(Colors.COLOR_KEY), null, null, null)?.use { cursor ->
                 if (cursor.count == Css3Color.values().size)
-                // colors already inserted and up to date
+                    // colors already inserted and up to date
                     return
             }
 
@@ -74,7 +75,11 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             for (color in Css3Color.values()) {
                 values.put(Colors.COLOR_KEY, color.name)
                 values.put(Colors.COLOR, color.argb)
-                provider.insert(syncAdapterURI(Colors.CONTENT_URI, account), values)
+                try {
+                    provider.insert(syncAdapterURI(Colors.CONTENT_URI, account), values)
+                } catch(e: Exception) {
+                    Constants.log.log(Level.WARNING, "Couldn't insert event color: ${color.name}", e)
+                }
             }
         }
 
