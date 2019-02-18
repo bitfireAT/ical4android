@@ -26,7 +26,11 @@ import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
 import net.fortuna.ical4j.util.TimeZones
-import java.io.*
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.ByteArrayInputStream
+import java.io.FileNotFoundException
+import java.io.ObjectInputStream
 import java.net.URI
 import java.net.URISyntaxException
 import java.text.ParseException
@@ -50,7 +54,9 @@ abstract class AndroidEvent(
     companion object {
 
         /** [ExtendedProperties.NAME] for unknown iCal properties */
+        @Deprecated("New serialization format", ReplaceWith("EXT_UNKNOWN_PROPERTY2"))
         const val EXT_UNKNOWN_PROPERTY = "unknown-property"
+        const val EXT_UNKNOWN_PROPERTY2 = "unknown-property.v2"
         const val MAX_UNKNOWN_PROPERTY_SIZE = 25000
 
         // not declared in ical4j Parameters class yet
@@ -325,17 +331,25 @@ abstract class AndroidEvent(
 
     protected open fun populateExtended(row: ContentValues) {
         Constants.log.log(Level.FINE, "Read extended property from calender provider", row.getAsString(ExtendedProperties.NAME))
+        val event = requireNotNull(event)
 
-        if (row.getAsString(ExtendedProperties.NAME) == EXT_UNKNOWN_PROPERTY) {
-            // de-serialize unknown property
-            val stream = ByteArrayInputStream(Base64.decode(row.getAsString(ExtendedProperties.VALUE), Base64.NO_WRAP))
-            try {
-                ObjectInputStream(stream).use {
-                    event!!.unknownProperties += it.readObject() as Property
+        try {
+            when (row.getAsString(ExtendedProperties.NAME)) {
+                EXT_UNKNOWN_PROPERTY -> {
+                    // deserialize unknown property v1 (deprecated)
+                    val stream = ByteArrayInputStream(Base64.decode(row.getAsString(ExtendedProperties.VALUE), Base64.NO_WRAP))
+                    ObjectInputStream(stream).use {
+                        event.unknownProperties += it.readObject() as Property
+                    }
                 }
-            } catch(e: Exception) {
-                Constants.log.log(Level.WARNING, "Couldn't de-serialize unknown property", e)
+
+                EXT_UNKNOWN_PROPERTY2 -> {
+                    // deserialize unknown property v2
+                    event.unknownProperties += UnknownProperty.fromExtendedProperty(row.getAsString(ExtendedProperties.VALUE))
+                }
             }
+        } catch(e: Exception) {
+            Constants.log.log(Level.WARNING, "Couldn't parse extended property", e)
         }
     }
 
@@ -690,25 +704,16 @@ abstract class AndroidEvent(
     }
 
     protected open fun insertUnknownProperty(batch: BatchOperation, idxEvent: Int, property: Property) {
-        val baos = ByteArrayOutputStream()
-        try {
-            ObjectOutputStream(baos).use { oos ->
-                oos.writeObject(property)
-
-                if (baos.size() > MAX_UNKNOWN_PROPERTY_SIZE) {
-                    Constants.log.warning("Ignoring unknown property with ${baos.size()} octets")
-                    return
-                }
-
-                val builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
-                builder .withValue(ExtendedProperties.NAME, EXT_UNKNOWN_PROPERTY)
-                        .withValue(ExtendedProperties.VALUE, Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP))
-
-                batch.enqueue(BatchOperation.Operation(builder, ExtendedProperties.EVENT_ID, idxEvent))
-            }
-        } catch(e: IOException) {
-            Constants.log.log(Level.WARNING, "Couldn't serialize unknown property", e)
+        if (property.value.length > MAX_UNKNOWN_PROPERTY_SIZE) {
+            Constants.log.warning("Ignoring unknown property with ${property.value.length} octets (too long)")
+            return
         }
+
+        val builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
+        builder .withValue(ExtendedProperties.NAME, EXT_UNKNOWN_PROPERTY2)
+                .withValue(ExtendedProperties.VALUE, UnknownProperty.toExtendedProperty(property))
+
+        batch.enqueue(BatchOperation.Operation(builder, ExtendedProperties.EVENT_ID, idxEvent))
     }
 
     private fun useRetainedClassification() {
@@ -737,7 +742,62 @@ abstract class AndroidEvent(
         return calendar.syncAdapterURI(ContentUris.withAppendedId(Events.CONTENT_URI, id))
     }
 
-
     override fun toString() = MiscUtils.reflectionToString(this)
+
+
+    /**
+     * Helpers to (de)serialize unknown properties as JSON to store it in an Android ExtendedProperty row.
+     *
+     * Format: `{ propertyName, propertyValue, { param1Name: param1Value, ... } }`, with the third
+     * array (parameters) being optional.
+     */
+    object UnknownProperty {
+
+        /**
+         * Deserializes a JSON string from an ExtendedProperty value to an ical4j property.
+         *
+         * @param jsonString JSON representation of an ical4j property
+         * @return ical4j property, generated from [jsonString]
+         * @throws org.json.JSONException when the input value can't be parsed
+         */
+        fun fromExtendedProperty(jsonString: String): Property {
+            val json = JSONArray(jsonString)
+            val name = json.getString(0)
+            val value = json.getString(1)
+
+            val params = ParameterList()
+            json.optJSONObject(2)?.let { jsonParams ->
+                for (paramName in jsonParams.keys())
+                    params.add(ICalendar.parameterFactoryRegistry.createParameter(
+                            paramName,
+                            jsonParams.getString(paramName)
+                    ))
+            }
+
+            return ICalendar.propertyFactoryRegistry.createProperty(name, params, value)
+        }
+
+        /**
+         * Serializes an ical4j property to a JSON string that can be stored in an ExtendedProperty.
+         *
+         * @param prop property to serialize as JSON
+         * @return JSON representation of [prop]
+         */
+        fun toExtendedProperty(prop: Property): String {
+            val json = JSONArray()
+            json.put(prop.name)
+            json.put(prop.value)
+
+            if (!prop.parameters.isEmpty) {
+                val jsonParams = JSONObject()
+                for (param in prop.parameters)
+                    jsonParams.put(param.name, param.value)
+                json.put(jsonParams)
+            }
+
+            return json.toString()
+        }
+
+    }
 
 }

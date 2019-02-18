@@ -38,8 +38,8 @@ open class ICalendar {
         }
 
         var prodId = ProdId("+//IDN bitfire.at//ical4android")
-        private val propertyFactoryRegistry = PropertyFactoryRegistry()
-        private val parameterFactoryRegistry = ParameterFactoryRegistry()
+        val propertyFactoryRegistry = PropertyFactoryRegistry()
+        val parameterFactoryRegistry = ParameterFactoryRegistry()
 
         @JvmStatic
         protected fun calendarBuilder() = CalendarBuilder(
