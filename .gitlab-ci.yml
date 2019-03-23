@@ -9,10 +9,9 @@ cache:
 
 test:
   script:
-#   - (cd /sdk/emulator; ./emulator @test -no-audio -no-window & wait-for-emulator.sh)
-#   - adb install src/androidTest/resources/org.dmfs.tasks_6880.apk
-#   - ./gradlew check connectedCheck
-    - ./gradlew check
+    - (cd /sdk/emulator; ./emulator @test -no-audio -no-window & wait-for-emulator.sh)
+    - adb install src/androidTest/resources/org.dmfs.tasks_6880.apk
+    - ./gradlew check connectedCheck
   artifacts:
     paths:
       - build/outputs/lint-results-debug.html
