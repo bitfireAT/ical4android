@@ -216,7 +216,7 @@ abstract class AndroidTask(
         task.organizer?.let {
             try {
                 val uri = URI(it.value)
-                if (uri.scheme == "mailto")
+                if (uri.scheme.equals("mailto", true))
                     organizer = uri.schemeSpecificPart
                 else
                     Constants.log.log(Level.WARNING, "Found non-mailto ORGANIZER URI, ignoring", uri)
