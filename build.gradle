@@ -1,9 +1,9 @@
 
 buildscript {
     ext.versions = [
-        kotlin: '1.3.30',
+        kotlin: '1.3.31',
         dokka: '0.9.17',
-        ical4j: '2.2.3'
+        ical4j: '2.2.4'
     ]
 
     repositories {
