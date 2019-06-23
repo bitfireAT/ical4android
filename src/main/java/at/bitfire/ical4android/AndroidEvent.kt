@@ -753,6 +753,9 @@ abstract class AndroidEvent(
      */
     object UnknownProperty {
 
+        private val parameterFactory = ParameterFactoryRegistry()
+        private val propertyFactory = PropertyFactoryRegistry()
+
         /**
          * Deserializes a JSON string from an ExtendedProperty value to an ical4j property.
          *
@@ -768,13 +771,13 @@ abstract class AndroidEvent(
             val params = ParameterList()
             json.optJSONObject(2)?.let { jsonParams ->
                 for (paramName in jsonParams.keys())
-                    params.add(ICalendar.parameterFactoryRegistry.createParameter(
+                    params.add(parameterFactory.createParameter(
                             paramName,
                             jsonParams.getString(paramName)
                     ))
             }
 
-            return ICalendar.propertyFactoryRegistry.createProperty(name, params, value)
+            return propertyFactory.createProperty(name, params, value)
         }
 
         /**

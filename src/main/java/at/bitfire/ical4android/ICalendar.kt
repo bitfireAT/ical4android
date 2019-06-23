@@ -38,14 +38,6 @@ open class ICalendar {
         }
 
         var prodId = ProdId("+//IDN bitfire.at//ical4android")
-        val propertyFactoryRegistry = PropertyFactoryRegistry()
-        val parameterFactoryRegistry = ParameterFactoryRegistry()
-
-        @JvmStatic
-        protected fun calendarBuilder() = CalendarBuilder(
-                CalendarParserFactory.getInstance().createParser(),
-                propertyFactoryRegistry, parameterFactoryRegistry,
-                TimeZoneRegistryFactory.getInstance().createRegistry())
 
 
         // time zone helpers

@@ -8,6 +8,7 @@
 
 package at.bitfire.ical4android
 
+import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
@@ -64,7 +65,7 @@ class Task: ICalendar() {
         fun fromReader(reader: Reader): List<Task> {
             val ical: Calendar
             try {
-                ical = calendarBuilder().build(reader)
+                ical = CalendarBuilder().build(reader)
             } catch(e: ParserException) {
                 throw InvalidCalendarException("Couldn't parse iCalendar object", e)
             } catch(e: IllegalArgumentException) {
