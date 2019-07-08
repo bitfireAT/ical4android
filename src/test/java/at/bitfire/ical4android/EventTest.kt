@@ -37,19 +37,15 @@ class EventTest {
         assertEquals("中华人民共和国", e.location)
     }
 
-    @Test(expected = AssertionError::class)
+    @Test
     fun testDstOnlyVtimezone() {
-        // Google Calendar (and maybe others) generate iCalendars which contain VTIMEZONE definitions
-        // with only a DAYLIGHT component (and no STANDARD component). This is technically valid,
-        // but results in wrong dates in ical4j:
-        // https://github.com/ical4j/ical4j/issues/230
+        // see https://github.com/ical4j/ical4j/issues/230
         val events = parseCalendar("dst-only-vtimezone.ics")
         assertEquals(1, events.size)
         val e = events.first()
         assertEquals("only-dst@example.com", e.uid)
         val dtStart = e.dtStart!!
         assertEquals("Europe/Berlin", dtStart.timeZone.id)
-        // FIXME this should not fail, but it does:
         assertEquals(1522738800000L, dtStart.date.time)
     }
 
