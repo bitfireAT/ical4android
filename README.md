@@ -4,7 +4,7 @@
 
 # ical4android
 
-ical4android is an Android library that brings together iCalendar and Android.
+ical4android is a library for Android that brings together iCalendar and Android.
 It's a framework for
 
 * parsing and generating iCalendar resources (using [ical4j](https://github.com/ical4j/ical4j))
@@ -14,10 +14,15 @@ It's a framework for
 
 It has been primarily developed for:
 
-* [DAVdroid](https://www.davdroid.com)
-* [ICSdroid](https://icsdroid.bitfire.at)
+* [DAVx⁵](https://www.davx5.com)
+* [ICSx⁵](https://icsx5.bitfire.at)
+
+_This software is not affiliated to, nor has it been authorized, sponsored or otherwise approved
+by Google LLC. Android is a trademark of Google LLC._
 
 Generated KDoc: https://bitfireAT.gitlab.io/ical4android/dokka/ical4android/
+
+Discussion: https://forums.bitfire.at/category/18/libraries
 
 
 ## Contact
@@ -29,9 +34,6 @@ Florastraße 27
 ```
 
 Email: [play@bitfire.at](mailto:play@bitfire.at) (do not use this)
-
-For questions, suggestions etc. please use the DAVdroid forum:
-https://www.davdroid.com/forums/
 
 
 ## License 
