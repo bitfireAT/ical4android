@@ -12,10 +12,10 @@ import android.accounts.Account
 import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.ContentValues
-import android.database.DatabaseUtils
 import android.net.Uri
 import android.provider.CalendarContract
 import android.provider.CalendarContract.*
+import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import java.io.FileNotFoundException
 import java.util.*
 import java.util.logging.Level
@@ -177,11 +177,8 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 
         val events = LinkedList<T>()
         provider.query(eventsSyncURI(), null, where, whereArgs, null)?.use { cursor ->
-            while (cursor.moveToNext()) {
-                val values = ContentValues(cursor.columnCount)
-                DatabaseUtils.cursorRowToContentValues(cursor, values)
-                events += eventFactory.fromProvider(this, values)
-            }
+            while (cursor.moveToNext())
+                events += eventFactory.fromProvider(this, cursor.toValues())
         }
         return events
     }

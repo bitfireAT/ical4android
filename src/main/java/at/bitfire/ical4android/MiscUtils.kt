@@ -9,6 +9,9 @@
 package at.bitfire.ical4android
 
 import android.content.ContentValues
+import android.database.Cursor
+import android.database.DatabaseUtils
+import net.fortuna.ical4j.model.TextList
 import net.fortuna.ical4j.model.property.DateProperty
 import net.fortuna.ical4j.util.TimeZones
 import java.lang.reflect.Modifier
@@ -91,6 +94,34 @@ object MiscUtils {
             if (obj is String && obj.isEmpty())
                 it.remove()
         }
+    }
+
+
+    object CursorHelper {
+
+        /**
+         * Returns the entire contents of the current row as a [ContentValues] object.
+         * @return entire contents of the current row
+         */
+        fun Cursor.toValues(): ContentValues {
+            val values = ContentValues(columnCount)
+            DatabaseUtils.cursorRowToContentValues(this, values)
+            return values
+        }
+
+    }
+
+
+    object TextListHelper {
+
+        fun TextList.toList(): List<String> {
+            val list = LinkedList<String>()
+            val it = iterator()
+            while (it.hasNext())
+                list += it.next()
+            return list
+        }
+
     }
 
 }

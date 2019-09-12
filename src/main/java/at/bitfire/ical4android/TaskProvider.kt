@@ -99,9 +99,12 @@ class TaskProvider private constructor(
 
 
     fun taskListsUri() = TaskContract.TaskLists.getContentUri(name.authority)!!
-    fun tasksUri() = TaskContract.Tasks.getContentUri(name.authority)!!
-    //fun alarmsUri() = TaskContract.Alarms.getContentUri(name.authority)!!
     fun syncStateUri() = TaskContract.SyncState.getContentUri(name.authority)!!
+
+    fun tasksUri() = TaskContract.Tasks.getContentUri(name.authority)!!
+    fun propertiesUri() = TaskContract.Properties.getContentUri(name.authority)!!
+    fun alarmsUri() = TaskContract.Alarms.getContentUri(name.authority)!!
+    fun categoriesUri() = TaskContract.Categories.getContentUri(name.authority)!!
 
 
     override fun close() {

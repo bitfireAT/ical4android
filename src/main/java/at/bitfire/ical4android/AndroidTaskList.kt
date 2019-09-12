@@ -12,13 +12,14 @@ import android.accounts.Account
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
-import android.database.DatabaseUtils
 import android.net.Uri
+import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import org.dmfs.tasks.contract.TaskContract
 import org.dmfs.tasks.contract.TaskContract.TaskLists
 import org.dmfs.tasks.contract.TaskContract.Tasks
 import java.io.FileNotFoundException
 import java.util.*
+
 
 /**
  * Represents a locally stored task list, containing AndroidTasks (whose data objects are Tasks).
@@ -67,9 +68,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
             provider.client.query(TaskProvider.syncAdapterUri(ContentUris.withAppendedId(provider.taskListsUri(), id), account), null, null, null, null)?.use { cursor ->
                 if (cursor.moveToNext()) {
                     val taskList = factory.newInstance(account, provider, id)
-                    val values = ContentValues(cursor.columnCount)
-                    DatabaseUtils.cursorRowToContentValues(cursor, values)
-                    taskList.populate(values)
+                    taskList.populate(cursor.toValues())
                     return taskList
                 }
             }
@@ -80,8 +79,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
             val taskLists = LinkedList<T>()
             provider.client.query(TaskProvider.syncAdapterUri(provider.taskListsUri(), account), null, where, whereArgs, null)?.use { cursor ->
                 while (cursor.moveToNext()) {
-                    val values = ContentValues(cursor.columnCount)
-                    DatabaseUtils.cursorRowToContentValues(cursor, values)
+                    val values = cursor.toValues()
                     val taskList = factory.newInstance(account, provider, values.getAsLong(TaskLists._ID))
                     taskList.populate(values)
                     taskLists += taskList
@@ -127,11 +125,8 @@ abstract class AndroidTaskList<out T: AndroidTask>(
                 tasksSyncUri(),
                 null,
                 where, whereArgs, null)?.use { cursor ->
-            while (cursor.moveToNext()) {
-                val values = ContentValues(cursor.columnCount)
-                DatabaseUtils.cursorRowToContentValues(cursor, values)
-                tasks += taskFactory.fromProvider(this, values)
-            }
+            while (cursor.moveToNext())
+                tasks += taskFactory.fromProvider(this, cursor.toValues())
         }
         return tasks
     }
@@ -142,5 +137,6 @@ abstract class AndroidTaskList<out T: AndroidTask>(
 
     fun taskListSyncUri() = TaskProvider.syncAdapterUri(ContentUris.withAppendedId(provider.taskListsUri(), id), account)
     fun tasksSyncUri() = TaskProvider.syncAdapterUri(provider.tasksUri(), account)
+    fun tasksPropertiesSyncUri() = TaskProvider.syncAdapterUri(provider.propertiesUri(), account)
 
 }

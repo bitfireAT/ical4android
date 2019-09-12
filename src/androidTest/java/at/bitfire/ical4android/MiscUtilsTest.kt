@@ -9,10 +9,14 @@
 package at.bitfire.ical4android
 
 import android.content.ContentValues
+import android.database.MatrixCursor
 import androidx.test.filters.SmallTest
+import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
+import at.bitfire.ical4android.MiscUtils.TextListHelper.toList
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
+import net.fortuna.ical4j.model.TextList
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.property.DtStart
@@ -95,6 +99,26 @@ class MiscUtilsTest {
         assertEquals("value", values.getAsString("key1"))
         assertEquals(1L, values.getAsLong("key2").toLong())
         assertNull(values.get("key3"))
+    }
+
+
+    @Test
+    @SmallTest
+    fun testCursorToValues() {
+        val columns = arrayOf("col1", "col2")
+        val c = MatrixCursor(columns)
+        c.addRow(arrayOf("row1_val1", "row1_val2"))
+        c.moveToFirst()
+        val values = c.toValues()
+        assertEquals("row1_val1", values.getAsString("col1"))
+        assertEquals("row1_val2", values.getAsString("col2"))
+    }
+
+    @Test
+    @SmallTest
+    fun testTextListToList() {
+        assertEquals(listOf("str1", "str2"), TextList(arrayOf("str1", "str2")).toList())
+        assertEquals(emptyList<String>(), TextList(arrayOf()).toList())
     }
 
 

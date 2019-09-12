@@ -13,12 +13,12 @@ import android.content.ContentProviderOperation.Builder
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.EntityIterator
-import android.database.DatabaseUtils
 import android.net.Uri
 import android.os.RemoteException
 import android.provider.CalendarContract
 import android.provider.CalendarContract.*
 import android.util.Base64
+import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.TimeZone
@@ -361,8 +361,7 @@ abstract class AndroidEvent(
                 null,
                 Events.ORIGINAL_ID + "=?", arrayOf(id.toString()), null)?.use { c ->
             while (c.moveToNext()) {
-                val values = ContentValues(c.columnCount)
-                DatabaseUtils.cursorRowToContentValues(c, values)
+                val values = c.toValues()
                 try {
                     val exception = calendar.eventFactory.fromProvider(calendar, values)
 

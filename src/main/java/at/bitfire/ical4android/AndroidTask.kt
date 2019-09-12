@@ -12,14 +12,16 @@ import android.content.ContentProviderOperation
 import android.content.ContentProviderOperation.Builder
 import android.content.ContentUris
 import android.content.ContentValues
-import android.database.DatabaseUtils
 import android.net.Uri
 import android.os.RemoteException
+import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.Dur
 import net.fortuna.ical4j.model.property.*
-import org.dmfs.tasks.contract.TaskContract.Tasks
+import org.dmfs.tasks.contract.TaskContract.*
+import org.dmfs.tasks.contract.TaskContract.Properties
+import org.dmfs.tasks.contract.TaskContract.Property.Category
 import java.io.FileNotFoundException
 import java.net.URI
 import java.net.URISyntaxException
@@ -66,11 +68,25 @@ abstract class AndroidTask(
             val id = requireNotNull(id)
 
             task = Task()
-            taskList.provider.client.query(taskSyncURI(), null, null, null, null)?.use { cursor ->
+            val client = taskList.provider.client
+            client.query(taskSyncURI(), null, null, null, null)?.use { cursor ->
                 if (cursor.moveToFirst()) {
-                    val values = ContentValues(cursor.columnCount)
-                    DatabaseUtils.cursorRowToContentValues(cursor, values)
+                    val values = cursor.toValues()
+                    Constants.log.log(Level.FINER, "Found task", values)
                     populateTask(values)
+
+                    if (values.getAsInteger(Tasks.HAS_PROPERTIES) != 0)
+                        // fetch properties
+                        client.query(taskList.tasksPropertiesSyncUri(), null,
+                                "${Properties.TASK_ID}=?", arrayOf(id.toString()),
+                                null)?.use { propCursor ->
+                            while (propCursor.moveToNext()) {
+                                val propValues = propCursor.toValues()
+                                Constants.log.log(Level.FINER, "Found property", propValues)
+                                populateProperty(propValues)
+                            }
+                        }
+
                     return task
                 }
             }
@@ -161,6 +177,17 @@ abstract class AndroidTask(
         values.getAsString(Tasks.RRULE)?.let { task.rRule = RRule(it) }
     }
 
+    protected open fun populateProperty(values: ContentValues) {
+        val task = requireNotNull(task)
+        val type = values.getAsString(Properties.MIMETYPE)
+        when (type) {
+            Category.CONTENT_ITEM_TYPE ->
+                task.categories += values.getAsString(Category.CATEGORY_NAME)
+            else ->
+                Constants.log.warning("Found unknown property of type $type")
+        }
+    }
+
 
     fun add(): Uri {
         val batch = BatchOperation(taskList.provider.client)
@@ -169,8 +196,13 @@ abstract class AndroidTask(
         batch.enqueue(BatchOperation.Operation(builder))
         batch.commit()
 
+        // TODO use backref mechanism so that only one commit is required for the whole task
         val result = batch.getResult(0) ?: throw CalendarStorageException("Empty result from provider when adding a task")
         id = ContentUris.parseId(result.uri)
+
+        insertProperties(batch)
+        batch.commit()
+
         return result.uri
     }
 
@@ -182,8 +214,28 @@ abstract class AndroidTask(
         val builder = ContentProviderOperation.newUpdate(uri)
         buildTask(builder, true)
         batch.enqueue(BatchOperation.Operation(builder))
+
+        val deleteProperties = ContentProviderOperation.newDelete(taskList.tasksPropertiesSyncUri())
+                .withSelection("${Properties.TASK_ID}=?", arrayOf(id.toString()))
+        batch.enqueue(BatchOperation.Operation(deleteProperties))
+        insertProperties(batch)
+
         batch.commit()
         return uri
+    }
+
+    private fun insertProperties(batch: BatchOperation) {
+        val task = requireNotNull(task)
+
+        // insert categories
+        for (category in task.categories) {
+            val builder = ContentProviderOperation.newInsert(taskList.tasksPropertiesSyncUri())
+            builder .withValue(Category.TASK_ID, id)
+                    .withValue(Category.MIMETYPE, Category.CONTENT_ITEM_TYPE)
+                    .withValue(Category.CATEGORY_NAME, category)
+            Constants.log.log(Level.FINE, "Inserting category", builder.build())
+            batch.enqueue(BatchOperation.Operation(builder))
+        }
     }
 
     fun delete(): Int {
@@ -268,7 +320,6 @@ abstract class AndroidTask(
                 .withValue(Tasks.RRULE, task.rRule?.value)
 
         builder .withValue(Tasks.EXDATE, if (task.exDates.isEmpty()) null else DateUtils.recurrenceSetsToAndroidString(task.exDates, allDay))
-
         Constants.log.log(Level.FINE, "Built task object", builder.build())
     }
 
@@ -286,7 +337,10 @@ abstract class AndroidTask(
 
     protected fun taskSyncURI(): Uri {
         val id = requireNotNull(id)
-        return ContentUris.withAppendedId(taskList.tasksSyncUri(), id)
+        val builder = taskList.tasksSyncUri().buildUpon()
+        return ContentUris.appendId(builder, id)
+                .appendQueryParameter(LOAD_PROPERTIES, "1")
+                .build()
     }
 
 

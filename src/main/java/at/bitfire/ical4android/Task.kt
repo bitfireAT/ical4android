@@ -8,6 +8,7 @@
 
 package at.bitfire.ical4android
 
+import at.bitfire.ical4android.MiscUtils.TextListHelper.toList
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
@@ -50,6 +51,7 @@ class Task: ICalendar() {
     val rDates = LinkedList<RDate>()
     val exDates = LinkedList<ExDate>()
 
+    val categories = LinkedList<String>()
     val unknownProperties = LinkedList<Property>()
 
     companion object {
@@ -112,6 +114,7 @@ class Task: ICalendar() {
                     is RRule -> t.rRule = prop
                     is RDate -> t.rDates += prop
                     is ExDate -> t.exDates += prop
+                    is Categories -> t.categories.addAll(prop.categories.toList())
                     is ProdId, is DtStamp -> { /* don't save these as unknown properties */ }
                     else -> t.unknownProperties += prop
                 }
@@ -185,6 +188,9 @@ class Task: ICalendar() {
             it.timeZone?.let(usedTimeZones::add)
         }
         percentComplete?.let { props += PercentComplete(it) }
+
+        if (categories.isNotEmpty())
+            props += Categories(TextList(categories.toTypedArray()))
 
         props.addAll(unknownProperties)
 

@@ -9,10 +9,9 @@
 package at.bitfire.ical4android
 
 import net.fortuna.ical4j.data.CalendarBuilder
-import net.fortuna.ical4j.data.CalendarParserFactory
 import net.fortuna.ical4j.data.ParserException
-import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
+import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.component.*
 import net.fortuna.ical4j.model.property.DateProperty
 import net.fortuna.ical4j.model.property.ProdId
