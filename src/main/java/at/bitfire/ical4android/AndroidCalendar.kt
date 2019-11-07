@@ -55,7 +55,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             info.put(Calendars.ALLOWED_AVAILABILITY, "${Events.AVAILABILITY_BUSY},${Events.AVAILABILITY_FREE},${Events.AVAILABILITY_TENTATIVE}")
             info.put(Calendars.ALLOWED_ATTENDEE_TYPES, "${Attendees.TYPE_NONE},${Attendees.TYPE_OPTIONAL},${Attendees.TYPE_REQUIRED},${Attendees.TYPE_RESOURCE}")
 
-            Constants.log.info("Creating local calendar: " + info.toString())
+            Constants.log.info("Creating local calendar: $info")
             return provider.insert(syncAdapterURI(Calendars.CONTENT_URI, account), info) ?:
                     throw Exception("Couldn't create calendar: provider returned null")
         }
@@ -69,8 +69,8 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 
             Constants.log.info("Inserting event colors for account $account")
             val values = ContentValues(5)
-            values.put(CalendarContract.Colors.ACCOUNT_NAME, account.name)
-            values.put(CalendarContract.Colors.ACCOUNT_TYPE, account.type)
+            values.put(Colors.ACCOUNT_NAME, account.name)
+            values.put(Colors.ACCOUNT_TYPE, account.type)
             values.put(Colors.COLOR_TYPE, Colors.TYPE_EVENT)
             for (color in Css3Color.values()) {
                 values.put(Colors.COLOR_KEY, color.name)
@@ -100,8 +100,8 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
         }
 
         fun<T: AndroidCalendar<AndroidEvent>> findByID(account: Account, provider: ContentProviderClient, factory: AndroidCalendarFactory<T>, id: Long): T {
-            val iterCalendars = CalendarContract.CalendarEntity.newEntityIterator(
-                    provider.query(syncAdapterURI(ContentUris.withAppendedId(CalendarContract.CalendarEntity.CONTENT_URI, id), account), null, null, null, null)
+            val iterCalendars = CalendarEntity.newEntityIterator(
+                    provider.query(syncAdapterURI(ContentUris.withAppendedId(CalendarEntity.CONTENT_URI, id), account), null, null, null, null)
             )
             try {
                 if (iterCalendars.hasNext()) {
@@ -117,8 +117,8 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
         }
 
         fun<T: AndroidCalendar<AndroidEvent>> find(account: Account, provider: ContentProviderClient, factory: AndroidCalendarFactory<T>, where: String?, whereArgs: Array<String>?): List<T> {
-            val iterCalendars = CalendarContract.CalendarEntity.newEntityIterator(
-                    provider.query(syncAdapterURI(CalendarContract.CalendarEntity.CONTENT_URI, account), null, where, whereArgs, null)
+            val iterCalendars = CalendarEntity.newEntityIterator(
+                    provider.query(syncAdapterURI(CalendarEntity.CONTENT_URI, account), null, where, whereArgs, null)
             )
             try {
                 val calendars = LinkedList<T>()
@@ -137,7 +137,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
         fun syncAdapterURI(uri: Uri, account: Account) = uri.buildUpon()
                 .appendQueryParameter(Calendars.ACCOUNT_NAME, account.name)
                 .appendQueryParameter(Calendars.ACCOUNT_TYPE, account.type)
-                .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
+                .appendQueryParameter(CALLER_IS_SYNCADAPTER, "true")
                 .build()!!
     }
 
@@ -188,7 +188,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 
 
     fun syncAdapterURI(uri: Uri) = uri.buildUpon()
-            .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
+            .appendQueryParameter(CALLER_IS_SYNCADAPTER, "true")
             .appendQueryParameter(Calendars.ACCOUNT_NAME, account.name)
             .appendQueryParameter(Calendars.ACCOUNT_TYPE, account.type)
             .build()!!

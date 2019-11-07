@@ -179,8 +179,7 @@ abstract class AndroidTask(
 
     protected open fun populateProperty(values: ContentValues) {
         val task = requireNotNull(task)
-        val type = values.getAsString(Properties.MIMETYPE)
-        when (type) {
+        when (val type = values.getAsString(Properties.MIMETYPE)) {
             Category.CONTENT_ITEM_TYPE ->
                 task.categories += values.getAsString(Category.CATEGORY_NAME)
             else ->
@@ -327,7 +326,7 @@ abstract class AndroidTask(
     fun getTimeZone(): TimeZone {
         val task = requireNotNull(task)
 
-        var tz: java.util.TimeZone? = null
+        var tz: TimeZone? = null
         task.dtStart?.timeZone?.let { tz = it }
 
         tz = tz ?: task.due?.timeZone

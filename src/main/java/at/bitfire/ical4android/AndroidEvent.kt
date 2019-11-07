@@ -15,7 +15,6 @@ import android.content.ContentValues
 import android.content.EntityIterator
 import android.net.Uri
 import android.os.RemoteException
-import android.provider.CalendarContract
 import android.provider.CalendarContract.*
 import android.util.Base64
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
@@ -99,9 +98,9 @@ abstract class AndroidEvent(
 
             var iterEvents: EntityIterator? = null
             try {
-                iterEvents = CalendarContract.EventsEntity.newEntityIterator(
+                iterEvents = EventsEntity.newEntityIterator(
                         calendar.provider.query(
-                                calendar.syncAdapterURI(ContentUris.withAppendedId(CalendarContract.EventsEntity.CONTENT_URI, id)),
+                                calendar.syncAdapterURI(ContentUris.withAppendedId(EventsEntity.CONTENT_URI, id)),
                                 null, null, null, null),
                         calendar.provider
                 )
@@ -116,7 +115,7 @@ abstract class AndroidEvent(
                         when (subValue.uri) {
                             Attendees.CONTENT_URI -> populateAttendee(subValue.values)
                             Reminders.CONTENT_URI -> populateReminder(subValue.values)
-                            CalendarContract.ExtendedProperties.CONTENT_URI -> populateExtended(subValue.values)
+                            ExtendedProperties.CONTENT_URI -> populateExtended(subValue.values)
                         }
                     populateExceptions()
 
@@ -280,8 +279,7 @@ abstract class AndroidEvent(
             params.add(if (type == Attendees.TYPE_RESOURCE) CuType.RESOURCE else CuType.INDIVIDUAL)
 
             // role
-            val relationship = row.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP)
-            when (relationship) {
+            when (row.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP)) {
                 Attendees.RELATIONSHIP_ORGANIZER,
                 Attendees.RELATIONSHIP_ATTENDEE,
                 Attendees.RELATIONSHIP_PERFORMER,
@@ -685,8 +683,7 @@ abstract class AndroidEvent(
             builder.withValue(Attendees.ATTENDEE_RELATIONSHIP, relationship)
         }
 
-        val partStat = attendee.getParameter(Parameter.PARTSTAT) as? PartStat
-        val status = when(partStat) {
+        val status = when(attendee.getParameter(Parameter.PARTSTAT) as? PartStat) {
             null,
             PartStat.NEEDS_ACTION -> Attendees.ATTENDEE_STATUS_INVITED
             PartStat.ACCEPTED     -> Attendees.ATTENDEE_STATUS_ACCEPTED

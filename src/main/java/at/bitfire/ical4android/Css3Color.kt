@@ -8,6 +8,8 @@
 
 package at.bitfire.ical4android
 
+import kotlin.math.sqrt
+
 /**
  * Represents an RGBA COLOR value, as specified in https://tools.ietf.org/html/rfc7986#section-5.9
  *
@@ -175,7 +177,7 @@ enum class Css3Color(val argb: Int) {
          */
         fun fromString(name: String) =
                 try {
-                    Css3Color.valueOf(name)
+                    valueOf(name)
                 } catch (e: IllegalArgumentException) {
                     Constants.log.warning("Unknown color: $name")
                     null
@@ -199,7 +201,7 @@ enum class Css3Color(val argb: Int) {
                 val deltaB = (rgb and 0xFF) - (cssColor and 0xFF)
                 val deltaR2 = deltaR*deltaR
                 val deltaG2 = deltaG*deltaG
-                Math.sqrt(2.0*deltaR2 + 4.0*deltaG2 + 3.0*deltaB*deltaB + (r*(deltaR2 - deltaG2))/256.0)
+                sqrt(2.0*deltaR2 + 4.0*deltaG2 + 3.0*deltaB*deltaB + (r*(deltaR2 - deltaG2))/256.0)
             }
             val idx = distance.withIndex().minBy { it.value }!!.index
             return values()[idx]

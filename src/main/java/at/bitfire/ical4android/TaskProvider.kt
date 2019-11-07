@@ -49,7 +49,7 @@ class TaskProvider private constructor(
          * @throws [ProviderTooOldException] if the tasks provider is installed, but doesn't meet the minimum version requirement
          */
         @SuppressLint("Recycle")
-        fun acquire(context: Context, name: TaskProvider.ProviderName): TaskProvider? {
+        fun acquire(context: Context, name: ProviderName): TaskProvider? {
             return try {
                 checkVersion(context, name)
 

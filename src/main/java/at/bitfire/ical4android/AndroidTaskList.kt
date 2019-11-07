@@ -59,7 +59,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
             info.put(TaskContract.ACCOUNT_TYPE, account.type)
             info.put(TaskLists.ACCESS_LEVEL, 0)
 
-            Constants.log.info("Creating local task list: " + info.toString())
+            Constants.log.info("Creating local task list: $info")
             return provider.client.insert(TaskProvider.syncAdapterUri(provider.taskListsUri(), account), info) ?:
                     throw CalendarStorageException("Couldn't create task list (empty result from provider)")
         }

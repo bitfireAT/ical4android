@@ -92,7 +92,7 @@ open class ICalendar {
             }
 
             // remove TZURL
-            tz.properties.filter { it is TzUrl }.forEach {
+            tz.properties.filterIsInstance<TzUrl>().forEach {
                 tz.properties.remove(it)
             }
         }
