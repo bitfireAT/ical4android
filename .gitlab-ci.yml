@@ -1,4 +1,5 @@
-image: registry.gitlab.com/bitfireat/davx5-ose:latest
+# https://gitlab.com/bitfireAT/docker-android-emulator
+image: registry.gitlab.com/bitfireat/docker-android-emulator:latest
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle; chmod +x gradlew
@@ -9,7 +10,7 @@ cache:
 
 test:
   script:
-    - (cd /sdk/emulator; ./emulator @test -no-audio -no-window & wait-for-emulator.sh)
+    - start-emulator.sh
     - adb install src/androidTest/resources/org.dmfs.tasks_6880.apk
     - ./gradlew check connectedCheck
   artifacts:
