@@ -38,7 +38,7 @@ Email: [play@bitfire.at](mailto:play@bitfire.at) (do not use this)
 
 ## License 
 
-Copyright (C) bitfire web engineering (Ricki Hirner, Bernhard Stockmann).
+Copyright (C) bitfire web engineering (Ricki Hirner, Bernhard Stockmann) and contributors.
 
 This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome
 to redistribute it under the conditions of the [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.html).
