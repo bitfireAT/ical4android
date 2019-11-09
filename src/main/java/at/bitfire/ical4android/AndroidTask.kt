@@ -15,17 +15,21 @@ import android.content.ContentValues
 import android.net.Uri
 import android.os.RemoteException
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
+import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.DateTime
-import net.fortuna.ical4j.model.Dur
+import net.fortuna.ical4j.model.Property
+import net.fortuna.ical4j.model.component.VAlarm
+import net.fortuna.ical4j.model.parameter.Related
 import net.fortuna.ical4j.model.property.*
 import org.dmfs.tasks.contract.TaskContract.*
 import org.dmfs.tasks.contract.TaskContract.Properties
+import org.dmfs.tasks.contract.TaskContract.Property.Alarm
 import org.dmfs.tasks.contract.TaskContract.Property.Category
 import java.io.FileNotFoundException
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
+import java.util.TimeZone
 import java.util.logging.Level
 
 /**
@@ -71,7 +75,7 @@ abstract class AndroidTask(
             val client = taskList.provider.client
             client.query(taskSyncURI(), null, null, null, null)?.use { cursor ->
                 if (cursor.moveToFirst()) {
-                    val values = cursor.toValues()
+                    val values = cursor.toValues(true)
                     Constants.log.log(Level.FINER, "Found task", values)
                     populateTask(values)
 
@@ -81,7 +85,7 @@ abstract class AndroidTask(
                                 "${Properties.TASK_ID}=?", arrayOf(id.toString()),
                                 null)?.use { propCursor ->
                             while (propCursor.moveToNext()) {
-                                val propValues = propCursor.toValues()
+                                val propValues = propCursor.toValues(true)
                                 Constants.log.log(Level.FINER, "Found property", propValues)
                                 populateProperty(propValues)
                             }
@@ -95,8 +99,6 @@ abstract class AndroidTask(
 
     protected open fun populateTask(values: ContentValues) {
         val task = requireNotNull(task)
-
-        MiscUtils.removeEmptyStrings(values)
 
         task.uid = values.getAsString(Tasks._UID)
         task.sequence = values.getAsInteger(Tasks.SYNC_VERSION)
@@ -177,14 +179,45 @@ abstract class AndroidTask(
         values.getAsString(Tasks.RRULE)?.let { task.rRule = RRule(it) }
     }
 
-    protected open fun populateProperty(values: ContentValues) {
+    protected open fun populateProperty(row: ContentValues) {
         val task = requireNotNull(task)
-        when (val type = values.getAsString(Properties.MIMETYPE)) {
+        when (val type = row.getAsString(Properties.MIMETYPE)) {
+            Alarm.CONTENT_ITEM_TYPE ->
+                populateAlarm(row)
             Category.CONTENT_ITEM_TYPE ->
-                task.categories += values.getAsString(Category.CATEGORY_NAME)
+                task.categories += row.getAsString(Category.CATEGORY_NAME)
             else ->
                 Constants.log.warning("Found unknown property of type $type")
         }
+    }
+
+    protected open fun populateAlarm(row: ContentValues) {
+        Constants.log.log(Level.FINE, "Read task reminder from tasks provider", row)
+        val task = requireNotNull(task)
+        val props = PropertyList<Property>()
+
+        val trigger = Trigger(Dur(0, 0, -row.getAsInteger(Alarm.MINUTES_BEFORE), 0))
+        when (row.getAsInteger(Alarm.REFERENCE)) {
+            Alarm.ALARM_REFERENCE_START_DATE ->
+                trigger.parameters.add(Related.START)
+            Alarm.ALARM_REFERENCE_DUE_DATE ->
+                trigger.parameters.add(Related.END)
+        }
+        props += trigger
+
+        props += when (row.getAsInteger(Alarm.ALARM_TYPE)) {
+            Alarm.ALARM_TYPE_EMAIL ->
+                Action.EMAIL
+            Alarm.ALARM_TYPE_SOUND ->
+                Action.AUDIO
+            else ->
+                // show alarm by default
+                Action.DISPLAY
+        }
+
+        props += Description(row.getAsString(Alarm.MESSAGE) ?: task.summary)
+
+        task.alarms += VAlarm(props)
     }
 
 
@@ -224,10 +257,45 @@ abstract class AndroidTask(
     }
 
     private fun insertProperties(batch: BatchOperation) {
-        val task = requireNotNull(task)
+        insertAlarms(batch)
+        insertCategories(batch)
+    }
 
-        // insert categories
-        for (category in task.categories) {
+    private fun insertAlarms(batch: BatchOperation) {
+        for (alarm in requireNotNull(task).alarms) {
+            val alarmRef = when (alarm.trigger.getParameter(Parameter.RELATED)) {
+                Related.END ->
+                    Alarm.ALARM_REFERENCE_DUE_DATE
+                else /* Related.START is the default value */ ->
+                    Alarm.ALARM_REFERENCE_START_DATE
+            }
+
+            val alarmType = when (alarm.action?.value?.toUpperCase(Locale.US)) {
+                Action.AUDIO.value ->
+                    Alarm.ALARM_TYPE_SOUND
+                Action.DISPLAY.value ->
+                    Alarm.ALARM_TYPE_MESSAGE
+                Action.EMAIL.value ->
+                    Alarm.ALARM_TYPE_EMAIL
+                else ->
+                    Alarm.ALARM_TYPE_NOTHING
+            }
+
+            val builder = ContentProviderOperation.newInsert(taskList.tasksPropertiesSyncUri())
+            builder .withValue(Alarm.TASK_ID, id)
+                    .withValue(Alarm.MIMETYPE, Alarm.CONTENT_ITEM_TYPE)
+                    .withValue(Alarm.MINUTES_BEFORE, ICalendar.alarmMinBefore(alarm))
+                    .withValue(Alarm.REFERENCE, alarmRef)
+                    .withValue(Alarm.MESSAGE, alarm.description?.value ?: alarm.summary)
+                    .withValue(Alarm.ALARM_TYPE, alarmType)
+
+            Constants.log.log(Level.FINE, "Inserting alarm", builder.build())
+            batch.enqueue(BatchOperation.Operation(builder))
+        }
+    }
+
+    private fun insertCategories(batch: BatchOperation) {
+        for (category in requireNotNull(task).categories) {
             val builder = ContentProviderOperation.newInsert(taskList.tasksPropertiesSyncUri())
             builder .withValue(Category.TASK_ID, id)
                     .withValue(Category.MIMETYPE, Category.CONTENT_ITEM_TYPE)

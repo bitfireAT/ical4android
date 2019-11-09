@@ -141,10 +141,8 @@ abstract class AndroidEvent(
      * @param row values of an [Events] row, as returned by the calendar provider
      */
     protected open fun populateEvent(row: ContentValues) {
-        val event = requireNotNull(event)
-
         Constants.log.log(Level.FINE, "Read event entity from calender provider", row)
-        MiscUtils.removeEmptyStrings(row)
+        val event = requireNotNull(event)
 
         event.summary = row.getAsString(Events.TITLE)
         event.location = row.getAsString(Events.EVENT_LOCATION)
@@ -307,15 +305,12 @@ abstract class AndroidEvent(
 
     protected open fun populateReminder(row: ContentValues) {
         Constants.log.log(Level.FINE, "Read event reminder from calender provider", row)
-
         val event = requireNotNull(event)
+
         val alarm = VAlarm(Dur(0, 0, -row.getAsInteger(Reminders.MINUTES), 0))
 
         val props = alarm.properties
         props += when (row.getAsInteger(Reminders.METHOD)) {
-            Reminders.METHOD_ALARM,
-            Reminders.METHOD_ALERT ->
-                Action.DISPLAY
             Reminders.METHOD_EMAIL,
             Reminders.METHOD_SMS ->
                 Action.EMAIL
@@ -359,7 +354,7 @@ abstract class AndroidEvent(
                 null,
                 Events.ORIGINAL_ID + "=?", arrayOf(id.toString()), null)?.use { c ->
             while (c.moveToNext()) {
-                val values = c.toValues()
+                val values = c.toValues(true)
                 try {
                     val exception = calendar.eventFactory.fromProvider(calendar, values)
 
@@ -626,8 +621,7 @@ abstract class AndroidEvent(
     protected open fun insertReminder(batch: BatchOperation, idxEvent: Int, alarm: VAlarm) {
         val builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(Reminders.CONTENT_URI))
 
-        val action = alarm.action
-        val method = when (action?.value) {
+        val method = when (alarm.action?.value?.toUpperCase(Locale.US)) {
             Action.DISPLAY.value,
             Action.AUDIO.value -> Reminders.METHOD_ALERT
             Action.EMAIL.value -> Reminders.METHOD_EMAIL

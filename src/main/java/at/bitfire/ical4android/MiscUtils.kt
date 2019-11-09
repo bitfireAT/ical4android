@@ -101,11 +101,17 @@ object MiscUtils {
 
         /**
          * Returns the entire contents of the current row as a [ContentValues] object.
+         *
+         * @param  removeEmptyRows  whether rows with empty values should be removed
          * @return entire contents of the current row
          */
-        fun Cursor.toValues(): ContentValues {
+        fun Cursor.toValues(removeEmptyRows: Boolean = false): ContentValues {
             val values = ContentValues(columnCount)
             DatabaseUtils.cursorRowToContentValues(this, values)
+
+            if (removeEmptyRows)
+                removeEmptyStrings(values)
+
             return values
         }
 
