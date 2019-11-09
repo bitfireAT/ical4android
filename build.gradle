@@ -65,5 +65,10 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
 
+    // This very old Groovy version is not actually used, but it's needed
+    // so that ical4j doesn't crash when testing: https://github.com/ical4j/ical4j/issues/315
+    //noinspection GradleDependency
+    androidTestImplementation 'org.codehaus.groovy:groovy:2.2.2'
+
     testImplementation 'junit:junit:4.12'
 }
