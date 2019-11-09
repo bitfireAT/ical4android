@@ -118,7 +118,7 @@ class Task: ICalendar() {
                     is RDate -> t.rDates += prop
                     is ExDate -> t.exDates += prop
                     is Categories -> t.categories.addAll(prop.categories.toList())
-                    is ProdId, is DtStamp -> { /* don't save these as unknown properties */ }
+                    is ProdId, is DtStamp, is Uid -> { /* don't save these as unknown properties */ }
                     else -> t.unknownProperties += prop
                 }
 
