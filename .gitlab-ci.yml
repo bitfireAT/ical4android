@@ -1,4 +1,4 @@
-image: openjdk:8-jdk-slim
+image: registry.gitlab.com/bitfireat/docker-android-emulator:latest
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle; chmod +x gradlew
@@ -8,7 +8,6 @@ cache:
      - .gradle/
 
 test:
-  image: registry.gitlab.com/bitfireat/docker-android-emulator:latest
   tags:
     - privileged
   script:
