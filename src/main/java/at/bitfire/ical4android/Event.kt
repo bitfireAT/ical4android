@@ -11,9 +11,8 @@ package at.bitfire.ical4android
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
+import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Calendar
-import net.fortuna.ical4j.model.Component
-import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VEvent
@@ -253,9 +252,7 @@ class Event: ICalendar() {
      * @return generated VEvent
      */
     private fun toVEvent(): VEvent {
-        val event = VEvent()
-        val props = event.properties
-
+        val props = PropertyList<Property>()
         props += Uid(uid)
         recurrenceId?.let { props += it }
         sequence?.let { if (it != 0) props += Sequence(it) }
@@ -286,8 +283,7 @@ class Event: ICalendar() {
 
         lastModified?.let { props += it }
 
-        event.alarms.addAll(alarms)
-        return event
+        return VEvent(props, ComponentList(alarms))
     }
 
 

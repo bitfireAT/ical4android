@@ -15,6 +15,8 @@ import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.TimeZone
+import net.fortuna.ical4j.model.component.CalendarComponent
+import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.property.*
 import java.io.IOException
@@ -51,6 +53,7 @@ class Task: ICalendar() {
     val rDates = LinkedList<RDate>()
     val exDates = LinkedList<ExDate>()
 
+    val alarms = LinkedList<VAlarm>()
     val categories = LinkedList<String>()
     val unknownProperties = LinkedList<Property>()
 
@@ -119,6 +122,8 @@ class Task: ICalendar() {
                     else -> t.unknownProperties += prop
                 }
 
+            t.alarms.addAll(todo.alarms)
+
             // there seem to be many invalid tasks out there because of some defect clients,
             // do some validation
             val dtStart = t.dtStart
@@ -135,15 +140,8 @@ class Task: ICalendar() {
 
 
     fun write(os: OutputStream) {
-        val ical = Calendar()
-        ical.properties += Version.VERSION_2_0
-        ical.properties += prodId
-
-        val todo = VToDo()
-        ical.components += todo
-        val props = todo.properties
-
-        uid?.let { props += Uid(it) }
+        val props = PropertyList<Property>()
+        uid?.let { props += Uid(uid) }
         sequence?.let { if (it != 0) props += Sequence(sequence as Int) }
 
         createdAt?.let { props += Created(DateTime(it)) }
@@ -172,6 +170,11 @@ class Task: ICalendar() {
         rDates.forEach { props += it }
         exDates.forEach { props += it }
 
+        if (categories.isNotEmpty())
+            props += Categories(TextList(categories.toTypedArray()))
+
+        props.addAll(unknownProperties)
+
         // remember used time zones
         val usedTimeZones = HashSet<TimeZone>()
         due?.let {
@@ -189,14 +192,20 @@ class Task: ICalendar() {
         }
         percentComplete?.let { props += PercentComplete(it) }
 
-        if (categories.isNotEmpty())
-            props += Categories(TextList(categories.toTypedArray()))
+        // generate VTODO
+        val iCalProps = PropertyList<Property>(2)
+        iCalProps += Version.VERSION_2_0
+        iCalProps += prodId
 
-        props.addAll(unknownProperties)
+        val vTodo = VToDo(props)
+        if (alarms.isNotEmpty())
+            vTodo.alarms.addAll(alarms)
 
-        // add VTIMEZONE components
-        usedTimeZones.forEach { ical.components += it.vTimeZone }
+        val iCalComponents = ComponentList<CalendarComponent>(2)
+        iCalComponents.add(vTodo)
+        iCalComponents.addAll(usedTimeZones.map { it.vTimeZone })
 
+        val ical = Calendar(iCalProps, iCalComponents)
         CalendarOutputter(false).output(ical, os)
     }
 
