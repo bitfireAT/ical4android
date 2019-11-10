@@ -14,8 +14,8 @@ class UnknownPropertyTest {
 
     @Test
     @SmallTest
-    fun testFromExtendedProperty() {
-        val prop = AndroidEvent.UnknownProperty.fromExtendedProperty("[ \"UID\", \"PropValue\" ]")
+    fun testFromJsonString() {
+        val prop = UnknownProperty.fromJsonString("[ \"UID\", \"PropValue\" ]")
         assertTrue(prop is Uid)
         assertEquals("UID", prop.name)
         assertEquals("PropValue", prop.value)
@@ -23,8 +23,8 @@ class UnknownPropertyTest {
 
     @Test
     @SmallTest
-    fun testFromExtendedPropertyWithParameters() {
-        val prop = AndroidEvent.UnknownProperty.fromExtendedProperty("[ \"ATTENDEE\", \"PropValue\", { \"x-param1\": \"value1\", \"x-param2\": \"value2\" } ]")
+    fun testFromJsonStringWithParameters() {
+        val prop = UnknownProperty.fromJsonString("[ \"ATTENDEE\", \"PropValue\", { \"x-param1\": \"value1\", \"x-param2\": \"value2\" } ]")
         assertTrue(prop is Attendee)
         assertEquals("ATTENDEE", prop.name)
         assertEquals("PropValue", prop.value)
@@ -35,14 +35,14 @@ class UnknownPropertyTest {
 
     @Test(expected = JSONException::class)
     @SmallTest
-    fun testFromInvalidExtendedProperty() {
-        AndroidEvent.UnknownProperty.fromExtendedProperty("This isn't JSON")
+    fun testFromInvalidJsonString() {
+        UnknownProperty.fromJsonString("This isn't JSON")
     }
 
 
     @Test
     @SmallTest
-    fun testToExtendedProperty() {
+    fun testToJsonString() {
         val attendee = Attendee("mailto:test@test.at")
         assertEquals(
                 "ATTENDEE:mailto:test@test.at",

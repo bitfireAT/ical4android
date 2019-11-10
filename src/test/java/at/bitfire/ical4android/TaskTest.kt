@@ -87,8 +87,15 @@ class TaskTest {
 
         assertEquals(828106200000L, t.createdAt)
         assertEquals(840288600000L, t.lastModified)
-        assertTrue(t.unknownProperties.isEmpty())
 
+        assertArrayEquals(arrayOf("Test","Sample"), t.categories.toArray())
+
+        val unknown = t.unknownProperties.first
+        assertEquals("X-UNKNOWN-PROP", unknown.name)
+        assertEquals("xxx", unknown.getParameter("param1").value)
+        assertEquals("Unknown Value", unknown.value)
+
+        // other file
         t = regenerate(parseCalendar("most-fields2.ics"))
         assertEquals("most-fields2@example.com", t.uid)
         assertEquals(DtStart(DateTime("20100101T101010Z")), t.dtStart)

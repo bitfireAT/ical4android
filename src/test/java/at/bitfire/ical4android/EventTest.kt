@@ -71,7 +71,7 @@ class EventTest {
     }
 
     @Test
-    fun testParseAndWrite() {
+    fun testParse() {
         val event = parseCalendar("utf8.ics").first()
         assertEquals("utf8@ical4android.EventTest", event.uid)
         assertEquals("© äö — üß", event.summary)
@@ -79,6 +79,11 @@ class EventTest {
         assertEquals("中华人民共和国", event.location)
         assertEquals(Css3Color.aliceblue, event.color)
         assertEquals("cyrus@example.com", event.attendees.first.parameters.getParameter("EMAIL").value)
+
+        val unknown = event.unknownProperties.first
+        assertEquals("X-UNKNOWN-PROP", unknown.name)
+        assertEquals("xxx", unknown.getParameter("param1").value)
+        assertEquals("Unknown Value", unknown.value)
     }
 
     @Test

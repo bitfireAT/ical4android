@@ -46,6 +46,10 @@ abstract class AndroidTask(
         val taskList: AndroidTaskList<AndroidTask>
 ) {
 
+    companion object {
+        const val UNKNOWN_PROPERTY_DATA = Properties.DATA0
+    }
+
     var id: Long? = null
 
 
@@ -84,11 +88,8 @@ abstract class AndroidTask(
                         client.query(taskList.tasksPropertiesSyncUri(), null,
                                 "${Properties.TASK_ID}=?", arrayOf(id.toString()),
                                 null)?.use { propCursor ->
-                            while (propCursor.moveToNext()) {
-                                val propValues = propCursor.toValues(true)
-                                Constants.log.log(Level.FINER, "Found property", propValues)
-                                populateProperty(propValues)
-                            }
+                            while (propCursor.moveToNext())
+                                populateProperty(propCursor.toValues(true))
                         }
 
                     return task
@@ -180,12 +181,16 @@ abstract class AndroidTask(
     }
 
     protected open fun populateProperty(row: ContentValues) {
+        Constants.log.log(Level.FINER, "Found property", row)
+
         val task = requireNotNull(task)
         when (val type = row.getAsString(Properties.MIMETYPE)) {
             Alarm.CONTENT_ITEM_TYPE ->
                 populateAlarm(row)
             Category.CONTENT_ITEM_TYPE ->
                 task.categories += row.getAsString(Category.CATEGORY_NAME)
+            UnknownProperty.CONTENT_ITEM_TYPE ->
+                task.unknownProperties += UnknownProperty.fromJsonString(row.getAsString(UNKNOWN_PROPERTY_DATA))
             else ->
                 Constants.log.warning("Found unknown property of type $type")
         }
@@ -259,6 +264,7 @@ abstract class AndroidTask(
     private fun insertProperties(batch: BatchOperation) {
         insertAlarms(batch)
         insertCategories(batch)
+        insertUnknownProperties(batch)
     }
 
     private fun insertAlarms(batch: BatchOperation) {
@@ -282,7 +288,7 @@ abstract class AndroidTask(
             }
 
             val builder = ContentProviderOperation.newInsert(taskList.tasksPropertiesSyncUri())
-            builder .withValue(Alarm.TASK_ID, id)
+                    .withValue(Alarm.TASK_ID, id)
                     .withValue(Alarm.MIMETYPE, Alarm.CONTENT_ITEM_TYPE)
                     .withValue(Alarm.MINUTES_BEFORE, ICalendar.alarmMinBefore(alarm))
                     .withValue(Alarm.REFERENCE, alarmRef)
@@ -297,10 +303,26 @@ abstract class AndroidTask(
     private fun insertCategories(batch: BatchOperation) {
         for (category in requireNotNull(task).categories) {
             val builder = ContentProviderOperation.newInsert(taskList.tasksPropertiesSyncUri())
-            builder .withValue(Category.TASK_ID, id)
+                    .withValue(Category.TASK_ID, id)
                     .withValue(Category.MIMETYPE, Category.CONTENT_ITEM_TYPE)
                     .withValue(Category.CATEGORY_NAME, category)
             Constants.log.log(Level.FINE, "Inserting category", builder.build())
+            batch.enqueue(BatchOperation.Operation(builder))
+        }
+    }
+
+    private fun insertUnknownProperties(batch: BatchOperation) {
+        for (property in requireNotNull(task).unknownProperties) {
+            if (property.value.length > UnknownProperty.MAX_UNKNOWN_PROPERTY_SIZE) {
+                Constants.log.warning("Ignoring unknown property with ${property.value.length} octets (too long)")
+                return
+            }
+
+            val builder = ContentProviderOperation.newInsert(taskList.tasksPropertiesSyncUri())
+                    .withValue(Properties.TASK_ID, id)
+                    .withValue(Properties.MIMETYPE, UnknownProperty.CONTENT_ITEM_TYPE)
+                    .withValue(UNKNOWN_PROPERTY_DATA, UnknownProperty.toJsonString(property))
+            Constants.log.log(Level.FINE, "Inserting unknown property", builder.build())
             batch.enqueue(BatchOperation.Operation(builder))
         }
     }
@@ -318,16 +340,15 @@ abstract class AndroidTask(
             builder .withValue(Tasks.LIST_ID, taskList.id)
 
         val task = requireNotNull(task)
-        builder
-                .withValue(Tasks._UID, task.uid)
+        builder .withValue(Tasks._UID, task.uid)
                 .withValue(Tasks._DIRTY, 0)
                 .withValue(Tasks.SYNC_VERSION, task.sequence)
                 .withValue(Tasks.TITLE, task.summary)
                 .withValue(Tasks.LOCATION, task.location)
 
-        builder .withValue(Tasks.GEO, task.geoPosition?.value)
+                .withValue(Tasks.GEO, task.geoPosition?.value)
 
-        builder .withValue(Tasks.DESCRIPTION, task.description)
+                .withValue(Tasks.DESCRIPTION, task.description)
                 .withValue(Tasks.TASK_COLOR, task.color)
                 .withValue(Tasks.URL, task.url)
 
@@ -379,14 +400,14 @@ abstract class AndroidTask(
         builder .withValue(Tasks.CREATED, task.createdAt)
                 .withValue(Tasks.LAST_MODIFIED, task.lastModified)
 
-        builder .withValue(Tasks.DTSTART, task.dtStart?.date?.time)
+                .withValue(Tasks.DTSTART, task.dtStart?.date?.time)
                 .withValue(Tasks.DUE, task.due?.date?.time)
                 .withValue(Tasks.DURATION, task.duration?.value)
 
-        builder .withValue(Tasks.RDATE, if (task.rDates.isEmpty()) null else DateUtils.recurrenceSetsToAndroidString(task.rDates, allDay))
+                .withValue(Tasks.RDATE, if (task.rDates.isEmpty()) null else DateUtils.recurrenceSetsToAndroidString(task.rDates, allDay))
                 .withValue(Tasks.RRULE, task.rRule?.value)
 
-        builder .withValue(Tasks.EXDATE, if (task.exDates.isEmpty()) null else DateUtils.recurrenceSetsToAndroidString(task.exDates, allDay))
+                .withValue(Tasks.EXDATE, if (task.exDates.isEmpty()) null else DateUtils.recurrenceSetsToAndroidString(task.exDates, allDay))
         Constants.log.log(Level.FINE, "Built task object", builder.build())
     }
 

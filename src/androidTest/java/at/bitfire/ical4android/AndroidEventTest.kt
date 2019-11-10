@@ -24,6 +24,7 @@ import at.bitfire.ical4android.impl.TestEvent
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateList
 import net.fortuna.ical4j.model.Dur
+import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.*
@@ -115,6 +116,10 @@ class AndroidEventTest {
         // add EXDATE
         event.exDates += ExDate(DateList("20150502T120000", Value.DATE_TIME, tzVienna))
 
+        // add special properties
+        event.unknownProperties.add(Categories("CAT1,CAT2"))
+        event.unknownProperties.add(XProperty("X-NAME", "X-Value"))
+
         // add to calendar
         val uri = TestEvent(calendar, event).add()
         assertNotNull(uri)
@@ -172,6 +177,9 @@ class AndroidEventTest {
             // compare EXDATE
             assertEquals(1, event2.exDates.size)
             assertEquals(event.exDates.first, event2.exDates.first)
+
+            // compare unknown properties
+            assertArrayEquals(event.unknownProperties.toArray(), event2.unknownProperties.toArray())
         } finally {
             testEvent.delete()
         }

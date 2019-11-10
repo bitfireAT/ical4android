@@ -8,6 +8,7 @@ DESCRIPTION:Test Description
 LOCATION:中华人民共和国
 COLOR:aliceblue
 ATTENDEE;CN=Cyrus Daboo;EMAIL=cyrus@example.com:mailto:opaque-token-1234@example.com
+X-UNKNOWN-PROP;param1=xxx:Unknown Value
 DTSTART:20131009T170000T
 DTEND:20131009T180000T
 END:VEVENT
