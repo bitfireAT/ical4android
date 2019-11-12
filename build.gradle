@@ -52,6 +52,14 @@ android {
     sourceSets {
         main.java.srcDirs = [ "src/main/java", "opentasks-contract/src/main/java" ]
     }
+
+    dokka.configuration {
+        sourceLink {
+            url = "https://gitlab.com/bitfireAT/ical4android/tree/master/"
+            lineSuffix = "#L"
+        }
+        jdkVersion = 7
+    }
 }
 
 dependencies {
