@@ -8,10 +8,8 @@
 
 package at.bitfire.ical4android
 
-import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.DateList
-import net.fortuna.ical4j.model.DateTime
-import net.fortuna.ical4j.model.Dur
+import net.fortuna.ical4j.model.*
+import net.fortuna.ical4j.model.parameter.RelType
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.*
 import org.junit.Assert.*
@@ -89,6 +87,10 @@ class TaskTest {
         assertEquals(840288600000L, t.lastModified)
 
         assertArrayEquals(arrayOf("Test","Sample"), t.categories.toArray())
+
+        val sibling = t.relatedTo.first
+        assertEquals("most-fields2@example.com", sibling.value)
+        assertEquals(RelType.SIBLING, (sibling.getParameter(Parameter.RELTYPE) as RelType))
 
         val unknown = t.unknownProperties.first
         assertEquals("X-UNKNOWN-PROP", unknown.name)

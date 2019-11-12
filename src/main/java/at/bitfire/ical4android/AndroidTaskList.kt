@@ -9,14 +9,16 @@
 package at.bitfire.ical4android
 
 import android.accounts.Account
+import android.content.ContentProviderOperation
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import org.dmfs.tasks.contract.TaskContract
-import org.dmfs.tasks.contract.TaskContract.TaskLists
-import org.dmfs.tasks.contract.TaskContract.Tasks
+import org.dmfs.tasks.contract.TaskContract.*
+import org.dmfs.tasks.contract.TaskContract.Properties
+import org.dmfs.tasks.contract.TaskContract.Property.Relation
 import java.io.FileNotFoundException
 import java.util.*
 
@@ -38,8 +40,9 @@ abstract class AndroidTaskList<out T: AndroidTask>(
         /**
          * Acquires a [android.content.ContentProviderClient] for a supported task provider. If multiple providers are
          * available, a pre-defined priority list is taken into account.
+         *
          * @return A [TaskProvider], or null if task storage is not available/accessible.
-         *         Caller is responsible for calling release()!
+         * Caller is responsible for calling [TaskProvider.close]!
          */
         fun acquireTaskProvider(context: Context): TaskProvider? {
             val byPriority = arrayOf(
@@ -96,6 +99,16 @@ abstract class AndroidTaskList<out T: AndroidTask>(
     var isSynced = false
     var isVisible = false
 
+    /**
+     * When tasks are added or updated, they may refer to related tasks ([Task.relatedTo]),
+     * but these related tasks may not be available yet (for instance, because they have not been
+     * synchronized yet), so that the tasks provider can't establish the relation in the database.
+     *
+     * When delayed relations are used, [commitRelations] must be called after
+     * operations which potentially add relations (namely [AndroidTask.add] and [AndroidTask.update]).
+     */
+    var useDelayedRelations = true
+
 
     protected fun populate(values: ContentValues) {
         syncId = values.getAsString(TaskLists._SYNC_ID)
@@ -108,12 +121,50 @@ abstract class AndroidTaskList<out T: AndroidTask>(
     fun update(info: ContentValues) = provider.client.update(taskListSyncUri(), info, null, null)
     fun delete() = provider.client.delete(taskListSyncUri(), null, null)
 
+    /**
+     * Transforms [AndroidTask.DelayedRelation]s to real [org.dmfs.tasks.contract.TaskContract.Property.Relation]s. Only
+     * useful when [useDelayedRelations] is active.
+     */
+    fun commitRelations() {
+        Constants.log.fine("Commiting relations")
+
+        val batch = BatchOperation(provider.client)
+        provider.client.query(tasksPropertiesSyncUri(),
+                arrayOf(Properties.PROPERTY_ID, Properties.TASK_ID, Relation.RELATED_TYPE, Relation.RELATED_UID),
+                "${Properties.MIMETYPE}=?", arrayOf(AndroidTask.DelayedRelation.CONTENT_ITEM_TYPE), null)?.use { cursor ->
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(0)
+                val taskId = cursor.getLong(1)
+                val relatedType = cursor.getInt(2)
+                val relatedUid = cursor.getString(3)
+
+                // create new Relation row
+                batch.enqueue(BatchOperation.Operation(
+                        ContentProviderOperation.newInsert(tasksPropertiesSyncUri())
+                                .withValue(Relation.TASK_ID, taskId)
+                                .withValue(Relation.MIMETYPE, Relation.CONTENT_ITEM_TYPE)
+                                .withValue(Relation.RELATED_TYPE, relatedType)
+                                .withValue(Relation.RELATED_UID, relatedUid)
+                ))
+
+                // delete DelayedRelation row
+                val delayedRelationUri = ContentUris.withAppendedId(tasksPropertiesSyncUri(), id)
+                batch.enqueue(BatchOperation.Operation(
+                        ContentProviderOperation.newDelete(delayedRelationUri)
+                ))
+            }
+        }
+        batch.commit()
+    }
+
 
     /**
      * Queries tasks from this task list. Adds a WHERE clause that restricts the
      * query to [Tasks.LIST_ID] = [id].
+     *
      * @param _where selection
      * @param _whereArgs arguments for selection
+     *
      * @return events from this task list which match the selection
      */
     fun queryTasks(_where: String? = null, _whereArgs: Array<String>? = null): List<T> {

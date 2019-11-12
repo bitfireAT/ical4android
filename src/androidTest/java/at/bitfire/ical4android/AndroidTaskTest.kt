@@ -17,10 +17,8 @@ import at.bitfire.ical4android.impl.TestTask
 import at.bitfire.ical4android.impl.TestTaskList
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.TimeZone
-import net.fortuna.ical4j.model.property.DtStart
-import net.fortuna.ical4j.model.property.Due
-import net.fortuna.ical4j.model.property.Organizer
-import net.fortuna.ical4j.model.property.XProperty
+import net.fortuna.ical4j.model.parameter.RelType
+import net.fortuna.ical4j.model.property.*
 import org.dmfs.tasks.contract.TaskContract
 import org.junit.After
 import org.junit.Assert.*
@@ -51,6 +49,7 @@ class AndroidTaskTest {
 
         taskList = TestTaskList.create(testAccount, providerOrNull)
         assertNotNull("Couldn't find/create test task list", taskList)
+        taskList!!.useDelayedRelations = false
 
         taskListUri = ContentUris.withAppendedId(provider!!.taskListsUri(), taskList!!.id)
     }
@@ -80,6 +79,11 @@ class AndroidTaskTest {
 
         // extended properties
         task.categories.addAll(arrayOf("Cat1", "Cat2"))
+
+        val sibling = RelatedTo("most-fields2@example.com")
+        sibling.parameters.add(RelType.SIBLING)
+        task.relatedTo.add(sibling)
+
         task.unknownProperties += XProperty("X-UNKNOWN-PROP", "Unknown Value")
 
         // add to task list
@@ -98,7 +102,9 @@ class AndroidTaskTest {
             assertEquals(task.description, task2.description)
             assertEquals(task.location, task2.location)
             assertEquals(task.dtStart, task2.dtStart)
+
             assertEquals(task.categories, task2.categories)
+            assertEquals(task.relatedTo, task2.relatedTo)
             assertEquals(task.unknownProperties, task2.unknownProperties)
         } finally {
             testTask.delete()

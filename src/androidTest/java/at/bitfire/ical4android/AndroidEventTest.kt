@@ -24,7 +24,6 @@ import at.bitfire.ical4android.impl.TestEvent
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateList
 import net.fortuna.ical4j.model.Dur
-import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.*

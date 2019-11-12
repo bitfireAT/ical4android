@@ -10,21 +10,23 @@ package at.bitfire.ical4android
 
 import android.content.ContentProviderOperation
 import android.content.ContentProviderOperation.Builder
+import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
 import android.os.RemoteException
+import at.bitfire.ical4android.AndroidTask.DelayedRelation.Companion.CONTENT_ITEM_TYPE
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.VAlarm
+import net.fortuna.ical4j.model.parameter.RelType
 import net.fortuna.ical4j.model.parameter.Related
 import net.fortuna.ical4j.model.property.*
 import org.dmfs.tasks.contract.TaskContract.*
 import org.dmfs.tasks.contract.TaskContract.Properties
-import org.dmfs.tasks.contract.TaskContract.Property.Alarm
-import org.dmfs.tasks.contract.TaskContract.Property.Category
+import org.dmfs.tasks.contract.TaskContract.Property.*
 import java.io.FileNotFoundException
 import java.net.URI
 import java.net.URISyntaxException
@@ -91,6 +93,26 @@ abstract class AndroidTask(
                             while (propCursor.moveToNext())
                                 populateProperty(propCursor.toValues(true))
                         }
+
+                    // Special case: parent_id set, but no matching parent Relation row (like given by aCalendar+)
+                    // In this case, we create the relation ourselves.
+                    val relatedToList = task!!.relatedTo
+                    values.getAsLong(Tasks.PARENT_ID)?.let { parentId ->
+                        val hasParentRelation = relatedToList.any { relatedTo ->
+                            val relatedType = relatedTo.getParameter(Parameter.RELTYPE)
+                            relatedType == null || relatedType == RelType.PARENT
+                        }
+                        if (!hasParentRelation) {
+                            // get UID of parent task
+                            val parentContentUri = ContentUris.withAppendedId(taskList.tasksSyncUri(), parentId)
+                            client.query(parentContentUri, arrayOf(Tasks._UID), null, null, null)?.use { cursor ->
+                                if (cursor.moveToNext()) {
+                                    // add RelatedTo for parent task
+                                    relatedToList += RelatedTo(cursor.getString(0))
+                                }
+                            }
+                        }
+                    }
 
                     return task
                 }
@@ -189,6 +211,8 @@ abstract class AndroidTask(
                 populateAlarm(row)
             Category.CONTENT_ITEM_TYPE ->
                 task.categories += row.getAsString(Category.CATEGORY_NAME)
+            Relation.CONTENT_ITEM_TYPE ->
+                populateRelatedTo(row)
             UnknownProperty.CONTENT_ITEM_TYPE ->
                 task.unknownProperties += UnknownProperty.fromJsonString(row.getAsString(UNKNOWN_PROPERTY_DATA))
             else ->
@@ -197,7 +221,6 @@ abstract class AndroidTask(
     }
 
     protected open fun populateAlarm(row: ContentValues) {
-        Constants.log.log(Level.FINE, "Read task reminder from tasks provider", row)
         val task = requireNotNull(task)
         val props = PropertyList<Property>()
 
@@ -223,6 +246,28 @@ abstract class AndroidTask(
         props += Description(row.getAsString(Alarm.MESSAGE) ?: task.summary)
 
         task.alarms += VAlarm(props)
+    }
+
+    protected open fun populateRelatedTo(row: ContentValues) {
+        val uid = row.getAsString(Relation.RELATED_UID)
+        if (uid == null) {
+            Constants.log.warning("Task relation doesn't refer to same task list; can't be synchronized")
+            return
+        }
+
+        val relatedTo = RelatedTo(uid)
+
+        // add relation type as reltypeparam
+        relatedTo.parameters.add(when (row.getAsInteger(Relation.RELATED_TYPE)) {
+            Relation.RELTYPE_CHILD ->
+                RelType.CHILD
+            Relation.RELTYPE_SIBLING ->
+                RelType.SIBLING
+            else /* Relation.RELTYPE_PARENT, default value */ ->
+                RelType.PARENT
+        })
+
+        requireNotNull(task).relatedTo.add(relatedTo)
     }
 
 
@@ -261,13 +306,14 @@ abstract class AndroidTask(
         return uri
     }
 
-    private fun insertProperties(batch: BatchOperation) {
+    protected open fun insertProperties(batch: BatchOperation) {
         insertAlarms(batch)
         insertCategories(batch)
+        insertRelatedTo(batch)
         insertUnknownProperties(batch)
     }
 
-    private fun insertAlarms(batch: BatchOperation) {
+    protected open fun insertAlarms(batch: BatchOperation) {
         for (alarm in requireNotNull(task).alarms) {
             val alarmRef = when (alarm.trigger.getParameter(Parameter.RELATED)) {
                 Related.END ->
@@ -300,7 +346,7 @@ abstract class AndroidTask(
         }
     }
 
-    private fun insertCategories(batch: BatchOperation) {
+    protected open fun insertCategories(batch: BatchOperation) {
         for (category in requireNotNull(task).categories) {
             val builder = ContentProviderOperation.newInsert(taskList.tasksPropertiesSyncUri())
                     .withValue(Category.TASK_ID, id)
@@ -311,7 +357,32 @@ abstract class AndroidTask(
         }
     }
 
-    private fun insertUnknownProperties(batch: BatchOperation) {
+    protected open fun insertRelatedTo(batch: BatchOperation) {
+        val mimeType = if (taskList.useDelayedRelations)
+            DelayedRelation.CONTENT_ITEM_TYPE
+        else
+            Relation.CONTENT_ITEM_TYPE
+
+        for (relatedTo in requireNotNull(task).relatedTo) {
+            val relType = when ((relatedTo.getParameter(Parameter.RELTYPE) as RelType?)) {
+                RelType.CHILD ->
+                    Relation.RELTYPE_CHILD
+                RelType.SIBLING ->
+                    Relation.RELTYPE_SIBLING
+                else /* RelType.PARENT, default value */ ->
+                    Relation.RELTYPE_PARENT
+            }
+            val builder = ContentProviderOperation.newInsert(taskList.tasksPropertiesSyncUri())
+                    .withValue(Relation.TASK_ID, id)
+                    .withValue(Relation.MIMETYPE, mimeType)
+                    .withValue(Relation.RELATED_UID, relatedTo.value)
+                    .withValue(Relation.RELATED_TYPE, relType)
+            Constants.log.log(Level.FINE, "Inserting relation", builder.build())
+            batch.enqueue(BatchOperation.Operation(builder))
+        }
+    }
+
+    protected open fun insertUnknownProperties(batch: BatchOperation) {
         for (property in requireNotNull(task).unknownProperties) {
             if (property.value.length > UnknownProperty.MAX_UNKNOWN_PROPERTY_SIZE) {
                 Constants.log.warning("Ignoring unknown property with ${property.value.length} octets (too long)")
@@ -433,5 +504,18 @@ abstract class AndroidTask(
 
 
     override fun toString() = MiscUtils.reflectionToString(this)
+
+
+    /**
+     * A delayed relation row represents a relation which possibly can't be resolved yet.
+     * Same definition as [Relation], only the row type is [CONTENT_ITEM_TYPE] instead of [Relation.CONTENT_ITEM_TYPE].
+     */
+    class DelayedRelation {
+
+        companion object {
+            const val CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/vnd.ical4android.delayed-relation"
+        }
+
+    }
 
 }
