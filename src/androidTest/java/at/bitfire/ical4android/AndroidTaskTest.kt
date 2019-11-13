@@ -49,7 +49,6 @@ class AndroidTaskTest {
 
         taskList = TestTaskList.create(testAccount, providerOrNull)
         assertNotNull("Couldn't find/create test task list", taskList)
-        taskList!!.useDelayedRelations = false
 
         taskListUri = ContentUris.withAppendedId(provider!!.taskListsUri(), taskList!!.id)
     }

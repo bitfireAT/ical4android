@@ -16,9 +16,9 @@ import android.content.Context
 import android.net.Uri
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import org.dmfs.tasks.contract.TaskContract
-import org.dmfs.tasks.contract.TaskContract.*
-import org.dmfs.tasks.contract.TaskContract.Properties
 import org.dmfs.tasks.contract.TaskContract.Property.Relation
+import org.dmfs.tasks.contract.TaskContract.TaskLists
+import org.dmfs.tasks.contract.TaskContract.Tasks
 import java.io.FileNotFoundException
 import java.util.*
 
@@ -99,16 +99,6 @@ abstract class AndroidTaskList<out T: AndroidTask>(
     var isSynced = false
     var isVisible = false
 
-    /**
-     * When tasks are added or updated, they may refer to related tasks ([Task.relatedTo]),
-     * but these related tasks may not be available yet (for instance, because they have not been
-     * synchronized yet), so that the tasks provider can't establish the relation in the database.
-     *
-     * When delayed relations are used, [commitRelations] must be called after
-     * operations which potentially add relations (namely [AndroidTask.add] and [AndroidTask.update]).
-     */
-    var useDelayedRelations = true
-
 
     protected fun populate(values: ContentValues) {
         syncId = values.getAsString(TaskLists._SYNC_ID)
@@ -122,39 +112,43 @@ abstract class AndroidTaskList<out T: AndroidTask>(
     fun delete() = provider.client.delete(taskListSyncUri(), null, null)
 
     /**
-     * Transforms [AndroidTask.DelayedRelation]s to real [org.dmfs.tasks.contract.TaskContract.Property.Relation]s. Only
-     * useful when [useDelayedRelations] is active.
-     */
-    fun commitRelations() {
-        Constants.log.fine("Commiting relations")
-
-        val batch = BatchOperation(provider.client)
-        provider.client.query(tasksPropertiesSyncUri(),
-                arrayOf(Properties.PROPERTY_ID, Properties.TASK_ID, Relation.RELATED_TYPE, Relation.RELATED_UID),
-                "${Properties.MIMETYPE}=?", arrayOf(AndroidTask.DelayedRelation.CONTENT_ITEM_TYPE), null)?.use { cursor ->
+     * When tasks are added or updated, they may refer to related tasks by UID ([Relation.RELATED_UID]).
+     * However, those related tasks may not be available (for instance, because they have not been
+     * synchronized yet), so that the tasks provider can't establish the actual relation (= set
+     * [Relation.TASK_ID]) in the database.
+     *
+     * As soon as such a related task is added, OpenTasks updates the [Relation.RELATED_ID],
+     * but it does *not* update [Tasks.PARENT_ID] of the parent task:
+     * https://github.com/dmfs/opentasks/issues/877
+     *
+     * This method shall be called after all tasks have been synchronized. It touches
+     *
+     *   - all [Relation] rows
+     *   - with [Relation.RELATED_ID] (→ related task is already synchronized)
+     *   - of tasks without [Tasks.PARENT_ID] (→ only touch relevant rows)
+     *
+     * so that missing [Tasks.PARENT_ID] fields are updated.
+     *
+     * @return number of touched [Relation] rows
+    */
+    fun touchRelations(): Int {
+        Constants.log.fine("Touching relations to set parent_id")
+        val batchOperation = BatchOperation(provider.client)
+        provider.client.query(tasksSyncUri(true), null,
+                "${Tasks.LIST_ID}=? AND ${Tasks.PARENT_ID} IS NULL AND ${Relation.MIMETYPE}=? AND ${Relation.RELATED_ID} IS NOT NULL",
+                arrayOf(id.toString(), Relation.CONTENT_ITEM_TYPE),
+                null, null)?.use { cursor ->
             while (cursor.moveToNext()) {
-                val id = cursor.getLong(0)
-                val taskId = cursor.getLong(1)
-                val relatedType = cursor.getInt(2)
-                val relatedUid = cursor.getString(3)
-
-                // create new Relation row
-                batch.enqueue(BatchOperation.Operation(
-                        ContentProviderOperation.newInsert(tasksPropertiesSyncUri())
-                                .withValue(Relation.TASK_ID, taskId)
-                                .withValue(Relation.MIMETYPE, Relation.CONTENT_ITEM_TYPE)
-                                .withValue(Relation.RELATED_TYPE, relatedType)
-                                .withValue(Relation.RELATED_UID, relatedUid)
-                ))
-
-                // delete DelayedRelation row
-                val delayedRelationUri = ContentUris.withAppendedId(tasksPropertiesSyncUri(), id)
-                batch.enqueue(BatchOperation.Operation(
-                        ContentProviderOperation.newDelete(delayedRelationUri)
+                val values = cursor.toValues()
+                val id = values.getAsLong(Relation.PROPERTY_ID)
+                val propertyContentUri = ContentUris.withAppendedId(tasksPropertiesSyncUri(), id)
+                batchOperation.enqueue(BatchOperation.Operation(
+                        ContentProviderOperation.newUpdate(propertyContentUri)
+                                .withValue(Relation.RELATED_ID, values.getAsLong(Relation.RELATED_ID))
                 ))
             }
         }
-        batch.commit()
+        return batchOperation.commit()
     }
 
 
@@ -187,7 +181,15 @@ abstract class AndroidTaskList<out T: AndroidTask>(
 
 
     fun taskListSyncUri() = TaskProvider.syncAdapterUri(ContentUris.withAppendedId(provider.taskListsUri(), id), account)
-    fun tasksSyncUri() = TaskProvider.syncAdapterUri(provider.tasksUri(), account)
+    fun tasksSyncUri(loadProperties: Boolean = false): Uri {
+        val uri = TaskProvider.syncAdapterUri(provider.tasksUri(), account)
+        return if (loadProperties)
+            uri     .buildUpon()
+                    .appendQueryParameter(TaskContract.LOAD_PROPERTIES, "1")
+                    .build()
+        else
+            uri
+    }
     fun tasksPropertiesSyncUri() = TaskProvider.syncAdapterUri(provider.propertiesUri(), account)
 
 }

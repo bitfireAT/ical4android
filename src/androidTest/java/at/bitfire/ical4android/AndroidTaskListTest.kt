@@ -19,6 +19,7 @@ import net.fortuna.ical4j.model.property.RelatedTo
 import org.dmfs.tasks.contract.TaskContract
 import org.dmfs.tasks.contract.TaskContract.Properties
 import org.dmfs.tasks.contract.TaskContract.Property.Relation
+import org.dmfs.tasks.contract.TaskContract.Tasks
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Assume.assumeNotNull
@@ -81,42 +82,27 @@ class AndroidTaskListTest {
     }
 
     @Test
-    fun testCommitRelations() {
+    fun testTouchRelations() {
         val taskList = createTaskList()
-        assertTrue(taskList.useDelayedRelations)
         try {
             val parent = Task()
             parent.uid = "parent"
             parent.summary = "Parent task"
-            val parentContentUri = TestTask(taskList, parent).add()
 
             val child = Task()
             child.uid = "child"
             child.summary = "Child task"
             child.relatedTo.add(RelatedTo(parent.uid))
+
+            // insert child before parent
             val childContentUri = TestTask(taskList, child).add()
+            val childId = ContentUris.parseId(childContentUri)
+            val parentContentUri = TestTask(taskList, parent).add()
+            val parentId = ContentUris.parseId(parentContentUri)
 
-            // there should be one DelayedRelation row
+            // OpenTasks should provide the correct relation…
             taskList.provider.client.query(taskList.tasksPropertiesSyncUri(), null,
-                    "${Properties.TASK_ID}=?", arrayOf(ContentUris.parseId(childContentUri).toString()),
-                    null, null)!!.use { cursor ->
-                assertEquals(1, cursor.count)
-                cursor.moveToNext()
-
-                val row = ContentValues()
-                DatabaseUtils.cursorRowToContentValues(cursor, row)
-
-                assertEquals(AndroidTask.DelayedRelation.CONTENT_ITEM_TYPE, row.getAsString(Properties.MIMETYPE))
-                assertNull(row.getAsLong(Relation.RELATED_ID))
-                assertEquals(parent.uid, row.getAsString(Relation.RELATED_UID))
-                assertEquals(Relation.RELTYPE_PARENT, row.getAsInteger(Relation.RELATED_TYPE))
-            }
-
-            taskList.commitRelations()
-
-            // now there must be a real Relation row
-            taskList.provider.client.query(taskList.tasksPropertiesSyncUri(), null,
-                    "${Properties.TASK_ID}=?", arrayOf(ContentUris.parseId(childContentUri).toString()),
+                    "${Properties.TASK_ID}=?", arrayOf(childId.toString()),
                     null, null)!!.use { cursor ->
                 assertEquals(1, cursor.count)
                 cursor.moveToNext()
@@ -125,9 +111,25 @@ class AndroidTaskListTest {
                 DatabaseUtils.cursorRowToContentValues(cursor, row)
 
                 assertEquals(Relation.CONTENT_ITEM_TYPE, row.getAsString(Properties.MIMETYPE))
-                assertEquals(ContentUris.parseId(parentContentUri), row.getAsLong(Relation.RELATED_ID))
+                assertEquals(parentId, row.getAsLong(Relation.RELATED_ID))
                 assertEquals(parent.uid, row.getAsString(Relation.RELATED_UID))
                 assertEquals(Relation.RELTYPE_PARENT, row.getAsInteger(Relation.RELATED_TYPE))
+            }
+            // … BUT the parent_id is not updated (https://github.com/dmfs/opentasks/issues/877)
+            taskList.provider.client.query(childContentUri, arrayOf(Tasks.PARENT_ID),
+                    null, null, null)!!.use { cursor ->
+                assertTrue(cursor.moveToNext())
+                assertTrue(cursor.isNull(0))
+            }
+
+            // touch the relations to update parent_id values
+            taskList.touchRelations()
+
+            // now parent_id should bet set
+            taskList.provider.client.query(childContentUri, arrayOf(Tasks.PARENT_ID),
+                    null, null, null)!!.use { cursor ->
+                assertTrue(cursor.moveToNext())
+                assertEquals(parentId, cursor.getLong(0))
             }
         } finally {
             taskList.delete()

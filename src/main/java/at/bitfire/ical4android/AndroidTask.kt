@@ -10,12 +10,10 @@ package at.bitfire.ical4android
 
 import android.content.ContentProviderOperation
 import android.content.ContentProviderOperation.Builder
-import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
 import android.os.RemoteException
-import at.bitfire.ical4android.AndroidTask.DelayedRelation.Companion.CONTENT_ITEM_TYPE
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
@@ -79,28 +77,28 @@ abstract class AndroidTask(
 
             task = Task()
             val client = taskList.provider.client
-            client.query(taskSyncURI(), null, null, null, null)?.use { cursor ->
+            client.query(taskSyncURI(true), null, null, null, null)?.use { cursor ->
                 if (cursor.moveToFirst()) {
                     val values = cursor.toValues(true)
                     Constants.log.log(Level.FINER, "Found task", values)
                     populateTask(values)
 
-                    if (values.getAsInteger(Tasks.HAS_PROPERTIES) != 0)
-                        // fetch properties
-                        client.query(taskList.tasksPropertiesSyncUri(), null,
-                                "${Properties.TASK_ID}=?", arrayOf(id.toString()),
-                                null)?.use { propCursor ->
-                            while (propCursor.moveToNext())
-                                populateProperty(propCursor.toValues(true))
+                    if (values.containsKey(Properties.PROPERTY_ID)) {
+                        // process the first property, which is combined with the task row
+                        populateProperty(values)
+
+                        while (cursor.moveToNext()) {
+                            // process the other properties
+                            populateProperty(cursor.toValues(true))
                         }
+                    }
 
                     // Special case: parent_id set, but no matching parent Relation row (like given by aCalendar+)
-                    // In this case, we create the relation ourselves.
                     val relatedToList = task!!.relatedTo
                     values.getAsLong(Tasks.PARENT_ID)?.let { parentId ->
                         val hasParentRelation = relatedToList.any { relatedTo ->
                             val relatedType = relatedTo.getParameter(Parameter.RELTYPE)
-                            relatedType == null || relatedType == RelType.PARENT
+                            relatedType == RelType.PARENT || relatedType == null /* RelType.PARENT is the default value */
                         }
                         if (!hasParentRelation) {
                             // get UID of parent task
@@ -358,11 +356,6 @@ abstract class AndroidTask(
     }
 
     protected open fun insertRelatedTo(batch: BatchOperation) {
-        val mimeType = if (taskList.useDelayedRelations)
-            DelayedRelation.CONTENT_ITEM_TYPE
-        else
-            Relation.CONTENT_ITEM_TYPE
-
         for (relatedTo in requireNotNull(task).relatedTo) {
             val relType = when ((relatedTo.getParameter(Parameter.RELTYPE) as RelType?)) {
                 RelType.CHILD ->
@@ -374,7 +367,7 @@ abstract class AndroidTask(
             }
             val builder = ContentProviderOperation.newInsert(taskList.tasksPropertiesSyncUri())
                     .withValue(Relation.TASK_ID, id)
-                    .withValue(Relation.MIMETYPE, mimeType)
+                    .withValue(Relation.MIMETYPE, Relation.CONTENT_ITEM_TYPE)
                     .withValue(Relation.RELATED_UID, relatedTo.value)
                     .withValue(Relation.RELATED_TYPE, relType)
             Constants.log.log(Level.FINE, "Inserting relation", builder.build())
@@ -494,28 +487,12 @@ abstract class AndroidTask(
         return tz ?: TimeZone.getDefault()
     }
 
-    protected fun taskSyncURI(): Uri {
+    protected fun taskSyncURI(loadProperties: Boolean = false): Uri {
         val id = requireNotNull(id)
-        val builder = taskList.tasksSyncUri().buildUpon()
-        return ContentUris.appendId(builder, id)
-                .appendQueryParameter(LOAD_PROPERTIES, "1")
-                .build()
+        return ContentUris.withAppendedId(taskList.tasksSyncUri(loadProperties), id)
     }
 
 
     override fun toString() = MiscUtils.reflectionToString(this)
-
-
-    /**
-     * A delayed relation row represents a relation which possibly can't be resolved yet.
-     * Same definition as [Relation], only the row type is [CONTENT_ITEM_TYPE] instead of [Relation.CONTENT_ITEM_TYPE].
-     */
-    class DelayedRelation {
-
-        companion object {
-            const val CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/vnd.ical4android.delayed-relation"
-        }
-
-    }
 
 }
