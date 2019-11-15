@@ -17,6 +17,7 @@ import android.net.Uri
 import android.os.RemoteException
 import android.provider.CalendarContract.*
 import android.util.Base64
+import android.util.Patterns
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
@@ -310,15 +311,30 @@ abstract class AndroidEvent(
         val alarm = VAlarm(Dur(0, 0, -row.getAsInteger(Reminders.MINUTES), 0))
 
         val props = alarm.properties
-        props += when (row.getAsInteger(Reminders.METHOD)) {
-            Reminders.METHOD_EMAIL,
-            Reminders.METHOD_SMS ->
-                Action.EMAIL
-            else ->
-                // show alarm by default
-                Action.DISPLAY
+        when (row.getAsInteger(Reminders.METHOD)) {
+            Reminders.METHOD_EMAIL -> {
+                val accountName = calendar.account.name
+                if (Patterns.EMAIL_ADDRESS.matcher(accountName).matches()) {
+                    props += Action.EMAIL
+                    // ACTION:EMAIL requires SUMMARY, DESCRIPTION, ATTENDEE
+                    props += Summary(event.summary)
+                    props += Description(event.description ?: event.summary)
+                    // Android doesn't allow to save email reminder recipients, so we always use the
+                    // account name (should be account owner's email address)
+                    props += Attendee(URI("mailto", calendar.account.name, null))
+                } else {
+                    Constants.log.warning("Account name is not an email address; changing EMAIL reminder to DISPLAY")
+                    props += Action.DISPLAY
+                    props += Description(event.summary)
+                }
+            }
+
+            // default: set ACTION:DISPLAY (requires DESCRIPTION)
+            else -> {
+                props += Action.DISPLAY
+                props += Description(event.summary)
+            }
         }
-        props += Description(event.summary)
         event.alarms += alarm
     }
 
@@ -622,7 +638,10 @@ abstract class AndroidEvent(
         val method = when (alarm.action?.value?.toUpperCase(Locale.US)) {
             Action.DISPLAY.value,
             Action.AUDIO.value -> Reminders.METHOD_ALERT
+
+            // Note: The calendar provider doesn't support saving specific attendees for email reminders.
             Action.EMAIL.value -> Reminders.METHOD_EMAIL
+
             else               -> Reminders.METHOD_DEFAULT
         }
 

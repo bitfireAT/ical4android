@@ -29,8 +29,7 @@ class TestCalendar(
                 val values = ContentValues(3)
                 values.put(CalendarContract.Calendars.NAME, "TestCalendar")
                 values.put(CalendarContract.Calendars.CALENDAR_DISPLAY_NAME, "ical4android Test Calendar")
-                values.put(CalendarContract.Calendars.ALLOWED_REMINDERS,
-                        CalendarContract.Reminders.METHOD_DEFAULT)
+                values.put(CalendarContract.Calendars.ALLOWED_REMINDERS, CalendarContract.Reminders.METHOD_DEFAULT)
                 val uri = AndroidCalendar.create(account, provider, values)
 
                 TestCalendar(account, provider, ContentUris.parseId(uri))
