@@ -40,7 +40,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
          */
         val calendarBaseValues = ContentValues(3)
         init {
-            calendarBaseValues.put(Calendars.ALLOWED_AVAILABILITY, "${Events.AVAILABILITY_BUSY},${Events.AVAILABILITY_FREE},${Events.AVAILABILITY_TENTATIVE}")
+            calendarBaseValues.put(Calendars.ALLOWED_AVAILABILITY, "${Events.AVAILABILITY_BUSY},${Events.AVAILABILITY_FREE}")
             calendarBaseValues.put(Calendars.ALLOWED_ATTENDEE_TYPES, "${Attendees.TYPE_NONE},${Attendees.TYPE_OPTIONAL},${Attendees.TYPE_REQUIRED},${Attendees.TYPE_RESOURCE}")
             calendarBaseValues.put(Calendars.ALLOWED_REMINDERS, "${Reminders.METHOD_DEFAULT},${Reminders.METHOD_ALERT},${Reminders.METHOD_EMAIL}")
         }
