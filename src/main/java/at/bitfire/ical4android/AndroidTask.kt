@@ -416,6 +416,9 @@ abstract class AndroidTask(
                 .withValue(Tasks.TASK_COLOR, task.color)
                 .withValue(Tasks.URL, task.url)
 
+                // parent_id will be re-calculated when the relation row is inserted (if there is any)
+                .withValue(Tasks.PARENT_ID, null)
+
         var organizer: String? = null
         task.organizer?.let {
             try {
