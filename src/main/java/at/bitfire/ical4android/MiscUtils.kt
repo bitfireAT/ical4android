@@ -85,15 +85,17 @@ object MiscUtils {
     /**
      * Removes empty [String] values from [values].
      *
-     * @param values set of values to be processed
+     * @param values set of values to be modified
+     * @return the modified object (which is the same object as passed in; for chaining)
      */
-    fun removeEmptyStrings(values: ContentValues) {
+    fun removeEmptyStrings(values: ContentValues): ContentValues {
         val it = values.keySet().iterator()
         while (it.hasNext()) {
             val obj = values[it.next()]
             if (obj is String && obj.isEmpty())
                 it.remove()
         }
+        return values
     }
 
 

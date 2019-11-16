@@ -110,14 +110,16 @@ abstract class AndroidEvent(
                     field = event
 
                     val e = iterEvents.next()
-                    populateEvent(e.entityValues)
+                    populateEvent(MiscUtils.removeEmptyStrings(e.entityValues))
 
-                    for (subValue in e.subValues)
+                    for (subValue in e.subValues) {
+                        val subValues = MiscUtils.removeEmptyStrings(subValue.values)
                         when (subValue.uri) {
-                            Attendees.CONTENT_URI -> populateAttendee(subValue.values)
-                            Reminders.CONTENT_URI -> populateReminder(subValue.values)
-                            ExtendedProperties.CONTENT_URI -> populateExtended(subValue.values)
+                            Attendees.CONTENT_URI -> populateAttendee(subValues)
+                            Reminders.CONTENT_URI -> populateReminder(subValues)
+                            ExtendedProperties.CONTENT_URI -> populateExtended(subValues)
                         }
+                    }
                     populateExceptions()
 
                     useRetainedClassification()
