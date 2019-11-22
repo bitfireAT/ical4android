@@ -102,9 +102,9 @@ class EventTest {
         // event with start+end date-time
         val eViennaEvolution = parseCalendar("vienna-evolution.ics").first()
         assertEquals(1381330800000L, eViennaEvolution.dtStart!!.date.time)
-        assertEquals("/freeassociation.sourceforge.net/Tzfile/Europe/Vienna", eViennaEvolution.dtStart!!.timeZone.id)
+        assertEquals("Europe/Vienna", eViennaEvolution.dtStart!!.timeZone.id)
         assertEquals(1381334400000L, eViennaEvolution.dtEnd!!.date.time)
-        assertEquals("/freeassociation.sourceforge.net/Tzfile/Europe/Vienna", eViennaEvolution.dtEnd!!.timeZone.id)
+        assertEquals("Europe/Vienna", eViennaEvolution.dtEnd!!.timeZone.id)
     }
 
     @Test

@@ -21,6 +21,7 @@ import java.io.IOException
 import java.io.OutputStream
 import java.io.Reader
 import java.util.*
+import java.util.logging.Level
 
 class Event: ICalendar() {
 
@@ -80,6 +81,12 @@ class Event: ICalendar() {
                 throw InvalidCalendarException("Couldn't parse iCalendar object", e)
             } catch(e: IllegalArgumentException) {
                 throw InvalidCalendarException("iCalendar object contains invalid value", e)
+            }
+
+            try {
+                ICalPreprocessor.preProcess(ical)
+            } catch (e: Exception) {
+                Constants.log.log(Level.WARNING, "Couldn't pre-process iCalendar", e)
             }
 
             // fill calendar properties
