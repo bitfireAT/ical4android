@@ -8,7 +8,7 @@
 
 package at.bitfire.ical4android
 
-import net.fortuna.ical4j.data.CalendarBuilder
+import at.bitfire.ical4android.ICalendar.Companion.CALENDAR_NAME
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
@@ -21,7 +21,6 @@ import java.io.IOException
 import java.io.OutputStream
 import java.io.Reader
 import java.util.*
-import java.util.logging.Level
 
 class Event: ICalendar() {
 
@@ -59,42 +58,22 @@ class Event: ICalendar() {
     val unknownProperties = LinkedList<Property>()
 
     companion object {
-        const val CALENDAR_NAME = "X-WR-CALNAME"
-
         /**
-         * Parses an InputStream that contains iCalendar VEVENTs.
+         * Parses an iCalendar resource, applies [ICalPreprocessor] to increase compatibility
+         * and extracts the VEVENTs.
          *
-         * @param reader        reader for the input stream containing the VEVENTs (pay attention to the charset)
-         * @param properties    map of properties, will be filled with CALENDAR_* values, if applicable (may be null)
-         * @return              array of filled Event data objects (may have size 0) – doesn't return null
+         * @param reader where the iCalendar is taken from
+         * @param properties Known iCalendar properties (like [CALENDAR_NAME]) will be put into this map. Key: property name; value: property value
+         *
+         * @return array of filled [Event] data objects (may have size 0)
+         *
+         * @throws ParserException when the iCalendar can't be parsed
+         * @throws IllegalArgumentException when the iCalendar resource contains an invalid value
          * @throws IOException on I/O errors
          * @throws InvalidCalendarException on parsing exceptions
          */
-        fun fromReader(reader: Reader, properties: MutableMap<String, String>? = null): List<Event> {
-            Constants.log.fine("Parsing iCalendar stream")
-
-            // parse stream
-            val ical: Calendar
-            try {
-                ical = CalendarBuilder().build(reader)
-            } catch(e: ParserException) {
-                throw InvalidCalendarException("Couldn't parse iCalendar object", e)
-            } catch(e: IllegalArgumentException) {
-                throw InvalidCalendarException("iCalendar object contains invalid value", e)
-            }
-
-            try {
-                ICalPreprocessor.preProcess(ical)
-            } catch (e: Exception) {
-                Constants.log.log(Level.WARNING, "Couldn't pre-process iCalendar", e)
-            }
-
-            // fill calendar properties
-            properties?.let {
-                ical.getProperty(CALENDAR_NAME)?.let { calName ->
-                    properties[CALENDAR_NAME] = calName.value
-                }
-            }
+        fun eventsFromReader(reader: Reader, properties: MutableMap<String, String>? = null): List<Event> {
+            val ical = fromReader(reader, properties)
 
             // process VEVENTs
             val vEvents = ical.getComponents<VEvent>(Component.VEVENT)

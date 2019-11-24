@@ -110,14 +110,14 @@ class TaskTest {
 
     private fun parseCalendar(fname: String, charset: Charset = Charsets.UTF_8): Task {
         javaClass.classLoader!!.getResourceAsStream("tasks/$fname").use { stream ->
-            return Task.fromReader(InputStreamReader(stream, charset)).first()
+            return Task.tasksFromReader(InputStreamReader(stream, charset)).first()
         }
     }
 
     private fun regenerate(t: Task): Task {
         val os = ByteArrayOutputStream()
         t.write(os)
-        return Task.fromReader(InputStreamReader(ByteArrayInputStream(os.toByteArray()), Charsets.UTF_8)).first()
+        return Task.tasksFromReader(InputStreamReader(ByteArrayInputStream(os.toByteArray()), Charsets.UTF_8)).first()
     }
     
 }

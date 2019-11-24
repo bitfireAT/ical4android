@@ -11,7 +11,6 @@
 package at.bitfire.ical4android
 
 import at.bitfire.ical4android.MiscUtils.TextListHelper.toList
-import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
@@ -64,23 +63,19 @@ class Task: ICalendar() {
     companion object {
 
         /**
-         * Parses an InputStream that contains iCalendar VTODOs.
+         * Parses an iCalendar resource, applies [ICalPreprocessor] to increase compatibility
+         * and extracts the VTODOs.
          *
-         * @param reader  reader for the input stream containing the VTODOs (pay attention to the charset)
-         * @return array of filled Task data objects (may have size 0) – doesn't return null
-         * @throws IOException
-         * @throws InvalidCalendarException on parser exceptions
+         * @param reader where the iCalendar is taken from
+         *
+         * @return array of filled [Task] data objects (may have size 0)
+         *
+         * @throws ParserException when the iCalendar can't be parsed
+         * @throws IllegalArgumentException when the iCalendar resource contains an invalid value
+         * @throws IOException on I/O errors
          */
-        fun fromReader(reader: Reader): List<Task> {
-            val ical: Calendar
-            try {
-                ical = CalendarBuilder().build(reader)
-            } catch(e: ParserException) {
-                throw InvalidCalendarException("Couldn't parse iCalendar object", e)
-            } catch(e: IllegalArgumentException) {
-                throw InvalidCalendarException("iCalendar object contains invalid value", e)
-            }
-
+        fun tasksFromReader(reader: Reader): List<Task> {
+            val ical = fromReader(reader)
             val vToDos = ical.getComponents<VToDo>(Component.VTODO)
             return vToDos.mapTo(LinkedList()) { this.fromVToDo(it) }
         }

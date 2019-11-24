@@ -10,12 +10,14 @@ package at.bitfire.ical4android
 
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.data.ParserException
+import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.component.*
 import net.fortuna.ical4j.model.property.DateProperty
 import net.fortuna.ical4j.model.property.ProdId
 import net.fortuna.ical4j.model.property.TzUrl
+import java.io.Reader
 import java.io.StringReader
 import java.util.*
 import java.util.logging.Level
@@ -27,6 +29,7 @@ open class ICalendar {
     var sequence: Int? = null
 
     companion object {
+
         // static ical4j initialization
         init {
             // reduce verbosity of those two loggers
@@ -36,7 +39,57 @@ open class ICalendar {
             Logger.getLogger(net.fortuna.ical4j.model.Recur::class.java.name).level = Level.CONFIG
         }
 
+        // known iCalendar properties
+        const val CALENDAR_NAME = "X-WR-CALNAME"
+
+        /**
+         * Default PRODID used when generating iCalendars. If you want another value, set it
+         * statically before writing the first iCalendar.
+         */
         var prodId = ProdId("+//IDN bitfire.at//ical4android")
+
+
+        // parser
+
+        /**
+         * Parses an iCalendar resource and applies [ICalPreprocessor] to increase compatibility.
+         *
+         * @param reader where the iCalendar is taken from
+         * @param properties Known iCalendar properties (like [CALENDAR_NAME]) will be put into this map. Key: property name; value: property value
+         *
+         * @return parsed iCalendar resource
+         * @throws ParserException when the iCalendar can't be parsed
+         * @throws IllegalArgumentException when the iCalendar resource contains an invalid value
+         */
+        fun fromReader(reader: Reader, properties: MutableMap<String, String>? = null): Calendar {
+            Constants.log.fine("Parsing iCalendar stream")
+
+            // parse stream
+            val calendar: Calendar
+            try {
+                calendar = CalendarBuilder().build(reader)
+            } catch(e: ParserException) {
+                throw InvalidCalendarException("Couldn't parse iCalendar", e)
+            } catch(e: IllegalArgumentException) {
+                throw InvalidCalendarException("iCalendar contains invalid value", e)
+            }
+
+            // apply ICalPreprocessor for increased compatibility
+            try {
+                ICalPreprocessor.preProcess(calendar)
+            } catch (e: Exception) {
+                Constants.log.log(Level.WARNING, "Couldn't pre-process iCalendar", e)
+            }
+
+            // fill calendar properties
+            properties?.let {
+                calendar.getProperty(CALENDAR_NAME)?.let { calName ->
+                    properties[CALENDAR_NAME] = calName.value
+                }
+            }
+
+            return calendar
+        }
 
 
         // time zone helpers
