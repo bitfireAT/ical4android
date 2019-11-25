@@ -17,6 +17,7 @@ import net.fortuna.ical4j.model.component.*
 import net.fortuna.ical4j.model.property.DateProperty
 import net.fortuna.ical4j.model.property.ProdId
 import net.fortuna.ical4j.model.property.TzUrl
+import net.fortuna.ical4j.validate.ValidationException
 import java.io.Reader
 import java.io.StringReader
 import java.util.*
@@ -32,11 +33,15 @@ open class ICalendar {
 
         // static ical4j initialization
         init {
-            // reduce verbosity of those two loggers
+            // reduce verbosity of various ical4j loggers
             org.slf4j.LoggerFactory.getLogger(net.fortuna.ical4j.data.CalendarParserImpl::class.java)
             Logger.getLogger(net.fortuna.ical4j.data.CalendarParserImpl::class.java.name).level = Level.CONFIG
+
             org.slf4j.LoggerFactory.getLogger(net.fortuna.ical4j.model.Recur::class.java)
             Logger.getLogger(net.fortuna.ical4j.model.Recur::class.java.name).level = Level.CONFIG
+
+            org.slf4j.LoggerFactory.getLogger(net.fortuna.ical4j.data.FoldingWriter::class.java)
+            Logger.getLogger(net.fortuna.ical4j.data.FoldingWriter::class.java.name).level = Level.CONFIG
         }
 
         // known iCalendar properties
@@ -165,6 +170,23 @@ open class ICalendar {
                 Constants.log.log(Level.SEVERE, "Can't understand time zone definition", e)
             }
             return null
+        }
+
+        /**
+         * Validates an iCalendar resource and catches/logs a potential [ValidationException].
+         *
+         * @param ical iCalendar resource to be validated
+         */
+        fun softValidate(ical: Calendar) {
+            try {
+                ical.validate(true)
+            } catch (e: ValidationException) {
+                if (BuildConfig.DEBUG)
+                    // debug build, re-throw ValidationException
+                    throw e
+                else
+                    Constants.log.log(Level.WARNING, "iCalendar validation failed - This is only a warning!", e)
+            }
         }
 
 

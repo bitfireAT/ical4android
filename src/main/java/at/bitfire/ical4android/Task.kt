@@ -206,6 +206,7 @@ class Task: ICalendar() {
 
         ical.components.addAll(usedTimeZones.map { it.vTimeZone })
 
+        softValidate(ical)
         CalendarOutputter(false).output(ical, os)
     }
 

@@ -229,6 +229,7 @@ class Event: ICalendar() {
             ical.components += tz
         }
 
+        softValidate(ical)
         CalendarOutputter(false).output(ical, os)
     }
 

@@ -115,7 +115,10 @@ class TaskTest {
         val t = Task()
         t.uid = "SAMPLEUID"
         t.dtStart = DtStart("20190101T100000", TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone("Europe/Berlin"))
-        t.alarms += VAlarm(Dur(0, -1, 0, 0))
+
+        val alarm = VAlarm(Dur(0, -1, 0, 0))
+        alarm.properties += Action.AUDIO
+        t.alarms += alarm
 
         val os = ByteArrayOutputStream()
         t.write(os)
@@ -127,6 +130,7 @@ class TaskTest {
         assertTrue(raw.contains("DTSTART;TZID=Europe/Berlin:20190101T100000"))
         assertTrue(raw.contains("BEGIN:VALARM\r\n" +
                 "TRIGGER:-PT1H\r\n" +
+                "ACTION:AUDIO\r\n" +
                 "END:VALARM\r\n"))
         assertTrue(raw.contains("BEGIN:VTIMEZONE"))
     }
