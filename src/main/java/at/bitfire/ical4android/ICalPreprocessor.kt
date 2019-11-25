@@ -38,9 +38,9 @@ object ICalPreprocessor {
         propertyRules
                 .filter { rule -> rule.supportedType.isAssignableFrom(property::class.java) }
                 .forEach {
-                    Constants.log.log(Level.INFO, "Applying rules to ${property.toString()}")
+                    Constants.log.log(Level.FINER, "Applying rules to ${property.toString()}")
                     (it as Rfc5545PropertyRule<Property>).applyTo(property)
-                    Constants.log.log(Level.INFO, "-> ${property.toString()}")
+                    Constants.log.log(Level.FINER, "-> ${property.toString()}")
                 }
     }
 

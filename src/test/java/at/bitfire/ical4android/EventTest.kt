@@ -7,8 +7,13 @@
  */
 package at.bitfire.ical4android
 
+import net.fortuna.ical4j.model.Dur
+import net.fortuna.ical4j.model.TimeZoneRegistryFactory
+import net.fortuna.ical4j.model.component.VAlarm
+import net.fortuna.ical4j.model.property.DtStart
 import org.junit.Assert.*
 import org.junit.Test
+import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
 import java.io.InputStreamReader
 import java.nio.charset.Charset
@@ -150,6 +155,30 @@ class EventTest {
         val s = e.toString()
         assertTrue(s.contains(Event::class.java.simpleName))
         assertTrue(s.contains("uid=SAMPLEUID"))
+    }
+
+
+    /* generating */
+
+    @Test
+    fun testWrite() {
+        val e = Event()
+        e.uid = "SAMPLEUID"
+        e.dtStart = DtStart("20190101T100000", TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone("Europe/Berlin"))
+        e.alarms += VAlarm(Dur(0, -1, 0, 0))
+
+        val os = ByteArrayOutputStream()
+        e.write(os)
+        val raw = os.toString(Charsets.UTF_8.name())
+
+        assertTrue(raw.contains("PRODID:${ICalendar.prodId.value}"))
+        assertTrue(raw.contains("UID:SAMPLEUID"))
+        assertTrue(raw.contains("DTSTART;TZID=Europe/Berlin:20190101T100000"))
+        assertTrue(raw.contains("DTSTAMP:"))
+        assertTrue(raw.contains("BEGIN:VALARM\r\n" +
+                "TRIGGER:-PT1H\r\n" +
+                "END:VALARM\r\n"))
+        assertTrue(raw.contains("BEGIN:VTIMEZONE"))
     }
 
 

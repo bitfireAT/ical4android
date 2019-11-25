@@ -16,7 +16,6 @@ import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.TimeZone
-import net.fortuna.ical4j.model.component.CalendarComponent
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.property.*
@@ -140,9 +139,19 @@ class Task: ICalendar() {
 
 
     fun write(os: OutputStream) {
-        val props = PropertyList<Property>()
+        val ical = Calendar()
+        ical.properties += Version.VERSION_2_0
+        ical.properties += prodId
+
+        val vTodo = VToDo(true /* generates DTSTAMP */)
+        ical.components += vTodo
+        val props = vTodo.properties
+
         uid?.let { props += Uid(uid) }
-        sequence?.let { if (it != 0) props += Sequence(sequence as Int) }
+        sequence?.let {
+            if (it != 0)
+                props += Sequence(it)
+        }
 
         createdAt?.let { props += Created(DateTime(it)) }
         lastModified?.let { props += LastModified(DateTime(it)) }
@@ -192,20 +201,11 @@ class Task: ICalendar() {
         }
         percentComplete?.let { props += PercentComplete(it) }
 
-        // generate VTODO
-        val iCalProps = PropertyList<Property>(2)
-        iCalProps += Version.VERSION_2_0
-        iCalProps += prodId
-
-        val vTodo = VToDo(props)
         if (alarms.isNotEmpty())
             vTodo.alarms.addAll(alarms)
 
-        val iCalComponents = ComponentList<CalendarComponent>(2)
-        iCalComponents.add(vTodo)
-        iCalComponents.addAll(usedTimeZones.map { it.vTimeZone })
+        ical.components.addAll(usedTimeZones.map { it.vTimeZone })
 
-        val ical = Calendar(iCalProps, iCalComponents)
         CalendarOutputter(false).output(ical, os)
     }
 

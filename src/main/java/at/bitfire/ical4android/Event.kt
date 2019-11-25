@@ -238,10 +238,15 @@ class Event: ICalendar() {
      * @return generated VEvent
      */
     private fun toVEvent(): VEvent {
-        val props = PropertyList<Property>()
+        val event = VEvent(true /* generates DTSTAMP */)
+        val props = event.properties
         props += Uid(uid)
+
         recurrenceId?.let { props += it }
-        sequence?.let { if (it != 0) props += Sequence(it) }
+        sequence?.let {
+            if (it != 0)
+                props += Sequence(it)
+        }
 
         summary?.let { props += Summary(it) }
         location?.let { props += Location(it) }
@@ -269,7 +274,9 @@ class Event: ICalendar() {
 
         lastModified?.let { props += it }
 
-        return VEvent(props, ComponentList(alarms))
+        event.alarms.addAll(alarms)
+
+        return event
     }
 
 

@@ -9,9 +9,11 @@
 package at.bitfire.ical4android
 
 import net.fortuna.ical4j.model.*
+import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.RelType
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.*
+import net.fortuna.ical4j.util.TimeZones
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.ByteArrayInputStream
@@ -103,6 +105,30 @@ class TaskTest {
         assertEquals(DtStart(DateTime("20100101T101010Z")), t.dtStart)
         assertEquals(Duration(Dur(4, 3, 2, 1)), t.duration)
         assertTrue(t.unknownProperties.isEmpty())
+    }
+
+
+    /* generating */
+
+    @Test
+    fun testWrite() {
+        val t = Task()
+        t.uid = "SAMPLEUID"
+        t.dtStart = DtStart("20190101T100000", TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone("Europe/Berlin"))
+        t.alarms += VAlarm(Dur(0, -1, 0, 0))
+
+        val os = ByteArrayOutputStream()
+        t.write(os)
+        val raw = os.toString(Charsets.UTF_8.name())
+
+        assertTrue(raw.contains("PRODID:${ICalendar.prodId.value}"))
+        assertTrue(raw.contains("UID:SAMPLEUID"))
+        assertTrue(raw.contains("DTSTAMP:"))
+        assertTrue(raw.contains("DTSTART;TZID=Europe/Berlin:20190101T100000"))
+        assertTrue(raw.contains("BEGIN:VALARM\r\n" +
+                "TRIGGER:-PT1H\r\n" +
+                "END:VALARM\r\n"))
+        assertTrue(raw.contains("BEGIN:VTIMEZONE"))
     }
 
 
