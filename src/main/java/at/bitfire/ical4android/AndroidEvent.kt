@@ -256,7 +256,6 @@ abstract class AndroidEvent(
 
     protected open fun populateAttendee(row: ContentValues) {
         Constants.log.log(Level.FINE, "Read event attendee from calender provider", row)
-        MiscUtils.removeEmptyStrings(row)
 
         try {
             val attendee: Attendee

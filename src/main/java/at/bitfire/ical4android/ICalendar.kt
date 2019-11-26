@@ -173,9 +173,14 @@ open class ICalendar {
         }
 
         /**
-         * Validates an iCalendar resource and catches/logs a potential [ValidationException].
+         * Validates an iCalendar resource.
+         *
+         * Debug builds only: throws [ValidationException] when the resource is invalid.
+         * Release builds only: prints a warning to the log when the resource is invalid.
          *
          * @param ical iCalendar resource to be validated
+         *
+         * @throws ValidationException when the resource is invalid (only if [BuildConfig.DEBUG] is set)
          */
         fun softValidate(ical: Calendar) {
             try {
