@@ -55,6 +55,7 @@ class Event: ICalendar() {
 
     var lastModified: LastModified? = null
 
+    val categories = LinkedList<String>()
     val unknownProperties = LinkedList<Property>()
 
     companion object {
@@ -150,6 +151,9 @@ class Event: ICalendar() {
                     is Summary -> e.summary = prop.value
                     is Location -> e.location = prop.value
                     is Description -> e.description = prop.value
+                    is Categories ->
+                        for (category in prop.categories)
+                            e.categories += category
                     is Color -> e.color = Css3Color.fromString(prop.value)
                     is DtStart -> e.dtStart = prop
                     is DtEnd -> e.dtEnd = prop
@@ -271,6 +275,8 @@ class Event: ICalendar() {
         organizer?.let { props += it }
         props.addAll(attendees)
 
+        if (categories.isNotEmpty())
+            props += Categories(TextList(categories.toTypedArray()))
         props.addAll(unknownProperties)
 
         lastModified?.let { props += it }

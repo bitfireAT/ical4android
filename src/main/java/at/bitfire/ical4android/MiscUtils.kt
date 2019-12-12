@@ -119,17 +119,4 @@ object MiscUtils {
 
     }
 
-
-    object TextListHelper {
-
-        fun TextList.toList(): List<String> {
-            val list = LinkedList<String>()
-            val it = iterator()
-            while (it.hasNext())
-                list += it.next()
-            return list
-        }
-
-    }
-
 }

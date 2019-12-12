@@ -10,7 +10,6 @@
 
 package at.bitfire.ical4android
 
-import at.bitfire.ical4android.MiscUtils.TextListHelper.toList
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
@@ -115,7 +114,9 @@ class Task: ICalendar() {
                     is RRule -> t.rRule = prop
                     is RDate -> t.rDates += prop
                     is ExDate -> t.exDates += prop
-                    is Categories -> t.categories.addAll(prop.categories.toList())
+                    is Categories ->
+                        for (category in prop.categories)
+                            t.categories += category
                     is RelatedTo -> t.relatedTo.add(prop)
                     is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */ }
                     else -> t.unknownProperties += prop

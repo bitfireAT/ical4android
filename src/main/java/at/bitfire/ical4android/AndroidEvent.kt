@@ -58,6 +58,18 @@ abstract class AndroidEvent(
         const val EXT_UNKNOWN_PROPERTY2 = "unknown-property.v2"
 
         /**
+         * VEVENT CATEGORIES will be stored as an extended property with this [ExtendedProperties.NAME].
+         *
+         * The [ExtendedProperties.VALUE] format is the same as used by the AOSP Exchange ActiveSync adapter:
+         * the category values are stored as list, separated by [EXT_CATEGORIES_SEPARATOR]. (If a category
+         * value contains [EXT_CATEGORIES_SEPARATOR], [EXT_CATEGORIES_SEPARATOR] will be dropped.)
+         *
+         * Example: `Cat1\Cat2`
+         */
+        const val EXT_CATEGORIES = "categories"
+        const val EXT_CATEGORIES_SEPARATOR = '\\'
+
+        /**
          * EMAIL parameter name (as used for ORGANIZER). Not declared in ical4j Parameters class yet.
          */
         private const val PARAMETER_EMAIL = "EMAIL"
@@ -340,11 +352,17 @@ abstract class AndroidEvent(
     }
 
     protected open fun populateExtended(row: ContentValues) {
-        Constants.log.log(Level.FINE, "Read extended property from calender provider", row.getAsString(ExtendedProperties.NAME))
+        val name = row.getAsString(ExtendedProperties.NAME)
+        Constants.log.log(Level.FINE, "Read extended property from calender provider (name=$name)")
         val event = requireNotNull(event)
 
         try {
             when (row.getAsString(ExtendedProperties.NAME)) {
+                EXT_CATEGORIES -> {
+                    val rawCategories = row.getAsString(ExtendedProperties.VALUE)
+                    event.categories += rawCategories.split(EXT_CATEGORIES_SEPARATOR)
+                }
+
                 EXT_UNKNOWN_PROPERTY -> {
                     // deserialize unknown property (deprecated format)
                     val stream = ByteArrayInputStream(Base64.decode(row.getAsString(ExtendedProperties.VALUE), Base64.NO_WRAP))
@@ -426,6 +444,8 @@ abstract class AndroidEvent(
 
         // add unknown properties
         retainClassification()
+        if (event.categories.isNotEmpty())
+            insertCategories(batch, idxEvent)
         event.unknownProperties.forEach { insertUnknownProperty(batch, idxEvent, it) }
 
         // add exceptions
@@ -711,6 +731,18 @@ abstract class AndroidEvent(
         batch.enqueue(BatchOperation.Operation(builder, Attendees.EVENT_ID, idxEvent))
     }
 
+    protected open fun insertCategories(batch: BatchOperation, idxEvent: Int) {
+        val rawCategories = event!!.categories
+                .map { it.filter { it != EXT_CATEGORIES_SEPARATOR } }   // drop backslashes
+                .joinToString(EXT_CATEGORIES_SEPARATOR.toString())      // concatenate, separate by backslash
+        val builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
+                .withValue(ExtendedProperties.NAME, EXT_CATEGORIES)
+                .withValue(ExtendedProperties.VALUE, rawCategories)
+
+        Constants.log.log(Level.FINE, "Built categories", builder.build())
+        batch.enqueue(BatchOperation.Operation(builder, ExtendedProperties.EVENT_ID, idxEvent))
+    }
+
     protected open fun insertUnknownProperty(batch: BatchOperation, idxEvent: Int, property: Property) {
         if (property.value.length > UnknownProperty.MAX_UNKNOWN_PROPERTY_SIZE) {
             Constants.log.warning("Ignoring unknown property with ${property.value.length} octets (too long)")
@@ -721,6 +753,7 @@ abstract class AndroidEvent(
                 .withValue(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
                 .withValue(ExtendedProperties.VALUE, UnknownProperty.toJsonString(property))
 
+        Constants.log.log(Level.FINE, "Built unknown property: ${property.name}")
         batch.enqueue(BatchOperation.Operation(builder, ExtendedProperties.EVENT_ID, idxEvent))
     }
 

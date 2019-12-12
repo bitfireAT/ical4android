@@ -2,6 +2,7 @@ package at.bitfire.ical4android
 
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Property
+import net.fortuna.ical4j.transform.rfc5545.CreatedPropertyRule
 import net.fortuna.ical4j.transform.rfc5545.DateListPropertyRule
 import net.fortuna.ical4j.transform.rfc5545.DatePropertyRule
 import net.fortuna.ical4j.transform.rfc5545.Rfc5545PropertyRule
@@ -17,6 +18,7 @@ import java.util.logging.Level
 object ICalPreprocessor {
 
     private val propertyRules = arrayOf(
+            CreatedPropertyRule(),      // make sure CREATED is UTC
             DatePropertyRule(),
             DateListPropertyRule()
     )

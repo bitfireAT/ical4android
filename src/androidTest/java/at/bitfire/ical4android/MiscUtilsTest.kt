@@ -12,11 +12,9 @@ import android.content.ContentValues
 import android.database.MatrixCursor
 import androidx.test.filters.SmallTest
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
-import at.bitfire.ical4android.MiscUtils.TextListHelper.toList
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
-import net.fortuna.ical4j.model.TextList
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.property.DtStart
@@ -112,13 +110,6 @@ class MiscUtilsTest {
         val values = c.toValues()
         assertEquals("row1_val1", values.getAsString("col1"))
         assertEquals("row1_val2", values.getAsString("col2"))
-    }
-
-    @Test
-    @SmallTest
-    fun testTextListToList() {
-        assertEquals(listOf("str1", "str2"), TextList(arrayOf("str1", "str2")).toList())
-        assertEquals(emptyList<String>(), TextList(arrayOf()).toList())
     }
 
 
