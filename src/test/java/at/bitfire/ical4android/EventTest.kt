@@ -7,10 +7,14 @@
  */
 package at.bitfire.ical4android
 
+import net.fortuna.ical4j.model.Date
+import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.Dur
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.property.DtStart
+import net.fortuna.ical4j.model.property.RRule
+import net.fortuna.ical4j.model.property.RecurrenceId
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.ByteArrayOutputStream
@@ -89,6 +93,44 @@ class EventTest {
         assertEquals("X-UNKNOWN-PROP", unknown.name)
         assertEquals("xxx", unknown.getParameter("param1").value)
         assertEquals("Unknown Value", unknown.value)
+    }
+
+    @Test
+    fun testRecurringWriteFullDayException() {
+        val event = Event().apply {
+            uid = "test1"
+            dtStart = DtStart("20190117T083000", DateUtils.tzRegistry.getTimeZone("Europe/Berlin"))
+            summary = "Main event"
+            rRule = RRule("FREQ=DAILY;COUNT=5")
+            exceptions += arrayOf(
+                    Event().apply {
+                        uid = "test2"
+                        recurrenceId = RecurrenceId(DateTime("20190118T073000", DateUtils.tzRegistry.getTimeZone("Europe/London")))
+                        summary = "Normal exception"
+                    },
+                    Event().apply {
+                        uid = "test3"
+                        recurrenceId = RecurrenceId(Date("20190223"))
+                        summary = "Full-day exception"
+                    }
+            )
+        }
+        val baos = ByteArrayOutputStream()
+        event.write(baos)
+        val iCal = baos.toString()
+        assertTrue(iCal.contains("UID:test1\r\n"))
+        assertTrue(iCal.contains("DTSTART;TZID=Europe/Berlin:20190117T083000\r\n"))
+
+        // first RECURRENCE-ID has been rewritten
+        // - to main event's UID
+        // - to time zone Europe/Berlin (with one hour time difference)
+        assertTrue(iCal.contains("UID:test1\r\n" +
+                "RECURRENCE-ID;TZID=Europe/Berlin:20190118T083000\r\n" +
+                "SUMMARY:Normal exception\r\n" +
+                "END:VEVENT"))
+
+        // no RECURRENCE-ID;VALUE=DATE:20190223
+        assertFalse(iCal.contains(":20190223"))
     }
 
     @Test

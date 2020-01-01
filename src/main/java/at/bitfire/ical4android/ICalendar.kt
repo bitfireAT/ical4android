@@ -99,8 +99,6 @@ open class ICalendar {
 
         // time zone helpers
 
-        fun isDateTime(date: DateProperty?) = date != null && date.date is DateTime
-
         /**
          * Minifies a VTIMEZONE so that only components after [start] are kept.
          * Doesn't return the smallest possible VTIMEZONE at the moment, but

@@ -15,6 +15,7 @@ import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.DateListProperty
+import net.fortuna.ical4j.model.property.DateProperty
 import net.fortuna.ical4j.model.property.ExDate
 import net.fortuna.ical4j.model.property.RDate
 import java.io.StringReader
@@ -73,6 +74,14 @@ object DateUtils {
 
         return deviceTZ
     }
+
+    /**
+     * Determines whether a given date represents a DATE-TIME value.
+     * @param date date property to check
+     * @return *true* if the date is a DATE-TIME value; *false* otherwise (for instance, when the
+     * date is a DATE value or null)
+     */
+    fun isDateTime(date: DateProperty?) = date != null && date.date is DateTime
 
     /**
      * Parses a VTIMEZONE definition to a VTimeZone object.

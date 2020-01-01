@@ -8,6 +8,7 @@
 
 package at.bitfire.ical4android
 
+import at.bitfire.ical4android.DateUtils.isDateTime
 import at.bitfire.ical4android.ICalendar.Companion.CALENDAR_NAME
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
@@ -206,24 +207,37 @@ class Event: ICalendar() {
 
         // recurrence exceptions
         for (exception in exceptions) {
-            // make sure that
-            //     - exceptions have the same UID as the main event and
-            //     - RECURRENCE-IDs have the same timezone as the main event's DTSTART
+            // exceptions must always have the same UID as the main event
             exception.uid = uid
-            exception.recurrenceId?.let { recurrenceId ->
-                if (recurrenceId.timeZone != dtStart.timeZone) {
-                    recurrenceId.timeZone = dtStart.timeZone
-                    exception.recurrenceId = recurrenceId
-                }
 
-                // create VEVENT for exception
-                val vException = exception.toVEvent()
-                components += vException
-
-                // remember used time zones
-                exception.dtStart?.timeZone?.let(usedTimeZones::add)
-                exception.dtEnd?.timeZone?.let(usedTimeZones::add)
+            val recurrenceId = exception.recurrenceId
+            if (recurrenceId == null) {
+                Constants.log.warning("Ignoring exception without recurrenceId")
+                continue
             }
+
+            /* Exceptions must always have the same value type as DTSTART [RFC 5545 3.8.4.4].
+               If this is not the case, we don't add the exception to the event because we're
+               strict in what we send (and servers may reject such a case).
+             */
+            if (isDateTime(recurrenceId) != isDateTime(dtStart)) {
+                Constants.log.warning("Ignoring exception $recurrenceId with other date type than dtStart: $dtStart")
+                continue
+            }
+
+            // for simplicity and compatibility, rewrite date-time exceptions to the same time zone as DTSTART
+            if (isDateTime(recurrenceId) && recurrenceId.timeZone != dtStart.timeZone) {
+                Constants.log.fine("Changing timezone of $recurrenceId to same time zone as dtStart: $dtStart")
+                recurrenceId.timeZone = dtStart.timeZone
+            }
+
+            // create and add VEVENT for exception
+            val vException = exception.toVEvent()
+            components += vException
+
+            // remember used time zones
+            exception.dtStart?.timeZone?.let(usedTimeZones::add)
+            exception.dtEnd?.timeZone?.let(usedTimeZones::add)
         }
 
         // add VTIMEZONE components
@@ -243,7 +257,7 @@ class Event: ICalendar() {
      * @return generated VEvent
      */
     private fun toVEvent(): VEvent {
-        val event = VEvent(true /* generates DTSTAMP */)
+        val event = VEvent(/* generates DTSTAMP */)
         val props = event.properties
         props += Uid(uid)
 
@@ -258,7 +272,7 @@ class Event: ICalendar() {
         description?.let { props += Description(it) }
         color?.let { props += Color(null, it.name) }
 
-        props += dtStart
+        dtStart?.let { props += it }
         dtEnd?.let { props += it }
         duration?.let { props += it }
 

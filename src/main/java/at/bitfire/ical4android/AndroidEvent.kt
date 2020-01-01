@@ -254,9 +254,7 @@ abstract class AndroidEvent(
 
         // exceptions from recurring events
         row.getAsLong(Events.ORIGINAL_INSTANCE_TIME)?.let { originalInstanceTime ->
-            var originalAllDay = false
-            row.getAsInteger(Events.ORIGINAL_ALL_DAY)?.let { originalAllDay = it != 0 }
-
+            val originalAllDay = (row.getAsInteger(Events.ORIGINAL_ALL_DAY) ?: 0) != 0
             val originalDate = if (originalAllDay)
                     Date(originalInstanceTime) else
                     DateTime(originalInstanceTime)

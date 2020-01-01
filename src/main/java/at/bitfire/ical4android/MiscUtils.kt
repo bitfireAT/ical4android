@@ -11,7 +11,7 @@ package at.bitfire.ical4android
 import android.content.ContentValues
 import android.database.Cursor
 import android.database.DatabaseUtils
-import net.fortuna.ical4j.model.TextList
+import at.bitfire.ical4android.DateUtils.isDateTime
 import net.fortuna.ical4j.model.property.DateProperty
 import net.fortuna.ical4j.util.TimeZones
 import java.lang.reflect.Modifier
@@ -25,7 +25,7 @@ object MiscUtils {
      * @param date DateProperty to validate. Values which are not DATE-TIME will be ignored.
      */
     fun androidifyTimeZone(date: DateProperty?) {
-        if (ICalendar.isDateTime(date)) {
+        if (isDateTime(date)) {
             val tz = date!!.timeZone ?: return
             val tzID = tz.id ?: return
             val deviceTzID = DateUtils.findAndroidTimezoneID(tzID)
@@ -47,7 +47,7 @@ object MiscUtils {
      *         - the currently set default time zone ID for floating date-times
      */
     fun getTzId(date: DateProperty): String =
-            if (ICalendar.isDateTime(date)) {
+            if (isDateTime(date)) {
                 when {
                     date.isUtc ->
                         // DATE-TIME in UTC format
