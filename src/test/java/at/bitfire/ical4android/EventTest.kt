@@ -80,6 +80,13 @@ class EventTest {
     }
 
     @Test
+    fun testIsAllDay() {
+        assertFalse(Event().isAllDay())
+        assertTrue(Event().apply { dtStart = DtStart(Date("20190101")) }.isAllDay())
+        assertFalse(Event().apply { dtStart = DtStart(DateTime("20190101T010100")) }.isAllDay())
+    }
+
+    @Test
     fun testParse() {
         val event = parseCalendar("utf8.ics").first()
         assertEquals("utf8@ical4android.EventTest", event.uid)

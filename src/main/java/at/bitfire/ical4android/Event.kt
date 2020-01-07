@@ -14,6 +14,7 @@ import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Calendar
+import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VEvent
@@ -303,6 +304,11 @@ class Event: ICalendar() {
 
     // helpers
 
-    fun isAllDay() = !isDateTime(dtStart)
+    /**
+     * Determines whether this Event is an all-day event.
+     *
+     * @return *true* if [dtStart] is a DATE value; *false* otherwise ([dtStart] is a DATETIME value or *null*)
+     */
+    fun isAllDay() = dtStart != null && !isDateTime(dtStart)
 
 }
