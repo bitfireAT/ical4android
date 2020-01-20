@@ -12,9 +12,9 @@ import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.DateTime
+import net.fortuna.ical4j.model.Parameter
 import net.fortuna.ical4j.model.component.*
-import net.fortuna.ical4j.model.property.DateProperty
+import net.fortuna.ical4j.model.parameter.Related
 import net.fortuna.ical4j.model.property.ProdId
 import net.fortuna.ical4j.model.property.TzUrl
 import net.fortuna.ical4j.validate.ValidationException
@@ -23,6 +23,9 @@ import java.io.StringReader
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.math.round
+import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 open class ICalendar {
 
@@ -195,15 +198,87 @@ open class ICalendar {
 
         // misc. iCalendar helpers
 
-        internal fun alarmMinBefore(alarm: VAlarm): Int {
-            var minutes = 0
-            alarm.trigger?.duration?.let { duration ->
+        /**
+         * Calculates the minutes before/after an event/task a certain alarm occurs.
+         *
+         * @param alarm the alarm to calculate the minutes from
+         * @param eventEndRef reference [VEvent] or [VToDo] to take start/end time from (required for calculations)
+         * @param allowRelEnd *true*: caller accepts minutes related to the end;
+         * *false*: caller only accepts minutes related to the start
+         *
+         * @return Pair of values:
+         *
+         * 1. whether the minutes are related to the start or end (always [Related.START] if [allowRelEnd] is *false*)
+         * 2. number of minutes before start/end (negative value means number of minutes *after* start/end)
+         *
+         * May be *null* if the minutes can't be calculated.
+         */
+        fun vAlarmToMin(alarm: VAlarm, reference: ICalendar, allowRelEnd: Boolean): Pair<Related, Int>? {
+            val trigger = alarm.trigger ?: return null
+
+            var minutes = 0       // minutes before/after the event
+            var related = trigger.getParameter(Parameter.RELATED) as? Related ?: Related.START
+
+            val alarmDur = trigger.duration
+            val alarmTime = trigger.dateTime
+
+            if (alarmDur != null) {
+                // TRIGGER value is a DURATION
+
                 // negative value in TRIGGER means positive value in Reminders.MINUTES and vice versa
-                minutes = -(((duration.weeks * 7 + duration.days) * 24 + duration.hours) * 60 + duration.minutes + duration.seconds/60)
-                if (duration.isNegative)
+                minutes = -(((alarmDur.weeks * 7 + alarmDur.days) * 24 + alarmDur.hours) * 60 + alarmDur.minutes + (alarmDur.seconds/60.0).roundToInt())
+                // duration.weeks etc. always contain positive values → evaluate duration.isNegative
+                if (alarmDur.isNegative)
                     minutes *= -1
+
+                // DURATION triggers may have RELATED=END (default: RELATED=START), which may not be useful for caller
+                if (related == Related.END && !allowRelEnd) {
+                    // Related.END is not accepted by caller (for instance because the calendar storage doesn't support it)
+
+                    val start = when (reference) {
+                        is Event -> reference.dtStart?.date?.time
+                        is Task -> reference.dtStart?.date?.time
+                        else -> null
+                    }
+                    if (start == null) {
+                        Constants.log.warning("iCalendar with RELATED=END VALARM doesn't have start time (required for calculation), ignoring")
+                        return null
+                    }
+
+                    val end = when (reference) {
+                        is Event -> reference.dtEnd?.date?.time
+                        is Task -> reference.due?.date?.time
+                        else -> null
+                    }
+                    if (end == null) {
+                        Constants.log.warning("iCalendar with RELATED=END VALARM doesn't have end time, ignoring")
+                        return null
+                    }
+                    val durMin = ((end - start)/60000.0).roundToInt()      // ms → min
+
+                    // move alarm towards end
+                    related = Related.START
+                    minutes -= durMin
+                }
+
+            } else if (alarmTime != null) {
+                // TRIGGER value is a DATE-TIME, calculate minutes from start time
+                val start = if (reference is Event)
+                            reference.dtStart?.date?.time
+                        else if (reference is Task)
+                            reference.dtStart?.date?.time
+                        else
+                            null
+                if (start == null) {
+                    Constants.log.warning("iCalendar with DATE-TIME VALARM doesn't have start time (required for calculation), ignoring")
+                    return null
+                }
+
+                related = Related.START
+                minutes = ((start - alarmTime.time)/60000.0).roundToInt()   // ms → min
             }
-            return minutes
+
+            return Pair(related, minutes)
         }
 
     }

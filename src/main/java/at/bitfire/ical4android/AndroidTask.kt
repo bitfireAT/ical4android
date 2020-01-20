@@ -312,8 +312,10 @@ abstract class AndroidTask(
     }
 
     protected open fun insertAlarms(batch: BatchOperation) {
-        for (alarm in requireNotNull(task).alarms) {
-            val alarmRef = when (alarm.trigger.getParameter(Parameter.RELATED)) {
+        val task = requireNotNull(task)
+        for (alarm in task.alarms) {
+            val (alarmRef, minutes) = ICalendar.vAlarmToMin(alarm, task, true) ?: continue
+            val ref = when (alarmRef) {
                 Related.END ->
                     Alarm.ALARM_REFERENCE_DUE_DATE
                 else /* Related.START is the default value */ ->
@@ -334,8 +336,8 @@ abstract class AndroidTask(
             val builder = ContentProviderOperation.newInsert(taskList.tasksPropertiesSyncUri())
                     .withValue(Alarm.TASK_ID, id)
                     .withValue(Alarm.MIMETYPE, Alarm.CONTENT_ITEM_TYPE)
-                    .withValue(Alarm.MINUTES_BEFORE, ICalendar.alarmMinBefore(alarm))
-                    .withValue(Alarm.REFERENCE, alarmRef)
+                    .withValue(Alarm.MINUTES_BEFORE, minutes)
+                    .withValue(Alarm.REFERENCE, ref)
                     .withValue(Alarm.MESSAGE, alarm.description?.value ?: alarm.summary)
                     .withValue(Alarm.ALARM_TYPE, alarmType)
 

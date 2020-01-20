@@ -664,7 +664,8 @@ abstract class AndroidEvent(
             else               -> Reminders.METHOD_DEFAULT
         }
 
-        val minutes = ICalendar.alarmMinBefore(alarm)
+        val (_, minutes) = ICalendar.vAlarmToMin(alarm, event!!, false) ?: return
+
         builder .withValue(Reminders.METHOD, method)
                 .withValue(Reminders.MINUTES, minutes)
 
