@@ -24,6 +24,21 @@ Generated KDoc: https://bitfireAT.gitlab.io/ical4android/dokka/ical4android/
 
 Discussion: https://forums.bitfire.at/category/18/libraries
 
+## How to use
+
+You can use [jitpack.io to include ical4android](https://jitpack.io/#com.gitlab.bitfireAT/ical4android):
+
+    allprojects {
+        repositories {
+            maven { url 'https://jitpack.io' }
+        }
+    }
+    dependencies {
+        implementation 'com.gitlab.bitfireAT:ical4android:<version>'  // see tags for latest version, like 1.0
+        //implementation 'com.gitlab.bitfireAT:ical4android:master-SNAPSHOT'  // alternative
+    }
+
+
 
 ## Contact
 
