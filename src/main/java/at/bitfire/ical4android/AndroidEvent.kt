@@ -731,9 +731,11 @@ abstract class AndroidEvent(
     }
 
     protected open fun insertCategories(batch: BatchOperation, idxEvent: Int) {
-        val rawCategories = event!!.categories
-                .map { it.filter { it != EXT_CATEGORIES_SEPARATOR } }   // drop backslashes
-                .joinToString(EXT_CATEGORIES_SEPARATOR.toString())      // concatenate, separate by backslash
+        val rawCategories = event!!.categories      // concatenate, separate by backslash
+                .joinToString(EXT_CATEGORIES_SEPARATOR.toString()) { category ->
+                    // drop occurrences of EXT_CATEGORIES_SEPARATOR in category names
+                    category.filter { it != EXT_CATEGORIES_SEPARATOR }
+                }
         val builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
                 .withValue(ExtendedProperties.NAME, EXT_CATEGORIES)
                 .withValue(ExtendedProperties.VALUE, rawCategories)

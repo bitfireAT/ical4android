@@ -14,7 +14,6 @@ import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Calendar
-import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VEvent

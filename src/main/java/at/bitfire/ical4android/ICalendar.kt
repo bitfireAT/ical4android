@@ -23,9 +23,7 @@ import java.io.StringReader
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
-import kotlin.math.round
 import kotlin.math.roundToInt
-import kotlin.math.roundToLong
 
 open class ICalendar {
 
@@ -202,7 +200,7 @@ open class ICalendar {
          * Calculates the minutes before/after an event/task a certain alarm occurs.
          *
          * @param alarm the alarm to calculate the minutes from
-         * @param eventEndRef reference [VEvent] or [VToDo] to take start/end time from (required for calculations)
+         * @param reference reference [VEvent] or [VToDo] to take start/end time from (required for calculations)
          * @param allowRelEnd *true*: caller accepts minutes related to the end;
          * *false*: caller only accepts minutes related to the start
          *
