@@ -84,7 +84,7 @@ class Task: ICalendar() {
             if (todo.uid != null)
                 t.uid = todo.uid.value
             else {
-                Constants.log.warning("Received VTODO without UID, generating new one")
+                Ical4Android.log.warning("Received VTODO without UID, generating new one")
                 t.generateUID()
             }
 
@@ -129,7 +129,7 @@ class Task: ICalendar() {
             val dtStart = t.dtStart
             val due = t.due
             if (dtStart != null && due != null && !due.date.after(dtStart.date)) {
-                Constants.log.warning("Invalid DTSTART >= DUE; ignoring DTSTART")
+                Ical4Android.log.warning("Invalid DTSTART >= DUE; ignoring DTSTART")
                 t.dtStart = null
             }
 
@@ -166,7 +166,7 @@ class Task: ICalendar() {
             try {
                 props += Url(URI(it))
             } catch (e: URISyntaxException) {
-                Constants.log.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
+                Ical4Android.log.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
             }
         }
         organizer?.let { props += it }

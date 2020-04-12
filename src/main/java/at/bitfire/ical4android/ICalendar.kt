@@ -13,6 +13,7 @@ import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.Parameter
+import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.*
 import net.fortuna.ical4j.model.parameter.Related
 import net.fortuna.ical4j.model.property.ProdId
@@ -20,10 +21,10 @@ import net.fortuna.ical4j.model.property.TzUrl
 import net.fortuna.ical4j.validate.ValidationException
 import java.io.Reader
 import java.io.StringReader
+import java.time.Duration
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
-import kotlin.math.roundToInt
 
 open class ICalendar {
 
@@ -68,7 +69,7 @@ open class ICalendar {
          * @throws IllegalArgumentException when the iCalendar resource contains an invalid value
          */
         fun fromReader(reader: Reader, properties: MutableMap<String, String>? = null): Calendar {
-            Constants.log.fine("Parsing iCalendar stream")
+            Ical4Android.log.fine("Parsing iCalendar stream")
 
             // parse stream
             val calendar: Calendar
@@ -84,12 +85,12 @@ open class ICalendar {
             try {
                 ICalPreprocessor.preProcess(calendar)
             } catch (e: Exception) {
-                Constants.log.log(Level.WARNING, "Couldn't pre-process iCalendar", e)
+                Ical4Android.log.log(Level.WARNING, "Couldn't pre-process iCalendar", e)
             }
 
             // fill calendar properties
             properties?.let {
-                calendar.getProperty(CALENDAR_NAME)?.let { calName ->
+                calendar.getProperty<Property>(CALENDAR_NAME)?.let { calName ->
                     properties[CALENDAR_NAME] = calName.value
                 }
             }
@@ -166,7 +167,7 @@ open class ICalendar {
                 val timezone = cal.getComponent(VTimeZone.VTIMEZONE) as VTimeZone?
                 timezone?.timeZoneId?.let { return it.value }
             } catch (e: ParserException) {
-                Constants.log.log(Level.SEVERE, "Can't understand time zone definition", e)
+                Ical4Android.log.log(Level.SEVERE, "Can't understand time zone definition", e)
             }
             return null
         }
@@ -189,7 +190,7 @@ open class ICalendar {
                     // debug build, re-throw ValidationException
                     throw e
                 else
-                    Constants.log.log(Level.WARNING, "iCalendar validation failed - This is only a warning!", e)
+                    Ical4Android.log.log(Level.WARNING, "iCalendar validation failed - This is only a warning!", e)
             }
         }
 
@@ -197,7 +198,7 @@ open class ICalendar {
         // misc. iCalendar helpers
 
         /**
-         * Calculates the minutes before/after an event/task a certain alarm occurs.
+         * Calculates the minutes before/after an event/task a given alarm occurs.
          *
          * @param alarm the alarm to calculate the minutes from
          * @param reference reference [VEvent] or [VToDo] to take start/end time from (required for calculations)
@@ -209,7 +210,7 @@ open class ICalendar {
          * 1. whether the minutes are related to the start or end (always [Related.START] if [allowRelEnd] is *false*)
          * 2. number of minutes before start/end (negative value means number of minutes *after* start/end)
          *
-         * May be *null* if the minutes can't be calculated.
+         * May be *null* if there's not enough information to calculate the number of minutes.
          */
         fun vAlarmToMin(alarm: VAlarm, reference: ICalendar, allowRelEnd: Boolean): Pair<Related, Int>? {
             val trigger = alarm.trigger ?: return null
@@ -217,17 +218,15 @@ open class ICalendar {
             var minutes = 0       // minutes before/after the event
             var related = trigger.getParameter(Parameter.RELATED) as? Related ?: Related.START
 
-            val alarmDur = trigger.duration
+            val alarmDur = trigger.duration as? Duration
             val alarmTime = trigger.dateTime
 
             if (alarmDur != null) {
-                // TRIGGER value is a DURATION
-
-                // negative value in TRIGGER means positive value in Reminders.MINUTES and vice versa
-                minutes = -(((alarmDur.weeks * 7 + alarmDur.days) * 24 + alarmDur.hours) * 60 + alarmDur.minutes + (alarmDur.seconds/60.0).roundToInt())
-                // duration.weeks etc. always contain positive values → evaluate duration.isNegative
-                if (alarmDur.isNegative)
-                    minutes *= -1
+                // TRIGGER value is a DURATION. Important:
+                // 1) Negative values in TRIGGER mean positive values in Reminders.MINUTES and vice versa.
+                // 2) Android doesn't know alarm seconds, but only minutes. Always round up so that an alarm 10 seconds
+                //    before the event pops up one minute before the event.
+                minutes = Math.ceil(-alarmDur.toMillis() / 60000.0).toInt()
 
                 // DURATION triggers may have RELATED=END (default: RELATED=START), which may not be useful for caller
                 if (related == Related.END && !allowRelEnd) {
@@ -239,7 +238,7 @@ open class ICalendar {
                         else -> null
                     }
                     if (start == null) {
-                        Constants.log.warning("iCalendar with RELATED=END VALARM doesn't have start time (required for calculation), ignoring")
+                        Ical4Android.log.warning("iCalendar with RELATED=END VALARM doesn't have start time (required for calculation), ignoring")
                         return null
                     }
 
@@ -249,10 +248,10 @@ open class ICalendar {
                         else -> null
                     }
                     if (end == null) {
-                        Constants.log.warning("iCalendar with RELATED=END VALARM doesn't have end time, ignoring")
+                        Ical4Android.log.warning("iCalendar with RELATED=END VALARM doesn't have end time, ignoring")
                         return null
                     }
-                    val durMin = ((end - start)/60000.0).roundToInt()      // ms → min
+                    val durMin = Math.ceil((end - start)/60000.0).toInt()      // ms → min
 
                     // move alarm towards end
                     related = Related.START
@@ -268,12 +267,11 @@ open class ICalendar {
                         else
                             null
                 if (start == null) {
-                    Constants.log.warning("iCalendar with DATE-TIME VALARM doesn't have start time (required for calculation), ignoring")
+                    Ical4Android.log.warning("iCalendar with DATE-TIME VALARM doesn't have start time (required for calculation), ignoring")
                     return null
                 }
-
                 related = Related.START
-                minutes = ((start - alarmTime.time)/60000.0).roundToInt()   // ms → min
+                minutes = Math.ceil((start - alarmTime.time)/60000.0).toInt()   // ms → min
             }
 
             return Pair(related, minutes)

@@ -62,7 +62,7 @@ object DateUtils {
             for (availableTZ in availableTZs)
                 if (availableTZ.contains(tzID) || tzID.contains(availableTZ)) {
                     deviceTZ = availableTZ
-                    Constants.log.warning("Couldn't find system time zone \"$tzID\", assuming $deviceTZ")
+                    Ical4Android.log.warning("Couldn't find system time zone \"$tzID\", assuming $deviceTZ")
                     break
                 }
 

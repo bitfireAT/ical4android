@@ -8,9 +8,11 @@
 
 package at.bitfire.ical4android
 
+import android.content.ContentProviderClient
 import android.content.ContentValues
 import android.database.Cursor
 import android.database.DatabaseUtils
+import android.os.Build
 import at.bitfire.ical4android.DateUtils.isDateTime
 import net.fortuna.ical4j.model.property.DateProperty
 import net.fortuna.ical4j.util.TimeZones
@@ -30,7 +32,7 @@ object MiscUtils {
             val tzID = tz.id ?: return
             val deviceTzID = DateUtils.findAndroidTimezoneID(tzID)
             if (tzID != deviceTzID) {
-                Constants.log.warning("Android doesn't know time zone \"$tzID\", assuming device time zone \"$deviceTzID\"")
+                Ical4Android.log.warning("Android doesn't know time zone \"$tzID\", assuming device time zone \"$deviceTzID\"")
                 date.timeZone = DateUtils.tzRegistry.getTimeZone(deviceTzID)
             }
         }
@@ -96,6 +98,19 @@ object MiscUtils {
                 it.remove()
         }
         return values
+    }
+
+
+    object ContentProviderClientHelper {
+
+        fun ContentProviderClient.closeCompat() {
+            @Suppress("DEPRECATION")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+                close()
+            else
+                release()
+        }
+
     }
 
 

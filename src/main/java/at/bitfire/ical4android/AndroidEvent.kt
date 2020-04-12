@@ -156,7 +156,7 @@ abstract class AndroidEvent(
      * @param row values of an [Events] row, as returned by the calendar provider
      */
     protected open fun populateEvent(row: ContentValues) {
-        Constants.log.log(Level.FINE, "Read event entity from calender provider", row)
+        Ical4Android.log.log(Level.FINE, "Read event entity from calender provider", row)
         val event = requireNotNull(event)
 
         event.summary = row.getAsString(Events.TITLE)
@@ -167,7 +167,7 @@ abstract class AndroidEvent(
             try {
                 event.color = Css3Color.valueOf(name)
             } catch(e: IllegalArgumentException) {
-                Constants.log.warning("Ignoring unknown color $name from Calendar Provider")
+                Ical4Android.log.warning("Ignoring unknown color $name from Calendar Provider")
             }
         }
 
@@ -181,7 +181,7 @@ abstract class AndroidEvent(
             event.dtStart = DtStart(Date(tsStart))
             when {
                 tsEnd != null -> event.dtEnd = DtEnd(Date(tsEnd))
-                duration != null -> event.duration = Duration(Dur(duration))
+                duration != null -> event.duration = Duration(null, duration)
             }
         } else {
             // use DATE-TIME values
@@ -200,7 +200,7 @@ abstract class AndroidEvent(
                     tz?.let { end.timeZone = it }
                     event.dtEnd = DtEnd(end)
                 }
-                duration != null -> event.duration = Duration(Dur(duration))
+                duration != null -> event.duration = Duration(null, duration)
             }
         }
 
@@ -222,9 +222,9 @@ abstract class AndroidEvent(
                 event.exDates += exDate
             }
         } catch (e: ParseException) {
-            Constants.log.log(Level.WARNING, "Couldn't parse recurrence rules, ignoring", e)
+            Ical4Android.log.log(Level.WARNING, "Couldn't parse recurrence rules, ignoring", e)
         } catch (e: IllegalArgumentException) {
-            Constants.log.log(Level.WARNING, "Invalid recurrence rules, ignoring", e)
+            Ical4Android.log.log(Level.WARNING, "Invalid recurrence rules, ignoring", e)
         }
 
         // status
@@ -242,7 +242,7 @@ abstract class AndroidEvent(
             try {
                 event.organizer = Organizer(URI("mailto", row.getAsString(Events.ORGANIZER), null))
             } catch (e: URISyntaxException) {
-                Constants.log.log(Level.WARNING, "Error when creating ORGANIZER mailto URI, ignoring", e)
+                Ical4Android.log.log(Level.WARNING, "Error when creating ORGANIZER mailto URI, ignoring", e)
             }
 
         // classification
@@ -265,7 +265,7 @@ abstract class AndroidEvent(
     }
 
     protected open fun populateAttendee(row: ContentValues) {
-        Constants.log.log(Level.FINE, "Read event attendee from calender provider", row)
+        Ical4Android.log.log(Level.FINE, "Read event attendee from calender provider", row)
 
         try {
             val attendee: Attendee
@@ -311,15 +311,15 @@ abstract class AndroidEvent(
 
             event!!.attendees.add(attendee)
         } catch (e: URISyntaxException) {
-            Constants.log.log(Level.WARNING, "Couldn't parse attendee information, ignoring", e)
+            Ical4Android.log.log(Level.WARNING, "Couldn't parse attendee information, ignoring", e)
         }
     }
 
     protected open fun populateReminder(row: ContentValues) {
-        Constants.log.log(Level.FINE, "Read event reminder from calender provider", row)
+        Ical4Android.log.log(Level.FINE, "Read event reminder from calender provider", row)
         val event = requireNotNull(event)
 
-        val alarm = VAlarm(Dur(0, 0, -row.getAsInteger(Reminders.MINUTES), 0))
+        val alarm = VAlarm(java.time.Duration.ofMinutes(-row.getAsLong(Reminders.MINUTES)))
 
         val props = alarm.properties
         when (row.getAsInteger(Reminders.METHOD)) {
@@ -334,7 +334,7 @@ abstract class AndroidEvent(
                     // account name (should be account owner's email address)
                     props += Attendee(URI("mailto", calendar.account.name, null))
                 } else {
-                    Constants.log.warning("Account name is not an email address; changing EMAIL reminder to DISPLAY")
+                    Ical4Android.log.warning("Account name is not an email address; changing EMAIL reminder to DISPLAY")
                     props += Action.DISPLAY
                     props += Description(event.summary)
                 }
@@ -351,7 +351,7 @@ abstract class AndroidEvent(
 
     protected open fun populateExtended(row: ContentValues) {
         val name = row.getAsString(ExtendedProperties.NAME)
-        Constants.log.log(Level.FINE, "Read extended property from calender provider (name=$name)")
+        Ical4Android.log.log(Level.FINE, "Read extended property from calender provider (name=$name)")
         val event = requireNotNull(event)
 
         try {
@@ -373,7 +373,7 @@ abstract class AndroidEvent(
                     event.unknownProperties += UnknownProperty.fromJsonString(row.getAsString(ExtendedProperties.VALUE))
             }
         } catch(e: Exception) {
-            Constants.log.log(Level.WARNING, "Couldn't parse extended property", e)
+            Ical4Android.log.log(Level.WARNING, "Couldn't parse extended property", e)
         }
     }
 
@@ -394,7 +394,7 @@ abstract class AndroidEvent(
                     exceptionEvent.organizer = event.organizer
                     event.exceptions += exceptionEvent
                 } catch (e: Exception) {
-                    Constants.log.log(Level.WARNING, "Couldn't find exception details", e)
+                    Ical4Android.log.log(Level.WARNING, "Couldn't find exception details", e)
                 }
             }
         }
@@ -473,7 +473,7 @@ abstract class AndroidEvent(
                 try {
                     date = Date(dateString)
                 } catch (e: ParseException) {
-                    Constants.log.log(Level.WARNING, "Couldn't parse DATE part of DATE-TIME RECURRENCE-ID", e)
+                    Ical4Android.log.log(Level.WARNING, "Couldn't parse DATE part of DATE-TIME RECURRENCE-ID", e)
                 }
             }
             exBuilder.withValue(Events.ORIGINAL_ALL_DAY, if (event.isAllDay()) 1 else 0)
@@ -558,7 +558,7 @@ abstract class AndroidEvent(
         var dtEnd = event.dtEnd
         if (event.isAllDay() && (dtEnd == null || !dtEnd.date.after(dtStart.date))) {
             // ical4j is not set to use floating times, so DATEs are UTC times internally
-            Constants.log.log(Level.INFO, "Changing all-day event for Android compatibility: dtend := dtstart + 1 day")
+            Ical4Android.log.log(Level.INFO, "Changing all-day event for Android compatibility: dtend := dtstart + 1 day")
             val c = java.util.Calendar.getInstance(TimeZone.getTimeZone(TimeZones.UTC_ID))
             c.time = dtStart.date
             c.add(java.util.Calendar.DATE, 1)
@@ -572,7 +572,7 @@ abstract class AndroidEvent(
            "DTEND" property, the event ends on the same calendar date and
            time of day specified by the "DTSTART" property. [RFC 5545 3.6.1] */
         else if (dtEnd == null || dtEnd.date.before(dtStart.date)) {
-            Constants.log.info("Event without duration, setting dtend := dtstart")
+            Ical4Android.log.info("Event without duration, setting dtend := dtstart")
             event.dtEnd = DtEnd(dtStart.date)
             dtEnd = event.dtEnd
         }
@@ -613,7 +613,7 @@ abstract class AndroidEvent(
                 if (cursor.moveToNext())
                     builder.withValue(Events.EVENT_COLOR_KEY, colorName)
                 else
-                    Constants.log.fine("Ignoring event color: $colorName (not available for this account)")
+                    Ical4Android.log.fine("Ignoring event color: $colorName (not available for this account)")
             }
         }
 
@@ -629,7 +629,7 @@ abstract class AndroidEvent(
             if (email != null)
                 builder.withValue(Events.ORGANIZER, email)
             else
-                Constants.log.warning("Ignoring ORGANIZER without email address (not supported by Android)")
+                Ical4Android.log.warning("Ignoring ORGANIZER without email address (not supported by Android)")
         }
 
         event.status?.let {
@@ -648,7 +648,7 @@ abstract class AndroidEvent(
             Clazz.CONFIDENTIAL -> builder.withValue(Events.ACCESS_LEVEL, Events.ACCESS_CONFIDENTIAL)
         }
 
-        Constants.log.log(Level.FINE, "Built event object", builder.build())
+        Ical4Android.log.log(Level.FINE, "Built event object", builder.build())
     }
 
     protected open fun insertReminder(batch: BatchOperation, idxEvent: Int, alarm: VAlarm) {
@@ -669,7 +669,7 @@ abstract class AndroidEvent(
         builder .withValue(Reminders.METHOD, method)
                 .withValue(Reminders.MINUTES, minutes)
 
-        Constants.log.log(Level.FINE, "Built alarm $minutes minutes before event", builder.build())
+        Ical4Android.log.log(Level.FINE, "Built alarm $minutes minutes before event", builder.build())
         batch.enqueue(BatchOperation.Operation(builder, Reminders.EVENT_ID, idxEvent))
     }
 
@@ -684,12 +684,12 @@ abstract class AndroidEvent(
             // attendee identified by other URI
             builder .withValue(Attendees.ATTENDEE_ID_NAMESPACE, member.scheme)
                     .withValue(Attendees.ATTENDEE_IDENTITY, member.schemeSpecificPart)
-            (attendee.getParameter(PARAMETER_EMAIL) as? Email)?.let { email ->
+            (attendee.getParameter<Email>(PARAMETER_EMAIL))?.let { email ->
                 builder.withValue(Attendees.ATTENDEE_EMAIL, email.value)
             }
         }
 
-        attendee.getParameter(Parameter.CN)?.let { cn ->
+        attendee.getParameter<Cn>(Parameter.CN)?.let { cn ->
             builder.withValue(Attendees.ATTENDEE_NAME, cn.value)
         }
 
@@ -726,7 +726,7 @@ abstract class AndroidEvent(
         builder .withValue(Attendees.ATTENDEE_TYPE, type)
                 .withValue(Attendees.ATTENDEE_STATUS, status)
 
-        Constants.log.log(Level.FINE, "Built attendee", builder.build())
+        Ical4Android.log.log(Level.FINE, "Built attendee", builder.build())
         batch.enqueue(BatchOperation.Operation(builder, Attendees.EVENT_ID, idxEvent))
     }
 
@@ -740,13 +740,13 @@ abstract class AndroidEvent(
                 .withValue(ExtendedProperties.NAME, EXT_CATEGORIES)
                 .withValue(ExtendedProperties.VALUE, rawCategories)
 
-        Constants.log.log(Level.FINE, "Built categories", builder.build())
+        Ical4Android.log.log(Level.FINE, "Built categories", builder.build())
         batch.enqueue(BatchOperation.Operation(builder, ExtendedProperties.EVENT_ID, idxEvent))
     }
 
     protected open fun insertUnknownProperty(batch: BatchOperation, idxEvent: Int, property: Property) {
         if (property.value.length > UnknownProperty.MAX_UNKNOWN_PROPERTY_SIZE) {
-            Constants.log.warning("Ignoring unknown property with ${property.value.length} octets (too long)")
+            Ical4Android.log.warning("Ignoring unknown property with ${property.value.length} octets (too long)")
             return
         }
 
@@ -754,7 +754,7 @@ abstract class AndroidEvent(
                 .withValue(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
                 .withValue(ExtendedProperties.VALUE, UnknownProperty.toJsonString(property))
 
-        Constants.log.log(Level.FINE, "Built unknown property: ${property.name}")
+        Ical4Android.log.log(Level.FINE, "Built unknown property: ${property.name}")
         batch.enqueue(BatchOperation.Operation(builder, ExtendedProperties.EVENT_ID, idxEvent))
     }
 
@@ -785,6 +785,5 @@ abstract class AndroidEvent(
     }
 
     override fun toString() = MiscUtils.reflectionToString(this)
-
 
 }

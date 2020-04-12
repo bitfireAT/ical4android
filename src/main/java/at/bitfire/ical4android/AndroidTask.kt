@@ -17,14 +17,13 @@ import android.os.RemoteException
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.RelType
 import net.fortuna.ical4j.model.parameter.Related
 import net.fortuna.ical4j.model.property.*
-import org.dmfs.tasks.contract.TaskContract.*
 import org.dmfs.tasks.contract.TaskContract.Properties
 import org.dmfs.tasks.contract.TaskContract.Property.*
+import org.dmfs.tasks.contract.TaskContract.Tasks
 import java.io.FileNotFoundException
 import java.net.URI
 import java.net.URISyntaxException
@@ -80,7 +79,7 @@ abstract class AndroidTask(
             client.query(taskSyncURI(true), null, null, null, null)?.use { cursor ->
                 if (cursor.moveToFirst()) {
                     val values = cursor.toValues(true)
-                    Constants.log.log(Level.FINER, "Found task", values)
+                    Ical4Android.log.log(Level.FINER, "Found task", values)
                     populateTask(values)
 
                     if (values.containsKey(Properties.PROPERTY_ID)) {
@@ -97,7 +96,7 @@ abstract class AndroidTask(
                     val relatedToList = task!!.relatedTo
                     values.getAsLong(Tasks.PARENT_ID)?.let { parentId ->
                         val hasParentRelation = relatedToList.any { relatedTo ->
-                            val relatedType = relatedTo.getParameter(Parameter.RELTYPE)
+                            val relatedType = relatedTo.getParameter<RelType>(Parameter.RELTYPE)
                             relatedType == RelType.PARENT || relatedType == null /* RelType.PARENT is the default value */
                         }
                         if (!hasParentRelation) {
@@ -136,7 +135,7 @@ abstract class AndroidTask(
             try {
                 task.organizer = Organizer("mailto:$it")
             } catch(e: URISyntaxException) {
-                Constants.log.log(Level.WARNING, "Invalid ORGANIZER email", e)
+                Ical4Android.log.log(Level.WARNING, "Invalid ORGANIZER email", e)
             }
         }
 
@@ -201,7 +200,7 @@ abstract class AndroidTask(
     }
 
     protected open fun populateProperty(row: ContentValues) {
-        Constants.log.log(Level.FINER, "Found property", row)
+        Ical4Android.log.log(Level.FINER, "Found property", row)
 
         val task = requireNotNull(task)
         when (val type = row.getAsString(Properties.MIMETYPE)) {
@@ -214,7 +213,7 @@ abstract class AndroidTask(
             UnknownProperty.CONTENT_ITEM_TYPE ->
                 task.unknownProperties += UnknownProperty.fromJsonString(row.getAsString(UNKNOWN_PROPERTY_DATA))
             else ->
-                Constants.log.warning("Found unknown property of type $type")
+                Ical4Android.log.warning("Found unknown property of type $type")
         }
     }
 
@@ -249,7 +248,7 @@ abstract class AndroidTask(
     protected open fun populateRelatedTo(row: ContentValues) {
         val uid = row.getAsString(Relation.RELATED_UID)
         if (uid == null) {
-            Constants.log.warning("Task relation doesn't refer to same task list; can't be synchronized")
+            Ical4Android.log.warning("Task relation doesn't refer to same task list; can't be synchronized")
             return
         }
 
@@ -341,7 +340,7 @@ abstract class AndroidTask(
                     .withValue(Alarm.MESSAGE, alarm.description?.value ?: alarm.summary)
                     .withValue(Alarm.ALARM_TYPE, alarmType)
 
-            Constants.log.log(Level.FINE, "Inserting alarm", builder.build())
+            Ical4Android.log.log(Level.FINE, "Inserting alarm", builder.build())
             batch.enqueue(BatchOperation.Operation(builder))
         }
     }
@@ -352,7 +351,7 @@ abstract class AndroidTask(
                     .withValue(Category.TASK_ID, id)
                     .withValue(Category.MIMETYPE, Category.CONTENT_ITEM_TYPE)
                     .withValue(Category.CATEGORY_NAME, category)
-            Constants.log.log(Level.FINE, "Inserting category", builder.build())
+            Ical4Android.log.log(Level.FINE, "Inserting category", builder.build())
             batch.enqueue(BatchOperation.Operation(builder))
         }
     }
@@ -372,7 +371,7 @@ abstract class AndroidTask(
                     .withValue(Relation.MIMETYPE, Relation.CONTENT_ITEM_TYPE)
                     .withValue(Relation.RELATED_UID, relatedTo.value)
                     .withValue(Relation.RELATED_TYPE, relType)
-            Constants.log.log(Level.FINE, "Inserting relation", builder.build())
+            Ical4Android.log.log(Level.FINE, "Inserting relation", builder.build())
             batch.enqueue(BatchOperation.Operation(builder))
         }
     }
@@ -380,7 +379,7 @@ abstract class AndroidTask(
     protected open fun insertUnknownProperties(batch: BatchOperation) {
         for (property in requireNotNull(task).unknownProperties) {
             if (property.value.length > UnknownProperty.MAX_UNKNOWN_PROPERTY_SIZE) {
-                Constants.log.warning("Ignoring unknown property with ${property.value.length} octets (too long)")
+                Ical4Android.log.warning("Ignoring unknown property with ${property.value.length} octets (too long)")
                 return
             }
 
@@ -388,7 +387,7 @@ abstract class AndroidTask(
                     .withValue(Properties.TASK_ID, id)
                     .withValue(Properties.MIMETYPE, UnknownProperty.CONTENT_ITEM_TYPE)
                     .withValue(UNKNOWN_PROPERTY_DATA, UnknownProperty.toJsonString(property))
-            Constants.log.log(Level.FINE, "Inserting unknown property", builder.build())
+            Ical4Android.log.log(Level.FINE, "Inserting unknown property", builder.build())
             batch.enqueue(BatchOperation.Operation(builder))
         }
     }
@@ -428,9 +427,9 @@ abstract class AndroidTask(
                 if (uri.scheme.equals("mailto", true))
                     organizer = uri.schemeSpecificPart
                 else
-                    Constants.log.log(Level.WARNING, "Found non-mailto ORGANIZER URI, ignoring", uri)
+                    Ical4Android.log.log(Level.WARNING, "Found non-mailto ORGANIZER URI, ignoring", uri)
             } catch (e: URISyntaxException) {
-                Constants.log.log(Level.WARNING, "Invalid ORGANIZER URI, ignoring", e)
+                Ical4Android.log.log(Level.WARNING, "Invalid ORGANIZER URI, ignoring", e)
             }
         }
         builder .withValue(Tasks.ORGANIZER, organizer)
@@ -477,7 +476,7 @@ abstract class AndroidTask(
                 .withValue(Tasks.RRULE, task.rRule?.value)
 
                 .withValue(Tasks.EXDATE, if (task.exDates.isEmpty()) null else DateUtils.recurrenceSetsToAndroidString(task.exDates, allDay))
-        Constants.log.log(Level.FINE, "Built task object", builder.build())
+        Ical4Android.log.log(Level.FINE, "Built task object", builder.build())
     }
 
 

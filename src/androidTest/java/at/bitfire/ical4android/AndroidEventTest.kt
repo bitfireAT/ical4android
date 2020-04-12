@@ -13,17 +13,16 @@ import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
-import android.os.Build
 import android.provider.CalendarContract
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.rule.GrantPermissionRule
 import at.bitfire.ical4android.AndroidCalendar.Companion.syncAdapterURI
+import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
 import at.bitfire.ical4android.impl.TestCalendar
 import at.bitfire.ical4android.impl.TestEvent
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateList
-import net.fortuna.ical4j.model.Dur
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.*
@@ -33,7 +32,9 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import java.net.URI
+import java.time.Duration
 import java.util.*
+
 
 class AndroidEventTest {
 
@@ -66,12 +67,7 @@ class AndroidEventTest {
     @After
     fun shutdown() {
         calendar.delete()
-
-        @Suppress("DEPRECATION")
-        if (Build.VERSION.SDK_INT >= 24)
-            provider.close()
-        else
-            provider.release()
+        provider.closeCompat()
     }
 
 
@@ -96,7 +92,7 @@ class AndroidEventTest {
         // TODO test rDates, exDate, duration
 
         // set an alarm one day, two hours, three minutes and four seconds before begin of event
-        event.alarms += VAlarm(Dur(-1, -2, -3, -4))
+        event.alarms += VAlarm(Duration.parse("-P1DT2H3M4S") /*Dur(-1, -2, -3, -4)*/)
 
         // add two attendees
         event.attendees += Attendee(URI("mailto:user1@example.com"))
@@ -108,7 +104,7 @@ class AndroidEventTest {
         exception.summary = "Exception for sample event"
         exception.dtStart = DtStart("20150502T140000", tzVienna)
         exception.dtEnd = DtEnd("20150502T150000", tzVienna)
-        exception.alarms += VAlarm(Dur(-2, -3, -4, -5))
+        exception.alarms += VAlarm(Duration.parse("-P2DT3H4M5S") /*Dur(-2, -3, -4, -5)*/)
         exception.attendees += Attendee(URI("mailto:only.here@today"))
         event.exceptions += exception
 
@@ -140,15 +136,13 @@ class AndroidEventTest {
             assertEquals(event.rRule, event2.rRule)
             assertEquals(event.classification, event2.classification)
             assertEquals(event.status, event2.status)
-
-            if (Build.VERSION.SDK_INT >= 23)
-                assertEquals(event.color, event2.color)
+            assertEquals(event.color, event2.color)
 
             // compare alarm
             assertEquals(1, event2.alarms.size)
             var alarm2 = event2.alarms.first
             assertEquals(event.summary, alarm2.description.value)  // should be built from event title
-            assertEquals(Dur(0, 0, -(24 * 60 + 60 * 2 + 3), 0), alarm2.trigger.duration)   // calendar provider stores trigger in minutes
+            assertEquals(Duration.ofMinutes(-(24 * 60 + 60 * 2 + 4)), alarm2.trigger.duration)   // calendar provider stores trigger in minutes
 
             // compare attendees
             assertEquals(2, event2.attendees.size)
@@ -167,7 +161,7 @@ class AndroidEventTest {
             assertEquals(1, exception2.alarms.size)
             alarm2 = exception2.alarms.first
             assertEquals(exception.summary, alarm2.description.value)
-            assertEquals(Dur(0, 0, -(2 * 24 * 60 + 60 * 3 + 4), 0), alarm2.trigger.duration)   // calendar provider stores trigger in minutes
+            assertEquals(Duration.ofMinutes(-(2 * 24 * 60 + 60 * 3 + 5)) /*Dur(0, 0, -(2 * 24 * 60 + 60 * 3 + 4), 0)*/, alarm2.trigger.duration)   // calendar provider stores trigger in minutes
 
             // compare exception attendee
             assertEquals(1, exception2.attendees.size)
@@ -201,7 +195,7 @@ class AndroidEventTest {
         val event2 = testEvent.event!!
         event2.summary = "Updated event"
         // add data rows
-        event2.alarms += VAlarm(Dur(-1, -2, -3, -4))
+        event2.alarms += VAlarm(Duration.parse("-P1DT2H3M4S") /*Dur(-1, -2, -3, -4)*/)
         event2.attendees += Attendee(URI("mailto:user@example.com"))
         val uri2 = testEvent.update(event2)
 
@@ -313,7 +307,7 @@ class AndroidEventTest {
         val event = Event()
         event.summary = "Event with zero duration"
         event.dtStart = DtStart(Date("20150501"))
-        event.duration = Duration(Dur("PT0S"))
+        event.duration = Duration(Duration.ofSeconds(0) /*Dur("PT0S")*/)
         val uri = TestEvent(calendar, event).add()
         assertNotNull(uri)
 
@@ -455,9 +449,9 @@ class AndroidEventTest {
     fun testWithZeroDuration() {
         // add event with 0 sec duration to calendar provider
         val event = Event()
-        event.summary = ("Event with zero duration")
-        event.dtStart = (DtStart(Date("20150501T152010Z")))
-        event.duration = (Duration(Dur("PT0S")))
+        event.summary = "Event with zero duration"
+        event.dtStart = DtStart(Date("20150501T152010Z"))
+        event.duration = Duration(Duration.ofSeconds(0))
         val uri = TestEvent(calendar, event).add()
         assertNotNull(uri)
 

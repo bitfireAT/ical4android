@@ -13,7 +13,6 @@ import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.RelType
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.*
-import net.fortuna.ical4j.util.TimeZones
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.ByteArrayInputStream
@@ -96,14 +95,14 @@ class TaskTest {
 
         val unknown = t.unknownProperties.first
         assertEquals("X-UNKNOWN-PROP", unknown.name)
-        assertEquals("xxx", unknown.getParameter("param1").value)
+        assertEquals("xxx", unknown.getParameter<Parameter>("param1").value)
         assertEquals("Unknown Value", unknown.value)
 
         // other file
         t = regenerate(parseCalendar("most-fields2.ics"))
         assertEquals("most-fields2@example.com", t.uid)
         assertEquals(DtStart(DateTime("20100101T101010Z")), t.dtStart)
-        assertEquals(Duration(Dur(4, 3, 2, 1)), t.duration)
+        assertEquals(Duration(java.time.Duration.ofSeconds(4*86400 + 3*3600 + 2*60 + 1) /*Dur(4, 3, 2, 1)*/), t.duration)
         assertTrue(t.unknownProperties.isEmpty())
     }
 
@@ -116,7 +115,7 @@ class TaskTest {
         t.uid = "SAMPLEUID"
         t.dtStart = DtStart("20190101T100000", TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone("Europe/Berlin"))
 
-        val alarm = VAlarm(Dur(0, -1, 0, 0))
+        val alarm = VAlarm(java.time.Duration.ofHours(-1) /*Dur(0, -1, 0, 0)*/)
         alarm.properties += Action.AUDIO
         t.alarms += alarm
 

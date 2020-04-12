@@ -62,7 +62,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
             info.put(TaskContract.ACCOUNT_TYPE, account.type)
             info.put(TaskLists.ACCESS_LEVEL, 0)
 
-            Constants.log.info("Creating local task list: $info")
+            Ical4Android.log.info("Creating local task list: $info")
             return provider.client.insert(TaskProvider.syncAdapterUri(provider.taskListsUri(), account), info) ?:
                     throw CalendarStorageException("Couldn't create task list (empty result from provider)")
         }
@@ -132,7 +132,7 @@ abstract class AndroidTaskList<out T: AndroidTask>(
      * @return number of touched [Relation] rows
     */
     fun touchRelations(): Int {
-        Constants.log.fine("Touching relations to set parent_id")
+        Ical4Android.log.fine("Touching relations to set parent_id")
         val batchOperation = BatchOperation(provider.client)
         provider.client.query(tasksSyncUri(true), null,
                 "${Tasks.LIST_ID}=? AND ${Tasks.PARENT_ID} IS NULL AND ${Relation.MIMETYPE}=? AND ${Relation.RELATED_ID} IS NOT NULL",

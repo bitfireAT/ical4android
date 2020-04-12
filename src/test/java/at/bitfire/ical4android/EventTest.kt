@@ -9,9 +9,11 @@ package at.bitfire.ical4android
 
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
-import net.fortuna.ical4j.model.Dur
+import net.fortuna.ical4j.model.Parameter
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory
 import net.fortuna.ical4j.model.component.VAlarm
+import net.fortuna.ical4j.model.parameter.Email
+import net.fortuna.ical4j.model.parameter.XParameter
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.RRule
 import net.fortuna.ical4j.model.property.RecurrenceId
@@ -21,6 +23,7 @@ import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
 import java.io.InputStreamReader
 import java.nio.charset.Charset
+import java.time.Duration
 
 class EventTest {
 
@@ -94,11 +97,11 @@ class EventTest {
         assertEquals("Test Description", event.description)
         assertEquals("中华人民共和国", event.location)
         assertEquals(Css3Color.aliceblue, event.color)
-        assertEquals("cyrus@example.com", event.attendees.first.parameters.getParameter("EMAIL").value)
+        assertEquals("cyrus@example.com", event.attendees.first.parameters.getParameter<XParameter>("EMAIL").value)
 
         val unknown = event.unknownProperties.first
         assertEquals("X-UNKNOWN-PROP", unknown.name)
-        assertEquals("xxx", unknown.getParameter("param1").value)
+        assertEquals("xxx", unknown.getParameter<Parameter>("param1").value)
         assertEquals("Unknown Value", unknown.value)
     }
 
@@ -214,7 +217,7 @@ class EventTest {
         val e = Event()
         e.uid = "SAMPLEUID"
         e.dtStart = DtStart("20190101T100000", TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone("Europe/Berlin"))
-        e.alarms += VAlarm(Dur(0, -1, 0, 0))
+        e.alarms += VAlarm(Duration.ofHours(-1))
 
         val os = ByteArrayOutputStream()
         e.write(os)

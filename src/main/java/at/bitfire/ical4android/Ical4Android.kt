@@ -10,7 +10,7 @@ package at.bitfire.ical4android
 
 import java.util.logging.Logger
 
-object Constants {
+object Ical4Android {
 
     val log: Logger = Logger.getLogger("ical4android")
 

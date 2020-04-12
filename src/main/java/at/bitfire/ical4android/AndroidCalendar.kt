@@ -62,7 +62,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 
             info.putAll(calendarBaseValues)
 
-            Constants.log.info("Creating local calendar: $info")
+            Ical4Android.log.info("Creating local calendar: $info")
             return provider.insert(syncAdapterURI(Calendars.CONTENT_URI, account), info) ?:
                     throw Exception("Couldn't create calendar: provider returned null")
         }
@@ -74,7 +74,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
                     return
             }
 
-            Constants.log.info("Inserting event colors for account $account")
+            Ical4Android.log.info("Inserting event colors for account $account")
             val values = ContentValues(5)
             values.put(Colors.ACCOUNT_NAME, account.name)
             values.put(Colors.ACCOUNT_TYPE, account.type)
@@ -85,13 +85,13 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
                 try {
                     provider.insert(syncAdapterURI(Colors.CONTENT_URI, account), values)
                 } catch(e: Exception) {
-                    Constants.log.log(Level.WARNING, "Couldn't insert event color: ${color.name}", e)
+                    Ical4Android.log.log(Level.WARNING, "Couldn't insert event color: ${color.name}", e)
                 }
             }
         }
 
         fun removeColors(provider: ContentProviderClient, account: Account) {
-            Constants.log.info("Removing event colors from account $account")
+            Ical4Android.log.info("Removing event colors from account $account")
 
             // unassign colors from events
             // ANDROID BUG: affects events of all accounts, not just the selected one;

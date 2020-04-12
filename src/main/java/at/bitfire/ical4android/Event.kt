@@ -84,11 +84,11 @@ class Event: ICalendar() {
             for (vEvent in vEvents)
                 if (vEvent.uid == null) {
                     val uid = Uid(UUID.randomUUID().toString())
-                    Constants.log.warning("Found VEVENT without UID, using a random one: ${uid.value}")
+                    Ical4Android.log.warning("Found VEVENT without UID, using a random one: ${uid.value}")
                     vEvent.properties += uid
                 }
 
-            Constants.log.fine("Assigning exceptions to main events")
+            Ical4Android.log.fine("Assigning exceptions to main events")
             val mainEvents = mutableMapOf<String /* UID */,VEvent>()
             val exceptions = mutableMapOf<String /* UID */,MutableMap<String /* RECURRENCE-ID */,VEvent>>()
 
@@ -212,7 +212,7 @@ class Event: ICalendar() {
 
             val recurrenceId = exception.recurrenceId
             if (recurrenceId == null) {
-                Constants.log.warning("Ignoring exception without recurrenceId")
+                Ical4Android.log.warning("Ignoring exception without recurrenceId")
                 continue
             }
 
@@ -221,13 +221,13 @@ class Event: ICalendar() {
                strict in what we send (and servers may reject such a case).
              */
             if (isDateTime(recurrenceId) != isDateTime(dtStart)) {
-                Constants.log.warning("Ignoring exception $recurrenceId with other date type than dtStart: $dtStart")
+                Ical4Android.log.warning("Ignoring exception $recurrenceId with other date type than dtStart: $dtStart")
                 continue
             }
 
             // for simplicity and compatibility, rewrite date-time exceptions to the same time zone as DTSTART
             if (isDateTime(recurrenceId) && recurrenceId.timeZone != dtStart.timeZone) {
-                Constants.log.fine("Changing timezone of $recurrenceId to same time zone as dtStart: $dtStart")
+                Ical4Android.log.fine("Changing timezone of $recurrenceId to same time zone as dtStart: $dtStart")
                 recurrenceId.timeZone = dtStart.timeZone
             }
 

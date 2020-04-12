@@ -29,7 +29,7 @@ class BatchOperation(
         var affected = 0
         if (!queue.isEmpty())
             try {
-                Constants.log.fine("Committing ${queue.size} operations")
+                Ical4Android.log.fine("Committing ${queue.size} operations")
 
                 results = arrayOfNulls(queue.size)
                 runBatch(0, queue.size)
@@ -39,7 +39,7 @@ class BatchOperation(
                         result.count != null -> affected += result.count
                         result.uri != null   -> affected += 1
                     }
-                Constants.log.fine("… $affected record(s) affected")
+                Ical4Android.log.fine("… $affected record(s) affected")
 
             } catch(e: Exception) {
                 throw CalendarStorageException("Couldn't apply batch operation", e)
@@ -67,12 +67,12 @@ class BatchOperation(
 
         try {
             val ops = toCPO(start, end)
-            Constants.log.fine("Running ${ops.size} operations ($start .. ${end-1})")
+            Ical4Android.log.fine("Running ${ops.size} operations ($start .. ${end-1})")
             val partResults = providerClient.applyBatch(ops)
 
             val n = end - start
             if (partResults.size != n)
-                Constants.log.warning("Batch operation returned only ${partResults.size} instead of $n results")
+                Ical4Android.log.warning("Batch operation returned only ${partResults.size} instead of $n results")
 
             System.arraycopy(partResults, 0, results, start, partResults.size)
         } catch(e: TransactionTooLargeException) {
@@ -80,7 +80,7 @@ class BatchOperation(
                 // only one operation, can't be split
                 throw CalendarStorageException("Can't transfer data to content provider (data row too large)")
 
-            Constants.log.warning("Transaction too large, splitting (losing atomicity)")
+            Ical4Android.log.warning("Transaction too large, splitting (losing atomicity)")
             val mid = start + (end - start)/2
             runBatch(start, mid)
             runBatch(mid, end)

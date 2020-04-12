@@ -14,11 +14,12 @@ import android.content.ContentProviderClient
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
+import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
 import org.dmfs.tasks.contract.TaskContract
 import java.io.Closeable
 import java.util.logging.Level
+
 
 class TaskProvider private constructor(
         val name: ProviderName,
@@ -59,10 +60,10 @@ class TaskProvider private constructor(
                 else
                     null
             } catch(e: SecurityException) {
-                Constants.log.log(Level.WARNING, "Not allowed to access task provider", e)
+                Ical4Android.log.log(Level.WARNING, "Not allowed to access task provider", e)
                 null
             } catch(e: PackageManager.NameNotFoundException) {
-                Constants.log.warning("Package ${name.packageName} not installed")
+                Ical4Android.log.warning("Package ${name.packageName} not installed")
                 null
             }
         }
@@ -84,7 +85,7 @@ class TaskProvider private constructor(
             val installedVersionCode = PackageInfoCompat.getLongVersionCode(info)
             if (installedVersionCode < name.minVersionCode) {
                 val exception = ProviderTooOldException(name, installedVersionCode, info.versionName)
-                Constants.log.log(Level.WARNING, "Task provider too old", exception)
+                Ical4Android.log.log(Level.WARNING, "Task provider too old", exception)
                 throw exception
             }
         }
@@ -108,11 +109,7 @@ class TaskProvider private constructor(
 
 
     override fun close() {
-        if (Build.VERSION.SDK_INT >= 24)
-            client.close()
-        else
-            @Suppress("DEPRECATION")
-            client.release()
+        client.closeCompat()
     }
 
 

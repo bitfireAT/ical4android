@@ -13,11 +13,11 @@ import android.accounts.Account
 import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.ContentValues
-import android.os.Build
 import android.provider.CalendarContract
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
 import at.bitfire.ical4android.impl.TestCalendar
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -46,11 +46,7 @@ class AndroidCalendarTest {
 
     @After
     fun shutdown() {
-        @Suppress("DEPRECATION")
-        if (Build.VERSION.SDK_INT >= 24)
-            provider.close()
-        else
-            provider.release()
+        provider.closeCompat()
     }
 
 
