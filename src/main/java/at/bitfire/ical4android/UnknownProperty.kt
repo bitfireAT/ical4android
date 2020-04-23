@@ -1,10 +1,11 @@
 package at.bitfire.ical4android
 
 import android.content.ContentResolver
-import net.fortuna.ical4j.model.ParameterFactoryRegistry
-import net.fortuna.ical4j.model.ParameterList
+import net.fortuna.ical4j.data.DefaultParameterFactorySupplier
+import net.fortuna.ical4j.data.DefaultPropertyFactorySupplier
+import net.fortuna.ical4j.model.ParameterBuilder
 import net.fortuna.ical4j.model.Property
-import net.fortuna.ical4j.model.PropertyFactoryRegistry
+import net.fortuna.ical4j.model.PropertyBuilder
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -28,9 +29,9 @@ object UnknownProperty {
      */
     const val MAX_UNKNOWN_PROPERTY_SIZE = 25000
 
+    val propertyFactorySupplier = DefaultPropertyFactorySupplier().get()!!
+    val parameterFactorySupplier = DefaultParameterFactorySupplier().get()!!
 
-    private val parameterFactory = ParameterFactoryRegistry()
-    private val propertyFactory = PropertyFactoryRegistry()
 
     /**
      * Deserializes a JSON string from an ExtendedProperty value to an ical4j property.
@@ -44,16 +45,23 @@ object UnknownProperty {
         val name = json.getString(0)
         val value = json.getString(1)
 
-        val params = ParameterList()
+        val builder = PropertyBuilder()
+                .factories(propertyFactorySupplier)
+                .name(name)
+                .value(value)
+
         json.optJSONObject(2)?.let { jsonParams ->
             for (paramName in jsonParams.keys())
-                params.add(parameterFactory.createParameter(
-                        paramName,
-                        jsonParams.getString(paramName)
-                ))
+                builder.parameter(
+                        ParameterBuilder()
+                                .factories(parameterFactorySupplier)
+                                .name(paramName)
+                                .value(jsonParams.getString(paramName))
+                                .build()
+                )
         }
 
-        return propertyFactory.createProperty(name, params, value)
+        return builder.build()
     }
 
     /**

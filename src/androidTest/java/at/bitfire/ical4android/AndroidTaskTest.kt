@@ -141,15 +141,16 @@ class AndroidTaskTest {
             // update test event in calendar
             val task2 = testTask.task!!
             task2.summary = "Updated event"                     // change value
-            task2.dtStart = null                                // remove value
-            task2.due = Due("20150501T140000", tzVienna)    // add value
-            testTask.update(task)
+            task.location = null                                // remove value
+            task2.duration = Duration(java.time.Duration.ofMinutes(10))     // add value
+            testTask.update(task2)
 
             // read again and verify result
             val updatedTask = taskList!!.findById(ContentUris.parseId(uri)).task!!
-            assertEquals(task.summary, updatedTask.summary)
-            assertEquals(task.dtStart, updatedTask.dtStart)
-            assertEquals(task.due, updatedTask.due)
+            assertEquals(task2.summary, updatedTask.summary)
+            assertEquals(task2.location, updatedTask.location)
+            assertEquals(task2.dtStart, updatedTask.dtStart)
+            assertEquals(task2.duration, updatedTask.duration)
         } finally {
             testTask.delete()
         }

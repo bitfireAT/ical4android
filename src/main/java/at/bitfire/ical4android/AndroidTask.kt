@@ -191,7 +191,7 @@ abstract class AndroidTask(
             task.due = Due(dt)
         }
 
-        values.getAsString(Tasks.DURATION)?.let { task.duration = Duration(Dur(it)) }
+        values.getAsString(Tasks.DURATION)?.let { task.duration = Duration(java.time.Duration.parse(it)) }
 
         values.getAsString(Tasks.RDATE)?.let { task.rDates += DateUtils.androidStringToRecurrenceSet(it, RDate::class.java, allDay) }
         values.getAsString(Tasks.EXDATE)?.let { task.exDates += DateUtils.androidStringToRecurrenceSet(it, ExDate::class.java, allDay) }
@@ -221,7 +221,7 @@ abstract class AndroidTask(
         val task = requireNotNull(task)
         val props = PropertyList<Property>()
 
-        val trigger = Trigger(Dur(0, 0, -row.getAsInteger(Alarm.MINUTES_BEFORE), 0))
+        val trigger = Trigger(java.time.Duration.ofMinutes(-row.getAsLong(Alarm.MINUTES_BEFORE)))
         when (row.getAsInteger(Alarm.REFERENCE)) {
             Alarm.ALARM_REFERENCE_START_DATE ->
                 trigger.parameters.add(Related.START)

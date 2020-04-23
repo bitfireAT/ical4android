@@ -25,6 +25,7 @@ import java.time.Duration
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.math.ceil
 
 open class ICalendar {
 
@@ -226,7 +227,7 @@ open class ICalendar {
                 // 1) Negative values in TRIGGER mean positive values in Reminders.MINUTES and vice versa.
                 // 2) Android doesn't know alarm seconds, but only minutes. Always round up so that an alarm 10 seconds
                 //    before the event pops up one minute before the event.
-                minutes = Math.ceil(-alarmDur.toMillis() / 60000.0).toInt()
+                minutes = ceil(-alarmDur.toMillis() / 60000.0).toInt()
 
                 // DURATION triggers may have RELATED=END (default: RELATED=START), which may not be useful for caller
                 if (related == Related.END && !allowRelEnd) {
@@ -251,7 +252,7 @@ open class ICalendar {
                         Ical4Android.log.warning("iCalendar with RELATED=END VALARM doesn't have end time, ignoring")
                         return null
                     }
-                    val durMin = Math.ceil((end - start)/60000.0).toInt()      // ms → min
+                    val durMin = ceil((end - start)/60000.0).toInt()      // ms → min
 
                     // move alarm towards end
                     related = Related.START
@@ -271,7 +272,7 @@ open class ICalendar {
                     return null
                 }
                 related = Related.START
-                minutes = Math.ceil((start - alarmTime.time)/60000.0).toInt()   // ms → min
+                minutes = ceil((start - alarmTime.time)/60000.0).toInt()   // ms → min
             }
 
             return Pair(related, minutes)
