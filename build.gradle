@@ -77,7 +77,12 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${versions.kotlin}"
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.0.5'
 
-    api "org.mnode.ical4j:ical4j:${versions.ical4j}"
+    api("org.mnode.ical4j:ical4j:${versions.ical4j}") {
+        exclude module: 'javax.mail'
+    }
+    // ical4j requires JavaMail API (e.g. for EMAIL parameter)
+    implementation 'com.sun.mail:android-mail:1.6.2'
+
     implementation 'org.slf4j:slf4j-jdk14:1.7.30'
     implementation 'androidx.core:core-ktx:1.2.0'
 
@@ -85,4 +90,8 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
     testImplementation 'junit:junit:4.13'
+
+    // groovy is not really used, but required for running the tests
+    // noinspection GradleDependency
+    androidTestImplementation 'org.codehaus.groovy:groovy:2.2.2'
 }
