@@ -31,9 +31,14 @@ import java.util.*
  */
 object DateUtils {
 
+    init {
+        Ical4Android.checkThreadContextClassLoader()
+    }
+
     /**
      * global ical4j time zone registry used for event/task processing
      */
+    @UsesThreadContextClassLoader
     val tzRegistry = TimeZoneRegistryFactory.getInstance().createRegistry()!!
 
 
@@ -89,7 +94,9 @@ object DateUtils {
      * @return parsed VTimeZone
      * @throws IllegalArgumentException when the timezone definition can't be parsed
      */
+    @UsesThreadContextClassLoader
     fun parseVTimeZone(timezoneDef: String): VTimeZone {
+        Ical4Android.checkThreadContextClassLoader()
         val builder = CalendarBuilder(tzRegistry)
         try {
             val cal = builder.build(StringReader(timezoneDef))

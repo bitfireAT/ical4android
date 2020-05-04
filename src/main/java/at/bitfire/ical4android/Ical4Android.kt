@@ -16,4 +16,9 @@ object Ical4Android {
 
     const val ical4jVersion = BuildConfig.version_ical4j
 
+    fun checkThreadContextClassLoader() {
+        if (Thread.currentThread().contextClassLoader == null)
+            throw IllegalStateException("Thread.currentThread().contextClassLoader must be set")
+    }
+
 }

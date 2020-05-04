@@ -74,6 +74,7 @@ class Event: ICalendar() {
          * @throws IOException on I/O errors
          * @throws InvalidCalendarException on parsing exceptions
          */
+        @UsesThreadContextClassLoader
         fun eventsFromReader(reader: Reader, properties: MutableMap<String, String>? = null): List<Event> {
             val ical = fromReader(reader, properties)
 
@@ -188,7 +189,10 @@ class Event: ICalendar() {
     }
 
 
+    @UsesThreadContextClassLoader
     fun write(os: OutputStream) {
+        Ical4Android.checkThreadContextClassLoader()
+
         val ical = Calendar()
         ical.properties += Version.VERSION_2_0
         ical.properties += prodId
