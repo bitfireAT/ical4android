@@ -74,45 +74,57 @@ abstract class AndroidTask(
                 return field
             val id = requireNotNull(id)
 
-            task = Task()
-            val client = taskList.provider.client
-            client.query(taskSyncURI(true), null, null, null, null)?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val values = cursor.toValues(true)
-                    Ical4Android.log.log(Level.FINER, "Found task", values)
-                    populateTask(values)
+            try {
+                val client = taskList.provider.client
+                client.query(taskSyncURI(true), null, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        // create new Task which will be populated
+                        val newTask = Task()
+                        field = newTask
 
-                    if (values.containsKey(Properties.PROPERTY_ID)) {
-                        // process the first property, which is combined with the task row
-                        populateProperty(values)
+                        val values = cursor.toValues(true)
+                        Ical4Android.log.log(Level.FINER, "Found task", values)
+                        populateTask(values)
 
-                        while (cursor.moveToNext()) {
-                            // process the other properties
-                            populateProperty(cursor.toValues(true))
+                        if (values.containsKey(Properties.PROPERTY_ID)) {
+                            // process the first property, which is combined with the task row
+                            populateProperty(values)
+
+                            while (cursor.moveToNext()) {
+                                // process the other properties
+                                populateProperty(cursor.toValues(true))
+                            }
                         }
-                    }
 
-                    // Special case: parent_id set, but no matching parent Relation row (like given by aCalendar+)
-                    val relatedToList = task!!.relatedTo
-                    values.getAsLong(Tasks.PARENT_ID)?.let { parentId ->
-                        val hasParentRelation = relatedToList.any { relatedTo ->
-                            val relatedType = relatedTo.getParameter<RelType>(Parameter.RELTYPE)
-                            relatedType == RelType.PARENT || relatedType == null /* RelType.PARENT is the default value */
-                        }
-                        if (!hasParentRelation) {
-                            // get UID of parent task
-                            val parentContentUri = ContentUris.withAppendedId(taskList.tasksSyncUri(), parentId)
-                            client.query(parentContentUri, arrayOf(Tasks._UID), null, null, null)?.use { cursor ->
-                                if (cursor.moveToNext()) {
-                                    // add RelatedTo for parent task
-                                    relatedToList += RelatedTo(cursor.getString(0))
+                        // Special case: parent_id set, but no matching parent Relation row (like given by aCalendar+)
+                        val relatedToList = newTask.relatedTo
+                        values.getAsLong(Tasks.PARENT_ID)?.let { parentId ->
+                            val hasParentRelation = relatedToList.any { relatedTo ->
+                                val relatedType = relatedTo.getParameter<RelType>(Parameter.RELTYPE)
+                                relatedType == RelType.PARENT || relatedType == null /* RelType.PARENT is the default value */
+                            }
+                            if (!hasParentRelation) {
+                                // get UID of parent task
+                                val parentContentUri = ContentUris.withAppendedId(taskList.tasksSyncUri(), parentId)
+                                client.query(parentContentUri, arrayOf(Tasks._UID), null, null, null)?.use { cursor ->
+                                    if (cursor.moveToNext()) {
+                                        // add RelatedTo for parent task
+                                        relatedToList += RelatedTo(cursor.getString(0))
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    return task
+                        field = newTask
+                        return newTask
+                    }
                 }
+            } catch (e: Exception) {
+                /* Populating event has been interrupted by an exception, so we reset the event to
+                avoid an inconsistent state. This also ensures that the exception will be thrown
+                again on the next get() call. */
+                field = null
+                throw e
             }
             throw FileNotFoundException("Couldn't find task #$id")
         }

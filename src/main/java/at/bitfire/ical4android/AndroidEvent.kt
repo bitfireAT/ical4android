@@ -118,8 +118,9 @@ abstract class AndroidEvent(
                         calendar.provider
                 )
                 if (iterEvents.hasNext()) {
-                    val event = Event()
-                    field = event
+                    // create new Event which will be populated
+                    val newEvent = Event()
+                    field = newEvent
 
                     val e = iterEvents.next()
                     populateEvent(MiscUtils.removeEmptyStrings(e.entityValues))
@@ -138,13 +139,19 @@ abstract class AndroidEvent(
 
                     /* remove ORGANIZER from all components if there are no attendees
                        (i.e. this is not a group-scheduled calendar entity) */
-                    if (event.attendees.isEmpty()) {
-                        event.organizer = null
-                        event.exceptions.forEach { it.organizer = null }
+                    if (newEvent.attendees.isEmpty()) {
+                        newEvent.organizer = null
+                        newEvent.exceptions.forEach { it.organizer = null }
                     }
 
-                    return field
+                    return newEvent
                 }
+            } catch (e: Exception) {
+                /* Populating event has been interrupted by an exception, so we reset the event to
+                avoid an inconsistent state. This also ensures that the exception will be thrown
+                again on the next get() call. */
+                field = null
+                throw e
             } finally {
                 iterEvents?.close()
             }
