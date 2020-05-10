@@ -181,7 +181,7 @@ abstract class AndroidEvent(
         val allDay = (row.getAsInteger(Events.ALL_DAY) ?: 0) != 0
         val tsStart = row.getAsLong(Events.DTSTART)
         val tsEnd = row.getAsLong(Events.DTEND)
-        val duration = row.getAsString(Events.DURATION)
+        val duration = row.getAsString(Events.DURATION)?.let { DateUtils.fixDuration(it) }
 
         if (allDay) {
             // use DATE values

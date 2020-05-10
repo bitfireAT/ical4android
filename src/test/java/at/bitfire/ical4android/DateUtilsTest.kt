@@ -13,7 +13,6 @@ import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.DateListProperty
 import net.fortuna.ical4j.model.property.ExDate
 import net.fortuna.ical4j.model.property.RDate
-import org.junit.Assert
 import org.junit.Assert.*
 import org.junit.Test
 import java.util.*
@@ -28,10 +27,26 @@ class DateUtilsTest {
     
     @Test
     fun testTimeZoneRegistry() {
-        Assert.assertNotNull(DateUtils.tzRegistry.getTimeZone("Europe/Vienna"))
+        assertNotNull(DateUtils.tzRegistry.getTimeZone("Europe/Vienna"))
 
         // https://github.com/ical4j/ical4j/issues/207
-        // assertNotNull(DateUtils.tzRegistry.getTimeZone("EST"))
+        assertNotNull(DateUtils.tzRegistry.getTimeZone("EST"))
+    }
+
+    @Test
+    fun testFixDuration() {
+        assertEquals("PT3600S", DateUtils.fixDuration("3600S"))
+        assertEquals("PT3600S", DateUtils.fixDuration("P3600S"))
+        assertEquals("+PT3600S", DateUtils.fixDuration("+P3600S"))
+        assertEquals("PT3600S", DateUtils.fixDuration("PT3600S"))
+        assertEquals("+PT3600S", DateUtils.fixDuration("+PT3600S"))
+        assertEquals("P10D", DateUtils.fixDuration("P1W3D"))
+        assertEquals("P14DT3600S", DateUtils.fixDuration("P2W3600S"))
+        assertEquals("-P3DT4H5M6S", DateUtils.fixDuration("-P3D4H5M6S"))
+        assertEquals("PT3H2M1S", DateUtils.fixDuration("P1S2M3H"))
+        assertEquals("P4DT3H2M1S", DateUtils.fixDuration("P1S2M3H4D"))
+        assertEquals("P11DT3H2M1S", DateUtils.fixDuration("P1S2M3H4D1W"))
+        assertEquals("PT1H0M10S", DateUtils.fixDuration("1H10S"))
     }
 
     @Test

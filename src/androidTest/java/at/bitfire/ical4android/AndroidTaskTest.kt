@@ -150,7 +150,7 @@ class AndroidTaskTest {
             assertEquals(task2.summary, updatedTask.summary)
             assertEquals(task2.location, updatedTask.location)
             assertEquals(task2.dtStart, updatedTask.dtStart)
-            assertEquals(task2.duration, updatedTask.duration)
+            assertEquals(task2.duration!!.value, updatedTask.duration!!.value)
         } finally {
             testTask.delete()
         }

@@ -81,6 +81,70 @@ object DateUtils {
     }
 
     /**
+     * Checks and fixes [Event.duration] values with incorrect format which can't be
+     * parsed by ical4j. Searches for values like "1H" and "3M" and
+     * groups them together in a standards-compliant way.
+     *
+     * @param duration value from the database (like "PT3600S" or "P3600S")
+     * @return duration value in RFC 2445 format ("PT3600S" when the argument was "P3600S")
+     */
+    fun fixDuration(duration: String): String {
+        /** [RFC 2445/5445]
+         * dur-value  = (["+"] / "-") "P" (dur-date / dur-time / dur-week)
+         * dur-date   = dur-day [dur-time]
+         * dur-day    = 1*DIGIT "D"
+         * dur-time   = "T" (dur-hour / dur-minute / dur-second)
+         * dur-week   = 1*DIGIT "W"
+         * dur-hour   = 1*DIGIT "H" [dur-minute]
+         * dur-minute = 1*DIGIT "M" [dur-second]
+         * dur-second = 1*DIGIT "S"
+         */
+        val possibleFormats = Regex("([+-]?)P?((\\d+W)|(\\d+D)|(\\d+H)|(\\d+M)|(\\d+S))*")
+        possibleFormats.matchEntire(duration)?.destructured?.let { (sign, _, weeks, days, hours, minutes, seconds) ->
+            val newValue = StringBuilder()
+            if (sign.isNotEmpty())
+                newValue.append(sign)
+            newValue.append("P")
+
+            // It's not possible to mix weeks with everything else, so convert
+            // one week to seven days if there's anything else than weeks.
+            var addDays = 0
+            if (weeks.isNotEmpty()) {
+                if ((days.isEmpty() && hours.isEmpty() && minutes.isEmpty() && seconds.isEmpty())) {
+                    // only weeks
+                    newValue.append(weeks)
+                    return newValue.toString()
+                } else
+                    addDays = weeks.dropLast(1).toInt() * 7
+            }
+            if (days.isNotEmpty() || addDays != 0) {
+                val daysInt = (if (days.isEmpty()) 0 else days.dropLast(1).toInt()) + addDays
+                newValue.append("${daysInt}D")
+            }
+
+            val durTime = StringBuilder()
+            if (hours.isNotEmpty())
+                durTime.append(hours)
+
+            if (minutes.isEmpty()) {
+                if (hours.isNotEmpty() && seconds.isNotEmpty())
+                    durTime.append("0M")
+            } else
+                durTime.append(minutes)
+
+            if (seconds.isNotEmpty())
+                durTime.append(seconds)
+
+            if (durTime.isNotEmpty())
+                newValue.append("T").append(durTime)
+
+            return newValue.toString()
+        }
+        // no match, return unchanged input value
+        return duration
+    }
+
+    /**
      * Determines whether a given date represents a DATE-TIME value.
      * @param date date property to check
      * @return *true* if the date is a DATE-TIME value; *false* otherwise (for instance, when the

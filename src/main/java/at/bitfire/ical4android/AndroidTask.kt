@@ -203,7 +203,10 @@ abstract class AndroidTask(
             task.due = Due(dt)
         }
 
-        values.getAsString(Tasks.DURATION)?.let { task.duration = Duration(java.time.Duration.parse(it)) }
+        values.getAsString(Tasks.DURATION)?.let { duration ->
+            val fixedDuration = DateUtils.fixDuration(duration)
+            task.duration = Duration(null, fixedDuration)
+        }
 
         values.getAsString(Tasks.RDATE)?.let { task.rDates += DateUtils.androidStringToRecurrenceSet(it, RDate::class.java, allDay) }
         values.getAsString(Tasks.EXDATE)?.let { task.exDates += DateUtils.androidStringToRecurrenceSet(it, ExDate::class.java, allDay) }
