@@ -691,7 +691,11 @@ abstract class AndroidEvent(
             // attendee identified by other URI
             builder .withValue(Attendees.ATTENDEE_ID_NAMESPACE, member.scheme)
                     .withValue(Attendees.ATTENDEE_IDENTITY, member.schemeSpecificPart)
-            (attendee.getParameter<Email>(PARAMETER_EMAIL))?.let { email ->
+
+            // TODO: use attendee.getParameter<Email>(Parameter.EMAIL) when
+            // https://github.com/ical4j/ical4j/pull/413 and
+            // https://github.com/ical4j/ical4j/pull/414 are merged
+            (attendee.getParameter<Parameter>(PARAMETER_EMAIL))?.let { email ->
                 builder.withValue(Attendees.ATTENDEE_EMAIL, email.value)
             }
         }

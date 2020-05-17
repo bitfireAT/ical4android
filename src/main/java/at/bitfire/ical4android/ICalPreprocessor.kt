@@ -11,7 +11,8 @@ import java.util.logging.Level
 /**
  * Applies some rules to increase compatibility or parsed iCalendars:
  *
- * - [DatePropertyRule], [DateListPropertyRule]: to rename Outlook-specific TZID parameters
+ *   - [CreatedPropertyRule] to make sure CREATED is UTC
+ *   - [DatePropertyRule], [DateListPropertyRule]: to rename Outlook-specific TZID parameters
  * (like "W. Europe Standard Time" to an Android-friendly name like "Europe/Vienna")
  *
  */
