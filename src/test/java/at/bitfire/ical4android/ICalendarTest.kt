@@ -8,6 +8,7 @@
 
 package at.bitfire.ical4android
 
+import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.Related
@@ -20,6 +21,60 @@ import org.junit.Test
 import java.time.Duration
 
 class ICalendarTest {
+
+	@Test
+	fun testMinifyVTimezone() {
+		// Austria (Europa/Vienna) uses DST regularly
+		val tzVienna = DateUtils.tzRegistry.getTimeZone("Europe/Vienna").vTimeZone
+
+		// Pakistan (Asia/Karachi) used DST only in 2002, 2008 and 2009; no known future occurrences
+		val tzKarachi = DateUtils.tzRegistry.getTimeZone("Asia/Karachi").vTimeZone
+
+		// Somalia (Africa/Mogadishu) has never used DST
+		val tzMogadishu = DateUtils.tzRegistry.getTimeZone("Africa/Mogadishu").vTimeZone
+
+		// test: remove obsolete observances when DST is used
+		assertEquals(6, tzVienna.observances.size)
+		// By default, the earliest observance is in 1893. We can drop that for events in 2020.
+		assertEquals(DateTime("18930401T000000"), tzVienna.observances.sortedBy { it.startDate.date }.first().startDate.date)
+		ICalendar.minifyVTimeZone(tzVienna, Date("20200101")).let { minified ->
+			assertEquals(2, minified.observances.size)
+			// now earliest observance for DAYLIGHT/STANDARD is 1981/1996
+			assertEquals(DateTime("19810329T020000"), minified.observances[0].startDate.date)
+			assertEquals(DateTime("19961027T030000"), minified.observances[1].startDate.date)
+		}
+
+		// test: remove obsolete observances when DST is not used
+		ICalendar.minifyVTimeZone(tzMogadishu, Date("19611001")).let { minified ->
+			assertEquals(1, minified.observances.size)
+		}
+
+		// test: keep future observances
+		ICalendar.minifyVTimeZone(tzVienna, Date("19751001")).let { minified ->
+			assertEquals(4, minified.observances.size)
+			assertEquals(DateTime("19160430T230000"), minified.observances[2].startDate.date)
+			assertEquals(DateTime("19161001T010000"), minified.observances[3].startDate.date)
+		}
+		ICalendar.minifyVTimeZone(tzKarachi, Date("19611001")).let { minified ->
+			assertEquals(4, minified.observances.size)
+		}
+		ICalendar.minifyVTimeZone(tzKarachi, Date("19751001")).let { minified ->
+			assertEquals(3, minified.observances.size)
+		}
+		ICalendar.minifyVTimeZone(tzMogadishu, Date("19311001")).let { minified ->
+			assertEquals(3, minified.observances.size)
+		}
+
+		// test: keep DST when there are no obsolete observances, but start time is in DST
+		ICalendar.minifyVTimeZone(tzKarachi, Date("20091031")).let { minified ->
+			assertEquals(2, minified.observances.size)
+		}
+
+		// test: remove obsolete observances (including DST) when DST is not used anymore
+		ICalendar.minifyVTimeZone(tzKarachi, Date("201001001")).let { minified ->
+			assertEquals(1, minified.observances.size)
+		}
+	}
 
     @Test
     fun testTimezoneDefToTzId() {

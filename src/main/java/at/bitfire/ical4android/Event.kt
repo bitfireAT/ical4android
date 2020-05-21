@@ -244,10 +244,15 @@ class Event: ICalendar() {
             exception.dtEnd?.timeZone?.let(usedTimeZones::add)
         }
 
+        // determine first dtStart (there may be exceptions with an earlier DTSTART that the main event)
+        val dtStarts = mutableListOf(dtStart.date)
+        dtStarts.addAll(exceptions.mapNotNull { it.dtStart?.date })
+        val earliest = dtStarts.sorted().firstOrNull()
         // add VTIMEZONE components
         usedTimeZones.forEach {
-            val tz = it.vTimeZone
-            // TODO dtStart?.let { minifyVTimeZone(tz, it.date) }
+            var tz = it.vTimeZone
+            if (earliest != null)
+                tz = minifyVTimeZone(tz, earliest)
             ical.components += tz
         }
 

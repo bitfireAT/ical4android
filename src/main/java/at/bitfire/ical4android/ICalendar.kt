@@ -17,6 +17,8 @@ import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.*
 import net.fortuna.ical4j.model.parameter.Related
 import net.fortuna.ical4j.model.property.ProdId
+import net.fortuna.ical4j.model.property.RDate
+import net.fortuna.ical4j.model.property.RRule
 import net.fortuna.ical4j.model.property.TzUrl
 import net.fortuna.ical4j.validate.ValidationException
 import java.io.Reader
@@ -105,57 +107,91 @@ open class ICalendar {
         // time zone helpers
 
         /**
-         * Minifies a VTIMEZONE so that only components after [start] are kept.
-         * Doesn't return the smallest possible VTIMEZONE at the moment, but
-         * reduces its size significantly.
+         * Minifies a VTIMEZONE so that only these observances are kept:
          *
-         * @param tz      Time zone definition to minify. Attention: the observances of this object
-         *                will be modified!
-         * @param start   Start date for components
+         *   - the last STANDARD observance matching [start], and
+         *   - the last DAYLIGHT observance matching [start], and
+         *   - observances beginning after [start]
+         *
+         * Additionally, TZURL properties is filtered.
+         *
+         * @param tz      time zone definition to minify
+         * @param start   start date for components (usually DTSTART)
+         * @return        minified time zone definition
          */
-        fun minifyVTimeZone(tz: VTimeZone, start: Date) {
-            // find latest matching STANDARD/DAYLIGHT component,
-            // keep components at/after "start"
-            val iter = tz.observances.iterator()
+        fun minifyVTimeZone(tz: VTimeZone, start: Date): VTimeZone {
+            val keep = mutableSetOf<Observance>()
+
+            // find latest matching STANDARD/DAYLIGHT observances
             var latestDaylight: Pair<Date, Observance>? = null
             var latestStandard: Pair<Date, Observance>? = null
-            val keep = mutableSetOf<Observance>()
-            while (iter.hasNext()) {
-                val entry = iter.next() as Observance
-                val latest = entry.getLatestOnset(start)
+            for (observance in tz.observances) {
+                val latest = observance.getLatestOnset(start)
 
-                if (latest == null  /* observance begins after "start" */ ||
-                    latest >= start /* observance has onsets at/after "start" */ ) {
-                    keep += entry
-                    continue
+                if (latest == null)         // observance begins after "start", keep in any case
+                    keep += observance
+                else
+                    when (observance) {
+                        is Standard ->
+                            if (latestStandard == null || latest > latestStandard.first)
+                                latestStandard = Pair(latest, observance)
+                        is Daylight ->
+                            if (latestDaylight == null || latest > latestDaylight.first)
+                                latestDaylight = Pair(latest, observance)
+                    }
+            }
+
+            // keep latest STANDARD observance
+            latestStandard?.second?.let { keep += it }
+
+            // Check latest DAYLIGHT for whether it can apply in the future. Otherwise, DST is not
+            // used in this time zone anymore and the DAYLIGHT component can be dropped completely.
+            latestDaylight?.second?.let { daylight ->
+                // check whether start time is in DST
+                if (latestStandard != null) {
+                    val latestStandardOnset = latestStandard.second.getLatestOnset(start)
+                    val latestDaylightOnset = daylight.getLatestOnset(start)
+                    if (latestStandardOnset != null && latestDaylightOnset != null && latestDaylightOnset > latestStandardOnset) {
+                        // we're currently in DST
+                        keep += daylight
+                        return@let
+                    }
                 }
 
-                when (entry) {
-                    is Standard -> {
-                        if (latestStandard == null || latest.after(latestStandard.first))
-                            latestStandard = Pair(latest, entry)
+                // check RRULEs
+                for (rRule in daylight.getProperties<RRule>(Property.RRULE)) {
+                    val nextDstOnset = rRule.recur.getNextDate(daylight.startDate.date, start)
+                    if (nextDstOnset != null) {
+                        // there will be a DST onset in the future -> keep DAYLIGHT
+                        keep += daylight
+                        return@let
                     }
-                    is Daylight -> {
-                        if (latestDaylight == null || latest.after(latestDaylight.first))
-                            latestDaylight = Pair(latest, entry)
+                }
+                // no RRULE, check whether there's an RDATE in the future
+                for (rDate in daylight.getProperties<RDate>(Property.RDATE)) {
+                    if (rDate.dates.any { it >= start }) {
+                        // RDATE in the future
+                        keep += daylight
+                        return@let
                     }
                 }
             }
-            latestStandard?.second?.let { keep += it }
-            latestDaylight?.second?.let { keep += it }
 
-            // actually remove all observances that shall not be kept
-            val iter2 = tz.observances.iterator()
-            while (iter2.hasNext()) {
-                val entry = iter2.next() as Observance
+            // remove all observances that shall not be kept
+            val newTz = tz.copy() as VTimeZone
+            val iterator = newTz.observances.iterator() as MutableIterator<Observance>
+            while (iterator.hasNext()) {
+                val entry = iterator.next()
                 if (!keep.contains(entry))
-                    iter2.remove()
+                    iterator.remove()
             }
 
             // remove TZURL
-            tz.properties.filterIsInstance<TzUrl>().forEach {
-                tz.properties.remove(it)
+            newTz.properties.filterIsInstance<TzUrl>().forEach {
+                newTz.properties.remove(it)
             }
+
+            return newTz
         }
 
         /**

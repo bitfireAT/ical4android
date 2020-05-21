@@ -209,7 +209,19 @@ class Task: ICalendar() {
         if (alarms.isNotEmpty())
             vTodo.alarms.addAll(alarms)
 
-        ical.components.addAll(usedTimeZones.map { it.vTimeZone })
+        // determine earliest referenced date
+        val earliest = arrayOf(
+                dtStart?.date,
+                due?.date,
+                completedAt?.date
+        ).filterNotNull().sorted().firstOrNull()
+        // add VTIMEZONE components
+        usedTimeZones.forEach {
+            var tz = it.vTimeZone
+            if (earliest != null)
+                tz = minifyVTimeZone(tz, earliest)
+            ical.components += tz
+        }
 
         softValidate(ical)
         CalendarOutputter(false).output(ical, os)
