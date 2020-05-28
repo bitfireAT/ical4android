@@ -12,7 +12,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.0.0-rc01'
+        classpath 'com.android.tools.build:gradle:4.0.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:${versions.dokka}"
     }
@@ -82,6 +82,7 @@ dependencies {
     }
     // ical4j requires JavaMail API (e.g. for EMAIL parameter)
     implementation 'com.sun.mail:android-mail:1.6.5'
+    implementation 'commons-io:commons-io:2.6'
 
     implementation 'org.slf4j:slf4j-jdk14:1.7.30'
     implementation 'androidx.core:core-ktx:1.2.0'

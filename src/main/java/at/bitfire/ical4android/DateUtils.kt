@@ -21,6 +21,7 @@ import net.fortuna.ical4j.model.property.RDate
 import java.io.StringReader
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.time.ZoneOffset
 import java.util.*
 
 /**

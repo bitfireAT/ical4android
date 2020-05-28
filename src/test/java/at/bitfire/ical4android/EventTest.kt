@@ -17,6 +17,7 @@ import net.fortuna.ical4j.model.property.RRule
 import net.fortuna.ical4j.model.property.RecurrenceId
 import org.junit.Assert.*
 import org.junit.Test
+import java.io.BufferedReader
 import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
 import java.io.InputStreamReader
