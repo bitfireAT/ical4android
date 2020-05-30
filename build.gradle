@@ -69,7 +69,7 @@ android {
             url = "https://gitlab.com/bitfireAT/ical4android/tree/master/"
             lineSuffix = "#L"
         }
-        jdkVersion = 7
+        jdkVersion = 8
     }
 }
 
