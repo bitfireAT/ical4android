@@ -73,7 +73,7 @@ class AndroidEventTest {
 
     @MediumTest
     @Test
-    fun testAddEvent() {
+    fun testAddRecurringEvent() {
         // build and write recurring event to calendar provider
         val event = Event()
         event.uid = "sample1@testAddEvent"
@@ -92,7 +92,7 @@ class AndroidEventTest {
         // TODO test rDates, exDate, duration
 
         // set an alarm one day, two hours, three minutes and four seconds before begin of event
-        event.alarms += VAlarm(Duration.parse("-P1DT2H3M4S") /*Dur(-1, -2, -3, -4)*/)
+        event.alarms += VAlarm(Duration.parse("-P1DT2H3M4S"))
 
         // add two attendees
         event.attendees += Attendee(URI("mailto:user1@example.com"))
@@ -104,7 +104,7 @@ class AndroidEventTest {
         exception.summary = "Exception for sample event"
         exception.dtStart = DtStart("20150502T140000", tzVienna)
         exception.dtEnd = DtEnd("20150502T150000", tzVienna)
-        exception.alarms += VAlarm(Duration.parse("-P2DT3H4M5S") /*Dur(-2, -3, -4, -5)*/)
+        exception.alarms += VAlarm(Duration.parse("-P2DT3H4M5S"))
         exception.attendees += Attendee(URI("mailto:only.here@today"))
         event.exceptions += exception
 
@@ -131,6 +131,11 @@ class AndroidEventTest {
             assertEquals(event.description, event2.description)
             assertEquals(event.location, event2.location)
             assertEquals(event.dtStart, event2.dtStart)
+
+            // recurring event: duration is calculated from dtStart and dtEnd; dtEnd is set to null
+            assertEquals(Duration.ofHours(1), event2.duration?.duration)
+            assertNull(event2.dtEnd)
+
             assertFalse(event2.isAllDay())
             assertEquals(event.organizer, event2.organizer)
             assertEquals(event.rRule, event2.rRule)
@@ -161,7 +166,7 @@ class AndroidEventTest {
             assertEquals(1, exception2.alarms.size)
             alarm2 = exception2.alarms.first
             assertEquals(exception.summary, alarm2.description.value)
-            assertEquals(Duration.ofMinutes(-(2 * 24 * 60 + 60 * 3 + 5)) /*Dur(0, 0, -(2 * 24 * 60 + 60 * 3 + 4), 0)*/, alarm2.trigger.duration)   // calendar provider stores trigger in minutes
+            assertEquals(Duration.ofMinutes(-(2 * 24 * 60 + 60 * 3 + 5)), alarm2.trigger.duration)   // calendar provider stores trigger in minutes
 
             // compare exception attendee
             assertEquals(1, exception2.attendees.size)
@@ -195,7 +200,7 @@ class AndroidEventTest {
         val event2 = testEvent.event!!
         event2.summary = "Updated event"
         // add data rows
-        event2.alarms += VAlarm(Duration.parse("-P1DT2H3M4S") /*Dur(-1, -2, -3, -4)*/)
+        event2.alarms += VAlarm(Duration.parse("-P1DT2H3M4S"))
         event2.attendees += Attendee(URI("mailto:user@example.com"))
         val uri2 = testEvent.update(event2)
 
@@ -307,7 +312,7 @@ class AndroidEventTest {
         val event = Event()
         event.summary = "Event with zero duration"
         event.dtStart = DtStart(Date("20150501"))
-        event.duration = Duration(Duration.ofSeconds(0) /*Dur("PT0S")*/)
+        event.duration = Duration(Duration.ofSeconds(0))
         val uri = TestEvent(calendar, event).add()
         assertNotNull(uri)
 
