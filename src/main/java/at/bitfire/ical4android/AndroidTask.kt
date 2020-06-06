@@ -14,6 +14,7 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
 import android.os.RemoteException
+import androidx.annotation.CallSuper
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
@@ -129,6 +130,7 @@ abstract class AndroidTask(
             throw FileNotFoundException("Couldn't find task #$id")
         }
 
+    @CallSuper
     protected open fun populateTask(values: ContentValues) {
         val task = requireNotNull(task)
 
@@ -415,6 +417,7 @@ abstract class AndroidTask(
         }
     }
 
+    @CallSuper
     protected open fun buildTask(builder: Builder, update: Boolean) {
         if (!update)
             builder .withValue(Tasks.LIST_ID, taskList.id)

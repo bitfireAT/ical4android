@@ -10,6 +10,7 @@
 
 package at.bitfire.ical4android
 
+import androidx.annotation.IntRange
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
@@ -38,7 +39,10 @@ class Task: ICalendar() {
     var url: String? = null
     var organizer: Organizer? = null
     var geoPosition: Geo? = null
+
+    @IntRange(from = 0, to = 9)
     var priority: Int = Priority.UNDEFINED.level
+
     var classification: Clazz? = null
     var status: Status? = null
 
@@ -46,6 +50,8 @@ class Task: ICalendar() {
     var due: Due? = null
     var duration: Duration? = null
     var completedAt: Completed? = null
+
+    @IntRange(from = 0, to = 100)
     var percentComplete: Int? = null
 
     var rRule: RRule? = null

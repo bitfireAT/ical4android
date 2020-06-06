@@ -18,6 +18,7 @@ import android.os.RemoteException
 import android.provider.CalendarContract.*
 import android.util.Base64
 import android.util.Patterns
+import androidx.annotation.CallSuper
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
@@ -162,6 +163,7 @@ abstract class AndroidEvent(
      * Reads event data from the calendar provider.
      * @param row values of an [Events] row, as returned by the calendar provider
      */
+    @CallSuper
     protected open fun populateEvent(row: ContentValues) {
         Ical4Android.log.log(Level.FINE, "Read event entity from calender provider", row)
         val event = requireNotNull(event)
@@ -541,6 +543,7 @@ abstract class AndroidEvent(
     }
 
 
+    @CallSuper
     protected open fun buildEvent(recurrence: Event?, builder: Builder) {
         val isException = recurrence != null
         val event = if (isException)
