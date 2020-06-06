@@ -38,9 +38,18 @@ class TaskTest {
     @Test
     fun testDueBeforeDtStart() {
         val t = parseCalendar("due-before-dtstart.ics")
-        assertEquals(t.summary, "DUE before DTSTART")
+        assertEquals("DUE before DTSTART", t.summary)
         // invalid tasks with DUE before DTSTART: DTSTART should be set to null
         assertNull(t.dtStart)
+    }
+
+    @Test
+    fun testEmptyPriority() {
+        val t = parseCalendar("empty-priority.ics")
+        assertEquals(0, t.priority)
+        assertEquals("1d58e8e0-4fac-4632-8d43-ec79757490d2.1519164997000", t.uid)
+        assertEquals("Alex Geschenkeliste", t.summary)
+        assertEquals(Status.VTODO_NEEDS_ACTION, t.status)
     }
 
     @Test
