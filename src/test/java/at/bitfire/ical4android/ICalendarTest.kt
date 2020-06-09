@@ -24,6 +24,9 @@ class ICalendarTest {
 
 	@Test
 	fun testMinifyVTimezone() {
+		// UTC timezone
+		val tzUTC = DateUtils.tzRegistry.getTimeZone("Etc/UTC").vTimeZone
+
 		// Austria (Europa/Vienna) uses DST regularly
 		val tzVienna = DateUtils.tzRegistry.getTimeZone("Europe/Vienna").vTimeZone
 
@@ -32,6 +35,12 @@ class ICalendarTest {
 
 		// Somalia (Africa/Mogadishu) has never used DST
 		val tzMogadishu = DateUtils.tzRegistry.getTimeZone("Africa/Mogadishu").vTimeZone
+
+		// keep the only observance for UTC
+		assertEquals(1, tzUTC.observances.size)
+		ICalendar.minifyVTimeZone(tzUTC, Date("20200612")).let { minified ->
+			assertEquals(1, minified.observances.size)
+		}
 
 		// test: remove obsolete observances when DST is used
 		assertEquals(6, tzVienna.observances.size)

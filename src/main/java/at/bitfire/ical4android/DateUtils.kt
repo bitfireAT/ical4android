@@ -37,10 +37,11 @@ object DateUtils {
     }
 
     /**
-     * global ical4j time zone registry used for event/task processing
+     * Global ical4j time zone registry used for event/task processing. Do not
+     * modify this registry or its entries!
      */
     @UsesThreadContextClassLoader
-    val tzRegistry = TimeZoneRegistryFactory.getInstance().createRegistry()!!
+    val tzRegistry = TimeZoneRegistryFactory.getInstance().createRegistry()
 
 
     // time zones
@@ -58,7 +59,7 @@ object DateUtils {
      * @return best matching Android time zone ID
      */
     fun findAndroidTimezoneID(tzID: String): String {
-        val availableTZs = SimpleTimeZone.getAvailableIDs()
+        val availableTZs = ZoneOffset.getAvailableZoneIds()
 
         // first, try to find an exact match (case insensitive)
         var deviceTZ = availableTZs.firstOrNull { it.equals(tzID, true) }

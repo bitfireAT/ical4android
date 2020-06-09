@@ -196,6 +196,7 @@ abstract class AndroidEvent(
             // use DATE-TIME values
             var tz: TimeZone? = null
             row.getAsString(Events.EVENT_TIMEZONE)?.let { tzId ->
+                Ical4Android.log.info("Loading timezone $tzId")
                 tz = DateUtils.tzRegistry.getTimeZone(tzId)
             }
 
