@@ -116,19 +116,20 @@ open class ICalendar {
          *   - the last DAYLIGHT observance matching [start], and
          *   - observances beginning after [start]
          *
-         * Additionally, TZURL properties is filtered.
+         * Additionally, TZURL properties are filtered.
          *
-         * @param tz      time zone definition to minify
-         * @param start   start date for components (usually DTSTART)
-         * @return        minified time zone definition
+         * @param originalTz    time zone definition to minify
+         * @param start         start date for components (usually DTSTART)
+         * @return              minified time zone definition
          */
-        fun minifyVTimeZone(tz: VTimeZone, start: Date): VTimeZone {
+        fun minifyVTimeZone(originalTz: VTimeZone, start: Date): VTimeZone {
+            val newTz = originalTz.copy() as VTimeZone
             val keep = mutableSetOf<Observance>()
 
             // find latest matching STANDARD/DAYLIGHT observances
             var latestDaylight: Pair<Date, Observance>? = null
             var latestStandard: Pair<Date, Observance>? = null
-            for (observance in tz.observances) {
+            for (observance in newTz.observances) {
                 val latest = observance.getLatestOnset(start)
 
                 if (latest == null)         // observance begins after "start", keep in any case
@@ -181,7 +182,6 @@ open class ICalendar {
             }
 
             // remove all observances that shall not be kept
-            val newTz = tz.copy() as VTimeZone
             val iterator = newTz.observances.iterator() as MutableIterator<Observance>
             while (iterator.hasNext()) {
                 val entry = iterator.next()
@@ -192,6 +192,15 @@ open class ICalendar {
             // remove TZURL
             newTz.properties.filterIsInstance<TzUrl>().forEach {
                 newTz.properties.remove(it)
+            }
+
+            // validate minified timezone
+            try {
+                newTz.validate()
+            } catch (e: ValidationException) {
+                // This should never happen!
+                Ical4Android.log.log(Level.WARNING, "Minified timezone is invalid, using original one", e)
+                return originalTz
             }
 
             return newTz
