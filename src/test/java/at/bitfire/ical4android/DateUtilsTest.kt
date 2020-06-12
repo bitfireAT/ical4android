@@ -34,6 +34,43 @@ class DateUtilsTest {
     }
 
     @Test
+    fun testAndroidStringToRecurrenceSets() {
+        // list of UTC times
+        var exDate = DateUtils.androidStringToRecurrenceSet("20150101T103010Z,20150702T103020Z", ExDate::class.java, false)
+        var exDates = exDate.dates
+        assertEquals(Value.DATE_TIME, exDates.type)
+        assertTrue(exDates.isUtc)
+        assertEquals(2, exDates.size)
+        assertEquals(1420108210000L, exDates[0].time)
+        assertEquals(1435833020000L, exDates[1].time)
+
+        // list of time zone times
+        exDate = DateUtils.androidStringToRecurrenceSet("$tzIdToronto;20150103T113030,20150704T113040", ExDate::class.java, false)
+        exDates = exDate.dates
+        assertEquals(Value.DATE_TIME, exDates.type)
+        assertEquals(DateUtils.tzRegistry.getTimeZone(tzIdToronto), exDates.timeZone)
+        assertEquals(2, exDates.size)
+        assertEquals(1420302630000L, exDates[0].time)
+        assertEquals(1436023840000L, exDates[1].time)
+
+        // list of dates
+        exDate = DateUtils.androidStringToRecurrenceSet("20150101T103010Z,20150702T103020Z", ExDate::class.java, true)
+        exDates = exDate.dates
+        assertEquals(Value.DATE, exDates.type)
+        assertEquals(2, exDates.size)
+        assertEquals("20150101", exDates[0].toString())
+        assertEquals("20150702", exDates[1].toString())
+    }
+
+    @Test
+    fun testFindAndroidTimezoneID() {
+        assertEquals("Europe/Vienna", DateUtils.findAndroidTimezoneID("Europe/Vienna"))
+        assertEquals("Europe/Vienna", DateUtils.findAndroidTimezoneID("Vienna"))
+        assertEquals("Europe/Vienna", DateUtils.findAndroidTimezoneID("Something with Europe/Vienna in between"))
+        assertEquals(TimeZone.getDefault().id, DateUtils.findAndroidTimezoneID("nothing-to-be-found"))
+    }
+
+    @Test
     fun testFixDuration() {
         assertEquals("PT3600S", DateUtils.fixDuration("3600S"))
         assertEquals("PT3600S", DateUtils.fixDuration("P3600S"))
@@ -73,35 +110,6 @@ class DateUtilsTest {
         list.clear()
         list.add(RDate(DateList("20150101T000000,20150702T000000Z", Value.DATE_TIME)))
         assertEquals("20150101T000000Z,20150702T000000Z", DateUtils.recurrenceSetsToAndroidString(list, true))
-    }
-
-    @Test
-    fun testAndroidStringToRecurrenceSets() {
-        // list of UTC times
-        var exDate = DateUtils.androidStringToRecurrenceSet("20150101T103010Z,20150702T103020Z", ExDate::class.java, false)
-        var exDates = exDate.dates
-        assertEquals(Value.DATE_TIME, exDates.type)
-        assertTrue(exDates.isUtc)
-        assertEquals(2, exDates.size)
-        assertEquals(1420108210000L, exDates[0].time)
-        assertEquals(1435833020000L, exDates[1].time)
-
-        // list of time zone times
-        exDate = DateUtils.androidStringToRecurrenceSet("$tzIdToronto;20150103T113030,20150704T113040", ExDate::class.java, false)
-        exDates = exDate.dates
-        assertEquals(Value.DATE_TIME, exDates.type)
-        assertEquals(DateUtils.tzRegistry.getTimeZone(tzIdToronto), exDates.timeZone)
-        assertEquals(2, exDates.size)
-        assertEquals(1420302630000L, exDates[0].time)
-        assertEquals(1436023840000L, exDates[1].time)
-
-        // list of dates
-        exDate = DateUtils.androidStringToRecurrenceSet("20150101T103010Z,20150702T103020Z", ExDate::class.java, true)
-        exDates = exDate.dates
-        assertEquals(Value.DATE, exDates.type)
-        assertEquals(2, exDates.size)
-        assertEquals("20150101", exDates[0].toString())
-        assertEquals("20150702", exDates[1].toString())
     }
 
 }

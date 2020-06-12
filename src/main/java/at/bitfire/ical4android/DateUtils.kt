@@ -21,11 +21,11 @@ import net.fortuna.ical4j.model.property.RDate
 import java.io.StringReader
 import java.text.ParseException
 import java.text.SimpleDateFormat
-import java.time.ZoneOffset
+import java.time.ZoneId
 import java.util.*
 
 /**
- * Date utilities
+ * Date/time utilities
  *
  * Before this object is accessed the first time, the accessing thread's contextClassLoader
  * must be set to an Android Context.classLoader!
@@ -59,7 +59,7 @@ object DateUtils {
      * @return best matching Android time zone ID
      */
     fun findAndroidTimezoneID(tzID: String): String {
-        val availableTZs = ZoneOffset.getAvailableZoneIds()
+        val availableTZs = ZoneId.getAvailableZoneIds()
 
         // first, try to find an exact match (case insensitive)
         var deviceTZ = availableTZs.firstOrNull { it.equals(tzID, true) }
