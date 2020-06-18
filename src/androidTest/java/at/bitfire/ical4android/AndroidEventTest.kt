@@ -147,7 +147,7 @@ class AndroidEventTest {
             assertEquals(1, event2.alarms.size)
             var alarm2 = event2.alarms.first
             assertEquals(event.summary, alarm2.description.value)  // should be built from event title
-            assertEquals(Duration.ofMinutes(-(24 * 60 + 60 * 2 + 4)), alarm2.trigger.duration)   // calendar provider stores trigger in minutes
+            assertEquals(Duration.ofMinutes(-(24*60 + 2*60 + 3)), alarm2.trigger.duration)   // calendar provider stores trigger in minutes
 
             // compare attendees
             assertEquals(2, event2.attendees.size)
@@ -166,7 +166,7 @@ class AndroidEventTest {
             assertEquals(1, exception2.alarms.size)
             alarm2 = exception2.alarms.first
             assertEquals(exception.summary, alarm2.description.value)
-            assertEquals(Duration.ofMinutes(-(2 * 24 * 60 + 60 * 3 + 5)), alarm2.trigger.duration)   // calendar provider stores trigger in minutes
+            assertEquals(Duration.ofMinutes(-(2*24*60 + 60*3 + 4)), alarm2.trigger.duration)   // calendar provider stores trigger in minutes
 
             // compare exception attendee
             assertEquals(1, exception2.attendees.size)

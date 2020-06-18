@@ -19,47 +19,67 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import java.time.Duration
+import java.time.Period
 
 class ICalendarTest {
 
+	// Austria (Europa/Vienna) uses DST regularly
+	val tzVienna = DateUtils.tzRegistry.getTimeZone("Europe/Vienna")
+
+	// UTC timezone
+	val tzUTC = DateUtils.tzRegistry.getTimeZone("Etc/UTC").vTimeZone
+
+	// Pakistan (Asia/Karachi) used DST only in 2002, 2008 and 2009; no known future occurrences
+	val tzKarachi = DateUtils.tzRegistry.getTimeZone("Asia/Karachi").vTimeZone
+
+	// Somalia (Africa/Mogadishu) has never used DST
+	val tzMogadishu = DateUtils.tzRegistry.getTimeZone("Africa/Mogadishu").vTimeZone
+
+	// current time stamp
+	val currentTime = java.util.Date().time
+
+
 	@Test
-	fun testMinifyVTimezone() {
-		// UTC timezone
-		val tzUTC = DateUtils.tzRegistry.getTimeZone("Etc/UTC").vTimeZone
-
-		// Austria (Europa/Vienna) uses DST regularly
-		val tzVienna = DateUtils.tzRegistry.getTimeZone("Europe/Vienna").vTimeZone
-
-		// Pakistan (Asia/Karachi) used DST only in 2002, 2008 and 2009; no known future occurrences
-		val tzKarachi = DateUtils.tzRegistry.getTimeZone("Asia/Karachi").vTimeZone
-
-		// Somalia (Africa/Mogadishu) has never used DST
-		val tzMogadishu = DateUtils.tzRegistry.getTimeZone("Africa/Mogadishu").vTimeZone
-
-		// keep the only observance for UTC
+	fun testMinifyVTimezone_UTC() {
+		// Keep the only observance for UTC.
+		// DATE-TIME values in UTC are usually noted with ...Z and don't have a VTIMEZONE,
+		// but it is allowed to write them as TZID=Etc/UTC.
 		assertEquals(1, tzUTC.observances.size)
 		ICalendar.minifyVTimeZone(tzUTC, Date("20200612")).let { minified ->
 			assertEquals(1, minified.observances.size)
 		}
+	}
 
-		// test: remove obsolete observances when DST is used
-		assertEquals(6, tzVienna.observances.size)
+	@Test
+	fun testMinifyVTimezone_removeObsoleteDstObservances() {
+		// Remove obsolete observances when DST is used.
+		val vtzVienna = tzVienna.vTimeZone
+		assertEquals(6, vtzVienna.observances.size)
 		// By default, the earliest observance is in 1893. We can drop that for events in 2020.
-		assertEquals(DateTime("18930401T000000"), tzVienna.observances.sortedBy { it.startDate.date }.first().startDate.date)
-		ICalendar.minifyVTimeZone(tzVienna, Date("20200101")).let { minified ->
+		assertEquals(DateTime("18930401T000000"), vtzVienna.observances.sortedBy { it.startDate.date }.first().startDate.date)
+		ICalendar.minifyVTimeZone(vtzVienna, Date("20200101")).let { minified ->
 			assertEquals(2, minified.observances.size)
 			// now earliest observance for DAYLIGHT/STANDARD is 1981/1996
 			assertEquals(DateTime("19810329T020000"), minified.observances[0].startDate.date)
 			assertEquals(DateTime("19961027T030000"), minified.observances[1].startDate.date)
 		}
 
-		// test: remove obsolete observances when DST is not used
+	}
+
+	@Test
+	fun testMinifyVTimezone_removeObsoleteObservances() {
+		// Remove obsolete observances when DST is not used. Mogadishu had several time zone changes,
+		// but now there is a simple offest without DST.
+		assertEquals(4, tzMogadishu.observances.size)
 		ICalendar.minifyVTimeZone(tzMogadishu, Date("19611001")).let { minified ->
 			assertEquals(1, minified.observances.size)
 		}
+	}
 
-		// test: keep future observances
-		ICalendar.minifyVTimeZone(tzVienna, Date("19751001")).let { minified ->
+	@Test
+	fun testMinifyVTimezone_keepFutureObservances() {
+		// Keep future observances.
+		ICalendar.minifyVTimeZone(tzVienna.vTimeZone, Date("19751001")).let { minified ->
 			assertEquals(4, minified.observances.size)
 			assertEquals(DateTime("19160430T230000"), minified.observances[2].startDate.date)
 			assertEquals(DateTime("19161001T010000"), minified.observances[3].startDate.date)
@@ -73,21 +93,27 @@ class ICalendarTest {
 		ICalendar.minifyVTimeZone(tzMogadishu, Date("19311001")).let { minified ->
 			assertEquals(3, minified.observances.size)
 		}
+	}
 
-		// test: keep DST when there are no obsolete observances, but start time is in DST
+	@Test
+	fun testMinifyVTimezone_keepDstWhenStartInDst() {
+		// Keep DST when there are no obsolete observances, but start time is in DST.
 		ICalendar.minifyVTimeZone(tzKarachi, Date("20091031")).let { minified ->
 			assertEquals(2, minified.observances.size)
 		}
+	}
 
-		// test: remove obsolete observances (including DST) when DST is not used anymore
+	@Test
+	fun testMinifyVTimezone_removeDstWhenNotUsedAnymore() {
+		// Remove obsolete observances (including DST) when DST is not used anymore.
 		ICalendar.minifyVTimeZone(tzKarachi, Date("201001001")).let { minified ->
 			assertEquals(1, minified.observances.size)
 		}
 	}
 
+
     @Test
-    fun testTimezoneDefToTzId() {
-		// test valid definition
+    fun testTimezoneDefToTzId_Valid() {
 		assertEquals("US-Eastern", ICalendar.timezoneDefToTzId("BEGIN:VCALENDAR\n" +
 				"PRODID:-//Example Corp.//CalDAV Client//EN\n" +
 				"VERSION:2.0\n" +
@@ -110,84 +136,148 @@ class ICalendarTest {
 				"END:DAYLIGHT\n" +
 				"END:VTIMEZONE\n" +
 				"END:VCALENDAR"))
+	}
 
-        // test invalid time zone
+	@Test
+	fun testTimezoneDefToTzId_Invalid() {
+		// invalid time zone
 		assertNull(ICalendar.timezoneDefToTzId("/* invalid content */"))
 
-        // test time zone without TZID
+        // time zone without TZID
 		assertNull(ICalendar.timezoneDefToTzId("BEGIN:VCALENDAR\n" +
 				"PRODID:-//Inverse inc./SOGo 2.2.10//EN\n" +
 				"VERSION:2.0\n" +
 				"END:VCALENDAR"))
     }
 
+
 	@Test
-	fun testVAlarmToMin() {
-		run {
-			// TRIGGER;REL=START:-P1DT1H1M29S (round up the 29s so that the alarm appears earlier)
-			val (ref, min) = ICalendar.vAlarmToMin(
-					VAlarm(Duration.parse("-P1DT1H1M29S") /*Dur(1, 1, 1, 29).negate()*/),
-					ICalendar(), false)!!
-			assertEquals(Related.START, ref)
-			assertEquals(60*24 + 60 + 1 + 1, min)
-		}
-
-		run {
-			// TRIGGER;REL=START:P1DT1H1M30S (alarm *after* start; round down the 30s so that alarm appears earlier)
-			val (ref, min) = ICalendar.vAlarmToMin(
-					VAlarm(Duration.parse("P1DT1H1M30S") /*Dur(1, 1, 1, 30)*/),
-					ICalendar(), false)!!
-			assertEquals(Related.START, ref)
-			assertEquals(-(60*24 + 60 + 1), min)
-		}
-
-		run {
-			// TRIGGER;REL=END:-P1DT1H1M30S (caller accepts Related.END)
-			val alarm = VAlarm(Duration.parse("-P1DT1H1M30S") /*Dur(1, 1, 1, 30).negate()*/)
-			alarm.trigger.parameters.add(Related.END)
-			val (ref, min) = ICalendar.vAlarmToMin(alarm, ICalendar(), true)!!
-			assertEquals(Related.END, ref)
-			assertEquals(60 * 24 + 60 + 1 + 1, min)
-		}
-
-		run {
-			// event with TRIGGER;REL=END:-P1DT1H1M30S (caller doesn't accept Related.END)
-			val alarm = VAlarm(Duration.parse("-P1DT1H1M30S") /*Dur(1, 1, 1, 30).negate()*/)
-			alarm.trigger.parameters.add(Related.END)
-			val event = Event()
-
-			val currentTime = java.util.Date().time
-			event.dtStart = DtStart(DateTime(currentTime))
-			event.dtEnd = DtEnd(DateTime(currentTime + 90*1000))	// 90 sec later
-			val (ref, min) = ICalendar.vAlarmToMin(alarm, event, false)!!
-			assertEquals(Related.START, ref)
-			assertEquals(60 * 24 + 60 + 1 + 1 /* duration of event: */ - 2, min)
-		}
-
-		run {
-			// task with TRIGGER;REL=END:-P1DT1H1M30S (caller doesn't accept Related.END; alarm *after* end)
-			val alarm = VAlarm(Duration.parse("P1DT1H1M30S") /*Dur(1, 1, 1, 30)*/)
-			alarm.trigger.parameters.add(Related.END)
-			val task = Task()
-			val currentTime = java.util.Date().time
-			task.dtStart = DtStart(DateTime(currentTime))
-			task.due = Due(DateTime(currentTime + 90*1000))	// 90 sec (should be rounded down to 1 min) later
-			val (ref, min) = ICalendar.vAlarmToMin(alarm, task, false)!!
-			assertEquals(Related.START, ref)
-			assertEquals(-(60 * 24 + 60 + 1 + 1) /* duration of event: */ - 1, min)
-		}
-
-		run {
-			// TRIGGER;VALUE=DATE-TIME:<xxxx>
-			val event = Event()
-			val currentTime = java.util.Date().time
-			event.dtStart = DtStart(DateTime(currentTime))
-			val alarm = VAlarm(DateTime(currentTime - 89*1000))	// 89 sec (should be rounded up to 2 min) before event
-			alarm.trigger.parameters.add(Related.END)	// not useful for DATE-TIME values, should be ignored
-			val (ref, min) = ICalendar.vAlarmToMin(alarm, event, false)!!
-			assertEquals(Related.START, ref)
-			assertEquals(2, min)
-		}
+	fun testVAlarmToMin_TriggerDuration_Negative() {
+		// TRIGGER;REL=START:-P1DT1H1M29S
+		val (ref, min) = ICalendar.vAlarmToMin(
+				VAlarm(Duration.parse("-P1DT1H1M29S")),
+				Event(), false)!!
+		assertEquals(Related.START, ref)
+		assertEquals(60*24 + 60 + 1, min)
 	}
+
+	@Test
+	fun testVAlarmToMin_TriggerDuration_OnlySeconds() {
+		// TRIGGER;REL=START:-PT3600S
+		val (ref, min) = ICalendar.vAlarmToMin(
+				VAlarm(Duration.parse("-PT3600S")),
+				Event(), false)!!
+		assertEquals(Related.START, ref)
+		assertEquals(60, min)
+	}
+
+	@Test
+	fun testVAlarmToMin_TriggerDuration_Positive() {
+		// TRIGGER;REL=START:P1DT1H1M30S (alarm *after* start)
+		val (ref, min) = ICalendar.vAlarmToMin(
+				VAlarm(Duration.parse("P1DT1H1M30S")),
+				Event(), false)!!
+		assertEquals(Related.START, ref)
+		assertEquals(-(60*24 + 60 + 1), min)
+	}
+
+	@Test
+	fun testVAlarmToMin_TriggerDuration_RelEndAllowed() {
+		// TRIGGER;REL=END:-P1DT1H1M30S (caller accepts Related.END)
+		val alarm = VAlarm(Duration.parse("-P1DT1H1M30S"))
+		alarm.trigger.parameters.add(Related.END)
+		val (ref, min) = ICalendar.vAlarmToMin(alarm, Event(), true)!!
+		assertEquals(Related.END, ref)
+		assertEquals(60*24 + 60 + 1, min)
+	}
+
+	@Test
+	fun testVAlarmToMin_TriggerDuration_RelEndNotAllowed() {
+		// event with TRIGGER;REL=END:-PT30S (caller doesn't accept Related.END)
+		val alarm = VAlarm(Duration.parse("-PT65S"))
+		alarm.trigger.parameters.add(Related.END)
+		val event = Event()
+		event.dtStart = DtStart(DateTime(currentTime))
+		event.dtEnd = DtEnd(DateTime(currentTime + 180*1000))    // 180 sec later
+		val (ref, min) = ICalendar.vAlarmToMin(alarm, event, false)!!
+		assertEquals(Related.START, ref)
+		// duration of event: 180 s (3 min), 65 s before that -> alarm 1:55 min before start
+		assertEquals(-1, min)
+	}
+
+	@Test
+	fun testVAlarmToMin_TriggerDuration_RelEndNotAllowed_NoDtStart() {
+		// event with TRIGGER;REL=END:-PT30S (caller doesn't accept Related.END)
+		val alarm = VAlarm(Duration.parse("-PT65S"))
+		alarm.trigger.parameters.add(Related.END)
+		val event = Event()
+		event.dtEnd = DtEnd(DateTime(currentTime))
+		assertNull(ICalendar.vAlarmToMin(alarm, event, false))
+	}
+
+	@Test
+	fun testVAlarmToMin_TriggerDuration_RelEndNotAllowed_NoDuration() {
+		// event with TRIGGER;REL=END:-PT30S (caller doesn't accept Related.END)
+		val alarm = VAlarm(Duration.parse("-PT65S"))
+		alarm.trigger.parameters.add(Related.END)
+		val event = Event()
+		event.dtStart = DtStart(DateTime(currentTime))
+		assertNull(ICalendar.vAlarmToMin(alarm, event, false))
+	}
+
+	@Test
+	fun testVAlarmToMin_TriggerDuration_RelEndNotAllowed_AfterEnd() {
+		// task with TRIGGER;REL=END:-P1DT1H1M30S (caller doesn't accept Related.END; alarm *after* end)
+		val alarm = VAlarm(Duration.parse("P1DT1H1M30S"))
+		alarm.trigger.parameters.add(Related.END)
+		val task = Task()
+		task.dtStart = DtStart(DateTime(currentTime))
+		task.due = Due(DateTime(currentTime + 90*1000))	// 90 sec (should be rounded down to 1 min) later
+		val (ref, min) = ICalendar.vAlarmToMin(alarm, task, false)!!
+		assertEquals(Related.START, ref)
+		assertEquals(-(60*24 + 60 + 1 + 1) /* duration of event: */ - 1, min)
+	}
+
+	@Test
+	fun testVAlarm_TriggerPeriod() {
+		val event = Event()
+		event.dtStart = DtStart(Date(currentTime))
+		val (ref, min) = ICalendar.vAlarmToMin(
+				VAlarm(Period.parse("-P1W1D")),
+				event, false
+		)!!
+		assertEquals(Related.START, ref)
+		assertEquals(8*24*60, min)
+	}
+
+	@Test
+	fun testVAlarm_TriggerAbsoluteValue() {
+		// TRIGGER;VALUE=DATE-TIME:<xxxx>
+		val event = Event()
+		event.dtStart = DtStart(DateTime(currentTime))
+		val alarm = VAlarm(DateTime(currentTime - 89*1000))	// 89 sec (should be cut off to 1 min) before event
+		alarm.trigger.parameters.add(Related.END)	// not useful for DATE-TIME values, should be ignored
+		val (ref, min) = ICalendar.vAlarmToMin(alarm, event, false)!!
+		assertEquals(Related.START, ref)
+		assertEquals(1, min)
+	}
+
+	/*
+	DOES NOT WORK YET! Will work as soon as Java 8 API is consequently used in ical4j and ical4android.
+
+	@Test
+	fun testVAlarm_TriggerPeriod_CrossingDST() {
+		// Event start: 2020/04/01 01:00 Vienna, alarm: one day before start of the event
+		// DST changes on 2020/03/29 02:00 -> 03:00, so there is one hour less!
+		// The alarm has to be set 23 hours before the event so that it is set one day earlier.
+		val event = Event()
+		event.dtStart = DtStart("20200401T010000", tzVienna)
+		val (ref, min) = ICalendar.vAlarmToMin(
+				VAlarm(Period.parse("-P1W1D")),
+				event, false
+		)!!
+		assertEquals(Related.START, ref)
+		assertEquals(8*24*60, min)
+	}*/
 
 }
