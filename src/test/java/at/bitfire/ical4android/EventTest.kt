@@ -17,7 +17,6 @@ import net.fortuna.ical4j.model.property.RRule
 import net.fortuna.ical4j.model.property.RecurrenceId
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.BufferedReader
 import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
 import java.io.InputStreamReader
@@ -112,13 +111,13 @@ class EventTest {
     fun testRecurringWriteFullDayException() {
         val event = Event().apply {
             uid = "test1"
-            dtStart = DtStart("20190117T083000", DateUtils.tzRegistry.getTimeZone("Europe/Berlin"))
+            dtStart = DtStart("20190117T083000", DateUtils.ical4jTimeZone("Europe/Berlin"))
             summary = "Main event"
-            rRule = RRule("FREQ=DAILY;COUNT=5")
+            rRules += RRule("FREQ=DAILY;COUNT=5")
             exceptions += arrayOf(
                     Event().apply {
                         uid = "test2"
-                        recurrenceId = RecurrenceId(DateTime("20190118T073000", DateUtils.tzRegistry.getTimeZone("Europe/London")))
+                        recurrenceId = RecurrenceId(DateTime("20190118T073000", DateUtils.ical4jTimeZone("Europe/London")))
                         summary = "Normal exception"
                     },
                     Event().apply {

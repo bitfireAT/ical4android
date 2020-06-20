@@ -16,6 +16,7 @@ import android.net.Uri
 import android.os.RemoteException
 import androidx.annotation.CallSuper
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
+import at.bitfire.ical4android.util.AndroidTimeUtils
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.component.VAlarm
@@ -210,8 +211,8 @@ abstract class AndroidTask(
             task.duration = Duration(null, fixedDuration)
         }
 
-        values.getAsString(Tasks.RDATE)?.let { task.rDates += DateUtils.androidStringToRecurrenceSet(it, RDate::class.java, allDay) }
-        values.getAsString(Tasks.EXDATE)?.let { task.exDates += DateUtils.androidStringToRecurrenceSet(it, ExDate::class.java, allDay) }
+        values.getAsString(Tasks.RDATE)?.let { task.rDates += AndroidTimeUtils.androidStringToRecurrenceSet(it, RDate::class.java, allDay) }
+        values.getAsString(Tasks.EXDATE)?.let { task.exDates += AndroidTimeUtils.androidStringToRecurrenceSet(it, ExDate::class.java, allDay) }
 
         values.getAsString(Tasks.RRULE)?.let { task.rRule = RRule(it) }
     }
@@ -477,8 +478,8 @@ abstract class AndroidTask(
             builder .withValue(Tasks.IS_ALLDAY, 1)
                     .withValue(Tasks.TZ, null)
         else {
-            MiscUtils.androidifyTimeZone(task.dtStart)
-            MiscUtils.androidifyTimeZone(task.due)
+            AndroidTimeUtils.androidifyTimeZone(task.dtStart)
+            AndroidTimeUtils.androidifyTimeZone(task.due)
             builder .withValue(Tasks.IS_ALLDAY, 0)
                     .withValue(Tasks.TZ, getTimeZone().id)
         }
@@ -490,10 +491,10 @@ abstract class AndroidTask(
                 .withValue(Tasks.DUE, task.due?.date?.time)
                 .withValue(Tasks.DURATION, task.duration?.value)
 
-                .withValue(Tasks.RDATE, if (task.rDates.isEmpty()) null else DateUtils.recurrenceSetsToAndroidString(task.rDates, allDay))
+                .withValue(Tasks.RDATE, if (task.rDates.isEmpty()) null else AndroidTimeUtils.recurrenceSetsToAndroidString(task.rDates, allDay))
                 .withValue(Tasks.RRULE, task.rRule?.value)
 
-                .withValue(Tasks.EXDATE, if (task.exDates.isEmpty()) null else DateUtils.recurrenceSetsToAndroidString(task.exDates, allDay))
+                .withValue(Tasks.EXDATE, if (task.exDates.isEmpty()) null else AndroidTimeUtils.recurrenceSetsToAndroidString(task.exDates, allDay))
         Ical4Android.log.log(Level.FINE, "Built task object", builder.build())
     }
 

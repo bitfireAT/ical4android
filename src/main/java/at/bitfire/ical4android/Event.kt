@@ -37,8 +37,8 @@ class Event: ICalendar() {
     var dtEnd: DtEnd? = null
 
     var duration: Duration? = null
-    var rRule: RRule? = null
-    var exRule: ExRule? = null
+    val rRules = LinkedList<RRule>()
+    val exRules = LinkedList<ExRule>()
     val rDates = LinkedList<RDate>()
     val exDates = LinkedList<ExDate>()
 
@@ -160,9 +160,9 @@ class Event: ICalendar() {
                     is DtStart -> e.dtStart = prop
                     is DtEnd -> e.dtEnd = prop
                     is Duration -> e.duration = prop
-                    is RRule -> e.rRule = prop
+                    is RRule -> e.rRules += prop
                     is RDate -> e.rDates += prop
-                    is ExRule -> e.exRule = prop
+                    is ExRule -> e.exRules += prop
                     is ExDate -> e.exDates += prop
                     is Clazz -> e.classification = prop
                     is Status -> e.status = prop
@@ -174,15 +174,15 @@ class Event: ICalendar() {
                     else -> e.unknownProperties += prop
                 }
 
-            // calculate DtEnd from Duration
-            if (e.dtEnd == null && e.duration != null)
-                e.dtEnd = event.getEndDate(true)
-
             e.alarms.addAll(event.alarms)
 
             // validation
             if (e.dtStart == null)
                 throw InvalidCalendarException("Event without start time")
+            else if (e.dtEnd != null && e.dtStart!!.date > e.dtEnd!!.date) {
+                Ical4Android.log.warning("DTSTART after DTEND; removing DTEND")
+                e.dtEnd = null
+            }
 
             return e
         }
@@ -285,9 +285,9 @@ class Event: ICalendar() {
         dtEnd?.let { props += it }
         duration?.let { props += it }
 
-        rRule?.let { props += it }
+        props.addAll(rRules)
         props.addAll(rDates)
-        exRule?.let { props += it }
+        props.addAll(exRules)
         props.addAll(exDates)
 
         classification?.let { props += it }
@@ -317,6 +317,7 @@ class Event: ICalendar() {
      *
      * @return *true* if [dtStart] is a DATE value; *false* otherwise ([dtStart] is a DATETIME value or *null*)
      */
-    fun isAllDay() = dtStart != null && !isDateTime(dtStart)
+    @Deprecated("Use DateUtils.isDate(dtStart) instead")
+    fun isAllDay() = dtStart != null && DateUtils.isDate(dtStart)
 
 }

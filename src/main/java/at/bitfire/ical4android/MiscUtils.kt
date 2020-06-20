@@ -13,57 +13,10 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.database.DatabaseUtils
 import android.os.Build
-import at.bitfire.ical4android.DateUtils.isDateTime
-import net.fortuna.ical4j.model.property.DateProperty
-import net.fortuna.ical4j.util.TimeZones
 import java.lang.reflect.Modifier
 import java.util.*
 
 object MiscUtils {
-
-    /**
-     * Ensures that a given DateProperty has a time zone with an ID that is available in Android.
-     *
-     * @param date DateProperty to validate. Values which are not DATE-TIME will be ignored.
-     */
-    fun androidifyTimeZone(date: DateProperty?) {
-        if (isDateTime(date)) {
-            val tz = date!!.timeZone ?: return
-            val tzID = tz.id ?: return
-            val deviceTzID = DateUtils.findAndroidTimezoneID(tzID)
-            if (tzID != deviceTzID) {
-                Ical4Android.log.warning("Android doesn't know time zone \"$tzID\", assuming device time zone \"$deviceTzID\"")
-                date.timeZone = DateUtils.tzRegistry.getTimeZone(deviceTzID)
-            }
-        }
-    }
-
-    /**
-     * Returns the time-zone ID for a given date or date-time that should be used to store it
-     * in the Android calendar storage.
-     *
-     * @param date DateProperty (DATE or DATE-TIME) whose time-zone information is used
-     *
-     * @return - UTC for dates and UTC date-times
-     *         - the specified time zone ID for date-times with given time zone
-     *         - the currently set default time zone ID for floating date-times
-     */
-    fun getTzId(date: DateProperty): String =
-            if (isDateTime(date)) {
-                when {
-                    date.isUtc ->
-                        // DATE-TIME in UTC format
-                        TimeZones.UTC_ID
-                    date.timeZone != null ->
-                        // DATE-TIME with given time-zone
-                        date.timeZone.id
-                    else /* date.timeZone == null */ ->
-                        // DATE-TIME in local format (floating)
-                        TimeZone.getDefault().id
-                }
-            } else
-                // DATE
-                TimeZones.UTC_ID
 
     /**
      * Generates useful toString info (fields and values) from [obj] by reflection.
