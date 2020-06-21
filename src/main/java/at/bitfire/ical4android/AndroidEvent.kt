@@ -780,7 +780,7 @@ abstract class AndroidEvent(
             else               -> Reminders.METHOD_DEFAULT
         }
 
-        val (_, minutes) = ICalendar.vAlarmToMin(alarm, event!!, false) ?: return
+        val minutes = ICalendar.vAlarmToMin(alarm, event!!, false)?.second ?: Reminders.MINUTES_DEFAULT
 
         builder .withValue(Reminders.METHOD, method)
                 .withValue(Reminders.MINUTES, minutes)
@@ -814,24 +814,24 @@ abstract class AndroidEvent(
         }
 
         var type = Attendees.TYPE_NONE
+        var relationship = Attendees.RELATIONSHIP_NONE
+
         val cutype = attendee.getParameter(Parameter.CUTYPE) as? CuType
         if (cutype in arrayOf(CuType.RESOURCE, CuType.ROOM))
             // "attendee" is a (physical) resource
             type = Attendees.TYPE_RESOURCE
         else {
             // attendee is not a (physical) resource
+            relationship = Attendees.RELATIONSHIP_ATTENDEE
+            type = Attendees.TYPE_REQUIRED
+
             val role = attendee.getParameter(Parameter.ROLE) as? Role
-            val relationship: Int
-            if (role == Role.CHAIR)
-                relationship = Attendees.RELATIONSHIP_ORGANIZER
-            else {
-                relationship = Attendees.RELATIONSHIP_ATTENDEE
-                when(role) {
-                    Role.OPT_PARTICIPANT -> type = Attendees.TYPE_OPTIONAL
-                    Role.REQ_PARTICIPANT -> type = Attendees.TYPE_REQUIRED
-                }
+
+            when (role) {
+                Role.CHAIR -> relationship = Attendees.RELATIONSHIP_SPEAKER
+                Role.OPT_PARTICIPANT -> type = Attendees.TYPE_OPTIONAL
+                Role.NON_PARTICIPANT -> type = Attendees.TYPE_NONE
             }
-            builder.withValue(Attendees.ATTENDEE_RELATIONSHIP, relationship)
         }
 
         val status = when(attendee.getParameter(Parameter.PARTSTAT) as? PartStat) {
@@ -845,6 +845,7 @@ abstract class AndroidEvent(
 
         builder .withValue(Attendees.ATTENDEE_TYPE, type)
                 .withValue(Attendees.ATTENDEE_STATUS, status)
+                .withValue(Attendees.ATTENDEE_RELATIONSHIP, relationship)
 
         Ical4Android.log.log(Level.FINE, "Built attendee", builder.build())
         batch.enqueue(BatchOperation.Operation(builder, Attendees.EVENT_ID, idxEvent))

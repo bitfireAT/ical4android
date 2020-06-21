@@ -27,8 +27,7 @@ import net.fortuna.ical4j.model.DateList
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.VAlarm
-import net.fortuna.ical4j.model.parameter.Email
-import net.fortuna.ical4j.model.parameter.Value
+import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
 import net.fortuna.ical4j.util.TimeZones
 import org.junit.After
@@ -38,6 +37,7 @@ import org.junit.Rule
 import org.junit.Test
 import java.net.URI
 import java.time.Duration
+import java.time.Period
 import java.util.*
 
 class AndroidEventTest {
@@ -49,7 +49,7 @@ class AndroidEventTest {
             Manifest.permission.WRITE_CALENDAR
     )!!
 
-    private val testAccount = Account("ical4android.AndroidEventTest", CalendarContract.ACCOUNT_TYPE_LOCAL)
+    private val testAccount = Account("ical4android@example.com", CalendarContract.ACCOUNT_TYPE_LOCAL)
 
     private val tzVienna = DateUtils.ical4jTimeZone("Europe/Vienna")!!
     private val tzShanghai = DateUtils.ical4jTimeZone("Asia/Shanghai")!!
@@ -124,8 +124,8 @@ class AndroidEventTest {
 
     private fun firstUnknownProperty(values: ContentValues): Property? {
         val id = values.getAsInteger(Events._ID)
-        provider.query(CalendarContract.ExtendedProperties.CONTENT_URI, arrayOf(CalendarContract.ExtendedProperties.VALUE),
-                "${CalendarContract.ExtendedProperties.EVENT_ID}=?", arrayOf(id.toString()), null)?.use {
+        provider.query(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI), arrayOf(ExtendedProperties.VALUE),
+                "${ExtendedProperties.EVENT_ID}=?", arrayOf(id.toString()), null)?.use {
             if (it.moveToNext())
                 return UnknownProperty.fromJsonString(it.getString(0))
         }
@@ -667,17 +667,411 @@ class AndroidEventTest {
         }
     }
 
-    // TODO tests: build alarms, attendees, exceptions, unknown properties
+
+    private fun firstReminder(row: ContentValues): ContentValues? {
+        val id = row.getAsInteger(Events._ID)
+        provider.query(calendar.syncAdapterURI(Reminders.CONTENT_URI), null,
+                "${Reminders.EVENT_ID}=?", arrayOf(id.toString()), null)?.use { cursor ->
+            if (cursor.moveToNext()) {
+                val subRow = ContentValues(cursor.count)
+                DatabaseUtils.cursorRowToContentValues(cursor, subRow)
+                return subRow
+            }
+        }
+        return null
+    }
+
+    @Test
+    fun testBuildReminder_Trigger_None() {
+        buildEvent(true) {
+            alarms += VAlarm()
+        }.let { result ->
+            firstReminder(result)!!.let { reminder ->
+                assertEquals(Reminders.METHOD_DEFAULT, reminder.getAsInteger(Reminders.METHOD))
+                assertEquals(Reminders.MINUTES_DEFAULT, reminder.getAsInteger(Reminders.MINUTES))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildReminder_Trigger_Type_Audio() {
+        buildEvent(true) {
+            alarms += VAlarm(Duration.ofMinutes(-10)).apply {
+                properties += Action.AUDIO
+            }
+        }.let { result ->
+            firstReminder(result)!!.let { reminder ->
+                assertEquals(Reminders.METHOD_ALERT, reminder.getAsInteger(Reminders.METHOD))
+                assertEquals(10, reminder.getAsInteger(Reminders.MINUTES))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildReminder_Trigger_Type_Display() {
+        buildEvent(true) {
+            alarms += VAlarm(Duration.ofMinutes(-10)).apply {
+                properties += Action.DISPLAY
+            }
+        }.let { result ->
+            firstReminder(result)!!.let { reminder ->
+                assertEquals(Reminders.METHOD_ALERT, reminder.getAsInteger(Reminders.METHOD))
+                assertEquals(10, reminder.getAsInteger(Reminders.MINUTES))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildReminder_Trigger_Type_Email() {
+        buildEvent(true) {
+            alarms += VAlarm(Duration.ofSeconds(-120)).apply {
+                properties += Action.EMAIL
+            }
+        }.let { result ->
+            firstReminder(result)!!.let { reminder ->
+                assertEquals(Reminders.METHOD_EMAIL, reminder.getAsInteger(Reminders.METHOD))
+                assertEquals(2, reminder.getAsInteger(Reminders.MINUTES))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildReminder_Trigger_Type_Custom() {
+        buildEvent(true) {
+            alarms += VAlarm(Duration.ofSeconds(-120)).apply {
+                properties += Action("X-CUSTOM")
+            }
+        }.let { result ->
+            firstReminder(result)!!.let { reminder ->
+                assertEquals(Reminders.METHOD_DEFAULT, reminder.getAsInteger(Reminders.METHOD))
+                assertEquals(2, reminder.getAsInteger(Reminders.MINUTES))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildReminder_Trigger_RelStart_Duration() {
+        buildEvent(true) {
+            alarms += VAlarm(Period.ofDays(-1))
+        }.let { result ->
+            firstReminder(result)!!.let { reminder ->
+                assertEquals(1440, reminder.getAsInteger(Reminders.MINUTES))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildReminder_Trigger_RelStart_Duration_LessThanOneMinute() {
+        buildEvent(true) {
+            alarms += VAlarm(Duration.ofSeconds(-10))
+        }.let { result ->
+            firstReminder(result)!!.let { reminder ->
+                assertEquals(0, reminder.getAsInteger(Reminders.MINUTES))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildReminder_Trigger_RelStart_Duration_Positive() {
+        // positive duration -> reminder is AFTER reference time -> negative minutes field
+        buildEvent(true) {
+            alarms += VAlarm(Duration.ofMinutes(10))
+        }.let { result ->
+            firstReminder(result)!!.let { reminder ->
+                assertEquals(-10, reminder.getAsInteger(Reminders.MINUTES))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildReminder_Trigger_RelEnd_Duration() {
+        buildEvent(false) {
+            dtStart = DtStart(DateTime("20200621T120000", tzVienna))
+            dtEnd = DtEnd(DateTime("20200621T140000", tzVienna))
+            alarms += VAlarm(Period.ofDays(-1)).apply {
+                trigger.parameters.add(Related.END)
+            }
+        }.let { result ->
+            firstReminder(result)!!.let { reminder ->
+                assertEquals(1320, reminder.getAsInteger(Reminders.MINUTES))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildReminder_Trigger_RelEnd_Duration_LessThanOneMinute() {
+        buildEvent(false) {
+            dtStart = DtStart(DateTime("20200621T120000", tzVienna))
+            dtEnd = DtEnd(DateTime("20200621T140000", tzVienna))
+            alarms += VAlarm(Duration.ofSeconds(-7240)).apply {
+                trigger.parameters.add(Related.END)
+            }
+        }.let { result ->
+            firstReminder(result)!!.let { reminder ->
+                assertEquals(0, reminder.getAsInteger(Reminders.MINUTES))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildReminder_Trigger_RelEnd_Duration_Positive() {
+        // positive duration -> reminder is AFTER reference time -> negative minutes field
+        buildEvent(false) {
+            dtStart = DtStart(DateTime("20200621T120000", tzVienna))
+            dtEnd = DtEnd(DateTime("20200621T140000", tzVienna))
+            alarms += VAlarm(Duration.ofMinutes(10)).apply {
+                trigger.parameters.add(Related.END)
+            }
+        }.let { result ->
+            firstReminder(result)!!.let { reminder ->
+                assertEquals(-130, reminder.getAsInteger(Reminders.MINUTES))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildReminder_Trigger_Absolute() {
+        buildEvent(false) {
+            dtStart = DtStart(DateTime("20200621T120000", tzVienna))
+            alarms += VAlarm(DateTime("20200621T110000", tzVienna))
+        }.let { result ->
+            firstReminder(result)!!.let { reminder ->
+                assertEquals(60, reminder.getAsInteger(Reminders.MINUTES))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildReminder_Trigger_Absolute_OtherTimeZone() {
+        buildEvent(false) {
+            dtStart = DtStart(DateTime("20200621T120000", tzVienna))
+            alarms += VAlarm(DateTime("20200621T110000", tzShanghai))
+        }.let { result ->
+            firstReminder(result)!!.let { reminder ->
+                assertEquals(420, reminder.getAsInteger(Reminders.MINUTES))
+            }
+        }
+    }
+
+
+    private fun firstAttendee(row: ContentValues): ContentValues? {
+        val id = row.getAsInteger(Events._ID)
+        provider.query(calendar.syncAdapterURI(Attendees.CONTENT_URI), null,
+                "${Attendees.EVENT_ID}=?", arrayOf(id.toString()), null)?.use { cursor ->
+            if (cursor.moveToNext()) {
+                val subRow = ContentValues(cursor.count)
+                DatabaseUtils.cursorRowToContentValues(cursor, subRow)
+                return subRow
+            }
+        }
+        return null
+    }
+
+    @Test
+    fun testBuildAttendee_MailTo() {
+        buildEvent(true) {
+            attendees += Attendee("mailto:attendee1@example.com")
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals("attendee1@example.com", attendee.getAsString(Attendees.ATTENDEE_EMAIL))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_CustomUri() {
+        buildEvent(true) {
+            attendees += Attendee("custom:uri")
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals("custom", attendee.getAsString(Attendees.ATTENDEE_ID_NAMESPACE))
+                assertEquals("uri", attendee.getAsString(Attendees.ATTENDEE_IDENTITY))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_CustomUri_EmailParam() {
+        buildEvent(true) {
+            attendees += Attendee("sample:uri").apply {
+                parameters.add(Email("attendee1@example.com"))
+            }
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals("sample", attendee.getAsString(Attendees.ATTENDEE_ID_NAMESPACE))
+                assertEquals("uri", attendee.getAsString(Attendees.ATTENDEE_IDENTITY))
+                assertEquals("attendee1@example.com", attendee.getAsString(Attendees.ATTENDEE_EMAIL))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_Cn() {
+        buildEvent(true) {
+            attendees += Attendee("mailto:attendee@example.com").apply {
+                parameters.add(Cn("Sample Attendee"))
+            }
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals("Sample Attendee", attendee.getAsString(Attendees.ATTENDEE_NAME))
+            }
+        }
+    }
+
+    /**
+     * Attendee test matrix:
+     *
+     * CuType ↓ / Role →   (none)    CHAIR    REQ-PARTICIPANT  OPT-PARTICIPANT  NON-PARTICIPANT  X-CUSTOM     test name prefix
+     * (none)              req,att   req,spk  req,att          opt,att          non,att          req,att      CuTypePerson
+     * INDIVIDUAL          req,att   req,spk  req,att          opt,att          non,att          req,att      CuTypePerson
+     * GROUP               req,att   req,spk  req,att          opt,att          non,att          req,att      CuTypePerson
+     * RESOURCE            ::: res,non ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::     CuTypeResource
+     * ROOM                ::: res,non ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::     CuTypeResource
+     * UNKNOWN             req,att   req,spk  req,att          opt,att          non,att          req,att      CuTypePerson
+     * X-CUSTOM            req,att   req,spk  req,att          opt,att          non,att          req,att      CuTypePerson
+     */
+
+    private val cuTypePersons = arrayOf(null, CuType.INDIVIDUAL, CuType.GROUP, CuType.UNKNOWN, CuType("X-CUSTOM"))
+    private val cuTypeResource = arrayOf(CuType.RESOURCE, CuType.ROOM)
+
+    @Test
+    fun testBuildAttendee_CuTypePerson_NoRole() {
+        for (cuType in cuTypePersons) {
+            buildEvent(true) {
+                attendees += Attendee("mailto:attendee@example.com").apply {
+                    if (cuType != null)
+                        parameters.add(cuType)
+                }
+            }.let { result ->
+                firstAttendee(result)!!.let { attendee ->
+                    assertEquals(Attendees.TYPE_REQUIRED, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                    assertEquals(Attendees.RELATIONSHIP_ATTENDEE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_CuTypePerson_Chair() {
+        for (cuType in cuTypePersons) {
+            buildEvent(true) {
+                attendees += Attendee("mailto:attendee@example.com").apply {
+                    if (cuType != null)
+                        parameters.add(cuType)
+                    parameters.add(Role.CHAIR)
+                }
+            }.let { result ->
+                firstAttendee(result)!!.let { attendee ->
+                    assertEquals(Attendees.TYPE_REQUIRED, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                    assertEquals(Attendees.RELATIONSHIP_SPEAKER, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_CuTypePerson_ReqParticipant() {
+        for (cuType in cuTypePersons) {
+            buildEvent(true) {
+                attendees += Attendee("mailto:attendee@example.com").apply {
+                    if (cuType != null)
+                        parameters.add(cuType)
+                    parameters.add(Role.REQ_PARTICIPANT)
+                }
+            }.let { result ->
+                firstAttendee(result)!!.let { attendee ->
+                    assertEquals(Attendees.TYPE_REQUIRED, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                    assertEquals(Attendees.RELATIONSHIP_ATTENDEE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_CuTypePerson_OptParticipant() {
+        for (cuType in cuTypePersons) {
+            buildEvent(true) {
+                attendees += Attendee("mailto:attendee@example.com").apply {
+                    if (cuType != null)
+                        parameters.add(cuType)
+                    parameters.add(Role.OPT_PARTICIPANT)
+                }
+            }.let { result ->
+                firstAttendee(result)!!.let { attendee ->
+                    assertEquals(Attendees.TYPE_OPTIONAL, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                    assertEquals(Attendees.RELATIONSHIP_ATTENDEE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_CuTypePerson_NonParticipant() {
+        for (cuType in cuTypePersons) {
+            buildEvent(true) {
+                attendees += Attendee("mailto:attendee@example.com").apply {
+                    if (cuType != null)
+                        parameters.add(cuType)
+                    parameters.add(Role.NON_PARTICIPANT)
+                }
+            }.let { result ->
+                firstAttendee(result)!!.let { attendee ->
+                    assertEquals(Attendees.TYPE_NONE, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                    assertEquals(Attendees.RELATIONSHIP_ATTENDEE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_CuTypePerson_CustomRole() {
+        for (cuType in cuTypePersons) {
+            buildEvent(true) {
+                attendees += Attendee("mailto:attendee@example.com").apply {
+                    if (cuType != null)
+                        parameters.add(cuType)
+                    parameters.add(Role("X-CUSTOM_ROLE"))
+                }
+            }.let { result ->
+                firstAttendee(result)!!.let { attendee ->
+                    assertEquals(Attendees.TYPE_REQUIRED, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                    assertEquals(Attendees.RELATIONSHIP_ATTENDEE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_CuTypeResource() {
+        for (cuType in cuTypeResource)
+            for (role in arrayOf(null, Role.CHAIR, Role.REQ_PARTICIPANT, Role.OPT_PARTICIPANT, Role.NON_PARTICIPANT, Role("X-CUSTOM-ROLE"))) {
+                buildEvent(true) {
+                    attendees += Attendee("mailto:attendee@example.com").apply {
+                        parameters.add(cuType)
+                        if (role != null)
+                            parameters.add(role)
+                    }
+                }.let { result ->
+                    firstAttendee(result)!!.let { attendee ->
+                        assertEquals(Attendees.TYPE_RESOURCE, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                        assertEquals(Attendees.RELATIONSHIP_NONE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+                    }
+                }
+            }
+    }
+
+    // TODO tests: build exceptions, unknown properties
 
 
     private fun populateEvent(
             automaticDates: Boolean,
+            destinationCalendar: TestCalendar = calendar,
             asSyncAdapter: Boolean = false,
             insertCallback: (id: Long) -> Unit = {},
             valuesBuilder: ContentValues.() -> Unit
     ): Event {
         val values = ContentValues()
-        values.put(Events.CALENDAR_ID, calendar.id)
+        values.put(Events.CALENDAR_ID, destinationCalendar.id)
         if (automaticDates) {
             values.put(Events.DTSTART, 1592733600000L)  // 21/06/2020 12:00 +0200
             values.put(Events.EVENT_TIMEZONE, "Europe/Berlin")
@@ -687,14 +1081,14 @@ class AndroidEventTest {
         valuesBuilder(values)
         Ical4Android.log.info("Inserting test event: $values")
         val uri = provider.insert(
-                if (asSyncAdapter) calendar.syncAdapterURI(Events.CONTENT_URI) else Events.CONTENT_URI,
+                if (asSyncAdapter) destinationCalendar.syncAdapterURI(Events.CONTENT_URI) else Events.CONTENT_URI,
                 values)!!
         val id = ContentUris.parseId(uri)
 
         // insert additional rows etc.
         insertCallback(id)
 
-        val androidEvent = calendar.findById(id)
+        val androidEvent = destinationCalendar.findById(id)
         return androidEvent.event!!
     }
 
@@ -1030,14 +1424,91 @@ class AndroidEventTest {
     }
 
     @Test
-    fun ttestPopulateEvent_Classification_None() {
+    fun testPopulateEvent_Classification_None() {
         populateEvent(true) {
         }.let { result ->
             assertNull(result.classification)
         }
     }
 
-    // TODO tests: populate alarms, attendees, exceptions, unknown properties
+
+    private fun populateReminder(destinationCalendar: TestCalendar = calendar, builder: ContentValues.() -> Unit): VAlarm? {
+        populateEvent(true, destinationCalendar = destinationCalendar, valuesBuilder = {}, insertCallback = { id ->
+            val reminderValues = ContentValues()
+            reminderValues.put(Reminders.EVENT_ID, id)
+            builder(reminderValues)
+            Ical4Android.log.info("Inserting test reminder: $reminderValues")
+            provider.insert(destinationCalendar.syncAdapterURI(Reminders.CONTENT_URI), reminderValues)
+        }).let { result ->
+            return result.alarms.firstOrNull()
+        }
+    }
+
+    @Test
+    fun testPopulateReminder_TypeEmail_AccountNameEmail() {
+        // account name looks like an email address
+        assertEquals("ical4android@example.com", testAccount.name)
+
+        populateReminder {
+            put(Reminders.METHOD, Reminders.METHOD_EMAIL)
+            put(Reminders.MINUTES, 10)
+        }!!.let { alarm ->
+            assertEquals(Action.EMAIL, alarm.action)
+            assertNotNull(alarm.summary)
+            assertNotNull(alarm.description)
+        }
+    }
+
+    @Test
+    fun testPopulateReminder_TypeEmail_AccountNameNotEmail() {
+        // test account name that doesn't look like an email address
+        val nonEmailAccount = Account("ical4android", CalendarContract.ACCOUNT_TYPE_LOCAL)
+        val testCalendar = TestCalendar.findOrCreate(nonEmailAccount, provider)
+        try {
+            populateReminder(testCalendar) {
+                put(Reminders.METHOD, Reminders.METHOD_EMAIL)
+            }!!.let { alarm ->
+                assertEquals(Action.DISPLAY, alarm.action)
+                assertNotNull(alarm.description)
+            }
+        } finally {
+            testCalendar.delete()
+        }
+    }
+
+    @Test
+    fun testPopulateReminder_TypeNotEmail() {
+        for (type in arrayOf(null, Reminders.METHOD_ALARM, Reminders.METHOD_ALERT, Reminders.METHOD_DEFAULT, Reminders.METHOD_SMS))
+            populateReminder {
+                put(Reminders.METHOD, type)
+                put(Reminders.MINUTES, 10)
+            }!!.let { alarm ->
+                assertEquals(Action.DISPLAY, alarm.action)
+                assertNotNull(alarm.description)
+            }
+    }
+
+    @Test
+    fun testPopulateReminder_Minutes_Positive() {
+        populateReminder {
+            put(Reminders.METHOD, Reminders.METHOD_ALERT)
+            put(Reminders.MINUTES, 10)
+        }!!.let { alarm ->
+            assertEquals(Duration.ofMinutes(-10), alarm.trigger.duration)
+        }
+    }
+
+    @Test
+    fun testPopulateReminder_Minutes_Negative() {
+        populateReminder {
+            put(Reminders.METHOD, Reminders.METHOD_ALERT)
+            put(Reminders.MINUTES, -10)
+        }!!.let { alarm ->
+            assertEquals(Duration.ofMinutes(10), alarm.trigger.duration)
+        }
+    }
+
+    // TODO tests: populate attendees, exceptions, unknown properties
 
 
     @Test

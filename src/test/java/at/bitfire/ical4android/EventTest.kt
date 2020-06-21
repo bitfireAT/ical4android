@@ -12,9 +12,7 @@ import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.Parameter
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory
 import net.fortuna.ical4j.model.component.VAlarm
-import net.fortuna.ical4j.model.property.DtStart
-import net.fortuna.ical4j.model.property.RRule
-import net.fortuna.ical4j.model.property.RecurrenceId
+import net.fortuna.ical4j.model.property.*
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.ByteArrayOutputStream
@@ -57,6 +55,23 @@ class EventTest {
         val dtStart = e.dtStart!!
         assertEquals("Europe/Berlin", dtStart.timeZone.id)
         assertEquals(1522738800000L, dtStart.date.time)
+    }
+
+    @Test
+    fun testGenerateEtcUTC() {
+        val tzUTC = DateUtils.ical4jTimeZone("Etc/UTC")
+
+        val e = Event()
+        e.uid = "etc-utc-test@example.com"
+        e.dtStart = DtStart("20200926T080000", tzUTC)
+        e.dtEnd = DtEnd("20200926T100000", tzUTC)
+        e.alarms += VAlarm(Duration.ofMinutes(-30))
+        e.attendees += Attendee("mailto:test@example.com")
+        val baos = ByteArrayOutputStream()
+        e.write(baos)
+        val ical = baos.toString()
+
+        assertTrue("BEGIN:VTIMEZONE.+BEGIN:STANDARD.+END:STANDARD.+END:VTIMEZONE".toRegex(RegexOption.DOT_MATCHES_ALL).containsMatchIn(ical))
     }
 
     @Test
