@@ -14,10 +14,10 @@ import android.content.ContentValues
 import android.database.DatabaseUtils
 import android.net.Uri
 import android.provider.CalendarContract
-import android.provider.CalendarContract.Events
+import android.provider.CalendarContract.*
+import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.rule.GrantPermissionRule
-import at.bitfire.ical4android.AndroidCalendar.Companion.syncAdapterURI
 import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
 import at.bitfire.ical4android.impl.TestCalendar
 import at.bitfire.ical4android.impl.TestEvent
@@ -25,7 +25,9 @@ import at.bitfire.ical4android.util.AndroidTimeUtils
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateList
 import net.fortuna.ical4j.model.DateTime
+import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.VAlarm
+import net.fortuna.ical4j.model.parameter.Email
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.*
 import net.fortuna.ical4j.util.TimeZones
@@ -59,16 +61,14 @@ class AndroidEventTest {
     private val provider by lazy {
         getInstrumentation().targetContext.contentResolver.acquireContentProviderClient(CalendarContract.AUTHORITY)!!
     }
+
     private lateinit var calendarUri: Uri
     private lateinit var calendar: TestCalendar
 
     @Before
     fun prepare() {
-        AndroidCalendar.insertColors(provider, testAccount)
-
         calendar = TestCalendar.findOrCreate(testAccount, provider)
         assertNotNull(calendar)
-
         calendarUri = ContentUris.withAppendedId(CalendarContract.Calendars.CONTENT_URI, calendar.id)
     }
 
@@ -107,12 +107,14 @@ class AndroidEventTest {
      *  - UTC times
      */
 
-    private fun buildEvent(eventBuilder: Event.() -> Unit): ContentValues {
+    private fun buildEvent(automaticDates: Boolean, eventBuilder: Event.() -> Unit): ContentValues {
         val event = Event().apply {
+            if (automaticDates)
+                dtStart = DtStart(DateTime())
             eventBuilder()
         }
         val uri = TestEvent(calendar, event).add()
-        calendar.provider.query(uri, null, null, null, null)!!.use {
+        provider.query(uri, null, null, null, null)!!.use {
             it.moveToNext()
             val values = ContentValues()
             DatabaseUtils.cursorRowToContentValues(it, values)
@@ -120,9 +122,19 @@ class AndroidEventTest {
         }
     }
 
+    private fun firstUnknownProperty(values: ContentValues): Property? {
+        val id = values.getAsInteger(Events._ID)
+        provider.query(CalendarContract.ExtendedProperties.CONTENT_URI, arrayOf(CalendarContract.ExtendedProperties.VALUE),
+                "${CalendarContract.ExtendedProperties.EVENT_ID}=?", arrayOf(id.toString()), null)?.use {
+            if (it.moveToNext())
+                return UnknownProperty.fromJsonString(it.getString(0))
+        }
+        return null
+    }
+
     @Test
     fun testBuildEvent_NonAllDay_NoDtEnd_NoDuration_NonRecurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzVienna)
         }
         assertEquals(0, values.getAsInteger(Events.ALL_DAY))
@@ -136,7 +148,7 @@ class AndroidEventTest {
 
     @Test
     fun testBuildEvent_NonAllDay_NoDtEnd_NoDuration_Recurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzVienna)
             rRules += RRule("FREQ=DAILY;COUNT=5")
             rRules += RRule("FREQ=WEEKLY;COUNT=10")
@@ -152,12 +164,12 @@ class AndroidEventTest {
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 
         assertEquals("FREQ=DAILY;COUNT=5\nFREQ=WEEKLY;COUNT=10", values.getAsString(Events.RRULE))
-        assertEquals("${tzVienna.id};20210601T123000", values.getAsString(Events.RDATE))
+        assertEquals("${tzVienna.id};20200601T123000,20210601T123000", values.getAsString(Events.RDATE))
     }
 
     @Test
     fun testBuildEvent_NonAllDay_NoDtEnd_Duration_NonRecurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzVienna)
             duration = Duration(null, "PT1H30M")
         }
@@ -173,7 +185,7 @@ class AndroidEventTest {
 
     @Test
     fun testBuildEvent_NonAllDay_NoDtEnd_Duration_Recurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzVienna)
             duration = Duration(null, "PT1H30M")
             rDates += RDate(DateList("20200602T113000", Value.DATE_TIME, tzVienna))
@@ -187,12 +199,12 @@ class AndroidEventTest {
         assertNull(values.get(Events.DTEND))
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 
-        assertEquals("${tzVienna.id};20200602T113000", values.get(Events.RDATE))
+        assertEquals("${tzVienna.id};20200601T123000,20200602T113000", values.get(Events.RDATE))
     }
 
     @Test
     fun testBuildEvent_NonAllDay_DtEnd_NoDuration_NonRecurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzVienna)
             dtEnd = DtEnd("20200602T143000", tzShanghai)
         }
@@ -208,7 +220,7 @@ class AndroidEventTest {
 
     @Test
     fun testBuildEvent_NonAllDay_DtEnd_NoDuration_Recurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzShanghai)
             dtEnd = DtEnd("20200601T123000", tzVienna)
             rDates += RDate(DateList("20200701T123000,20200702T123000", Value.DATE_TIME, tzVienna))
@@ -223,12 +235,12 @@ class AndroidEventTest {
         assertNull(values.get(Events.DTEND))
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 
-        assertEquals("${tzVienna.id};20200701T123000,20200702T123000,20200801T063000,20200802T063000", values.getAsString(Events.RDATE))
+        assertEquals("${tzShanghai.id};20200601T123000,20200701T183000,20200702T183000,20200801T123000,20200802T123000", values.getAsString(Events.RDATE))
     }
 
     @Test
     fun testBuildEvent_NonAllDay_DtEnd_Duration_NonRecurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzVienna)
             dtEnd = DtEnd("20200601T143000", tzVienna)
             duration = Duration(null, "PT10S")
@@ -245,7 +257,7 @@ class AndroidEventTest {
 
     @Test
     fun testBuildEvent_NonAllDay_DtEnd_Duration_Recurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzVienna)
             dtEnd = DtEnd("20200601T143000", tzVienna)
             duration = Duration(null, "PT10S")
@@ -265,7 +277,7 @@ class AndroidEventTest {
 
     @Test
     fun testBuildEvent_AllDay_NoDtEnd_NoDuration_NonRecurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart(Date("20200601"))
         }
         assertEquals(1, values.getAsInteger(Events.ALL_DAY))
@@ -280,7 +292,7 @@ class AndroidEventTest {
 
     @Test
     fun testBuildEvent_AllDay_NoDtEnd_NoDuration_Recurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart(Date("20200601"))
             rRules += RRule("FREQ=MONTHLY;COUNT=3")
         }
@@ -298,7 +310,7 @@ class AndroidEventTest {
 
     @Test
     fun testBuildEvent_AllDay_NoDtEnd_Duration_NonRecurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart(Date("20200601"))
             duration = Duration(null, "P2W1D")
         }
@@ -314,7 +326,7 @@ class AndroidEventTest {
 
     @Test
     fun testBuildEvent_AllDay_NoDtEnd_Duration_Recurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart(Date("20200601"))
             duration = Duration(null, "P2D")
             rRules += RRule("FREQ=YEARLY;BYMONTH=4;BYDAY=-1SU")
@@ -333,7 +345,7 @@ class AndroidEventTest {
 
     @Test
     fun testBuildEvent_AllDay_DtEnd_NoDuration_NonRecurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart(Date("20200601"))
             dtEnd = DtEnd(Date("20200701"))
         }
@@ -349,7 +361,7 @@ class AndroidEventTest {
 
     @Test
     fun testBuildEvent_AllDay_DtEnd_NoDuration_Recurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart(Date("20200601"))
             dtEnd = DtEnd(Date("20200701"))
             rDates += RDate(DateList("20210601", Value.DATE))
@@ -364,12 +376,12 @@ class AndroidEventTest {
         assertNull(values.get(Events.DTEND))
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 
-        assertEquals("20210601T000000Z,20220601T000000Z", values.get(Events.RDATE))
+        assertEquals("20200601T000000Z,20210601T000000Z,20220601T000000Z", values.get(Events.RDATE))
     }
 
     @Test
     fun testBuildEvent_AllDay_DtEnd_Duration_NonRecurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart(Date("20200601"))
             dtEnd = DtEnd(Date("20200701"))
             duration = Duration(null, "PT1M")
@@ -386,7 +398,7 @@ class AndroidEventTest {
 
     @Test
     fun testBuildEvent_AllDay_DtEnd_Duration_Recurring() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart(Date("20200601"))
             dtEnd = DtEnd(Date("20200701"))
             duration = Duration(null, "PT1M")
@@ -406,7 +418,7 @@ class AndroidEventTest {
 
     @Test
     fun testBuildEvent_FloatingTimes() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000")
             dtEnd = DtEnd("20200601T123001")
         }
@@ -421,7 +433,7 @@ class AndroidEventTest {
 
     @Test
     fun testBuildEvent_FloatingTimesInRecurrenceDates() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzShanghai)
             duration = Duration(null, "PT5M30S")
             rDates += RDate(DateList("20200602T113000", Value.DATE_TIME))
@@ -435,13 +447,15 @@ class AndroidEventTest {
         assertEquals("PT5M30S", values.getAsString(Events.DURATION))
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 
-        assertEquals("$tzIdDefault;20200602T113000", values.get(Events.RDATE))
+        val rewritten = DateTime("20200602T113000")
+        rewritten.timeZone = tzShanghai
+        assertEquals("${tzShanghai.id};20200601T123000,$rewritten", values.get(Events.RDATE))
         assertEquals("$tzIdDefault;20200602T113000", values.get(Events.EXDATE))
     }
 
     @Test
     fun testBuildEvent_UTC() {
-        val values = buildEvent {
+        val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000Z")
             dtEnd = DtEnd("20200601T143001Z")
         }
@@ -454,116 +468,577 @@ class AndroidEventTest {
         assertEquals(TimeZones.UTC_ID, values.get(Events.EVENT_END_TIMEZONE))
     }
 
-
     @Test
-    fun testAddRecurringEvent() {
-        // build and write recurring event to calendar provider
-        val event = Event()
-        event.uid = "sample1@testAddEvent"
-        event.summary = "Sample event"
-        event.description = "Sample event with date/time"
-        event.location = "Sample location"
-        event.dtStart = DtStart("20150501T120000", tzVienna)
-        event.dtEnd = DtEnd("20150501T130000", tzVienna)
-        event.organizer = Organizer(URI("mailto:organizer@example.com"))
-        event.rRules += RRule("FREQ=DAILY;COUNT=10")
-        event.rRules += RRule("FREQ=WEEKLY;COUNT=8")
-        event.classification = Clazz.PRIVATE
-        event.status = Status.VEVENT_CONFIRMED
-        event.color = Css3Color.aliceblue
-
-        // TODO test rDates, exDate, duration
-
-        // set an alarm one day, two hours, three minutes and four seconds before begin of event
-        event.alarms += VAlarm(Duration.parse("-P1DT2H3M4S"))
-
-        // add two attendees
-        event.attendees += Attendee(URI("mailto:user1@example.com"))
-        event.attendees += Attendee(URI("mailto:user2@example.com"))
-
-        // add exception with alarm and attendee
-        val exception = Event()
-        exception.recurrenceId = RecurrenceId("20150502T120000", tzVienna)
-        exception.summary = "Exception for sample event"
-        exception.dtStart = DtStart("20150502T140000", tzVienna)
-        exception.dtEnd = DtEnd("20150502T150000", tzVienna)
-        exception.alarms += VAlarm(Duration.parse("-P2DT3H4M5S"))
-        exception.attendees += Attendee(URI("mailto:only.here@today"))
-        event.exceptions += exception
-
-        // add EXDATE
-        event.exDates += ExDate(DateList("20150502T120000", Value.DATE_TIME, tzVienna))
-
-        // add special properties
-        event.unknownProperties.add(Categories("CAT1,CAT2"))
-        event.unknownProperties.add(XProperty("X-NAME", "X-Value"))
-
-        // add to calendar
-        val uri = TestEvent(calendar, event).add()
-        assertNotNull(uri)
-
-        val testEvent = calendar.findById(ContentUris.parseId(uri))
-        try {
-
-            // read and parse event from calendar provider
-            assertNotNull(testEvent)
-            val event2 = testEvent.event!!
-
-            // compare with original event
-            assertEquals(event.summary, event2.summary)
-            assertEquals(event.description, event2.description)
-            assertEquals(event.location, event2.location)
-            assertEquals(event.dtStart, event2.dtStart)
-
-            // recurring event: duration is calculated from dtStart and dtEnd; dtEnd is set to null
-            assertEquals(Duration.ofHours(1), event2.duration?.duration)
-            assertNull(event2.dtEnd)
-
-            assertEquals(event.organizer, event2.organizer)
-            assertArrayEquals(event.rRules.toTypedArray(), event2.rRules.toTypedArray())
-            assertEquals(event.classification, event2.classification)
-            assertEquals(event.status, event2.status)
-            assertEquals(event.color, event2.color)
-
-            // compare alarm
-            assertEquals(1, event2.alarms.size)
-            var alarm2 = event2.alarms.first
-            assertEquals(event.summary, alarm2.description.value)  // should be built from event title
-            assertEquals(Duration.ofMinutes(-(24*60 + 2*60 + 3)), alarm2.trigger.duration)   // calendar provider stores trigger in minutes
-
-            // compare attendees
-            assertEquals(2, event2.attendees.size)
-            assertEquals(event.attendees[0].calAddress, event2.attendees[0].calAddress)
-            assertEquals(event.attendees[1].calAddress, event2.attendees[1].calAddress)
-
-            // compare exception
-            assertEquals(1, event2.exceptions.size)
-            val exception2 = event2.exceptions.first
-            assertEquals(exception.recurrenceId!!.date, exception2.recurrenceId!!.date)
-            assertEquals(exception.summary, exception2.summary)
-            assertEquals(exception.dtStart, exception2.dtStart)
-            assertEquals(exception.dtEnd, exception2.dtEnd)
-
-            // compare exception alarm
-            assertEquals(1, exception2.alarms.size)
-            alarm2 = exception2.alarms.first
-            assertEquals(exception.summary, alarm2.description.value)
-            assertEquals(Duration.ofMinutes(-(2*24*60 + 60*3 + 4)), alarm2.trigger.duration)   // calendar provider stores trigger in minutes
-
-            // compare exception attendee
-            assertEquals(1, exception2.attendees.size)
-            assertEquals(exception.attendees.first.calAddress, exception2.attendees.first.calAddress)
-
-            // compare EXDATE
-            assertEquals(1, event2.exDates.size)
-            assertEquals(event.exDates.first, event2.exDates.first)
-
-            // compare unknown properties
-            assertArrayEquals(event.unknownProperties.toArray(), event2.unknownProperties.toArray())
-        } finally {
-            testEvent.delete()
+    fun testBuildEvent_Summary() {
+        buildEvent(true) {
+            summary = "Sample Summary"
+        }.let { result ->
+            assertEquals("Sample Summary", result.get(Events.TITLE))
         }
     }
+
+    @Test
+    fun testBuildEvent_Location() {
+        buildEvent(true) {
+            location = "Sample Location"
+        }.let { result ->
+            assertEquals("Sample Location", result.get(Events.EVENT_LOCATION))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Description() {
+        buildEvent(true) {
+            description = "Sample Description"
+        }.let { result ->
+            assertEquals("Sample Description", result.get(Events.DESCRIPTION))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Color_WhenNotAvailable() {
+        AndroidCalendar.removeColors(provider, testAccount)
+        buildEvent(true) {
+            color = Css3Color.darkseagreen
+        }.let { result ->
+            assertNull(result.get(Events.CALENDAR_COLOR_KEY))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Color_WhenAvailable() {
+        AndroidCalendar.insertColors(provider, testAccount)
+        buildEvent(true) {
+            color = Css3Color.darkseagreen
+        }.let { result ->
+            assertEquals(Css3Color.darkseagreen.name, result.get(Events.EVENT_COLOR_KEY))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Organizer_NotGroupScheduled() {
+        buildEvent(true) {
+            organizer = Organizer("mailto:organizer@example.com")
+        }.let { result ->
+            assertNull(result.get(Events.ORGANIZER))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Organizer_MailTo() {
+        buildEvent(true) {
+            organizer = Organizer("mailto:organizer@example.com")
+            attendees += Attendee("mailto:attendee@example.com")
+        }.let { result ->
+            assertEquals("organizer@example.com", result.get(Events.ORGANIZER))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Organizer_EmailParameter() {
+        buildEvent(true) {
+            organizer = Organizer("local-id:user").apply {
+                parameters.add(Email("organizer@example.com"))
+            }
+            attendees += Attendee("mailto:attendee@example.com")
+        }.let { result ->
+            assertEquals("organizer@example.com", result.get(Events.ORGANIZER))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Organizer_NotEmail() {
+        buildEvent(true) {
+            organizer = Organizer("local-id:user")
+            attendees += Attendee("mailto:attendee@example.com")
+        }.let { result ->
+            assertNull(result.get(Events.ORGANIZER))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Status_Confirmed() {
+        buildEvent(true) {
+            status = Status.VEVENT_CONFIRMED
+        }.let { result ->
+            assertEquals(Events.STATUS_CONFIRMED, result.getAsInteger(Events.STATUS))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Status_Cancelled() {
+        buildEvent(true) {
+            status = Status.VEVENT_CANCELLED
+        }.let { result ->
+            assertEquals(Events.STATUS_CANCELED, result.getAsInteger(Events.STATUS))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Status_Tentative() {
+        buildEvent(true) {
+            status = Status.VEVENT_TENTATIVE
+        }.let { result ->
+            assertEquals(Events.STATUS_TENTATIVE, result.getAsInteger(Events.STATUS))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Status_Invalid() {
+        buildEvent(true) {
+            status = Status.VTODO_IN_PROCESS
+        }.let { result ->
+            assertEquals(Events.STATUS_TENTATIVE, result.getAsInteger(Events.STATUS))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Status_None() {
+        buildEvent(true) {
+        }.let { result ->
+            assertNull(result.get(Events.STATUS))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Opaque_True() {
+        buildEvent(true) {
+            opaque = true
+        }.let { result ->
+            assertEquals(Events.AVAILABILITY_BUSY, result.getAsInteger(Events.AVAILABILITY))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Opaque_False() {
+        buildEvent(true) {
+            opaque = false
+        }.let { result ->
+            assertEquals(Events.AVAILABILITY_FREE, result.getAsInteger(Events.AVAILABILITY))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Classification_Public() {
+        buildEvent(true) {
+            classification = Clazz.PUBLIC
+        }.let { result ->
+            assertEquals(Events.ACCESS_PUBLIC, result.getAsInteger(Events.ACCESS_LEVEL))
+            assertNull(firstUnknownProperty(result))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Classification_Private() {
+        buildEvent(true) {
+            classification = Clazz.PRIVATE
+        }.let { result ->
+            assertEquals(Events.ACCESS_PRIVATE, result.getAsInteger(Events.ACCESS_LEVEL))
+            assertNull(firstUnknownProperty(result))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Classification_Confidential() {
+        buildEvent(true) {
+            classification = Clazz.CONFIDENTIAL
+        }.let { result ->
+            assertEquals(Events.ACCESS_CONFIDENTIAL, result.getAsInteger(Events.ACCESS_LEVEL))
+            assertEquals(Clazz.CONFIDENTIAL, firstUnknownProperty(result))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Classification_Custom() {
+        buildEvent(true) {
+            classification = Clazz("TOP-SECRET")
+        }.let { result ->
+            assertEquals(Events.ACCESS_PRIVATE, result.getAsInteger(Events.ACCESS_LEVEL))
+            assertEquals(Clazz("TOP-SECRET"), firstUnknownProperty(result))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Classification_None() {
+        buildEvent(true) {
+        }.let { result ->
+            assertEquals(Events.ACCESS_PUBLIC, result.getAsInteger(Events.ACCESS_LEVEL))
+            assertNull(firstUnknownProperty(result))
+        }
+    }
+
+    // TODO tests: build alarms, attendees, exceptions, unknown properties
+
+
+    private fun populateEvent(
+            automaticDates: Boolean,
+            asSyncAdapter: Boolean = false,
+            insertCallback: (id: Long) -> Unit = {},
+            valuesBuilder: ContentValues.() -> Unit
+    ): Event {
+        val values = ContentValues()
+        values.put(Events.CALENDAR_ID, calendar.id)
+        if (automaticDates) {
+            values.put(Events.DTSTART, 1592733600000L)  // 21/06/2020 12:00 +0200
+            values.put(Events.EVENT_TIMEZONE, "Europe/Berlin")
+            values.put(Events.DTEND, 1592742600000L)    // 21/06/2020 14:30 +0200
+            values.put(Events.EVENT_END_TIMEZONE, "Europe/Berlin")
+        }
+        valuesBuilder(values)
+        Ical4Android.log.info("Inserting test event: $values")
+        val uri = provider.insert(
+                if (asSyncAdapter) calendar.syncAdapterURI(Events.CONTENT_URI) else Events.CONTENT_URI,
+                values)!!
+        val id = ContentUris.parseId(uri)
+
+        // insert additional rows etc.
+        insertCallback(id)
+
+        val androidEvent = calendar.findById(id)
+        return androidEvent.event!!
+    }
+
+    @Test
+    fun testPopulateEvent_NonAllDay_NonRecurring() {
+        populateEvent(false) {
+            put(Events.DTSTART, 1592733600000L)  // 21/06/2020 12:00 +0200
+            put(Events.EVENT_TIMEZONE, "Europe/Vienna")
+            put(Events.DTEND, 1592742600000L)    // 21/06/2020 14:30 +0200
+            put(Events.EVENT_END_TIMEZONE, "Europe/Vienna")
+        }.let { result ->
+            assertEquals(DtStart(DateTime("20200621T120000", tzVienna)), result.dtStart)
+            assertEquals(DtEnd(DateTime("20200621T143000", tzVienna)), result.dtEnd)
+            assertNull(result.duration)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_NonAllDay_NonRecurring_MixedZones() {
+        populateEvent(false) {
+            put(Events.DTSTART, 1592733600000L)  // 21/06/2020 18:00 +0800
+            put(Events.EVENT_TIMEZONE, "Asia/Shanghai")
+            put(Events.DTEND, 1592742600000L)    // 21/06/2020 14:30 +0200
+            put(Events.EVENT_END_TIMEZONE, "Europe/Vienna")
+        }.let { result ->
+            assertEquals(DtStart(DateTime("20200621T180000", tzShanghai)), result.dtStart)
+            assertEquals(DtEnd(DateTime("20200621T143000", tzVienna)), result.dtEnd)
+            assertNull(result.duration)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_NonAllDay_NonRecurring_Duration() {
+        /* This should not happen, because according to the documentation, non-recurring events MUST
+        have a dtEnd. However, the calendar provider doesn't enforce this for non-sync-adapters. */
+        populateEvent(false, asSyncAdapter = false) {
+            put(Events.DTSTART, 1592733600000L)  // 21/06/2020 18:00 +0800
+            put(Events.EVENT_TIMEZONE, "Asia/Shanghai")
+            put(Events.DURATION, "PT1H")
+        }.let { result ->
+            assertEquals(DtStart(DateTime("20200621T180000", tzShanghai)), result.dtStart)
+            assertNull(result.dtEnd)
+            assertEquals(Duration(null, "PT1H"), result.duration)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_NonAllDay_NonRecurring_NoTime() {
+        populateEvent(false) {
+            put(Events.DTSTART, 1592742600000L)  // 21/06/2020 14:30 +0200
+            put(Events.EVENT_TIMEZONE, "Europe/Vienna")
+            put(Events.DTEND, 1592742600000L)    // 21/06/2020 14:30 +0200
+            put(Events.EVENT_END_TIMEZONE, "Europe/Vienna")
+        }.let { result ->
+            assertEquals(DtStart(DateTime("20200621T143000", tzVienna)), result.dtStart)
+            assertNull(result.dtEnd)
+            assertNull(result.duration)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_AllDay_NonRecurring_NoTime() {
+        populateEvent(false) {
+            put(Events.ALL_DAY, 1)
+            put(Events.DTSTART, 1592697600000L)  // 21/06/2020
+            put(Events.EVENT_TIMEZONE, AndroidTimeUtils.TZID_ALLDAY)
+            put(Events.DTEND, 1592697600000L)    // 21/06/2020
+            put(Events.EVENT_END_TIMEZONE, AndroidTimeUtils.TZID_ALLDAY)
+        }.let { result ->
+            assertEquals(DtStart(Date("20200621")), result.dtStart)
+            assertNull(result.dtEnd)
+            assertNull(result.duration)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_AllDay_NonRecurring_1Day() {
+        populateEvent(false) {
+            put(Events.ALL_DAY, 1)
+            put(Events.DTSTART, 1592697600000L)  // 21/06/2020
+            put(Events.EVENT_TIMEZONE, AndroidTimeUtils.TZID_ALLDAY)
+            put(Events.DTEND, 1592784000000L)    // 22/06/2020
+            put(Events.EVENT_END_TIMEZONE, AndroidTimeUtils.TZID_ALLDAY)
+        }.let { result ->
+            assertEquals(DtStart(Date("20200621")), result.dtStart)
+            assertEquals(DtEnd(Date("20200622")), result.dtEnd)
+            assertNull(result.duration)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_AllDay_NonRecurring_AllDayDuration() {
+        /* This should not happen, because according to the documentation, non-recurring events MUST
+        have a dtEnd. However, the calendar provider doesn't enforce this for non-sync-adapters. */
+        populateEvent(false, asSyncAdapter = false) {
+            put(Events.ALL_DAY, 1)
+            put(Events.DTSTART, 1592697600000L)  // 21/06/2020
+            put(Events.EVENT_TIMEZONE, AndroidTimeUtils.TZID_ALLDAY)
+            put(Events.DURATION, "P1W")
+        }.let { result ->
+            assertEquals(DtStart(Date("20200621")), result.dtStart)
+            assertNull(result.dtEnd)
+            assertEquals(Duration(null, "P1W"), result.duration)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_AllDay_NonRecurring_NonAllDayDuration_LessThanOneDay() {
+        /* This should not happen, because according to the documentation, non-recurring events MUST
+        have a dtEnd. However, the calendar provider doesn't enforce this for non-sync-adapters. */
+        populateEvent(false, asSyncAdapter = false) {
+            put(Events.ALL_DAY, 1)
+            put(Events.DTSTART, 1592697600000L)  // 21/06/2020
+            put(Events.EVENT_TIMEZONE, AndroidTimeUtils.TZID_ALLDAY)
+            put(Events.DURATION, "PT1H30M")
+        }.let { result ->
+            assertEquals(DtStart(Date("20200621")), result.dtStart)
+            assertNull(result.dtEnd)
+            assertNull(result.duration)
+        }
+    }
+    @Test
+    fun testPopulateEvent_AllDay_NonRecurring_NonAllDayDuration_MoreThanOneDay() {
+        /* This should not happen, because according to the documentation, non-recurring events MUST
+        have a dtEnd. However, the calendar provider doesn't enforce this for non-sync-adapters. */
+        populateEvent(false, asSyncAdapter = false) {
+            put(Events.ALL_DAY, 1)
+            put(Events.DTSTART, 1592697600000L)  // 21/06/2020
+            put(Events.EVENT_TIMEZONE, AndroidTimeUtils.TZID_ALLDAY)
+            put(Events.DURATION, "PT49H2M")
+        }.let { result ->
+            assertEquals(DtStart(Date("20200621")), result.dtStart)
+            assertNull(result.dtEnd)
+            assertEquals(Duration(null, "P2D"), result.duration)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Summary() {
+        populateEvent(true) {
+            put(Events.TITLE, "Sample Title")
+        }.let { result ->
+            assertEquals("Sample Title", result.summary)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Location() {
+        populateEvent(true) {
+            put(Events.EVENT_LOCATION, "Sample Location")
+        }.let { result ->
+            assertEquals("Sample Location", result.location)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Description() {
+        populateEvent(true) {
+            put(Events.DESCRIPTION, "Sample Description")
+        }.let { result ->
+            assertEquals("Sample Description", result.description)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Color() {
+        AndroidCalendar.insertColors(provider, testAccount)
+        populateEvent(true) {
+            put(Events.EVENT_COLOR_KEY, Css3Color.silver.name)
+        }.let { result ->
+            assertEquals(Css3Color.silver, result.color)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Status_Confirmed() {
+        populateEvent(true) {
+            put(Events.STATUS, Events.STATUS_CONFIRMED)
+        }.let { result ->
+            assertEquals(Status.VEVENT_CONFIRMED, result.status)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Status_Tentative() {
+        populateEvent(true) {
+            put(Events.STATUS, Events.STATUS_TENTATIVE)
+        }.let { result ->
+            assertEquals(Status.VEVENT_TENTATIVE, result.status)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Status_Cancelled() {
+        populateEvent(true) {
+            put(Events.STATUS, Events.STATUS_CANCELED)
+        }.let { result ->
+            assertEquals(Status.VEVENT_CANCELLED, result.status)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Status_None() {
+        populateEvent(true) {
+        }.let { result ->
+            assertNull(result.status)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Availability_Busy() {
+        populateEvent(true) {
+            put(Events.AVAILABILITY, Events.AVAILABILITY_BUSY)
+        }.let { result ->
+            assertTrue(result.opaque)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Availability_Tentative() {
+        populateEvent(true) {
+            put(Events.AVAILABILITY, Events.AVAILABILITY_TENTATIVE)
+        }.let { result ->
+            assertTrue(result.opaque)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Availability_Free() {
+        populateEvent(true) {
+            put(Events.AVAILABILITY, Events.AVAILABILITY_FREE)
+        }.let { result ->
+            assertFalse(result.opaque)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Organizer_NotGroupScheduled() {
+        populateEvent(true) {
+        }.let { result ->
+            assertNull(result.organizer)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Organizer_NotGroupScheduled_ExplicitOrganizer() {
+        populateEvent(true) {
+            put(Events.ORGANIZER, "sample@example.com")
+        }.let { result ->
+            assertNull(result.organizer)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Organizer_GroupScheduled() {
+        populateEvent(true, valuesBuilder = {
+            put(Events.ORGANIZER, "organizer@example.com")
+        }, insertCallback = { id ->
+            provider.insert(calendar.syncAdapterURI(Attendees.CONTENT_URI), ContentValues().apply {
+                put(Attendees.EVENT_ID, id)
+                put(Attendees.ATTENDEE_EMAIL, "organizer@example.com")
+                put(Attendees.ATTENDEE_TYPE, Attendees.RELATIONSHIP_ORGANIZER)
+            })
+        }).let { result ->
+            assertEquals("mailto:organizer@example.com", result.organizer?.value)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Classification_Public() {
+        populateEvent(true) {
+            put(Events.ACCESS_LEVEL, Events.ACCESS_PUBLIC)
+        }.let { result ->
+            assertEquals(Clazz.PUBLIC, result.classification)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Classification_Private() {
+        populateEvent(true) {
+            put(Events.ACCESS_LEVEL, Events.ACCESS_PRIVATE)
+        }.let { result ->
+            assertEquals(Clazz.PRIVATE, result.classification)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Classification_Confidential() {
+        populateEvent(true) {
+            put(Events.ACCESS_LEVEL, Events.ACCESS_CONFIDENTIAL)
+        }.let { result ->
+            assertEquals(Clazz.CONFIDENTIAL, result.classification)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Classification_Confidential_Retained() {
+        populateEvent(true, valuesBuilder = {
+            put(Events.ACCESS_LEVEL, Events.ACCESS_DEFAULT)
+        }, insertCallback = { id ->
+            provider.insert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI), ContentValues().apply {
+                put(ExtendedProperties.EVENT_ID, id)
+                put(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
+                put(ExtendedProperties.VALUE, UnknownProperty.toJsonString(Clazz.CONFIDENTIAL))
+            })
+        }).let { result ->
+            assertEquals(Clazz.CONFIDENTIAL, result.classification)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Classification_Default() {
+        populateEvent(true) {
+            put(Events.ACCESS_LEVEL, Events.ACCESS_DEFAULT)
+        }.let { result ->
+            assertNull(result.classification)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Classification_Custom() {
+        populateEvent(true, valuesBuilder = {
+            put(Events.ACCESS_LEVEL, Events.ACCESS_DEFAULT)
+        }, insertCallback = { id ->
+            provider.insert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI), ContentValues().apply {
+                put(ExtendedProperties.EVENT_ID, id)
+                put(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
+                put(ExtendedProperties.VALUE, UnknownProperty.toJsonString(Clazz("TOP-SECRET")))
+            })
+        }).let { result ->
+            assertEquals(Clazz("TOP-SECRET"), result.classification)
+        }
+    }
+
+    @Test
+    fun ttestPopulateEvent_Classification_None() {
+        populateEvent(true) {
+        }.let { result ->
+            assertNull(result.classification)
+        }
+    }
+
+    // TODO tests: populate alarms, attendees, exceptions, unknown properties
+
 
     @Test
     fun testUpdateEvent() {
@@ -597,7 +1072,7 @@ class AndroidEventTest {
         }
     }
 
-    /*@LargeTest
+    @LargeTest
     @Test
     fun testLargeTransactionManyRows() {
         val event = Event()
@@ -615,7 +1090,7 @@ class AndroidEventTest {
         } finally {
             testEvent.delete()
         }
-    }*/
+    }
 
     @Test(expected = CalendarStorageException::class)
     fun testLargeTransactionSingleRow() {
@@ -631,186 +1106,5 @@ class AndroidEventTest {
 
         TestEvent(calendar, event).add()
     }
-
-    @Test
-    fun testAllDayWithoutDtEndOrDuration() {
-        // add event without dtEnd/duration to calendar provider
-        val event = Event()
-        event.summary = "Event without duration"
-        event.dtStart = DtStart(Date("20150501"))
-        val uri = TestEvent(calendar, event).add()
-        assertNotNull(uri)
-
-        val testEvent = calendar.findById(ContentUris.parseId(uri))
-        try {
-            // read again and verify result
-            val event2 = testEvent.event!!
-            // should now be an all-day event (converted by ical4android because events without duration don't show up in Android calendar)
-            assertEquals(event.dtStart, event2.dtStart)
-            assertEquals(event.dtStart!!.date.time + 86400000, event2.dtEnd!!.date.time)
-        } finally {
-            testEvent.delete()
-        }
-    }
-
-    @Test
-    fun testCalculateEndFromDuration() {
-        // add event without dtEnd/duration to calendar provider
-        val event = Event()
-        event.summary = "Event without end, but with duration"
-        event.dtStart = DtStart(DateTime("20150501T020304", tzVienna))
-        event.duration = Duration(null, "PT1H30M")
-        val uri = TestEvent(calendar, event).add()
-        assertNotNull(uri)
-
-        val testEvent = calendar.findById(ContentUris.parseId(uri))
-        try {
-            // read again and verify result
-            val event2 = testEvent.event!!
-            assertEquals(event.dtStart, event2.dtStart)
-            assertEquals(event.dtStart!!.date.time + 90*60000, event2.dtEnd!!.date.time)
-        } finally {
-            testEvent.delete()
-        }
-    }
-
-    @Test
-    fun testAllDayWithZeroDuration() {
-        // add all-day event without dtEnd and duration
-        val event = Event()
-        event.summary = "Event with zero duration"
-        event.dtStart = DtStart(Date("20150501"))
-        val uri = TestEvent(calendar, event).add()
-        assertNotNull(uri)
-
-        val testEvent = calendar.findById(ContentUris.parseId(uri))
-        try {
-            // read again and verify result
-            val event2 = testEvent.event!!
-            // should now be an all-day event with a duration of one day
-            assertTrue(DateUtils.isDate(event2.dtStart))
-            assertEquals(event.dtStart, event2.dtStart)
-            assertEquals(event.dtStart!!.date.time + 86400000, event2.dtEnd!!.date.time)
-        } finally {
-            testEvent.delete()
-        }
-    }
-
-    @Test
-    fun testClassificationConfidential() {
-        val event = Event()
-        event.summary = "Confidential event"
-        event.dtStart = DtStart(Date("20150501"))
-        event.dtEnd = DtEnd(Date("20150502"))
-        event.classification = Clazz.CONFIDENTIAL
-        val uri = TestEvent(calendar, event).add()
-        assertNotNull(uri)
-        val id = ContentUris.parseId(uri)
-
-        // now, the calendar app changes to ACCESS_DEFAULT
-        val values = ContentValues(1)
-        values.put(CalendarContract.Events.ACCESS_LEVEL, CalendarContract.Events.ACCESS_DEFAULT)
-        calendar.provider.update(calendar.syncAdapterURI(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id)),
-                values, null, null)
-
-        val testEvent = calendar.findById(id)
-        try {
-            // read again and verify result
-            val event2 = testEvent.event!!
-            // CONFIDENTIAL has been retained
-            assertTrue(event.unknownProperties.contains(Clazz.CONFIDENTIAL))
-            // should still be CONFIDENTIAL
-            assertEquals(event.classification, event2.classification)
-
-            // now, the calendar app changes to ACCESS_PRIVATE
-            values.put(CalendarContract.Events.ACCESS_LEVEL, CalendarContract.Events.ACCESS_PRIVATE)
-            calendar.provider.update(calendar.syncAdapterURI(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id)),
-                    values, null, null)
-
-            // read again and verify result
-            val testEventPrivate = calendar.findById(id)
-            val eventPrivate = testEventPrivate.event!!
-            // should be PRIVATE
-            assertEquals(Clazz.PRIVATE, eventPrivate.classification)
-            // the retained value is not used in this case
-            assertFalse(eventPrivate.unknownProperties.contains(Clazz.CONFIDENTIAL))
-        } finally {
-            testEvent.delete()
-        }
-    }
-
-    @Test
-    fun testClassificationPrivate() {
-        val event = Event()
-        event.summary = "Private event"
-        event.dtStart = DtStart(Date("20150501"))
-        event.dtEnd = DtEnd(Date("20150502"))
-        event.classification = Clazz.PRIVATE
-        val uri = TestEvent(calendar, event).add()
-        assertNotNull(uri)
-        val id = ContentUris.parseId(uri)
-
-        val testEvent = calendar.findById(id)
-        try {
-            // read again and verify result
-            val event2 = testEvent.event!!
-            // PRIVATE has not been retained
-            assertFalse(event.unknownProperties.contains(Clazz.PRIVATE))
-            // should still be PRIVATE
-            assertEquals(Clazz.PRIVATE, event2.classification)
-        } finally {
-            testEvent.delete()
-        }
-    }
-
-    @Test
-    fun testNoOrganizerWithoutAttendees() {
-        val event = Event()
-        event.summary = "Not a group-scheduled event"
-        event.dtStart = DtStart(Date("20150501"))
-        event.dtEnd = DtEnd(Date("20150502"))
-        event.rRules += RRule("FREQ=DAILY;COUNT=10;INTERVAL=1")
-        event.organizer = Organizer("mailto:test@test.at")
-
-        val exception = Event()
-        exception.recurrenceId = RecurrenceId(Date("20150502"))
-        exception.dtStart = DtStart(Date("20150502"))
-        exception.dtEnd = DtEnd(Date("20150503"))
-        exception.status = Status.VEVENT_CANCELLED
-        exception.organizer = event.organizer
-        event.exceptions += exception
-
-        val uri = TestEvent(calendar, event).add()
-        assertNotNull(uri)
-
-        val testEvent = calendar.findById(ContentUris.parseId(uri))
-        try {
-            // read again and verify result
-            val event2 = testEvent.event!!
-            assertNull(event2.organizer)
-            val exception2 = event2.exceptions.first
-            assertNull(exception2.organizer)
-        } finally {
-            testEvent.delete()
-        }
-    }
-
-    @Test
-    fun testPopulateEventWithoutDuration() {
-        val values = ContentValues()
-        values.put(CalendarContract.Events.CALENDAR_ID, calendar.id)
-        values.put(CalendarContract.Events.DTSTART, 1381330800000L)
-        values.put(CalendarContract.Events.EVENT_TIMEZONE, "Europe/Vienna")
-        values.put(CalendarContract.Events.TITLE, "Without dtend/duration")
-        val uri = provider.insert(syncAdapterURI(CalendarContract.Events.CONTENT_URI, testAccount), values)!!
-
-        val testEvent = calendar.findById(ContentUris.parseId(uri))
-        try {
-            assertNull(testEvent.event!!.dtEnd)
-        } finally {
-            testEvent.delete()
-        }
-    }
-
 
 }

@@ -1,15 +1,15 @@
 package at.bitfire.ical4android
 
-import at.bitfire.ical4android.util.TimeApiHelpers.toIcal4jDate
-import at.bitfire.ical4android.util.TimeApiHelpers.toLocalDate
-import at.bitfire.ical4android.util.TimeApiHelpers.toRfc5545Duration
+import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
+import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
+import at.bitfire.ical4android.util.TimeApiExtensions.toRfc5545Duration
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.*
 
-class TimeApiHelpersTest {
+class TimeApiExtensionsTest {
 
     @Test
     fun testDateToLocalDate() {

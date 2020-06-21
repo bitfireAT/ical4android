@@ -21,12 +21,11 @@ import android.util.Patterns
 import androidx.annotation.CallSuper
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import at.bitfire.ical4android.util.AndroidTimeUtils
-import at.bitfire.ical4android.util.TimeApiHelpers.toIcal4jDate
-import at.bitfire.ical4android.util.TimeApiHelpers.toLocalDate
-import at.bitfire.ical4android.util.TimeApiHelpers.toRfc5545Duration
+import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
+import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
+import at.bitfire.ical4android.util.TimeApiExtensions.toRfc5545Duration
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
@@ -173,6 +172,90 @@ abstract class AndroidEvent(
         Ical4Android.log.log(Level.FINE, "Read event entity from calender provider", row)
         val event = requireNotNull(event)
 
+        val allDay = (row.getAsInteger(Events.ALL_DAY) ?: 0) != 0
+        val tsStart = row.getAsLong(Events.DTSTART) ?: throw CalendarStorageException("Found event without DTSTART")
+        val tsEnd = row.getAsLong(Events.DTEND)
+        val strDuration = AndroidTimeUtils.fixDuration(row.getAsString(Events.DURATION))
+
+        if (allDay) {
+            // use DATE values
+            event.dtStart = DtStart(Date(tsStart))
+            when {
+                tsEnd != null -> {
+                    if (tsEnd < tsStart)
+                        Ical4Android.log.warning("dtEnd $tsEnd (allDay) < dtStart $tsStart (allDay), ignoring")
+                    else if (tsEnd == tsStart)
+                        Ical4Android.log.fine("dtEnd $tsEnd (allDay) = dtStart, won't generate DTEND property")
+                    else /* tsEnd > tsStart */
+                        event.dtEnd = DtEnd(Date(tsEnd))
+                }
+                strDuration != null -> {
+                    var eventDuration: net.fortuna.ical4j.model.property.Duration? = Duration(null, strDuration)
+                    (eventDuration?.duration as? Duration)?.let { dur ->
+                        // rewrite to weeks/days
+                        val days = dur.toDays().toInt()
+                        if (days == 0)
+                            eventDuration = null
+                        else
+                            eventDuration?.duration = Period.ofDays(days)
+                    }
+                    event.duration = eventDuration
+                }
+            }
+
+        } else /* !allDay */ {
+            // use DATE-TIME values
+            val startTz = row.getAsString(Events.EVENT_TIMEZONE)?.let { tzId ->
+                DateUtils.ical4jTimeZone(tzId)
+            }
+            event.dtStart = DtStart(DateTime(tsStart).apply {
+                if (startTz != null)
+                    timeZone = startTz
+            })
+
+            if (tsEnd != null) {
+                if (tsEnd < tsStart)
+                    Ical4Android.log.warning("dtEnd $tsEnd < dtStart $tsStart, ignoring")
+                else if (tsEnd == tsStart)
+                    Ical4Android.log.fine("dtEnd $tsEnd == dtStart, won't generate DTEND property")
+                else /* tsEnd > tsStart */ {
+                    val endTz = row.getAsString(Events.EVENT_END_TIMEZONE)?.let { tzId ->
+                        DateUtils.ical4jTimeZone(tzId)
+                    }
+                    event.dtEnd = DtEnd(DateTime(tsEnd).apply {
+                        if (endTz != null)
+                            timeZone = endTz
+                    })
+                }
+
+            } else if (strDuration != null)
+                event.duration = Duration(null, strDuration)
+
+        }
+
+        // recurrence
+        try {
+            row.getAsString(Events.RRULE)?.let { rulesStr ->
+                for (rule in rulesStr.split(AndroidTimeUtils.RECURRENCE_RULE_SEPARATOR))
+                    event.rRules += RRule(rule)
+            }
+            row.getAsString(Events.RDATE)?.let { datesStr ->
+                val rDate = AndroidTimeUtils.androidStringToRecurrenceSet(datesStr, RDate::class.java, allDay)
+                event.rDates += rDate
+            }
+
+            row.getAsString(Events.EXRULE)?.let { rulesStr ->
+                for (rule in rulesStr.split(AndroidTimeUtils.RECURRENCE_RULE_SEPARATOR))
+                    event.exRules += ExRule(null, rule)
+            }
+            row.getAsString(Events.EXDATE)?.let { datesStr ->
+                val exDate = AndroidTimeUtils.androidStringToRecurrenceSet(datesStr, ExDate::class.java, allDay)
+                event.exDates += exDate
+            }
+        } catch (e: Exception) {
+            Ical4Android.log.log(Level.WARNING, "Couldn't parse recurrence rules, ignoring", e)
+        }
+
         event.summary = row.getAsString(Events.TITLE)
         event.location = row.getAsString(Events.EVENT_LOCATION)
         event.description = row.getAsString(Events.DESCRIPTION)
@@ -185,65 +268,6 @@ abstract class AndroidEvent(
             }
         }
 
-        val allDay = (row.getAsInteger(Events.ALL_DAY) ?: 0) != 0
-        val tsStart = row.getAsLong(Events.DTSTART)
-        val tsEnd = row.getAsLong(Events.DTEND)
-        val duration = row.getAsString(Events.DURATION)?.let { DateUtils.fixDuration(it) }
-
-        if (allDay) {
-            // use DATE values
-            event.dtStart = DtStart(Date(tsStart))
-            when {
-                tsEnd != null -> event.dtEnd = DtEnd(Date(tsEnd))
-                duration != null -> event.duration = Duration(null, duration)
-            }
-        } else {
-            // use DATE-TIME values
-            var tz: TimeZone? = null
-            row.getAsString(Events.EVENT_TIMEZONE)?.let { tzId ->
-                Ical4Android.log.info("Loading timezone $tzId")
-                tz = DateUtils.ical4jTimeZone(tzId)
-            }
-
-            val start = DateTime(tsStart)
-            tz?.let { start.timeZone = it }
-            event.dtStart = DtStart(start)
-
-            when {
-                tsEnd != null -> {
-                    val end = DateTime(tsEnd)
-                    tz?.let { end.timeZone = it }
-                    event.dtEnd = DtEnd(end)
-                }
-                duration != null -> event.duration = Duration(null, duration)
-            }
-        }
-
-        // recurrence
-        try {
-            row.getAsString(Events.RRULE)?.let { rulesStr ->
-                for (rule in rulesStr.split('\n'))
-                    event.rRules += RRule(rule)
-            }
-            row.getAsString(Events.RDATE)?.let {
-                val rDate = AndroidTimeUtils.androidStringToRecurrenceSet(it, RDate::class.java, allDay)
-                event.rDates += rDate
-            }
-
-            row.getAsString(Events.EXRULE)?.let { rulesStr ->
-                for (rule in rulesStr.split('\n'))
-                    event.exRules += ExRule(null, rule)
-            }
-            row.getAsString(Events.EXDATE)?.let {
-                val exDate = AndroidTimeUtils.androidStringToRecurrenceSet(it, ExDate::class.java, allDay)
-                event.exDates += exDate
-            }
-        } catch (e: ParseException) {
-            Ical4Android.log.log(Level.WARNING, "Couldn't parse recurrence rules, ignoring", e)
-        } catch (e: IllegalArgumentException) {
-            Ical4Android.log.log(Level.WARNING, "Invalid recurrence rules, ignoring", e)
-        }
-
         // status
         when (row.getAsInteger(Events.STATUS)) {
             Events.STATUS_CONFIRMED -> event.status = Status.VEVENT_CONFIRMED
@@ -254,8 +278,9 @@ abstract class AndroidEvent(
         // availability
         event.opaque = row.getAsInteger(Events.AVAILABILITY) != Events.AVAILABILITY_FREE
 
-        // set ORGANIZER if there's attendee data
-        if (row.getAsInteger(Events.HAS_ATTENDEE_DATA) != 0 && row.containsKey(Events.ORGANIZER))
+        // ORGANIZER must only be set for group-scheduled events (= events with attendees),
+        // so it may have to be removed after processing the attendees. This is done in the getter of [event].
+        if (row.containsKey(Events.ORGANIZER))
             try {
                 event.organizer = Organizer(URI("mailto", row.getAsString(Events.ORGANIZER), null))
             } catch (e: URISyntaxException) {
@@ -494,8 +519,8 @@ abstract class AndroidEvent(
                     Ical4Android.log.log(Level.WARNING, "Couldn't parse DATE part of DATE-TIME RECURRENCE-ID", e)
                 }
             }
-            exBuilder.withValue(Events.ORIGINAL_ALL_DAY, if (event.isAllDay()) 1 else 0)
-                    .withValue(Events.ORIGINAL_INSTANCE_TIME, date.time)
+            exBuilder   .withValue(Events.ORIGINAL_ALL_DAY, if (event.isAllDay()) 1 else 0)
+                        .withValue(Events.ORIGINAL_INSTANCE_TIME, date.time)
 
             val idxException = batch.nextBackrefIdx()
             batch.enqueue(BatchOperation.Operation(exBuilder, Events.ORIGINAL_ID, idxEvent))
@@ -565,6 +590,12 @@ abstract class AndroidEvent(
         val allDay = DateUtils.isDate(dtStart)
         val recurring = event.rRules.isNotEmpty() || event.rDates.isNotEmpty()
 
+        /**
+         * [RFC 5545 3.8.4.1 Attendee]
+         * This property MUST be specified in an iCalendar object that specifies a group-scheduled calendar entity.
+         */
+        val groupScheduled = event.attendees.isNotEmpty()
+
         // make sure that time zone is supported by Android
         AndroidTimeUtils.androidifyTimeZone(dtStart)
 
@@ -578,7 +609,7 @@ abstract class AndroidEvent(
            - a calendar_id */
 
         builder .withValue(Events.CALENDAR_ID, calendar.id)
-                .withValue(Events.HAS_ATTENDEE_DATA, 1 /* we know information about all attendees and not only ourselves */)
+                .withValue(Events.HAS_ATTENDEE_DATA, 1 /* we always know information about all attendees and not only ourselves */)
 
                 .withValue(Events.DTSTART, dtStart.date.time)
                 .withValue(Events.ALL_DAY, if (allDay) 1 else 0)
@@ -627,6 +658,12 @@ abstract class AndroidEvent(
             if (event.rDates.isNotEmpty()) {
                 for (rDate in event.rDates)
                     AndroidTimeUtils.androidifyTimeZone(rDate)
+
+                // Calendar provider drops DTSTART instance when using RDATE [https://code.google.com/p/android/issues/detail?id=171292]
+                val listWithDtStart = DateList()
+                listWithDtStart.add(dtStart.date)
+                event.rDates.addFirst(RDate(listWithDtStart))
+
                 builder.withValue(Events.RDATE, AndroidTimeUtils.recurrenceSetsToAndroidString(event.rDates, allDay))
             }
 
@@ -692,6 +729,11 @@ abstract class AndroidEvent(
         }
 
         event.organizer?.let { organizer ->
+            if (!groupScheduled) {
+                Ical4Android.log.fine("Ignoring ORGANIZER of non-group-scheduled event")
+                return@let
+            }
+
             val email: String?
             val uri = organizer.calAddress
             email = if (uri.scheme.equals("mailto", true))
@@ -717,9 +759,9 @@ abstract class AndroidEvent(
         builder.withValue(Events.AVAILABILITY, if (event.opaque) Events.AVAILABILITY_BUSY else Events.AVAILABILITY_FREE)
 
         when (event.classification) {
-            Clazz.PUBLIC -> builder.withValue(Events.ACCESS_LEVEL, Events.ACCESS_PUBLIC)
-            Clazz.PRIVATE -> builder.withValue(Events.ACCESS_LEVEL, Events.ACCESS_PRIVATE)
+            null, Clazz.PUBLIC -> builder.withValue(Events.ACCESS_LEVEL, Events.ACCESS_PUBLIC)
             Clazz.CONFIDENTIAL -> builder.withValue(Events.ACCESS_LEVEL, Events.ACCESS_CONFIDENTIAL)
+            else /* including Events.ACCESS_PRIVATE */ -> builder.withValue(Events.ACCESS_LEVEL, Events.ACCESS_PRIVATE)
         }
 
         Ical4Android.log.log(Level.FINE, "Built event object", builder.build())

@@ -14,7 +14,7 @@ class AndroidTimeZonesTest {
         for (id in ZoneId.getAvailableZoneIds()) {
             val name = ZoneId.of(id).getDisplayName(TextStyle.FULL, Locale.US)
             val info = try {
-                DateUtils.tzRegistry.getTimeZone(id)
+                DateUtils.ical4jTimeZone(id)
             } catch(e: Exception) {
                 Assert.fail("Invalid system timezone $name ($id)")
             }

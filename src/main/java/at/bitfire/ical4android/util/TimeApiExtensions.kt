@@ -9,7 +9,7 @@ import java.time.Period
 import java.time.temporal.TemporalAmount
 import java.util.*
 
-object TimeApiHelpers {
+object TimeApiExtensions {
 
     val DAYS_PER_WEEK = 7
 
@@ -18,8 +18,10 @@ object TimeApiHelpers {
     val SECONDS_PER_DAY = SECONDS_PER_HOUR * 24
     val SECONDS_PER_WEEK = SECONDS_PER_DAY * DAYS_PER_WEEK
 
-    val tzUTC by lazy { TimeZone.getTimeZone(TimeZones.UTC_ID) }
+    val tzUTC by lazy { TimeZones.getUtcTimeZone() }
 
+
+    /***** Dates *****/
 
     fun Date.toLocalDate(): LocalDate {
         val cal = Calendar.getInstance(tzUTC)
@@ -36,6 +38,9 @@ object TimeApiHelpers {
         cal.set(year, monthValue - 1, dayOfMonth)
         return Date(cal)
     }
+
+
+    /***** Durations *****/
 
     /**
      * Converts a [TemporalAmount] to an RFC5545 duration value, which only uses

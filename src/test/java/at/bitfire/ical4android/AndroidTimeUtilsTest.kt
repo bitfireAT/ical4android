@@ -274,4 +274,21 @@ class AndroidTimeUtilsTest {
         assertEquals("20150101T000000Z,20150702T000000Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, true))
     }
 
+
+    @Test
+    fun testFixFromAndroidDuration() {
+        assertEquals("PT3600S", AndroidTimeUtils.fixDuration("3600S"))
+        assertEquals("PT3600S", AndroidTimeUtils.fixDuration("P3600S"))
+        assertEquals("+PT3600S", AndroidTimeUtils.fixDuration("+P3600S"))
+        assertEquals("PT3600S", AndroidTimeUtils.fixDuration("PT3600S"))
+        assertEquals("+PT3600S", AndroidTimeUtils.fixDuration("+PT3600S"))
+        assertEquals("P10D", AndroidTimeUtils.fixDuration("P1W3D"))
+        assertEquals("P14DT3600S", AndroidTimeUtils.fixDuration("P2W3600S"))
+        assertEquals("-P3DT4H5M6S", AndroidTimeUtils.fixDuration("-P3D4H5M6S"))
+        assertEquals("PT3H2M1S", AndroidTimeUtils.fixDuration("P1S2M3H"))
+        assertEquals("P4DT3H2M1S", AndroidTimeUtils.fixDuration("P1S2M3H4D"))
+        assertEquals("P11DT3H2M1S", AndroidTimeUtils.fixDuration("P1S2M3H4D1W"))
+        assertEquals("PT1H0M10S", AndroidTimeUtils.fixDuration("1H10S"))
+    }
+
 }

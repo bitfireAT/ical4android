@@ -207,7 +207,7 @@ abstract class AndroidTask(
         }
 
         values.getAsString(Tasks.DURATION)?.let { duration ->
-            val fixedDuration = DateUtils.fixDuration(duration)
+            val fixedDuration = AndroidTimeUtils.fixDuration(duration)
             task.duration = Duration(null, fixedDuration)
         }
 

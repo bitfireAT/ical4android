@@ -13,7 +13,7 @@ class EventAndroidTest {
 
     @Test
     fun testGenerateEtcUTC() {
-        val tzUTC = DateUtils.tzRegistry.getTimeZone("Etc/UTC")
+        val tzUTC = DateUtils.ical4jTimeZone("Etc/UTC")
 
         val e = Event()
         e.uid = "etc-utc-test@example.com"

@@ -24,16 +24,16 @@ import java.time.Period
 class ICalendarTest {
 
 	// Austria (Europa/Vienna) uses DST regularly
-	val tzVienna = DateUtils.tzRegistry.getTimeZone("Europe/Vienna")
+	val tzVienna = DateUtils.ical4jTimeZone("Europe/Vienna")
 
 	// UTC timezone
-	val tzUTC = DateUtils.tzRegistry.getTimeZone("Etc/UTC").vTimeZone
+	val tzUTC = DateUtils.ical4jTimeZone("Etc/UTC").vTimeZone
 
 	// Pakistan (Asia/Karachi) used DST only in 2002, 2008 and 2009; no known future occurrences
-	val tzKarachi = DateUtils.tzRegistry.getTimeZone("Asia/Karachi").vTimeZone
+	val tzKarachi = DateUtils.ical4jTimeZone("Asia/Karachi").vTimeZone
 
 	// Somalia (Africa/Mogadishu) has never used DST
-	val tzMogadishu = DateUtils.tzRegistry.getTimeZone("Africa/Mogadishu").vTimeZone
+	val tzMogadishu = DateUtils.ical4jTimeZone("Africa/Mogadishu").vTimeZone
 
 	// current time stamp
 	val currentTime = java.util.Date().time

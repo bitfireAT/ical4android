@@ -19,17 +19,14 @@ import java.util.*
 class DateUtilsTest {
 
     private val tzIdToronto = "America/Toronto"
-    private val tzToronto = DateUtils.tzRegistry.getTimeZone(tzIdToronto)
-    init {
-        assertNotNull(tzToronto)
-    }
-    
+    private val tzToronto = DateUtils.ical4jTimeZone(tzIdToronto)!!
+
     @Test
     fun testTimeZoneRegistry() {
-        assertNotNull(DateUtils.tzRegistry.getTimeZone("Europe/Vienna"))
+        assertNotNull(DateUtils.ical4jTimeZone("Europe/Vienna"))
 
         // https://github.com/ical4j/ical4j/issues/207
-        assertNotNull(DateUtils.tzRegistry.getTimeZone("EST"))
+        assertNotNull(DateUtils.ical4jTimeZone("EST"))
     }
 
 
@@ -41,6 +38,7 @@ class DateUtilsTest {
         assertEquals(TimeZone.getDefault().id, DateUtils.findAndroidTimezoneID(null))
         assertEquals(TimeZone.getDefault().id, DateUtils.findAndroidTimezoneID("nothing-to-be-found"))
     }
+
 
     @Test
     fun testIsDate() {
@@ -54,22 +52,6 @@ class DateUtilsTest {
         assertFalse(DateUtils.isDateTime(DtEnd(Date("20200101"))))
         assertTrue(DateUtils.isDateTime(DtEnd(DateTime("20200101T010203Z"))))
         assertFalse(DateUtils.isDateTime(null))
-    }
-
-    @Test
-    fun testFixDuration() {
-        assertEquals("PT3600S", DateUtils.fixDuration("3600S"))
-        assertEquals("PT3600S", DateUtils.fixDuration("P3600S"))
-        assertEquals("+PT3600S", DateUtils.fixDuration("+P3600S"))
-        assertEquals("PT3600S", DateUtils.fixDuration("PT3600S"))
-        assertEquals("+PT3600S", DateUtils.fixDuration("+PT3600S"))
-        assertEquals("P10D", DateUtils.fixDuration("P1W3D"))
-        assertEquals("P14DT3600S", DateUtils.fixDuration("P2W3600S"))
-        assertEquals("-P3DT4H5M6S", DateUtils.fixDuration("-P3D4H5M6S"))
-        assertEquals("PT3H2M1S", DateUtils.fixDuration("P1S2M3H"))
-        assertEquals("P4DT3H2M1S", DateUtils.fixDuration("P1S2M3H4D"))
-        assertEquals("P11DT3H2M1S", DateUtils.fixDuration("P1S2M3H4D1W"))
-        assertEquals("PT1H0M10S", DateUtils.fixDuration("1H10S"))
     }
 
 }

@@ -318,6 +318,6 @@ class Event: ICalendar() {
      * @return *true* if [dtStart] is a DATE value; *false* otherwise ([dtStart] is a DATETIME value or *null*)
      */
     @Deprecated("Use DateUtils.isDate(dtStart) instead")
-    fun isAllDay() = dtStart != null && DateUtils.isDate(dtStart)
+    fun isAllDay() = DateUtils.isDate(dtStart)
 
 }

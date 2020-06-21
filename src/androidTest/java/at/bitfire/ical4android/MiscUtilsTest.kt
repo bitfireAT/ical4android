@@ -17,7 +17,7 @@ import org.junit.Test
 
 class MiscUtilsTest {
 
-    private val tzVienna = DateUtils.tzRegistry.getTimeZone("Europe/Vienna")
+    private val tzVienna = DateUtils.ical4jTimeZone("Europe/Vienna")
 
 
     @Test
