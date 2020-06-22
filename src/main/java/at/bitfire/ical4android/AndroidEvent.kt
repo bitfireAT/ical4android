@@ -56,6 +56,8 @@ abstract class AndroidEvent(
 
     companion object {
 
+        const val MUTATORS_SEPARATOR = ','
+
         @Deprecated("New serialization format", ReplaceWith("EXT_UNKNOWN_PROPERTY2"))
         const val EXT_UNKNOWN_PROPERTY = "unknown-property"
 
@@ -73,12 +75,6 @@ abstract class AndroidEvent(
          */
         const val EXT_CATEGORIES = "categories"
         const val EXT_CATEGORIES_SEPARATOR = '\\'
-
-        /**
-         * EMAIL parameter name (as used for ORGANIZER). Not declared in ical4j Parameters class yet.
-         */
-        private const val PARAMETER_EMAIL = "EMAIL"
-
     }
 
     var id: Long? = null
@@ -171,6 +167,11 @@ abstract class AndroidEvent(
     protected open fun populateEvent(row: ContentValues) {
         Ical4Android.log.log(Level.FINE, "Read event entity from calender provider", row)
         val event = requireNotNull(event)
+
+        row.getAsString(Events.MUTATORS)?.let { strPackages ->
+            val packages = strPackages.split(MUTATORS_SEPARATOR).toSet()
+            event.userAgents.addAll(packages)
+        }
 
         val allDay = (row.getAsInteger(Events.ALL_DAY) ?: 0) != 0
         val tsStart = row.getAsLong(Events.DTSTART) ?: throw CalendarStorageException("Found event without DTSTART")
@@ -349,6 +350,7 @@ abstract class AndroidEvent(
                 Attendees.ATTENDEE_STATUS_ACCEPTED -> params.add(PartStat.ACCEPTED)
                 Attendees.ATTENDEE_STATUS_DECLINED -> params.add(PartStat.DECLINED)
                 Attendees.ATTENDEE_STATUS_TENTATIVE -> params.add(PartStat.TENTATIVE)
+                Attendees.ATTENDEE_STATUS_NONE -> { /* no information, don't add PARTSTAT */ }
             }
 
             event!!.attendees.add(attendee)
@@ -738,10 +740,8 @@ abstract class AndroidEvent(
             val uri = organizer.calAddress
             email = if (uri.scheme.equals("mailto", true))
                 uri.schemeSpecificPart
-            else {
-                val emailParam = organizer.getParameter(PARAMETER_EMAIL) as? Email
-                emailParam?.value
-            }
+            else
+                organizer.getParameter<Parameter>(ICalendar.PARAMETER_EMAIL)?.value
             if (email != null)
                 builder.withValue(Events.ORGANIZER, email)
             else
@@ -804,7 +804,7 @@ abstract class AndroidEvent(
             // TODO: use attendee.getParameter<Email>(Parameter.EMAIL) when
             // https://github.com/ical4j/ical4j/pull/413 and
             // https://github.com/ical4j/ical4j/pull/414 are merged
-            (attendee.getParameter<Parameter>(PARAMETER_EMAIL))?.let { email ->
+            (attendee.getParameter<Parameter>(ICalendar.PARAMETER_EMAIL))?.let { email ->
                 builder.withValue(Attendees.ATTENDEE_EMAIL, email.value)
             }
         }
@@ -813,7 +813,7 @@ abstract class AndroidEvent(
             builder.withValue(Attendees.ATTENDEE_NAME, cn.value)
         }
 
-        var type = Attendees.TYPE_NONE
+        var type: Int
         var relationship = Attendees.RELATIONSHIP_NONE
 
         val cutype = attendee.getParameter(Parameter.CUTYPE) as? CuType
@@ -827,6 +827,7 @@ abstract class AndroidEvent(
 
             val role = attendee.getParameter(Parameter.ROLE) as? Role
 
+            Calendars.CAN_PARTIALLY_UPDATE
             when (role) {
                 Role.CHAIR -> relationship = Attendees.RELATIONSHIP_SPEAKER
                 Role.OPT_PARTICIPANT -> type = Attendees.TYPE_OPTIONAL
@@ -835,12 +836,11 @@ abstract class AndroidEvent(
         }
 
         val status = when(attendee.getParameter(Parameter.PARTSTAT) as? PartStat) {
-            null,
-            PartStat.NEEDS_ACTION -> Attendees.ATTENDEE_STATUS_INVITED
             PartStat.ACCEPTED     -> Attendees.ATTENDEE_STATUS_ACCEPTED
             PartStat.DECLINED     -> Attendees.ATTENDEE_STATUS_DECLINED
             PartStat.TENTATIVE    -> Attendees.ATTENDEE_STATUS_TENTATIVE
-            else -> Attendees.ATTENDEE_STATUS_NONE
+            PartStat.DELEGATED    -> Attendees.ATTENDEE_STATUS_NONE
+            else /* default: PartStat.NEEDS_ACTION */ -> Attendees.ATTENDEE_STATUS_INVITED
         }
 
         builder .withValue(Attendees.ATTENDEE_TYPE, type)

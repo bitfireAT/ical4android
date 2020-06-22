@@ -29,8 +29,8 @@ object UnknownProperty {
      */
     const val MAX_UNKNOWN_PROPERTY_SIZE = 25000
 
-    val propertyFactorySupplier = DefaultPropertyFactorySupplier().get()!!
-    val parameterFactorySupplier = DefaultParameterFactorySupplier().get()!!
+    val propertyFactorySupplier = DefaultPropertyFactorySupplier().get()
+    val parameterFactorySupplier = DefaultParameterFactorySupplier().get()
 
 
     /**

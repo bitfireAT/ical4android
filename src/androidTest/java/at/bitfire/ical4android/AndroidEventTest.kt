@@ -22,10 +22,8 @@ import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
 import at.bitfire.ical4android.impl.TestCalendar
 import at.bitfire.ical4android.impl.TestEvent
 import at.bitfire.ical4android.util.AndroidTimeUtils
+import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.DateList
-import net.fortuna.ical4j.model.DateTime
-import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
@@ -879,13 +877,13 @@ class AndroidEventTest {
     }
 
     @Test
-    fun testBuildAttendee_CustomUri() {
+    fun testBuildAttendee_OtherUri() {
         buildEvent(true) {
-            attendees += Attendee("custom:uri")
+            attendees += Attendee("https://example.com/principals/attendee")
         }.let { result ->
             firstAttendee(result)!!.let { attendee ->
-                assertEquals("custom", attendee.getAsString(Attendees.ATTENDEE_ID_NAMESPACE))
-                assertEquals("uri", attendee.getAsString(Attendees.ATTENDEE_IDENTITY))
+                assertEquals("https", attendee.getAsString(Attendees.ATTENDEE_ID_NAMESPACE))
+                assertEquals("//example.com/principals/attendee", attendee.getAsString(Attendees.ATTENDEE_IDENTITY))
             }
         }
     }
@@ -919,7 +917,7 @@ class AndroidEventTest {
     }
 
     /**
-     * Attendee test matrix:
+     * Build attendee CuType/Role test matrix:
      *
      * CuType ↓ / Role →   (none)    CHAIR    REQ-PARTICIPANT  OPT-PARTICIPANT  NON-PARTICIPANT  X-CUSTOM     test name prefix
      * (none)              req,att   req,spk  req,att          opt,att          non,att          req,att      CuTypePerson
@@ -1058,6 +1056,95 @@ class AndroidEventTest {
                     }
                 }
             }
+    }
+
+    @Test
+    fun testBuildAttendee_PartStat_None() {
+        buildEvent(true) {
+            attendees += Attendee("mailto:attendee@example.com")
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals(Attendees.ATTENDEE_STATUS_INVITED, attendee.getAsInteger(Attendees.ATTENDEE_STATUS))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_PartStat_NeedsAction() {
+        buildEvent(true) {
+            attendees += Attendee("mailto:attendee@example.com").apply {
+                parameters.add(PartStat.NEEDS_ACTION)
+            }
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals(Attendees.ATTENDEE_STATUS_INVITED, attendee.getAsInteger(Attendees.ATTENDEE_STATUS))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_PartStat_Accepted() {
+        buildEvent(true) {
+            attendees += Attendee("mailto:attendee@example.com").apply {
+                parameters.add(PartStat.ACCEPTED)
+            }
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals(Attendees.ATTENDEE_STATUS_ACCEPTED, attendee.getAsInteger(Attendees.ATTENDEE_STATUS))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_PartStat_Declined() {
+        buildEvent(true) {
+            attendees += Attendee("mailto:attendee@example.com").apply {
+                parameters.add(PartStat.DECLINED)
+            }
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals(Attendees.ATTENDEE_STATUS_DECLINED, attendee.getAsInteger(Attendees.ATTENDEE_STATUS))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_PartStat_Tentative() {
+        buildEvent(true) {
+            attendees += Attendee("mailto:attendee@example.com").apply {
+                parameters.add(PartStat.TENTATIVE)
+            }
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals(Attendees.ATTENDEE_STATUS_TENTATIVE, attendee.getAsInteger(Attendees.ATTENDEE_STATUS))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_PartStat_Delegated() {
+        buildEvent(true) {
+            attendees += Attendee("mailto:attendee@example.com").apply {
+                parameters.add(PartStat.DELEGATED)
+            }
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals(Attendees.ATTENDEE_STATUS_NONE, attendee.getAsInteger(Attendees.ATTENDEE_STATUS))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_PartStat_Custom() {
+        buildEvent(true) {
+            attendees += Attendee("mailto:attendee@example.com").apply {
+                parameters.add(PartStat("X-WILL-ASK"))
+            }
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals(Attendees.ATTENDEE_STATUS_INVITED, attendee.getAsInteger(Attendees.ATTENDEE_STATUS))
+            }
+        }
     }
 
     // TODO tests: build exceptions, unknown properties
@@ -1505,6 +1592,122 @@ class AndroidEventTest {
             put(Reminders.MINUTES, -10)
         }!!.let { alarm ->
             assertEquals(Duration.ofMinutes(10), alarm.trigger.duration)
+        }
+    }
+
+
+    private fun populateAttendee(builder: ContentValues.() -> Unit): Attendee? {
+        populateEvent(true, valuesBuilder = {}, insertCallback = { id ->
+            val attendeeValues = ContentValues()
+            attendeeValues.put(Attendees.EVENT_ID, id)
+            builder(attendeeValues)
+            Ical4Android.log.info("Inserting test attendee: $attendeeValues")
+            provider.insert(calendar.syncAdapterURI(Attendees.CONTENT_URI), attendeeValues)
+        }).let { result ->
+            return result.attendees.firstOrNull()
+        }
+    }
+
+    @Test
+    fun testPopulateAttendee_Email() {
+        populateAttendee {
+            put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+        }!!.let { attendee ->
+            assertEquals(URI("mailto:attendee@example.com"), attendee.calAddress)
+        }
+    }
+
+    @Test
+    fun testPopulateAttendee_OtherUri() {
+        populateAttendee {
+            put(Attendees.ATTENDEE_ID_NAMESPACE, "https")
+            put(Attendees.ATTENDEE_IDENTITY, "//example.com/principals/attendee")
+        }!!.let { attendee ->
+            assertEquals(URI("https://example.com/principals/attendee"), attendee.calAddress)
+        }
+    }
+
+    @Test
+    fun testPopulateAttendee_EmailAndOtherUri() {
+        populateAttendee {
+            put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+            put(Attendees.ATTENDEE_ID_NAMESPACE, "https")
+            put(Attendees.ATTENDEE_IDENTITY, "//example.com/principals/attendee")
+        }!!.let { attendee ->
+            assertEquals(URI("https://example.com/principals/attendee"), attendee.calAddress)
+            assertEquals("attendee@example.com", attendee.getParameter<Parameter>(ICalendar.PARAMETER_EMAIL).value)
+        }
+    }
+
+    /**
+     * Populate attendees relationship/type test matrix:
+     *
+     * ↓ RELATIONSHIP / TYPE →  none     required   optional   resource
+     *   none                   -        ind,req    ind,opt    res,req
+     *   organizer              ind,cha  ind,cha    ind,cha    res,req
+     *   performer \
+     *   attendee  |            ind,-    ind,req    ind,opt    res,req
+     *   speaker   /
+     */
+
+    /* TODO */
+
+    @Test
+    fun testPopulateAttendee_Status_Null() {
+        populateAttendee {
+            put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+        }!!.let { attendee ->
+            assertNull(attendee.getParameter(Parameter.PARTSTAT))
+        }
+    }
+
+    @Test
+    fun testPopulateAttendee_Status_Invited() {
+        populateAttendee {
+            put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+            put(Attendees.ATTENDEE_STATUS, Attendees.ATTENDEE_STATUS_INVITED)
+        }!!.let { attendee ->
+            assertEquals(PartStat.NEEDS_ACTION, attendee.getParameter(Parameter.PARTSTAT))
+        }
+    }
+
+    @Test
+    fun testPopulateAttendee_Status_Accepted() {
+        populateAttendee {
+            put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+            put(Attendees.ATTENDEE_STATUS, Attendees.ATTENDEE_STATUS_ACCEPTED)
+        }!!.let { attendee ->
+            assertEquals(PartStat.ACCEPTED, attendee.getParameter(Parameter.PARTSTAT))
+        }
+    }
+
+    @Test
+    fun testPopulateAttendee_Status_Declined() {
+        populateAttendee {
+            put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+            put(Attendees.ATTENDEE_STATUS, Attendees.ATTENDEE_STATUS_DECLINED)
+        }!!.let { attendee ->
+            assertEquals(PartStat.DECLINED, attendee.getParameter(Parameter.PARTSTAT))
+        }
+    }
+
+    @Test
+    fun testPopulateAttendee_Status_Tentative() {
+        populateAttendee {
+            put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+            put(Attendees.ATTENDEE_STATUS, Attendees.ATTENDEE_STATUS_TENTATIVE)
+        }!!.let { attendee ->
+            assertEquals(PartStat.TENTATIVE, attendee.getParameter(Parameter.PARTSTAT))
+        }
+    }
+
+    @Test
+    fun testPopulateAttendee_Status_None() {
+        populateAttendee {
+            put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+            put(Attendees.ATTENDEE_STATUS, Attendees.ATTENDEE_STATUS_NONE)
+        }!!.let { attendee ->
+            assertNull(attendee.getParameter(Parameter.PARTSTAT))
         }
     }
 

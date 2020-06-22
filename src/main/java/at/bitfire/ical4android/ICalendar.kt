@@ -9,11 +9,11 @@
 package at.bitfire.ical4android
 
 import net.fortuna.ical4j.data.CalendarBuilder
+import net.fortuna.ical4j.data.DefaultParameterFactorySupplier
 import net.fortuna.ical4j.data.ParserException
+import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.Parameter
-import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.*
 import net.fortuna.ical4j.model.parameter.Related
 import net.fortuna.ical4j.model.property.ProdId
@@ -51,6 +51,11 @@ open class ICalendar {
 
         // known iCalendar properties
         const val CALENDAR_NAME = "X-WR-CALNAME"
+
+        /**
+         * EMAIL parameter name (as used for ORGANIZER). Not declared in ical4j Parameters class yet.
+         */
+        const val PARAMETER_EMAIL = "EMAIL"
 
         /**
          * Default PRODID used when generating iCalendars. If you want another value, set it
