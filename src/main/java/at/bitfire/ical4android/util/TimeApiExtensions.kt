@@ -18,6 +18,9 @@ object TimeApiExtensions {
     val SECONDS_PER_DAY = SECONDS_PER_HOUR * 24
     val SECONDS_PER_WEEK = SECONDS_PER_DAY * DAYS_PER_WEEK
 
+    val MILLIS_PER_SECOND = 1000
+    val MILLIS_PER_DAY = SECONDS_PER_DAY * MILLIS_PER_SECOND
+
     val tzUTC by lazy { TimeZones.getUtcTimeZone() }
 
 
@@ -41,6 +44,22 @@ object TimeApiExtensions {
 
 
     /***** Durations *****/
+
+    fun TemporalAmount.toDuration(position: Instant): Duration {
+        if (this is Duration)
+            return this
+
+        else if (this is Period) {
+            val calEnd = Calendar.getInstance(tzUTC)
+            calEnd.timeInMillis = position.toEpochMilli()
+            calEnd.add(Calendar.DAY_OF_MONTH, days)
+            calEnd.add(Calendar.MONTH, months)
+            calEnd.add(Calendar.YEAR, years)
+            return Duration.ofMillis(calEnd.timeInMillis - position.toEpochMilli())
+        } else
+
+            throw IllegalArgumentException("TemporalAmount must be Period or Duration")
+    }
 
     /**
      * Converts a [TemporalAmount] to an RFC5545 duration value, which only uses
@@ -103,13 +122,7 @@ object TimeApiExtensions {
 
         } else if (this is Period) {
             // TemporalAmountAdapter(Period).toString() returns wrong values: https://github.com/ical4j/ical4j/issues/419
-            val calEnd = Calendar.getInstance(tzUTC)
-            calEnd.timeInMillis = position.toEpochMilli()
-            calEnd.add(Calendar.DAY_OF_MONTH, days)
-            calEnd.add(Calendar.MONTH, months)
-            calEnd.add(Calendar.YEAR, years)
-            val duration = Duration.ofMillis(calEnd.timeInMillis - position.toEpochMilli())
-            var days = duration.toDays().toInt()
+            var days = this.toDuration(position).toDays().toInt()
 
             if (days < 0) {
                 builder.append("-")

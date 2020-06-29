@@ -211,8 +211,12 @@ abstract class AndroidTask(
             task.duration = Duration(null, fixedDuration)
         }
 
-        values.getAsString(Tasks.RDATE)?.let { task.rDates += AndroidTimeUtils.androidStringToRecurrenceSet(it, RDate::class.java, allDay) }
-        values.getAsString(Tasks.EXDATE)?.let { task.exDates += AndroidTimeUtils.androidStringToRecurrenceSet(it, ExDate::class.java, allDay) }
+        values.getAsString(Tasks.RDATE)?.let {
+            task.rDates += AndroidTimeUtils.androidStringToRecurrenceSet(it, allDay) { RDate(it) }
+        }
+        values.getAsString(Tasks.EXDATE)?.let {
+            task.exDates += AndroidTimeUtils.androidStringToRecurrenceSet(it, allDay) { ExDate(it) }
+        }
 
         values.getAsString(Tasks.RRULE)?.let { task.rRule = RRule(it) }
     }

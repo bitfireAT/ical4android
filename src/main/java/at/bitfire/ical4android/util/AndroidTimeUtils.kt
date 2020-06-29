@@ -179,19 +179,22 @@ object AndroidTimeUtils {
      *                  expected format: "[TZID;]date1,date2,date3" where date is "yyyymmddThhmmss[Z]"
      * @param type      subclass of DateListProperty, e.g. [RDate] or [ExDate]
      * @param allDay    true: list will contain DATE values; false: list will contain DATE_TIME values
+     * @param generator generates the [DateListProperty]; must call the constructor with the one argument of type [DateList]
      * @return          instance of "type" containing the parsed dates/times from the string
      * @throws ParseException when the string cannot be parsed
      */
-    fun<T: DateListProperty> androidStringToRecurrenceSet(dbStr: String, type: Class<T>, allDay: Boolean): T
+    fun<T: DateListProperty> androidStringToRecurrenceSet(dbStr: String, allDay: Boolean, generator: (DateList) -> T): T
     {
         // 1. split string into time zone and actual dates
-        val timeZone: TimeZone?
+        var timeZone: TimeZone?
         val datesStr: String
 
         val limiter = dbStr.indexOf(RECURRENCE_LIST_TZID_SEPARATOR)
         if (limiter != -1) {    // TZID given
             val tzId = dbStr.substring(0, limiter)
             timeZone = DateUtils.ical4jTimeZone(tzId)
+            if (TimeZones.isUtc(timeZone))
+                timeZone = null
             datesStr = dbStr.substring(limiter + 1)
         } else {
             timeZone = null
@@ -199,25 +202,22 @@ object AndroidTimeUtils {
         }
 
         // 2. process date string and generate list of DATEs or DATE-TIMEs
-        val dateList: DateList
-        if (allDay)
-            dateList = DateList(datesStr, Value.DATE)
-        else {
-            dateList = DateList(datesStr, Value.DATE_TIME, timeZone)
-            if (timeZone == null)
-                dateList.isUtc = true
-        }
+        val dateList =
+                if (allDay)
+                    DateList(datesStr, Value.DATE)
+                else
+                    DateList(datesStr, Value.DATE_TIME, timeZone)
 
         // 3. generate requested DateListProperty (RDate/ExDate) from list of DATEs or DATE-TIMEs
-        val list: DateListProperty
-        try {
-            list = type.getDeclaredConstructor(DateList::class.java).newInstance(dateList)
-            dateList.timeZone?.let { list.timeZone = it }
-        } catch (e: Exception) {
-            throw ParseException("Couldn't create date/time list by reflection", -1)
+        val property = generator(dateList)
+        if (!allDay) {
+            if (timeZone != null)
+                property.timeZone = timeZone
+            else
+                property.setUtc(true)
         }
 
-        return list
+        return property
     }
 
 

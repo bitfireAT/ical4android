@@ -1,5 +1,6 @@
 package at.bitfire.ical4android
 
+import at.bitfire.ical4android.util.TimeApiExtensions.toDuration
 import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toRfc5545Duration
@@ -24,6 +25,16 @@ class TimeApiExtensionsTest {
     fun testLocalDateToIcal4jDate() {
         assertEquals(Date("19000118"), LocalDate.of(1900, 1, 18).toIcal4jDate())
         assertEquals(Date("20200620"), LocalDate.of(2020, 6, 20).toIcal4jDate())
+    }
+
+    @Test
+    fun testTemporalAmountToDuration() {
+        assertEquals(Duration.ofHours(1), Duration.ofHours(1).toDuration(Instant.EPOCH))
+        assertEquals(Duration.ofDays(1), Duration.ofDays(1).toDuration(Instant.EPOCH))
+        assertEquals(Duration.ofDays(1), Period.ofDays(1).toDuration(Instant.EPOCH))
+        assertEquals(Duration.ofDays(7), Period.ofWeeks(1).toDuration(Instant.EPOCH))
+        assertEquals(Duration.ofDays(365), Period.ofYears(1).toDuration(Instant.EPOCH))
+        assertEquals(Duration.ofDays(366), Period.ofYears(1).toDuration(Instant.ofEpochSecond(1577836800)))
     }
 
     @Test

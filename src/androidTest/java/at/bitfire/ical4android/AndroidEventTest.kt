@@ -1217,8 +1217,8 @@ class AndroidEventTest {
             put(Events.DURATION, "PT1H")
         }.let { result ->
             assertEquals(DtStart(DateTime("20200621T180000", tzShanghai)), result.dtStart)
-            assertNull(result.dtEnd)
-            assertEquals(Duration(null, "PT1H"), result.duration)
+            assertEquals(DtEnd(DateTime("20200621T190000", tzShanghai)), result.dtEnd)
+            assertNull(result.duration)
         }
     }
 
@@ -1277,8 +1277,8 @@ class AndroidEventTest {
             put(Events.DURATION, "P1W")
         }.let { result ->
             assertEquals(DtStart(Date("20200621")), result.dtStart)
-            assertNull(result.dtEnd)
-            assertEquals(Duration(null, "P1W"), result.duration)
+            assertEquals(DtEnd(Date("20200628")), result.dtEnd)
+            assertNull(result.duration)
         }
     }
 
@@ -1308,8 +1308,8 @@ class AndroidEventTest {
             put(Events.DURATION, "PT49H2M")
         }.let { result ->
             assertEquals(DtStart(Date("20200621")), result.dtStart)
-            assertNull(result.dtEnd)
-            assertEquals(Duration(null, "P2D"), result.duration)
+            assertEquals(DtEnd(Date("20200623")), result.dtEnd)
+            assertNull(result.duration)
         }
     }
 

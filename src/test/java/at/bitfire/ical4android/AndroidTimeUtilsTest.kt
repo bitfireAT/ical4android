@@ -2,16 +2,13 @@ package at.bitfire.ical4android
 
 import at.bitfire.ical4android.util.AndroidTimeUtils
 import net.fortuna.ical4j.data.CalendarBuilder
+import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.DateList
-import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VTimeZone
+import net.fortuna.ical4j.model.parameter.TzId
 import net.fortuna.ical4j.model.parameter.Value
-import net.fortuna.ical4j.model.property.DateListProperty
-import net.fortuna.ical4j.model.property.DtStart
-import net.fortuna.ical4j.model.property.ExDate
-import net.fortuna.ical4j.model.property.RDate
+import net.fortuna.ical4j.model.property.*
 import net.fortuna.ical4j.util.TimeZones
 import org.junit.Assert.*
 import org.junit.Test
@@ -188,7 +185,8 @@ class AndroidTimeUtilsTest {
     @Test
     fun testAndroidStringToRecurrenceSets_UtcTimes() {
         // list of UTC times
-        var exDate = AndroidTimeUtils.androidStringToRecurrenceSet("20150101T103010Z,20150702T103020Z", ExDate::class.java, false)
+        var exDate = AndroidTimeUtils.androidStringToRecurrenceSet("20150101T103010Z,20150702T103020Z", false) { ExDate(it) }
+        assertNull(exDate.timeZone)
         var exDates = exDate.dates
         assertEquals(Value.DATE_TIME, exDates.type)
         assertTrue(exDates.isUtc)
@@ -200,7 +198,9 @@ class AndroidTimeUtilsTest {
     @Test
     fun testAndroidStringToRecurrenceSets_ZonedTimes() {
         // list of time zone times
-        val exDate = AndroidTimeUtils.androidStringToRecurrenceSet("${tzToronto.id};20150103T113030,20150704T113040", ExDate::class.java, false)
+        val exDate = AndroidTimeUtils.androidStringToRecurrenceSet("${tzToronto.id};20150103T113030,20150704T113040",false) { ExDate(it) }
+        assertEquals(tzToronto, exDate.timeZone)
+        assertEquals(tzToronto.id, (exDate.getParameter(Parameter.TZID) as TzId).value)
         val exDates = exDate.dates
         assertEquals(Value.DATE_TIME, exDates.type)
         assertEquals(tzToronto, exDates.timeZone)
@@ -212,7 +212,7 @@ class AndroidTimeUtilsTest {
     @Test
     fun testAndroidStringToRecurrenceSets_Dates() {
         // list of dates
-        val exDate = AndroidTimeUtils.androidStringToRecurrenceSet("20150101T103010Z,20150702T103020Z", ExDate::class.java, true)
+        val exDate = AndroidTimeUtils.androidStringToRecurrenceSet("20150101T103010Z,20150702T103020Z", true) { ExDate(it) }
         val exDates = exDate.dates
         assertEquals(Value.DATE, exDates.type)
         assertEquals(2, exDates.size)
