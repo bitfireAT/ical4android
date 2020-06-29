@@ -80,6 +80,7 @@ abstract class AndroidEvent(
     var id: Long? = null
         protected set
 
+
     /**
      * Creates a new object from an event which already exists in the calendar storage.
      * @param values database row with all columns, as returned by the calendar provider
@@ -118,33 +119,30 @@ abstract class AndroidEvent(
                                 null, null, null, null),
                         calendar.provider
                 )
+
                 if (iterEvents.hasNext()) {
+                    val e = iterEvents.next()
+
                     // create new Event which will be populated
                     val newEvent = Event()
                     field = newEvent
 
-                    val e = iterEvents.next()
-                    populateEvent(MiscUtils.removeEmptyStrings(e.entityValues))
+                    // calculate some scheduling properties
+                    val groupScheduled = e.subValues.any { it.uri == Attendees.CONTENT_URI }
+                    val isOrganizer = (e.entityValues.getAsInteger(Events.IS_ORGANIZER) ?: 0) != 0
+
+                    populateEvent(MiscUtils.removeEmptyStrings(e.entityValues), groupScheduled)
 
                     for (subValue in e.subValues) {
                         val subValues = MiscUtils.removeEmptyStrings(subValue.values)
                         when (subValue.uri) {
-                            Attendees.CONTENT_URI -> populateAttendee(subValues)
+                            Attendees.CONTENT_URI -> populateAttendee(subValues, isOrganizer)
                             Reminders.CONTENT_URI -> populateReminder(subValues)
                             ExtendedProperties.CONTENT_URI -> populateExtended(subValues)
                         }
                     }
                     populateExceptions()
-
                     useRetainedClassification()
-
-                    /* remove ORGANIZER from all components if there are no attendees
-                       (i.e. this is not a group-scheduled calendar entity) */
-                    if (newEvent.attendees.isEmpty()) {
-                        newEvent.organizer = null
-                        newEvent.exceptions.forEach { it.organizer = null }
-                    }
-
                     return newEvent
                 }
             } catch (e: Exception) {
@@ -164,7 +162,7 @@ abstract class AndroidEvent(
      * @param row values of an [Events] row, as returned by the calendar provider
      */
     @CallSuper
-    protected open fun populateEvent(row: ContentValues) {
+    protected open fun populateEvent(row: ContentValues, groupScheduled: Boolean) {
         Ical4Android.log.log(Level.FINE, "Read event entity from calender provider", row)
         val event = requireNotNull(event)
 
@@ -279,14 +277,16 @@ abstract class AndroidEvent(
         // availability
         event.opaque = row.getAsInteger(Events.AVAILABILITY) != Events.AVAILABILITY_FREE
 
-        // ORGANIZER must only be set for group-scheduled events (= events with attendees),
-        // so it may have to be removed after processing the attendees. This is done in the getter of [event].
-        if (row.containsKey(Events.ORGANIZER))
-            try {
-                event.organizer = Organizer(URI("mailto", row.getAsString(Events.ORGANIZER), null))
-            } catch (e: URISyntaxException) {
-                Ical4Android.log.log(Level.WARNING, "Error when creating ORGANIZER mailto URI, ignoring", e)
-            }
+        // scheduling
+        if (groupScheduled) {
+            // ORGANIZER must only be set for group-scheduled events (= events with attendees)
+            if (row.containsKey(Events.ORGANIZER) && groupScheduled)
+                try {
+                    event.organizer = Organizer(URI("mailto", row.getAsString(Events.ORGANIZER), null))
+                } catch (e: URISyntaxException) {
+                    Ical4Android.log.log(Level.WARNING, "Error when creating ORGANIZER mailto URI, ignoring", e)
+                }
+        }
 
         // classification
         when (row.getAsInteger(Events.ACCESS_LEVEL)) {
@@ -307,7 +307,7 @@ abstract class AndroidEvent(
         }
     }
 
-    protected open fun populateAttendee(row: ContentValues) {
+    protected open fun populateAttendee(row: ContentValues, isOrganizer: Boolean) {
         Ical4Android.log.log(Level.FINE, "Read event attendee from calender provider", row)
 
         try {
@@ -329,7 +329,8 @@ abstract class AndroidEvent(
 
             // type
             val type = row.getAsInteger(Attendees.ATTENDEE_TYPE)
-            params.add(if (type == Attendees.TYPE_RESOURCE) CuType.RESOURCE else CuType.INDIVIDUAL)
+            if (type == Attendees.TYPE_RESOURCE)
+                params.add(CuType.RESOURCE)
 
             // role
             when (row.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP)) {
@@ -338,7 +339,10 @@ abstract class AndroidEvent(
                 Attendees.RELATIONSHIP_PERFORMER,
                 Attendees.RELATIONSHIP_SPEAKER -> {
                     params.add(if (type == Attendees.TYPE_REQUIRED) Role.REQ_PARTICIPANT else Role.OPT_PARTICIPANT)
-                    params.add(Rsvp(true))     // ask server to send invitations
+
+                    // If the event is created/modified by the organizer, ask each participant to update their status.
+                    if (isOrganizer)
+                        params.add(Rsvp(true))
                 }
                 else /* RELATIONSHIP_NONE */ ->
                     params.add(Role.NON_PARTICIPANT)
@@ -432,11 +436,30 @@ abstract class AndroidEvent(
                 val values = c.toValues(true)
                 try {
                     val exception = calendar.eventFactory.fromProvider(calendar, values)
-
-                    // make sure that all components have the same ORGANIZER [RFC 6638 3.1]
                     val exceptionEvent = exception.event!!
-                    exceptionEvent.organizer = event.organizer
-                    event.exceptions += exceptionEvent
+                    val recurrenceId = exceptionEvent.recurrenceId!!
+
+                    // use EXDATE instead of exceptions for cancelled instances
+                    if (exceptionEvent.status == Status.VEVENT_CANCELLED) {
+                        // TODO EXDATE TIMEZONE testen/optimieren
+                        // TODO Test für CANCELLED -> EXDATE
+                        val list = DateList(
+                                if (DateUtils.isDate(recurrenceId)) Value.DATE else Value.DATE_TIME,
+                                recurrenceId.timeZone
+                        )
+                        list.add(recurrenceId.date)
+                        event.exDates += ExDate(list).apply {
+                            if (DateUtils.isDateTime(recurrenceId))
+                                timeZone = recurrenceId.timeZone
+                        }
+
+                    } else /* exceptionEvent.status != Status.VEVENT_CANCELLED */ {
+                        // make sure that all components have the same ORGANIZER [RFC 6638 3.1]
+                        exceptionEvent.organizer = event.organizer
+
+                        // add exception to list of exceptions
+                        event.exceptions += exceptionEvent
+                    }
                 } catch (e: Exception) {
                     Ical4Android.log.log(Level.WARNING, "Couldn't find exception details", e)
                 }
@@ -502,7 +525,7 @@ abstract class AndroidEvent(
                (it checks for RRULE and aborts if no RRULE is found).
                So I have chosen the method of inserting the exception event manually.
 
-               It's also noteworthy that the link between the "master event" and the exception is not
+               It's also noteworthy that the link between the main event and the exception is not
                between ID and ORIGINAL_ID (as one could assume), but between _SYNC_ID and ORIGINAL_SYNC_ID.
                So, if you don't set _SYNC_ID in the master event and ORIGINAL_SYNC_ID in the exception,
                the exception will appear additionally (and not *instead* of the instance).
@@ -512,7 +535,8 @@ abstract class AndroidEvent(
             buildEvent(exception, exBuilder)
 
             var date = exception.recurrenceId!!.date
-            if (event.isAllDay() && date is DateTime) {       // correct VALUE=DATE-TIME RECURRENCE-IDs to VALUE=DATE for all-day events
+            if (DateUtils.isDate(event.dtStart) && date is DateTime) {
+                // correct VALUE=DATE-TIME RECURRENCE-IDs to VALUE=DATE for all-day events
                 val dateFormatDate = SimpleDateFormat("yyyyMMdd", Locale.US)
                 val dateString = dateFormatDate.format(date)
                 try {
@@ -521,7 +545,7 @@ abstract class AndroidEvent(
                     Ical4Android.log.log(Level.WARNING, "Couldn't parse DATE part of DATE-TIME RECURRENCE-ID", e)
                 }
             }
-            exBuilder   .withValue(Events.ORIGINAL_ALL_DAY, if (event.isAllDay()) 1 else 0)
+            exBuilder   .withValue(Events.ORIGINAL_ALL_DAY, if (DateUtils.isDate(event.dtStart)) 1 else 0)
                         .withValue(Events.ORIGINAL_INSTANCE_TIME, date.time)
 
             val idxException = batch.nextBackrefIdx()
@@ -592,12 +616,6 @@ abstract class AndroidEvent(
         val allDay = DateUtils.isDate(dtStart)
         val recurring = event.rRules.isNotEmpty() || event.rDates.isNotEmpty()
 
-        /**
-         * [RFC 5545 3.8.4.1 Attendee]
-         * This property MUST be specified in an iCalendar object that specifies a group-scheduled calendar entity.
-         */
-        val groupScheduled = event.attendees.isNotEmpty()
-
         // make sure that time zone is supported by Android
         AndroidTimeUtils.androidifyTimeZone(dtStart)
 
@@ -611,8 +629,6 @@ abstract class AndroidEvent(
            - a calendar_id */
 
         builder .withValue(Events.CALENDAR_ID, calendar.id)
-                .withValue(Events.HAS_ATTENDEE_DATA, 1 /* we always know information about all attendees and not only ourselves */)
-
                 .withValue(Events.DTSTART, dtStart.date.time)
                 .withValue(Events.ALL_DAY, if (allDay) 1 else 0)
                 .withValue(Events.EVENT_TIMEZONE, AndroidTimeUtils.storageTzId(dtStart))
@@ -730,23 +746,26 @@ abstract class AndroidEvent(
             }
         }
 
-        event.organizer?.let { organizer ->
-            if (!groupScheduled) {
-                Ical4Android.log.fine("Ignoring ORGANIZER of non-group-scheduled event")
-                return@let
+        // scheduling
+        val groupScheduled = event.attendees.isNotEmpty()
+        if (groupScheduled) {
+            builder.withValue(Events.HAS_ATTENDEE_DATA, 1)
+
+            event.organizer?.let { organizer ->
+                val email: String?
+                val uri = organizer.calAddress
+                email = if (uri.scheme.equals("mailto", true))
+                    uri.schemeSpecificPart
+                else
+                    organizer.getParameter<Parameter>(ICalendar.PARAMETER_EMAIL)?.value
+                if (email != null)
+                    builder.withValue(Events.ORGANIZER, email)
+                else
+                    Ical4Android.log.warning("Ignoring ORGANIZER without email address (not supported by Android)")
             }
 
-            val email: String?
-            val uri = organizer.calAddress
-            email = if (uri.scheme.equals("mailto", true))
-                uri.schemeSpecificPart
-            else
-                organizer.getParameter<Parameter>(ICalendar.PARAMETER_EMAIL)?.value
-            if (email != null)
-                builder.withValue(Events.ORGANIZER, email)
-            else
-                Ical4Android.log.warning("Ignoring ORGANIZER without email address (not supported by Android)")
-        }
+        } else /* !groupScheduled */
+            builder.withValue(Events.HAS_ATTENDEE_DATA, 0)
 
         event.status?.let {
             builder.withValue(Events.STATUS, when (it) {
