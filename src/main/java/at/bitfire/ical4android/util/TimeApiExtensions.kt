@@ -1,11 +1,10 @@
 package at.bitfire.ical4android.util
 
+import at.bitfire.ical4android.DateUtils
 import net.fortuna.ical4j.model.Date
+import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.util.TimeZones
-import java.time.Duration
-import java.time.Instant
-import java.time.LocalDate
-import java.time.Period
+import java.time.*
 import java.time.temporal.TemporalAmount
 import java.util.*
 
@@ -27,19 +26,20 @@ object TimeApiExtensions {
     /***** Dates *****/
 
     fun Date.toLocalDate(): LocalDate {
-        val cal = Calendar.getInstance(tzUTC)
-        cal.time = this
-        return LocalDate.of(
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH) + 1,
-            cal.get(Calendar.DAY_OF_MONTH)
-        )
+        val utcDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneOffset.UTC)
+        return utcDateTime.toLocalDate()
     }
 
     fun LocalDate.toIcal4jDate(): Date {
         val cal = Calendar.getInstance(tzUTC)
         cal.set(year, monthValue - 1, dayOfMonth)
         return Date(cal)
+    }
+
+    fun ZonedDateTime.toIcal4jDate(): Date {
+        val date = DateTime(toEpochSecond() * MILLIS_PER_SECOND)
+        date.timeZone = DateUtils.ical4jTimeZone(zone.id)!!
+        return date
     }
 
 

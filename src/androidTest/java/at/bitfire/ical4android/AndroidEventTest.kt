@@ -88,7 +88,7 @@ class AndroidEventTest {
      *        0            1            0              0
      *        0            1            0              1          dtEnd calulcated from duration
      *        0            1            1              0          duration ignored
-     *        0            1            1              1          dtEnd ignored
+     *        0            1            1              1          duration ignored
      *        1            0            0              0          duration = 1d
      *        1            0            0              1          duration = 1d
      *        1            0            1              0          dtEnd calculated from duration
@@ -96,7 +96,7 @@ class AndroidEventTest {
      *        1            1            0              0
      *        1            1            0              1          duration calculated from dtEnd; ignore times in rDate
      *        1            1            1              0          duration ignored
-     *        1            1            1              1          dtEnd ignored
+     *        1            1            1              1          duration ignored
      *
      *  buildEvent() EXTRA TESTS:
      *
@@ -241,7 +241,7 @@ class AndroidEventTest {
         val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzVienna)
             dtEnd = DtEnd("20200601T143000", tzVienna)
-            duration = Duration(null, "PT10S")
+            duration = Duration(null, "PT1S")
         }
         assertEquals(0, values.getAsInteger(Events.ALL_DAY))
 
@@ -266,7 +266,7 @@ class AndroidEventTest {
         assertEquals(1591007400000L, values.getAsLong(Events.DTSTART))
         assertEquals(tzVienna.id, values.get(Events.EVENT_TIMEZONE))
 
-        assertEquals("PT10S", values.getAsString(Events.DURATION))
+        assertEquals("PT2H", values.getAsString(Events.DURATION))
         assertNull(values.get(Events.DTEND))
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 
@@ -382,7 +382,7 @@ class AndroidEventTest {
         val values = buildEvent(false) {
             dtStart = DtStart(Date("20200601"))
             dtEnd = DtEnd(Date("20200701"))
-            duration = Duration(null, "PT1M")
+            duration = Duration(null, "PT5M")
         }
         assertEquals(1, values.getAsInteger(Events.ALL_DAY))
 
@@ -407,7 +407,7 @@ class AndroidEventTest {
         assertEquals(1590969600000L, values.getAsLong(Events.DTSTART))
         assertEquals(AndroidTimeUtils.TZID_ALLDAY, values.get(Events.EVENT_TIMEZONE))
 
-        assertEquals("PT1M", values.getAsString(Events.DURATION))
+        assertEquals("P30D", values.getAsString(Events.DURATION))
         assertNull(values.get(Events.DTEND))
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 

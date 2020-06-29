@@ -8,17 +8,22 @@ import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.parameter.TzId
 import net.fortuna.ical4j.model.parameter.Value
-import net.fortuna.ical4j.model.property.*
+import net.fortuna.ical4j.model.property.DateListProperty
+import net.fortuna.ical4j.model.property.DtStart
+import net.fortuna.ical4j.model.property.ExDate
+import net.fortuna.ical4j.model.property.RDate
 import net.fortuna.ical4j.util.TimeZones
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.StringReader
+import java.time.Duration
+import java.time.Period
 import java.util.*
 
 class AndroidTimeUtilsTest {
 
-    val tzBerlin: TimeZone = DateUtils.ical4jTimeZone("Europe/Berlin")
-    val tzToronto: TimeZone = DateUtils.ical4jTimeZone("America/Toronto")
+    val tzBerlin: TimeZone = DateUtils.ical4jTimeZone("Europe/Berlin")!!
+    val tzToronto: TimeZone = DateUtils.ical4jTimeZone("America/Toronto")!!
 
     val tzCustom by lazy {
         val builder = CalendarBuilder()
@@ -221,6 +226,12 @@ class AndroidTimeUtilsTest {
     }
 
     @Test
+    fun testAndroidStringToRecurrenceSets_Exclude() {
+        val exDate = AndroidTimeUtils.androidStringToRecurrenceSet("${tzToronto.id};20150103T113030",false, 1420302630000L) { ExDate(it) }
+        assertEquals(0, exDate.dates.size)
+    }
+
+    @Test
     fun testRecurrenceSetsToAndroidString_UtcTime() {
         val list = ArrayList<DateListProperty>(1)
         list.add(RDate(DateList("20150101T103010Z,20150102T103020Z", Value.DATE_TIME)))
@@ -276,19 +287,20 @@ class AndroidTimeUtilsTest {
 
 
     @Test
-    fun testFixFromAndroidDuration() {
-        assertEquals("PT3600S", AndroidTimeUtils.fixDuration("3600S"))
-        assertEquals("PT3600S", AndroidTimeUtils.fixDuration("P3600S"))
-        assertEquals("+PT3600S", AndroidTimeUtils.fixDuration("+P3600S"))
-        assertEquals("PT3600S", AndroidTimeUtils.fixDuration("PT3600S"))
-        assertEquals("+PT3600S", AndroidTimeUtils.fixDuration("+PT3600S"))
-        assertEquals("P10D", AndroidTimeUtils.fixDuration("P1W3D"))
-        assertEquals("P14DT3600S", AndroidTimeUtils.fixDuration("P2W3600S"))
-        assertEquals("-P3DT4H5M6S", AndroidTimeUtils.fixDuration("-P3D4H5M6S"))
-        assertEquals("PT3H2M1S", AndroidTimeUtils.fixDuration("P1S2M3H"))
-        assertEquals("P4DT3H2M1S", AndroidTimeUtils.fixDuration("P1S2M3H4D"))
-        assertEquals("P11DT3H2M1S", AndroidTimeUtils.fixDuration("P1S2M3H4D1W"))
-        assertEquals("PT1H0M10S", AndroidTimeUtils.fixDuration("1H10S"))
+    fun testParseDuration() {
+        assertEquals(Duration.parse("PT3600S"), AndroidTimeUtils.parseDuration("3600S"))
+        assertEquals(Duration.parse("PT3600S"), AndroidTimeUtils.parseDuration("P3600S"))
+        assertEquals(Duration.parse("+PT3600S"), AndroidTimeUtils.parseDuration("+P3600S"))
+        assertEquals(Duration.parse("PT3600S"), AndroidTimeUtils.parseDuration("PT3600S"))
+        assertEquals(Duration.parse("+PT3600S"), AndroidTimeUtils.parseDuration("+PT3600S"))
+        assertEquals(Period.parse("P10D"), AndroidTimeUtils.parseDuration("P1W3D"))
+        assertEquals(Period.parse("P1D"), AndroidTimeUtils.parseDuration("1DT"))
+        assertEquals(Duration.parse("P14DT3600S"), AndroidTimeUtils.parseDuration("P2W3600S"))
+        assertEquals(Duration.parse("-P3DT4H5M6S"), AndroidTimeUtils.parseDuration("-P3D4H5M6S"))
+        assertEquals(Duration.parse("PT3H2M1S"), AndroidTimeUtils.parseDuration("P1S2M3H"))
+        assertEquals(Duration.parse("P4DT3H2M1S"), AndroidTimeUtils.parseDuration("P1S2M3H4D"))
+        assertEquals(Duration.parse("P11DT3H2M1S"), AndroidTimeUtils.parseDuration("P1S2M3H4D1W"))
+        assertEquals(Duration.parse("PT1H0M10S"), AndroidTimeUtils.parseDuration("1H10S"))
     }
 
 }

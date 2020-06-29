@@ -4,6 +4,7 @@ import android.text.format.Time
 import at.bitfire.ical4android.DateUtils
 import at.bitfire.ical4android.Ical4Android
 import net.fortuna.ical4j.model.DateList
+import net.fortuna.ical4j.model.TemporalAmountAdapter
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.DateListProperty
@@ -13,6 +14,9 @@ import net.fortuna.ical4j.model.property.RDate
 import net.fortuna.ical4j.util.TimeZones
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.time.Duration
+import java.time.Period
+import java.time.temporal.TemporalAmount
 import java.util.*
 
 object AndroidTimeUtils {
@@ -175,15 +179,19 @@ object AndroidTimeUtils {
     /**
      * Takes a formatted string as provided by the Android calendar provider and returns a DateListProperty
      * constructed from these values.
+     *
      * @param dbStr     formatted string from Android calendar provider (RDATE/EXDATE field)
      *                  expected format: "[TZID;]date1,date2,date3" where date is "yyyymmddThhmmss[Z]"
      * @param type      subclass of DateListProperty, e.g. [RDate] or [ExDate]
      * @param allDay    true: list will contain DATE values; false: list will contain DATE_TIME values
+     * @param exclude   this time stamp won't be added to the [DateListProperty]
      * @param generator generates the [DateListProperty]; must call the constructor with the one argument of type [DateList]
+     *
      * @return          instance of "type" containing the parsed dates/times from the string
+     *
      * @throws ParseException when the string cannot be parsed
      */
-    fun<T: DateListProperty> androidStringToRecurrenceSet(dbStr: String, allDay: Boolean, generator: (DateList) -> T): T
+    fun<T: DateListProperty> androidStringToRecurrenceSet(dbStr: String, allDay: Boolean, exclude: Long? = null, generator: (DateList) -> T): T
     {
         // 1. split string into time zone and actual dates
         var timeZone: TimeZone?
@@ -208,7 +216,15 @@ object AndroidTimeUtils {
                 else
                     DateList(datesStr, Value.DATE_TIME, timeZone)
 
-        // 3. generate requested DateListProperty (RDate/ExDate) from list of DATEs or DATE-TIMEs
+        // 3. filter excludes
+        val iter = dateList.iterator()
+        while (iter.hasNext()) {
+            val date = iter.next()
+            if (date.time == exclude)
+                iter.remove()
+        }
+
+        // 4. generate requested DateListProperty (RDate/ExDate) from list of DATEs or DATE-TIMEs
         val property = generator(dateList)
         if (!allDay) {
             if (timeZone != null)
@@ -228,13 +244,10 @@ object AndroidTimeUtils {
      * parsed by ical4j. Searches for values like "1H" and "3M" and
      * groups them together in a standards-compliant way.
      *
-     * @param duration value from the content provider (like "PT3600S" or "P3600S")
+     * @param durationStr value from the content provider (like "PT3600S" or "P3600S")
      * @return duration value in RFC 2445 format ("PT3600S" when the argument was "P3600S")
      */
-    fun fixDuration(duration: String?): String? {
-        if (duration == null)
-            return null
-
+    fun parseDuration(durationStr: String): TemporalAmount {
         /** [RFC 2445/5445]
          * dur-value  = (["+"] / "-") "P" (dur-date / dur-time / dur-week)
          * dur-date   = dur-day [dur-time]
@@ -245,49 +258,29 @@ object AndroidTimeUtils {
          * dur-minute = 1*DIGIT "M" [dur-second]
          * dur-second = 1*DIGIT "S"
          */
-        val possibleFormats = Regex("([+-]?)P?(T|(\\d+W)|(\\d+D)|(\\d+H)|(\\d+M)|(\\d+S))*")
-        possibleFormats.matchEntire(duration)?.destructured?.let { (sign, _, weeks, days, hours, minutes, seconds) ->
-            val newValue = StringBuilder()
-            if (sign.isNotEmpty())
-                newValue.append(sign)
-            newValue.append("P")
+        val possibleFormats = Regex("([+-]?)P?(T|((\\d+)W)|((\\d+)D)|((\\d+)H)|((\\d+)M)|((\\d+)S))*")
+                                         //  1            4         6         8         10        12
+        possibleFormats.matchEntire(durationStr)?.let { result ->
+            fun fromMatch(s: String) = if (s.isEmpty()) 0 else s.toInt()
 
-            // It's not possible to mix weeks with everything else, so convert
-            // one week to seven days if there's anything else than weeks.
-            var addDays = 0
-            if (weeks.isNotEmpty()) {
-                if ((days.isEmpty() && hours.isEmpty() && minutes.isEmpty() && seconds.isEmpty())) {
-                    // only weeks
-                    newValue.append(weeks)
-                    return newValue.toString()
-                } else
-                    addDays = weeks.dropLast(1).toInt() * 7
-            }
-            if (days.isNotEmpty() || addDays != 0) {
-                val daysInt = (if (days.isEmpty()) 0 else days.dropLast(1).toInt()) + addDays
-                newValue.append("${daysInt}D")
-            }
+            val intSign = if (result.groupValues[1] == "-") -1 else 1
+            val intDays = fromMatch(result.groupValues[4]) * TimeApiExtensions.DAYS_PER_WEEK + fromMatch(result.groupValues[6])
+            val intHours = fromMatch(result.groupValues[8])
+            val intMinutes = fromMatch(result.groupValues[10])
+            val intSeconds = fromMatch(result.groupValues[12])
 
-            val durTime = StringBuilder()
-            if (hours.isNotEmpty())
-                durTime.append(hours)
-
-            if (minutes.isEmpty()) {
-                if (hours.isNotEmpty() && seconds.isNotEmpty())
-                    durTime.append("0M")
-            } else
-                durTime.append(minutes)
-
-            if (seconds.isNotEmpty())
-                durTime.append(seconds)
-
-            if (durTime.isNotEmpty())
-                newValue.append("T").append(durTime)
-
-            return newValue.toString()
+            return if (intDays != 0 && intHours == 0 && intMinutes == 0 && intSeconds == 0)
+                Period.ofDays(intSign * intDays)
+            else
+                Duration.ofSeconds(intSign * (
+                        intDays * TimeApiExtensions.SECONDS_PER_DAY.toLong() +
+                        intHours * TimeApiExtensions.SECONDS_PER_HOUR +
+                        intMinutes * TimeApiExtensions.SECONDS_PER_MINUTE +
+                        intSeconds
+                ))
         }
-        // no match, return unchanged input value
-        return duration
+        // no match, try TemporalAmountAdapter
+        return TemporalAmountAdapter.parse(durationStr).duration
     }
 
 }

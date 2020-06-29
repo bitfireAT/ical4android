@@ -12,8 +12,10 @@ import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
+import net.fortuna.ical4j.util.TimeZones
 import org.junit.Assert.*
 import org.junit.Test
+import java.time.ZoneId
 import java.util.*
 
 class DateUtilsTest {
@@ -37,6 +39,14 @@ class DateUtilsTest {
         assertEquals("Europe/Vienna", DateUtils.findAndroidTimezoneID("Something with Europe/Vienna in between"))
         assertEquals(TimeZone.getDefault().id, DateUtils.findAndroidTimezoneID(null))
         assertEquals(TimeZone.getDefault().id, DateUtils.findAndroidTimezoneID("nothing-to-be-found"))
+    }
+
+
+    @Test
+    fun testGetZoneId() {
+        assertNull(DateUtils.getZoneId(null))
+        assertNull(DateUtils.getZoneId("not/available"))
+        assertEquals(ZoneId.of("Europe/Vienna"), DateUtils.getZoneId("Europe/Vienna"))
     }
 
 

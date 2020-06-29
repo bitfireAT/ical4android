@@ -28,6 +28,16 @@ class TimeApiExtensionsTest {
     }
 
     @Test
+    fun testZonedDateTimeToIcal4jDate() {
+        val tzBerlin = DateUtils.ical4jTimeZone("Europe/Berlin")
+        assertEquals(
+                DateTime("20200705T010203", tzBerlin),
+                ZonedDateTime.of(2020, 7, 5, 1, 2, 3, 0, ZoneId.of("Europe/Berlin")).toIcal4jDate()
+        )
+    }
+
+
+    @Test
     fun testTemporalAmountToDuration() {
         assertEquals(Duration.ofHours(1), Duration.ofHours(1).toDuration(Instant.EPOCH))
         assertEquals(Duration.ofDays(1), Duration.ofDays(1).toDuration(Instant.EPOCH))

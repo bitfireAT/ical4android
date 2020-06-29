@@ -17,6 +17,7 @@ import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.property.DateProperty
 import java.io.StringReader
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 /**
  * Date/time utilities
@@ -81,9 +82,27 @@ object DateUtils {
             result
     }
 
+    /**
+     * Gets a [ZoneId] from a given ID string. In opposite to [ZoneId.of],
+     * this methods returns null when the zone is not available.
+     *
+     * @param id    zone ID, like "Europe/Berlin" (may be null)
+     *
+     * @return      ZoneId or null if the argument was null or no zone with this ID could be found
+     */
+    fun getZoneId(id: String?): ZoneId? =
+            id?.let {
+                try {
+                    val zone = ZoneId.of(id)
+                    zone
+                } catch (e: Exception) {
+                    null
+                }
+            }
+
     @Suppress("DEPRECATION")
     @UsesThreadContextClassLoader
-    fun ical4jTimeZone(id: String) = tzRegistry.getTimeZone(id)
+    fun ical4jTimeZone(id: String): TimeZone? = tzRegistry.getTimeZone(id)
 
     /**
      * Determines whether a given date represents a DATE value.

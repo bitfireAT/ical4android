@@ -15,6 +15,7 @@ import net.fortuna.ical4j.model.parameter.Related
 import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.Due
+import net.fortuna.ical4j.util.TimeZones
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -27,13 +28,13 @@ class ICalendarTest {
 	val tzVienna = DateUtils.ical4jTimeZone("Europe/Vienna")
 
 	// UTC timezone
-	val tzUTC = DateUtils.ical4jTimeZone("Etc/UTC").vTimeZone
+	val tzUTC = DateUtils.ical4jTimeZone(TimeZones.UTC_ID)!!.vTimeZone
 
 	// Pakistan (Asia/Karachi) used DST only in 2002, 2008 and 2009; no known future occurrences
-	val tzKarachi = DateUtils.ical4jTimeZone("Asia/Karachi").vTimeZone
+	val tzKarachi = DateUtils.ical4jTimeZone("Asia/Karachi")!!.vTimeZone
 
 	// Somalia (Africa/Mogadishu) has never used DST
-	val tzMogadishu = DateUtils.ical4jTimeZone("Africa/Mogadishu").vTimeZone
+	val tzMogadishu = DateUtils.ical4jTimeZone("Africa/Mogadishu")!!.vTimeZone
 
 	// current time stamp
 	val currentTime = java.util.Date().time
@@ -53,7 +54,7 @@ class ICalendarTest {
 	@Test
 	fun testMinifyVTimezone_removeObsoleteDstObservances() {
 		// Remove obsolete observances when DST is used.
-		val vtzVienna = tzVienna.vTimeZone
+		val vtzVienna = tzVienna!!.vTimeZone
 		assertEquals(6, vtzVienna.observances.size)
 		// By default, the earliest observance is in 1893. We can drop that for events in 2020.
 		assertEquals(DateTime("18930401T000000"), vtzVienna.observances.sortedBy { it.startDate.date }.first().startDate.date)
@@ -79,7 +80,7 @@ class ICalendarTest {
 	@Test
 	fun testMinifyVTimezone_keepFutureObservances() {
 		// Keep future observances.
-		ICalendar.minifyVTimeZone(tzVienna.vTimeZone, Date("19751001")).let { minified ->
+		ICalendar.minifyVTimeZone(tzVienna!!.vTimeZone, Date("19751001")).let { minified ->
 			assertEquals(4, minified.observances.size)
 			assertEquals(DateTime("19160430T230000"), minified.observances[2].startDate.date)
 			assertEquals(DateTime("19161001T010000"), minified.observances[3].startDate.date)

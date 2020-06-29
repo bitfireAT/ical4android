@@ -22,7 +22,6 @@ import androidx.annotation.CallSuper
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import at.bitfire.ical4android.util.AndroidTimeUtils
 import at.bitfire.ical4android.util.TimeApiExtensions
-import at.bitfire.ical4android.util.TimeApiExtensions.toDuration
 import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toRfc5545Duration
@@ -39,8 +38,8 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.time.*
 import java.time.Duration
-import java.time.Instant
 import java.time.Period
 import java.util.*
 import java.util.logging.Level
@@ -179,21 +178,20 @@ abstract class AndroidEvent(
         val tsStart = row.getAsLong(Events.DTSTART) ?: throw CalendarStorageException("Found event without DTSTART")
 
         var tsEnd = row.getAsLong(Events.DTEND)
-        var strDuration = AndroidTimeUtils.fixDuration(row.getAsString(Events.DURATION)).takeIf { tsEnd == null }
+        var duration =   // only use DURATION of DTEND is not defined
+                if (tsEnd == null)
+                    row.getAsString(Events.DURATION)?.let { AndroidTimeUtils.parseDuration(it) }
+                else
+                    null
 
         if (allDay) {
-            if (strDuration != null) {
+            if (duration != null) {
                 // Some servers have problems with DURATION, so we always generate DTEND.
-                val durationAmount = TemporalAmountAdapter.parse(strDuration).duration
-
-                val days = when (durationAmount) {
-                    is Period -> durationAmount.days    /* Android doesn't store months or years */
-                    is Duration -> durationAmount.toDuration(Instant.ofEpochMilli(tsStart)).toDays().toInt()
-                    else -> throw AssertionError("TemporalAmount must be Period or Duration")
-                }
-
-                tsEnd = tsStart + TimeApiExtensions.MILLIS_PER_DAY * days
-                strDuration = null
+                val startDate = ZonedDateTime.ofInstant(Instant.ofEpochMilli(tsStart), ZoneOffset.UTC).toLocalDate()
+                if (duration is Duration)
+                    duration = Period.ofDays(duration.toDays().toInt())
+                tsEnd = (startDate + duration).toEpochDay() * TimeApiExtensions.MILLIS_PER_DAY
+                duration = null
             }
 
             // use DATE values
@@ -205,7 +203,6 @@ abstract class AndroidEvent(
                     Ical4Android.log.fine("dtEnd $tsEnd (allDay) = dtStart, won't generate DTEND property")
                 else /* tsEnd > tsStart */
                     event.dtEnd = DtEnd(Date(tsEnd))
-
             }
 
         } else /* !allDay */ {
@@ -222,12 +219,13 @@ abstract class AndroidEvent(
                 }
             })
 
-            if (strDuration != null) {
+            if (duration != null) {
                 // Some servers have problems with DURATION, so we always generate DTEND.
-                val durationAmount = TemporalAmountAdapter.parse(strDuration).duration
-                val duration = durationAmount.toDuration(Instant.ofEpochMilli(tsStart))
-                tsEnd = (Instant.ofEpochMilli(tsStart) + duration).toEpochMilli()
-                strDuration = null
+                val startTzId = DateUtils.getZoneId(startTz?.id) ?: ZoneId.systemDefault()
+                val zonedStart = ZonedDateTime.ofInstant(Instant.ofEpochMilli(tsStart), startTzId)
+
+                tsEnd = (zonedStart + duration).toInstant().toEpochMilli()
+                duration = null
             }
 
             if (tsEnd != null) {
@@ -248,7 +246,6 @@ abstract class AndroidEvent(
                         }
                     })
                 }
-
             }
 
         }
@@ -260,7 +257,7 @@ abstract class AndroidEvent(
                     event.rRules += RRule(rule)
             }
             row.getAsString(Events.RDATE)?.let { datesStr ->
-                val rDate = AndroidTimeUtils.androidStringToRecurrenceSet(datesStr, allDay) { RDate(it) }
+                val rDate = AndroidTimeUtils.androidStringToRecurrenceSet(datesStr, allDay, tsStart) { RDate(it) }
                 event.rDates += rDate
             }
 
@@ -669,7 +666,13 @@ abstract class AndroidEvent(
         var dtEnd = event.dtEnd
         AndroidTimeUtils.androidifyTimeZone(dtEnd)
 
-        var duration = event.duration?.duration
+        var duration =
+                if (dtEnd == null)
+                    event.duration?.duration
+                else
+                    null
+        if (allDay && duration is Duration)
+            duration = Period.ofDays(duration.toDays().toInt())
 
         if (recurring) {
             // duration must be set
@@ -735,8 +738,10 @@ abstract class AndroidEvent(
                         val calcDtEnd = dtStart.date.toLocalDate() + duration
                         dtEnd = DtEnd(calcDtEnd.toIcal4jDate())
                     } else {
-                        val calcEndTime = dtStart.date.toInstant() + duration
-                        val calcDtEnd = DtEnd(DateTime(calcEndTime.toEpochMilli()))
+                        val zoneIdStart = DateUtils.getZoneId(dtStart.timeZone?.id) ?: ZoneId.systemDefault()
+                        val zonedStartTime = ZonedDateTime.ofInstant(dtStart.date.toInstant(), zoneIdStart)
+                        val calcEnd = zonedStartTime + duration
+                        val calcDtEnd = DtEnd(calcEnd.toIcal4jDate())
                         calcDtEnd.timeZone = dtStart.timeZone
                         dtEnd = calcDtEnd
                     }
