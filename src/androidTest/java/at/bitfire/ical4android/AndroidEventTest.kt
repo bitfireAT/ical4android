@@ -916,78 +916,26 @@ class AndroidEventTest {
         }
     }
 
-    /**
-     * Build attendee CuType/Role test matrix:
-     *
-     * CuType ↓ / Role →   (none)    CHAIR    REQ-PARTICIPANT  OPT-PARTICIPANT  NON-PARTICIPANT  X-CUSTOM     test name prefix
-     * (none)              req,att   req,spk  req,att          opt,att          non,att          req,att      CuTypePerson
-     * INDIVIDUAL          req,att   req,spk  req,att          opt,att          non,att          req,att      CuTypePerson
-     * GROUP               req,att   req,spk  req,att          opt,att          non,att          req,att      CuTypePerson
-     * RESOURCE            ::: res,non ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::     CuTypeResource
-     * ROOM                ::: res,non ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::     CuTypeResource
-     * UNKNOWN             req,att   req,spk  req,att          opt,att          non,att          req,att      CuTypePerson
-     * X-CUSTOM            req,att   req,spk  req,att          opt,att          non,att          req,att      CuTypePerson
-     */
-
-    private val cuTypePersons = arrayOf(null, CuType.INDIVIDUAL, CuType.GROUP, CuType.UNKNOWN, CuType("X-CUSTOM"))
-    private val cuTypeResource = arrayOf(CuType.RESOURCE, CuType.ROOM)
-
     @Test
-    fun testBuildAttendee_CuTypePerson_NoRole() {
-        for (cuType in cuTypePersons) {
-            buildEvent(true) {
-                attendees += Attendee("mailto:attendee@example.com").apply {
-                    if (cuType != null)
-                        parameters.add(cuType)
-                }
-            }.let { result ->
-                firstAttendee(result)!!.let { attendee ->
-                    assertEquals(Attendees.TYPE_REQUIRED, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
-                    assertEquals(Attendees.RELATIONSHIP_ATTENDEE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+    fun testBuildAttendee_Individual() {
+        for (cuType in arrayOf(CuType.INDIVIDUAL, null)) {
+            // REQ-PARTICIPANT (default, includes unknown values)
+            for (role in arrayOf(Role.REQ_PARTICIPANT, Role("x-custom-role"), null)) {
+                buildEvent(true) {
+                    attendees += Attendee("mailto:attendee@example.com").apply {
+                        if (cuType != null)
+                            parameters.add(cuType)
+                        if (role != null)
+                            parameters.add(role)
+                    }
+                }.let { result ->
+                    firstAttendee(result)!!.let { attendee ->
+                        assertEquals(Attendees.TYPE_REQUIRED, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                        assertEquals(Attendees.RELATIONSHIP_ATTENDEE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+                    }
                 }
             }
-        }
-    }
-
-    @Test
-    fun testBuildAttendee_CuTypePerson_Chair() {
-        for (cuType in cuTypePersons) {
-            buildEvent(true) {
-                attendees += Attendee("mailto:attendee@example.com").apply {
-                    if (cuType != null)
-                        parameters.add(cuType)
-                    parameters.add(Role.CHAIR)
-                }
-            }.let { result ->
-                firstAttendee(result)!!.let { attendee ->
-                    assertEquals(Attendees.TYPE_REQUIRED, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
-                    assertEquals(Attendees.RELATIONSHIP_SPEAKER, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
-                }
-            }
-        }
-    }
-
-    @Test
-    fun testBuildAttendee_CuTypePerson_ReqParticipant() {
-        for (cuType in cuTypePersons) {
-            buildEvent(true) {
-                attendees += Attendee("mailto:attendee@example.com").apply {
-                    if (cuType != null)
-                        parameters.add(cuType)
-                    parameters.add(Role.REQ_PARTICIPANT)
-                }
-            }.let { result ->
-                firstAttendee(result)!!.let { attendee ->
-                    assertEquals(Attendees.TYPE_REQUIRED, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
-                    assertEquals(Attendees.RELATIONSHIP_ATTENDEE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
-                }
-            }
-        }
-    }
-
-    @Test
-    fun testBuildAttendee_CuTypePerson_OptParticipant() {
-        for (cuType in cuTypePersons) {
+            // OPT-PARTICIPANT
             buildEvent(true) {
                 attendees += Attendee("mailto:attendee@example.com").apply {
                     if (cuType != null)
@@ -1000,12 +948,7 @@ class AndroidEventTest {
                     assertEquals(Attendees.RELATIONSHIP_ATTENDEE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
                 }
             }
-        }
-    }
-
-    @Test
-    fun testBuildAttendee_CuTypePerson_NonParticipant() {
-        for (cuType in cuTypePersons) {
+            // NON-PARTICIPANT
             buildEvent(true) {
                 attendees += Attendee("mailto:attendee@example.com").apply {
                     if (cuType != null)
@@ -1022,38 +965,150 @@ class AndroidEventTest {
     }
 
     @Test
-    fun testBuildAttendee_CuTypePerson_CustomRole() {
-        for (cuType in cuTypePersons) {
+    fun testBuildAttendee_Unknown() {
+        // REQ-PARTICIPANT (default, includes unknown values)
+        for (role in arrayOf(Role.REQ_PARTICIPANT, Role("x-custom-role"), null)) {
             buildEvent(true) {
                 attendees += Attendee("mailto:attendee@example.com").apply {
-                    if (cuType != null)
-                        parameters.add(cuType)
-                    parameters.add(Role("X-CUSTOM_ROLE"))
+                    parameters.add(CuType.UNKNOWN)
+                    if (role != null)
+                        parameters.add(role)
                 }
             }.let { result ->
                 firstAttendee(result)!!.let { attendee ->
                     assertEquals(Attendees.TYPE_REQUIRED, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
-                    assertEquals(Attendees.RELATIONSHIP_ATTENDEE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+                    assertEquals(Attendees.RELATIONSHIP_NONE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
                 }
+            }
+        }
+        // OPT-PARTICIPANT
+        buildEvent(true) {
+            attendees += Attendee("mailto:attendee@example.com").apply {
+                parameters.add(CuType.UNKNOWN)
+                parameters.add(Role.OPT_PARTICIPANT)
+            }
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals(Attendees.TYPE_OPTIONAL, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                assertEquals(Attendees.RELATIONSHIP_NONE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+            }
+        }
+        // NON-PARTICIPANT
+        buildEvent(true) {
+            attendees += Attendee("mailto:attendee@example.com").apply {
+                parameters.add(CuType.UNKNOWN)
+                parameters.add(Role.NON_PARTICIPANT)
+            }
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals(Attendees.TYPE_NONE, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                assertEquals(Attendees.ATTENDEE_STATUS_NONE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
             }
         }
     }
 
     @Test
-    fun testBuildAttendee_CuTypeResource() {
-        for (cuType in cuTypeResource)
-            for (role in arrayOf(null, Role.CHAIR, Role.REQ_PARTICIPANT, Role.OPT_PARTICIPANT, Role.NON_PARTICIPANT, Role("X-CUSTOM-ROLE"))) {
-                buildEvent(true) {
-                    attendees += Attendee("mailto:attendee@example.com").apply {
+    fun testBuildAttendee_Group() {
+        // REQ-PARTICIPANT (default, includes unknown values)
+        for (role in arrayOf(Role.REQ_PARTICIPANT, Role("x-custom-role"), null)) {
+            buildEvent(true) {
+                attendees += Attendee("mailto:attendee@example.com").apply {
+                    parameters.add(CuType.GROUP)
+                    if (role != null)
+                        parameters.add(role)
+                }
+            }.let { result ->
+                firstAttendee(result)!!.let { attendee ->
+                    assertEquals(Attendees.TYPE_REQUIRED, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                    assertEquals(Attendees.RELATIONSHIP_PERFORMER, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+                }
+            }
+        }
+        // OPT-PARTICIPANT
+        buildEvent(true) {
+            attendees += Attendee("mailto:attendee@example.com").apply {
+                parameters.add(CuType.GROUP)
+                parameters.add(Role.OPT_PARTICIPANT)
+            }
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals(Attendees.TYPE_OPTIONAL, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                assertEquals(Attendees.RELATIONSHIP_PERFORMER, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+            }
+        }
+        // NON-PARTICIPANT
+        buildEvent(true) {
+            attendees += Attendee("mailto:attendee@example.com").apply {
+                parameters.add(CuType.GROUP)
+                parameters.add(Role.NON_PARTICIPANT)
+            }
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals(Attendees.TYPE_NONE, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                assertEquals(Attendees.RELATIONSHIP_PERFORMER, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_Resource() {
+        for (role in arrayOf(null, Role.REQ_PARTICIPANT, Role.OPT_PARTICIPANT, Role.NON_PARTICIPANT, Role("X-CUSTOM-ROLE")))
+            buildEvent(true) {
+                attendees += Attendee("mailto:attendee@example.com").apply {
+                    parameters.add(CuType.RESOURCE)
+                    if (role != null)
+                        parameters.add(role)
+                }
+            }.let { result ->
+                firstAttendee(result)!!.let { attendee ->
+                    assertEquals(Attendees.TYPE_RESOURCE, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                    assertEquals(Attendees.RELATIONSHIP_NONE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+                }
+            }
+        // CHAIR
+        buildEvent(true) {
+            attendees += Attendee("mailto:attendee@example.com").apply {
+                parameters.add(CuType.RESOURCE)
+                parameters.add(Role.CHAIR)
+            }
+        }.let { result ->
+            firstAttendee(result)!!.let { attendee ->
+                assertEquals(Attendees.TYPE_RESOURCE, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                assertEquals(Attendees.RELATIONSHIP_SPEAKER, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAttendee_Chair() {
+        for (cuType in arrayOf(null, CuType.INDIVIDUAL, CuType.UNKNOWN, CuType.GROUP, CuType("x-custom-cutype")))
+            buildEvent(true) {
+                attendees += Attendee("mailto:attendee@example.com").apply {
+                    if (cuType != null)
                         parameters.add(cuType)
-                        if (role != null)
-                            parameters.add(role)
-                    }
-                }.let { result ->
-                    firstAttendee(result)!!.let { attendee ->
-                        assertEquals(Attendees.TYPE_RESOURCE, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
-                        assertEquals(Attendees.RELATIONSHIP_NONE, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
-                    }
+                    parameters.add(Role.CHAIR)
+                }
+            }.let { result ->
+                firstAttendee(result)!!.let { attendee ->
+                    assertEquals(Attendees.TYPE_REQUIRED, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                    assertEquals(Attendees.RELATIONSHIP_SPEAKER, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+                }
+            }
+    }
+
+    @Test
+    fun testBuildAttendee_Room() {
+        for (role in arrayOf(null, Role.CHAIR, Role.REQ_PARTICIPANT, Role.OPT_PARTICIPANT, Role.NON_PARTICIPANT, Role("X-CUSTOM-ROLE")))
+            buildEvent(true) {
+                attendees += Attendee("mailto:attendee@example.com").apply {
+                    parameters.add(CuType.ROOM)
+                    if (role != null)
+                        parameters.add(role)
+                }
+            }.let { result ->
+                firstAttendee(result)!!.let { attendee ->
+                    assertEquals(Attendees.TYPE_RESOURCE, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                    assertEquals(Attendees.RELATIONSHIP_PERFORMER, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
                 }
             }
     }
@@ -1147,7 +1202,23 @@ class AndroidEventTest {
         }
     }
 
-    // TODO tests: build exceptions, unknown properties
+
+    @Test
+    fun testBuildUnknownProperty() {
+        buildEvent(true) {
+            val params = ParameterList()
+            params.add(Language("en"))
+            unknownProperties += XProperty("X-NAME", params, "Custom Value")
+        }.let { result ->
+            firstUnknownProperty(result)!!.let { property ->
+                assertEquals("X-NAME", property.name)
+                assertEquals("en", property.getParameter<Language>(Parameter.LANGUAGE).value)
+                assertEquals("Custom Value", property.value)
+            }
+        }
+    }
+
+    // TODO tests: build/populate exceptions
 
 
     private fun populateEvent(
@@ -1639,18 +1710,129 @@ class AndroidEventTest {
         }
     }
 
-    /**
-     * Populate attendees relationship/type test matrix:
-     *
-     * ↓ RELATIONSHIP / TYPE →  none     required   optional   resource
-     *   none                   -        ind,req    ind,opt    res,req
-     *   organizer              ind,cha  ind,cha    ind,cha    res,req
-     *   performer \
-     *   attendee  |            ind,-    ind,req    ind,opt    res,req
-     *   speaker   /
-     */
+    @Test
+    fun testPopulateAttendee_AttendeeOrganizer() {
+        for (relationship in arrayOf(Attendees.RELATIONSHIP_ATTENDEE, Attendees.RELATIONSHIP_ORGANIZER))
+            for (type in arrayOf(Attendees.TYPE_REQUIRED, Attendees.TYPE_OPTIONAL, Attendees.TYPE_NONE, null))
+                populateAttendee {
+                    put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+                    put(Attendees.ATTENDEE_RELATIONSHIP, relationship)
+                    if (type != null)
+                        put(Attendees.ATTENDEE_TYPE, type as Int?)
+                }!!.let { attendee ->
+                    assertNull(attendee.getParameter(Parameter.CUTYPE))
+                }
+    }
 
-    /* TODO */
+    @Test
+    fun testPopulateAttendee_Performer() {
+        for (type in arrayOf(Attendees.TYPE_REQUIRED, Attendees.TYPE_OPTIONAL, Attendees.TYPE_NONE, null))
+            populateAttendee {
+                put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+                put(Attendees.ATTENDEE_RELATIONSHIP, Attendees.RELATIONSHIP_PERFORMER)
+                if (type != null)
+                    put(Attendees.ATTENDEE_TYPE, type as Int?)
+            }!!.let { attendee ->
+                assertEquals(CuType.GROUP, attendee.getParameter<CuType>(Parameter.CUTYPE))
+            }
+    }
+
+    @Test
+    fun testPopulateAttendee_Speaker() {
+        for (type in arrayOf(Attendees.TYPE_REQUIRED, Attendees.TYPE_OPTIONAL, Attendees.TYPE_NONE, null))
+            populateAttendee {
+                put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+                put(Attendees.ATTENDEE_RELATIONSHIP, Attendees.RELATIONSHIP_SPEAKER)
+                if (type != null)
+                    put(Attendees.ATTENDEE_TYPE, type as Int?)
+            }!!.let { attendee ->
+                assertNull(attendee.getParameter(Parameter.CUTYPE))
+                assertEquals(Role.CHAIR, attendee.getParameter<Role>(Parameter.ROLE))
+            }
+        // TYPE_RESOURCE
+        populateAttendee {
+            put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+            put(Attendees.ATTENDEE_RELATIONSHIP, Attendees.RELATIONSHIP_SPEAKER)
+            put(Attendees.ATTENDEE_TYPE, Attendees.TYPE_RESOURCE)
+        }!!.let { attendee ->
+            assertEquals(CuType.RESOURCE, attendee.getParameter<CuType>(Parameter.CUTYPE))
+            assertEquals(Role.CHAIR, attendee.getParameter<Role>(Parameter.ROLE))
+        }
+    }
+
+    @Test
+    fun testPopulateAttendee_RelNone() {
+        for (relationship in arrayOf(Attendees.RELATIONSHIP_NONE, null))
+            for (type in arrayOf(Attendees.TYPE_REQUIRED, Attendees.TYPE_OPTIONAL, Attendees.TYPE_NONE, null))
+                populateAttendee {
+                    put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+                    put(Attendees.ATTENDEE_RELATIONSHIP, relationship)
+                    if (type != null)
+                        put(Attendees.ATTENDEE_TYPE, type as Int?)
+                }!!.let { attendee ->
+                    assertEquals(CuType.UNKNOWN, attendee.getParameter<CuType>(Parameter.CUTYPE))
+                }
+    }
+
+    @Test
+    fun testPopulateAttendee_Required() {
+        for (relationship in arrayOf(Attendees.RELATIONSHIP_ATTENDEE, Attendees.RELATIONSHIP_ORGANIZER, Attendees.RELATIONSHIP_PERFORMER, Attendees.RELATIONSHIP_NONE, null))
+            populateAttendee {
+                put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+                put(Attendees.ATTENDEE_TYPE, Attendees.TYPE_REQUIRED)
+                if (relationship != null)
+                    put(Attendees.ATTENDEE_RELATIONSHIP, relationship)
+            }!!.let { attendee ->
+                assertNull(attendee.getParameter(Parameter.ROLE))
+            }
+    }
+
+    @Test
+    fun testPopulateAttendee_Optional() {
+        for (relationship in arrayOf(Attendees.RELATIONSHIP_ATTENDEE, Attendees.RELATIONSHIP_ORGANIZER, Attendees.RELATIONSHIP_PERFORMER, Attendees.RELATIONSHIP_NONE, null))
+            populateAttendee {
+                put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+                put(Attendees.ATTENDEE_TYPE, Attendees.TYPE_OPTIONAL)
+                if (relationship != null)
+                    put(Attendees.ATTENDEE_RELATIONSHIP, relationship)
+            }!!.let { attendee ->
+                assertEquals(Role.OPT_PARTICIPANT, attendee.getParameter<Role>(Parameter.ROLE))
+            }
+    }
+
+    @Test
+    fun testPopulateAttendee_TypeNone() {
+        for (relationship in arrayOf(Attendees.RELATIONSHIP_ATTENDEE, Attendees.RELATIONSHIP_ORGANIZER, Attendees.RELATIONSHIP_PERFORMER, Attendees.RELATIONSHIP_NONE, null))
+            populateAttendee {
+                put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+                put(Attendees.ATTENDEE_TYPE, Attendees.TYPE_NONE)
+                if (relationship != null)
+                    put(Attendees.ATTENDEE_RELATIONSHIP, relationship)
+            }!!.let { attendee ->
+                assertEquals(Role.NON_PARTICIPANT, attendee.getParameter<Role>(Parameter.ROLE))
+            }
+    }
+
+    @Test
+    fun testPopulateAttendee_Resource() {
+        for (relationship in arrayOf(Attendees.RELATIONSHIP_ATTENDEE, Attendees.RELATIONSHIP_ORGANIZER, Attendees.RELATIONSHIP_NONE, null))
+            populateAttendee {
+                put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+                put(Attendees.ATTENDEE_TYPE, Attendees.TYPE_RESOURCE)
+                if (relationship != null)
+                    put(Attendees.ATTENDEE_RELATIONSHIP, relationship)
+            }!!.let { attendee ->
+                assertEquals(CuType.RESOURCE, attendee.getParameter<CuType>(Parameter.CUTYPE))
+            }
+        // RELATIONSHIP_PERFORMER
+        populateAttendee {
+            put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+            put(Attendees.ATTENDEE_TYPE, Attendees.TYPE_RESOURCE)
+            put(Attendees.ATTENDEE_RELATIONSHIP, Attendees.RELATIONSHIP_PERFORMER)
+        }!!.let { attendee ->
+            assertEquals(CuType.ROOM, attendee.getParameter<CuType>(Parameter.CUTYPE))
+        }
+    }
 
     @Test
     fun testPopulateAttendee_Status_Null() {
@@ -1711,7 +1893,21 @@ class AndroidEventTest {
         }
     }
 
-    // TODO tests: populate attendees, exceptions, unknown properties
+
+    fun testPopulateUnknownProperty() {
+        val params = ParameterList()
+        params.add(Language("en"))
+        val unknownProperty = XProperty("X-NAME", params, "Custom Value")
+        val result = populateEvent(true, valuesBuilder = {}, insertCallback = { id ->
+            val values = ContentValues()
+            values.put(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
+            values.put(ExtendedProperties.VALUE, UnknownProperty.toJsonString(unknownProperty))
+            provider.insert(calendar.syncAdapterURI(Reminders.CONTENT_URI), values)
+        }).unknownProperties.first
+        assertEquals("X-NAME", result.name)
+        assertEquals("en", result.getParameter<Language>(Parameter.LANGUAGE).value)
+        assertEquals("Custom Value", result.value)
+    }
 
 
     @Test

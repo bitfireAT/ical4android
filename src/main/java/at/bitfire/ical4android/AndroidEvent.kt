@@ -28,7 +28,10 @@ import at.bitfire.ical4android.util.TimeApiExtensions.toRfc5545Duration
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.component.VAlarm
-import net.fortuna.ical4j.model.parameter.*
+import net.fortuna.ical4j.model.parameter.Cn
+import net.fortuna.ical4j.model.parameter.Email
+import net.fortuna.ical4j.model.parameter.PartStat
+import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.*
 import net.fortuna.ical4j.util.TimeZones
 import java.io.ByteArrayInputStream
@@ -353,26 +356,8 @@ abstract class AndroidEvent(
 
             row.getAsString(Attendees.ATTENDEE_NAME)?.let { cn -> params.add(Cn(cn)) }
 
-            // type
-            val type = row.getAsInteger(Attendees.ATTENDEE_TYPE)
-            if (type == Attendees.TYPE_RESOURCE)
-                params.add(CuType.RESOURCE)
-
-            // role
-            when (row.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP)) {
-                Attendees.RELATIONSHIP_ORGANIZER,
-                Attendees.RELATIONSHIP_ATTENDEE,
-                Attendees.RELATIONSHIP_PERFORMER,
-                Attendees.RELATIONSHIP_SPEAKER -> {
-                    params.add(if (type == Attendees.TYPE_REQUIRED) Role.REQ_PARTICIPANT else Role.OPT_PARTICIPANT)
-
-                    // If the event is created/modified by the organizer, ask each participant to update their status.
-                    if (isOrganizer)
-                        params.add(Rsvp(true))
-                }
-                else /* RELATIONSHIP_NONE */ ->
-                    params.add(Role.NON_PARTICIPANT)
-            }
+            // type/relation mapping is complex and thus outsourced to AttendeeMappings
+            AttendeeMappings.androidToICalendar(row, attendee)
 
             // status
             when (row.getAsInteger(Attendees.ATTENDEE_STATUS)) {
@@ -870,27 +855,8 @@ abstract class AndroidEvent(
             builder.withValue(Attendees.ATTENDEE_NAME, cn.value)
         }
 
-        var type: Int
-        var relationship = Attendees.RELATIONSHIP_NONE
-
-        val cutype = attendee.getParameter(Parameter.CUTYPE) as? CuType
-        if (cutype in arrayOf(CuType.RESOURCE, CuType.ROOM))
-            // "attendee" is a (physical) resource
-            type = Attendees.TYPE_RESOURCE
-        else {
-            // attendee is not a (physical) resource
-            relationship = Attendees.RELATIONSHIP_ATTENDEE
-            type = Attendees.TYPE_REQUIRED
-
-            val role = attendee.getParameter(Parameter.ROLE) as? Role
-
-            Calendars.CAN_PARTIALLY_UPDATE
-            when (role) {
-                Role.CHAIR -> relationship = Attendees.RELATIONSHIP_SPEAKER
-                Role.OPT_PARTICIPANT -> type = Attendees.TYPE_OPTIONAL
-                Role.NON_PARTICIPANT -> type = Attendees.TYPE_NONE
-            }
-        }
+        // type/relation mapping is complex and thus outsourced to AttendeeMappings
+        AttendeeMappings.iCalendarToAndroid(attendee, builder)
 
         val status = when(attendee.getParameter(Parameter.PARTSTAT) as? PartStat) {
             PartStat.ACCEPTED     -> Attendees.ATTENDEE_STATUS_ACCEPTED
@@ -899,10 +865,7 @@ abstract class AndroidEvent(
             PartStat.DELEGATED    -> Attendees.ATTENDEE_STATUS_NONE
             else /* default: PartStat.NEEDS_ACTION */ -> Attendees.ATTENDEE_STATUS_INVITED
         }
-
-        builder .withValue(Attendees.ATTENDEE_TYPE, type)
-                .withValue(Attendees.ATTENDEE_STATUS, status)
-                .withValue(Attendees.ATTENDEE_RELATIONSHIP, relationship)
+        builder.withValue(Attendees.ATTENDEE_STATUS, status)
 
         Ical4Android.log.log(Level.FINE, "Built attendee", builder.build())
         batch.enqueue(BatchOperation.Operation(builder, Attendees.EVENT_ID, idxEvent))
