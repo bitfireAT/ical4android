@@ -153,6 +153,8 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
     var isSynced = true
     var isVisible = true
 
+    var ownerAccount: String? = null
+
 
     protected open fun populate(info: ContentValues) {
         name = info.getAsString(Calendars.NAME)
@@ -162,6 +164,8 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 
         isSynced = info.getAsInteger(Calendars.SYNC_EVENTS) != 0
         isVisible = info.getAsInteger(Calendars.VISIBLE) != 0
+
+        ownerAccount = info.getAsString(Calendars.OWNER_ACCOUNT)
     }
 
 

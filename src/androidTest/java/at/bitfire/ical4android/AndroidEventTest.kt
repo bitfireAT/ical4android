@@ -1114,6 +1114,19 @@ class AndroidEventTest {
     }
 
     @Test
+    fun testBuildAttendee_Organizer() {
+        for (cuType in arrayOf(null, CuType.INDIVIDUAL, CuType.UNKNOWN, CuType.GROUP, CuType("x-custom-cutype")))
+            buildEvent(true) {
+                attendees += Attendee(URI("mailto", testAccount.name, null))
+            }.let { result ->
+                firstAttendee(result)!!.let { attendee ->
+                    assertEquals(testAccount.name, attendee.getAsString(Attendees.ATTENDEE_EMAIL))
+                    assertEquals(Attendees.TYPE_REQUIRED, attendee.getAsInteger(Attendees.ATTENDEE_TYPE))
+                    assertEquals(Attendees.RELATIONSHIP_ORGANIZER, attendee.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP))
+                }
+            }
+    }
+    @Test
     fun testBuildAttendee_PartStat_None() {
         buildEvent(true) {
             attendees += Attendee("mailto:attendee@example.com")

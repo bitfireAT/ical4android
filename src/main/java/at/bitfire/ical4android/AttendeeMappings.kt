@@ -95,10 +95,14 @@ object AttendeeMappings {
      *     ¹ custom/unknown ROLE values must be treated as REQ-PARTICIPANT
      *     ² custom/unknown CUTYPE values must be treated as UNKNOWN
      *
+     *  When [attendee] is the ORGANIZER, [CalendarContract.Attendees.ATTENDEE_RELATIONSHIP] = RELATIONSHIP_ATTENDEE
+     *  is replaced by [CalendarContract.Attendees.RELATIONSHIP_ORGANIZER].
+     *
      * @param attendee   iCalendar attendee to map
      * @param row        builder for the Android attendee row
+     * @param owner      email address of account owner ([CalendarContract.Calendars.OWNER_ACCOUNT]); used to determine whether [attendee] is the organizer
      */
-    fun iCalendarToAndroid(attendee: Attendee, row: ContentProviderOperation.Builder) {
+    fun iCalendarToAndroid(attendee: Attendee, row: ContentProviderOperation.Builder, owner: String) {
         var type: Int
         var relationship: Int
 
@@ -143,6 +147,16 @@ object AttendeeMappings {
                         type = Attendees.TYPE_REQUIRED
                 }
             }
+        }
+
+        if (relationship == Attendees.RELATIONSHIP_ATTENDEE) {
+            var uri = attendee.calAddress
+            val email = if (uri.scheme.equals("mailto", true))
+                uri.schemeSpecificPart
+            else
+                attendee.getParameter<Parameter>(ICalendar.PARAMETER_EMAIL)?.value
+            if (email == owner)
+                relationship = Attendees.RELATIONSHIP_ORGANIZER
         }
 
         row     .withValue(Attendees.ATTENDEE_TYPE, type)

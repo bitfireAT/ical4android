@@ -856,7 +856,7 @@ abstract class AndroidEvent(
         }
 
         // type/relation mapping is complex and thus outsourced to AttendeeMappings
-        AttendeeMappings.iCalendarToAndroid(attendee, builder)
+        AttendeeMappings.iCalendarToAndroid(attendee, builder, calendar.ownerAccount ?: calendar.account.name)
 
         val status = when(attendee.getParameter(Parameter.PARTSTAT) as? PartStat) {
             PartStat.ACCEPTED     -> Attendees.ATTENDEE_STATUS_ACCEPTED
