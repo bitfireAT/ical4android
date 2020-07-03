@@ -144,6 +144,38 @@ class TaskTest {
     }
 
 
+    /* other methods */
+
+    @Test
+    fun testAllDay() {
+        assertTrue(Task().isAllDay())
+
+        // DTSTART has priority
+        assertFalse(Task().apply {
+            dtStart = DtStart(DateTime())
+        }.isAllDay())
+        assertFalse(Task().apply {
+            dtStart = DtStart(DateTime())
+            due = Due(Date())
+        }.isAllDay())
+        assertTrue(Task().apply {
+            dtStart = DtStart(Date())
+        }.isAllDay())
+        assertTrue(Task().apply {
+            dtStart = DtStart(Date())
+            due = Due(DateTime())
+        }.isAllDay())
+
+        // if DTSTART is missing, DUE decides
+        assertFalse(Task().apply {
+            due = Due(DateTime())
+        }.isAllDay())
+        assertTrue(Task().apply {
+            due = Due(Date())
+        }.isAllDay())
+    }
+
+
     /* helpers */
 
     private fun parseCalendar(fname: String, charset: Charset = Charsets.UTF_8): Task {

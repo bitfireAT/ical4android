@@ -454,8 +454,8 @@ class AndroidEventTest {
     @Test
     fun testBuildEvent_UTC() {
         val values = buildEvent(false) {
-            dtStart = DtStart("20200601T123000Z")
-            dtEnd = DtEnd("20200601T143001Z")
+            dtStart = DtStart(DateTime(1591014600000L), true)
+            dtEnd = DtEnd(DateTime(1591021801000L), true)
         }
         assertEquals(0, values.getAsInteger(Events.ALL_DAY))
 

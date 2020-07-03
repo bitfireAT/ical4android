@@ -460,7 +460,7 @@ public final class TaskContract
      *
      * @author Marten Gajda <marten@dmfs.org>
      */
-    public interface TaskColumns
+    public interface TaskColumns extends BaseColumns
     {
 
         /**
@@ -470,6 +470,18 @@ public final class TaskContract
          * </p>
          */
         String _ID = "_id";
+
+        /**
+         * The local version number of this task. The only guarantee about the value is, it's incremented whenever the task changes (this includes any
+         * changes applied by sync adapters).
+         * <p>
+         * Note, there is no guarantee about how much it's incremented other than by at least 1.
+         * <p>
+         * Value: Integer
+         * <p>
+         * read-only
+         */
+        String VERSION = "version";
 
         /**
          * The id of the list this task belongs to. This value is <strong>write-once</strong> and must not be <code>null</code>.
@@ -764,8 +776,8 @@ public final class TaskContract
         String ORIGINAL_INSTANCE_ID = "original_instance_id";
 
         /**
-         * The time in milliseconds since the Epoch of the original instance that is overridden by this instance or <code>null</code> if this task is not an
-         * exception.
+         * The time in milliseconds since the Epoch of the original instance that is overridden by this instance or <code>null</code> if this task is not a
+         * recurring instance.
          * <p>
          * Value: Long
          * </p>
@@ -782,6 +794,13 @@ public final class TaskContract
 
         /**
          * The row id of the parent task. <code>null</code> if the task has no parent task.
+         * <p>
+         * Note, when writing this value the task {@link Property.Relation} properties are updated accordingly. Any parent or child relations which
+         * make this a child of another task are deleted and a new {@link Property.Relation#RELTYPE_PARENT} relation pointing to the new parent is created.
+         * Be aware that Siblings will be split, i.e. they are not moved to the new parent. Currently this might cause siblings to become orphans if they
+         * don't have a parent-child relationship. This behavior may change in future version.
+         * </p>
+         *
          * <p>
          * Value: Long
          * </p>
@@ -1554,6 +1573,8 @@ public final class TaskContract
          * <p>
          * When writing a relation, exactly one of {@link #RELATED_ID} or {@link #RELATED_UID} must be present. The missing value and {@link
          * #RELATED_CONTENT_URI} will be populated automatically if possible.
+         * <p>
+         * {@link Tasks#PARENT_ID} is updated automatically if possible.
          */
         interface Relation extends PropertyColumns
         {

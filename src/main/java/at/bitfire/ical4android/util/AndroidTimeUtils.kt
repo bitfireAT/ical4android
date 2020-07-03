@@ -3,8 +3,8 @@ package at.bitfire.ical4android.util
 import android.text.format.Time
 import at.bitfire.ical4android.DateUtils
 import at.bitfire.ical4android.Ical4Android
-import net.fortuna.ical4j.model.DateList
-import net.fortuna.ical4j.model.TemporalAmountAdapter
+import net.fortuna.ical4j.model.*
+import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.DateListProperty
@@ -120,13 +120,10 @@ object AndroidTimeUtils {
      * TZID is given) or "yyyymmddThhmmssZ". We don't use the TZID format here because then we're limited
      * to one time-zone, while an iCalendar may contain multiple EXDATE/RDATE lines with different time zones.
      *
-     * @param dates     one more more lists of RDATE or EXDATE
-     * @param allDay    whether the event is an all-day event or not
+     * @param dates         one more more lists of RDATE or EXDATE
+     * @param allDay        whether the event is an all-day event or not
      *
-     * @return formatted string for Android calendar provider:
-     *
-     *   - in case of all-day events, all dates/times are returned as yyyymmddT000000Z
-     *   - in case of timed events, all dates/times are returned as UTC time: yyyymmddThhmmssZ
+     * @return formatted string for Android calendar provider
      */
     fun recurrenceSetsToAndroidString(dates: List<DateListProperty>, allDay: Boolean): String {
         /*  rdate/exdate:       DATE                                DATE_TIME
@@ -236,8 +233,35 @@ object AndroidTimeUtils {
         return property
     }
 
+    fun recurrenceSetsToOpenTasksString(dates: List<DateListProperty>, tz: TimeZone?): String {
+        val allDay = tz == null
+        val strDates = LinkedList<String>()
+        for (dateListProp in dates) {
+            if (dateListProp is RDate)
+                if (dateListProp.periods.isNotEmpty())
+                    Ical4Android.log.warning("RDATE PERIOD not supported, ignoring")
+                else if (dateListProp is ExDate)
+                    if (dateListProp.periods.isNotEmpty())
+                        Ical4Android.log.warning("EXDATE PERIOD not supported, ignoring")
 
-    // duration
+            for (date in dateListProp.dates) {
+                val dateToUse =
+                        if (date is DateTime && allDay)             // VALUE=DATE-TIME, but allDay=1
+                            Date(date)
+                        else if (date !is DateTime && !allDay)      // VALUE=DATE, but allDay=0
+                            DateTime(date.toString(), tz)
+                        else
+                            date
+                if (dateToUse is DateTime)
+                    dateToUse.timeZone = tz!!
+                strDates += dateToUse.toString()
+            }
+        }
+        return strDates.joinToString(RECURRENCE_LIST_VALUE_SEPARATOR)
+    }
+
+
+        // duration
 
     /**
      * Checks and fixes [Event.duration] values with incorrect format which can't be

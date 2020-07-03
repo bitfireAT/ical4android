@@ -34,11 +34,11 @@ class Task: ICalendar() {
 
     var summary: String? = null
     var location: String? = null
+    var geoPosition: Geo? = null
     var description: String? = null
     var color: Int? = null
     var url: String? = null
     var organizer: Organizer? = null
-    var geoPosition: Geo? = null
 
     @IntRange(from = 0, to = 9)
     var priority: Int = Priority.UNDEFINED.level
@@ -131,13 +131,23 @@ class Task: ICalendar() {
 
             t.alarms.addAll(todo.alarms)
 
-            // there seem to be many invalid tasks out there because of some defect clients,
-            // do some validation
+            // There seem to be many invalid tasks out there because of some defect clients, do some validation.
             val dtStart = t.dtStart
             val due = t.due
-            if (dtStart != null && due != null && !due.date.after(dtStart.date)) {
-                Ical4Android.log.warning("Invalid DTSTART >= DUE; ignoring DTSTART")
+
+            if (DateUtils.isDate(dtStart) && DateUtils.isDateTime(due)) {
+                Ical4Android.log.warning("DTSTART is DATE but DUE is DATE-TIME, rewriting DTSTART to DATE-TIME")
+                t.dtStart = DtStart(DateTime(t.dtStart.toString(), t.due!!.timeZone))
+            }
+
+            if (dtStart != null && due != null && due.date <= dtStart.date) {
+                Ical4Android.log.warning("Found invalid DUE <= DTSTART; dropping DTSTART")
                 t.dtStart = null
+            }
+
+            if (t.duration != null && t.dtStart == null) {
+                Ical4Android.log.warning("Found DURATION without DTSTART; ignoring")
+                t.duration = null
             }
 
             return t
@@ -235,10 +245,9 @@ class Task: ICalendar() {
 
 
     fun isAllDay(): Boolean {
-        val dtStart = dtStart
-        val due = due
-        return (dtStart != null && dtStart.date !is DateTime) ||
-               (due != null && due.date !is DateTime)
+        return  dtStart?.let { DateUtils.isDate(it) } ?:
+                due?.let { DateUtils.isDate(it) } ?:
+                true
     }
 
 }

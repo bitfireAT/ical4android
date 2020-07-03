@@ -19,18 +19,19 @@ import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import at.bitfire.ical4android.util.AndroidTimeUtils
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
+import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.RelType
 import net.fortuna.ical4j.model.parameter.Related
 import net.fortuna.ical4j.model.property.*
+import net.fortuna.ical4j.util.TimeZones
 import org.dmfs.tasks.contract.TaskContract.Properties
 import org.dmfs.tasks.contract.TaskContract.Property.*
 import org.dmfs.tasks.contract.TaskContract.Tasks
 import java.io.FileNotFoundException
-import java.net.URI
 import java.net.URISyntaxException
+import java.time.ZoneId
 import java.util.*
-import java.util.TimeZone
 import java.util.logging.Level
 
 /**
@@ -49,6 +50,8 @@ abstract class AndroidTask(
 
     companion object {
         const val UNKNOWN_PROPERTY_DATA = Properties.DATA0
+
+        val utcTimeZone by lazy { DateUtils.ical4jTimeZone(TimeZones.UTC_ID) }
     }
 
     var id: Long? = null
@@ -173,37 +176,44 @@ abstract class AndroidTask(
             else ->                    Status.VTODO_NEEDS_ACTION
         }
 
-        var allDay = false
-        values.getAsInteger(Tasks.IS_ALLDAY)?.let { allDay = it != 0 }
+        val allDay = values.getAsInteger(Tasks.IS_ALLDAY) ?: 0 != 0
 
         val tzID = values.getAsString(Tasks.TZ)
-        val tz = if (tzID != null) DateUtils.tzRegistry.getTimeZone(tzID) else null
+        val tz = tzID?.let { DateUtils.ical4jTimeZone(it) }
 
         values.getAsLong(Tasks.CREATED)?.let { task.createdAt = it }
         values.getAsLong(Tasks.LAST_MODIFIED)?.let { task.lastModified = it }
 
         values.getAsLong(Tasks.DTSTART)?.let { dtStart ->
-            val dt: Date
-            if (allDay)
-                dt = Date(dtStart)
-            else {
-                dt = DateTime(dtStart)
-                if (tz != null)
-                    dt.timeZone = tz
-            }
-            task.dtStart = DtStart(dt)
+            task.dtStart =
+                    if (allDay)
+                        DtStart(Date(dtStart))
+                    else {
+                        val dt = DateTime(dtStart)
+                        if (tz == null)
+                            DtStart(dt, true)
+                        else
+                            DtStart(dt.apply {
+                                timeZone = tz
+                            })
+                    }
         }
 
         values.getAsLong(Tasks.DUE)?.let { due ->
-            val dt: Date
-            if (allDay)
-                dt = Date(due)
-            else {
-                dt = DateTime(due)
-                if (tz != null)
-                    dt.timeZone = tz
-            }
-            task.due = Due(dt)
+            task.due =
+                    if (allDay)
+                        Due(Date(due))
+                    else {
+                        val dt = DateTime(due)
+                        if (tz == null)
+                            Due(dt).apply {
+                                isUtc = true
+                            }
+                        else
+                            Due(dt.apply {
+                                timeZone = tz
+                            })
+                    }
         }
 
         values.getAsString(Tasks.DURATION)?.let { duration ->
@@ -433,9 +443,7 @@ abstract class AndroidTask(
                 .withValue(Tasks.SYNC_VERSION, task.sequence)
                 .withValue(Tasks.TITLE, task.summary)
                 .withValue(Tasks.LOCATION, task.location)
-
-                .withValue(Tasks.GEO, task.geoPosition?.value)
-
+                .withValue(Tasks.GEO, task.geoPosition?.let { "${it.longitude},${it.latitude}" })
                 .withValue(Tasks.DESCRIPTION, task.description)
                 .withValue(Tasks.TASK_COLOR, task.color)
                 .withValue(Tasks.URL, task.url)
@@ -443,19 +451,17 @@ abstract class AndroidTask(
                 // parent_id will be re-calculated when the relation row is inserted (if there is any)
                 .withValue(Tasks.PARENT_ID, null)
 
-        var organizer: String? = null
-        task.organizer?.let {
-            try {
-                val uri = URI(it.value)
-                if (uri.scheme.equals("mailto", true))
-                    organizer = uri.schemeSpecificPart
-                else
-                    Ical4Android.log.log(Level.WARNING, "Found non-mailto ORGANIZER URI, ignoring", uri)
-            } catch (e: URISyntaxException) {
-                Ical4Android.log.log(Level.WARNING, "Invalid ORGANIZER URI, ignoring", e)
-            }
+        task.organizer?.let { organizer ->
+            val uri = organizer.calAddress
+            val email = if (uri.scheme.equals("mailto", true))
+                uri.schemeSpecificPart
+            else
+                organizer.getParameter<Parameter>(ICalendar.PARAMETER_EMAIL)?.value
+            if (email != null)
+                builder.withValue(Tasks.ORGANIZER, email)
+            else
+                Ical4Android.log.warning("Ignoring ORGANIZER without email address (not supported by Android)")
         }
-        builder .withValue(Tasks.ORGANIZER, organizer)
 
         builder .withValue(Tasks.PRIORITY, task.priority)
                 .withValue(Tasks.CLASSIFICATION, when (task.classification) {
@@ -470,18 +476,19 @@ abstract class AndroidTask(
                 .withValue(Tasks.COMPLETED_IS_ALLDAY, 0)
                 .withValue(Tasks.PERCENT_COMPLETE, task.percentComplete)
 
-        builder .withValue(Tasks.STATUS, when (task.status) {
+        val status = when (task.status) {
             Status.VTODO_IN_PROCESS -> Tasks.STATUS_IN_PROCESS
             Status.VTODO_COMPLETED  -> Tasks.STATUS_COMPLETED
             Status.VTODO_CANCELLED  -> Tasks.STATUS_CANCELLED
             else                    -> Tasks.STATUS_DEFAULT    // == Tasks.STATUS_NEEDS_ACTION
-        })
+        }
+        builder.withValue(Tasks.STATUS, status)
 
         val allDay = task.isAllDay()
-        if (allDay)
+        if (allDay) {
             builder .withValue(Tasks.IS_ALLDAY, 1)
                     .withValue(Tasks.TZ, null)
-        else {
+        } else {
             AndroidTimeUtils.androidifyTimeZone(task.dtStart)
             AndroidTimeUtils.androidifyTimeZone(task.due)
             builder .withValue(Tasks.IS_ALLDAY, 0)
@@ -495,23 +502,37 @@ abstract class AndroidTask(
                 .withValue(Tasks.DUE, task.due?.date?.time)
                 .withValue(Tasks.DURATION, task.duration?.value)
 
-                .withValue(Tasks.RDATE, if (task.rDates.isEmpty()) null else AndroidTimeUtils.recurrenceSetsToAndroidString(task.rDates, allDay))
+                .withValue(Tasks.RDATE,
+                        if (task.rDates.isEmpty())
+                            null
+                        else
+                            AndroidTimeUtils.recurrenceSetsToOpenTasksString(task.rDates, if (allDay) null else getTimeZone()))
                 .withValue(Tasks.RRULE, task.rRule?.value)
 
-                .withValue(Tasks.EXDATE, if (task.exDates.isEmpty()) null else AndroidTimeUtils.recurrenceSetsToAndroidString(task.exDates, allDay))
+                .withValue(Tasks.EXDATE,
+                        if (task.exDates.isEmpty())
+                            null
+                        else
+                            AndroidTimeUtils.recurrenceSetsToOpenTasksString(task.exDates, if (allDay) null else getTimeZone()))
         Ical4Android.log.log(Level.FINE, "Built task object", builder.build())
     }
 
 
     fun getTimeZone(): TimeZone {
         val task = requireNotNull(task)
-
-        var tz: TimeZone? = null
-        task.dtStart?.timeZone?.let { tz = it }
-
-        tz = tz ?: task.due?.timeZone
-
-        return tz ?: TimeZone.getDefault()
+        return  task.dtStart?.let { dtStart ->
+                    if (dtStart.isUtc)
+                        utcTimeZone
+                    else
+                        dtStart.timeZone
+                } ?:
+                task.due?.let { due ->
+                    if (due.isUtc)
+                        utcTimeZone
+                    else
+                        due.timeZone
+                } ?:
+                DateUtils.ical4jTimeZone(ZoneId.systemDefault().id)!!
     }
 
     protected fun taskSyncURI(loadProperties: Boolean = false): Uri {

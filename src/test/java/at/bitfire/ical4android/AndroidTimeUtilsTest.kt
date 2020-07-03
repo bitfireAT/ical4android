@@ -285,6 +285,48 @@ class AndroidTimeUtilsTest {
         assertEquals("20150101T000000Z,20150702T000000Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, true))
     }
 
+    @Test
+    fun testRecurrenceSetsToOpenTasksString_UtcTimes() {
+        val list = ArrayList<DateListProperty>(1)
+        list.add(RDate(DateList("20150101T060000Z,20150702T060000Z", Value.DATE_TIME)))
+        assertEquals("20150101T070000,20150702T080000", AndroidTimeUtils.recurrenceSetsToOpenTasksString(list, tzBerlin))
+    }
+
+    @Test
+    fun testRecurrenceSetsToOpenTasksString_ZonedTimes() {
+        val list = ArrayList<DateListProperty>(1)
+        list.add(RDate(DateList("20150101T060000,20150702T060000", Value.DATE_TIME, tzToronto)))
+        assertEquals("20150101T120000,20150702T120000", AndroidTimeUtils.recurrenceSetsToOpenTasksString(list, tzBerlin))
+    }
+
+    @Test
+    fun testRecurrenceSetsToOpenTasksString_MixedTimes() {
+        val list = ArrayList<DateListProperty>(1)
+        list.add(RDate(DateList("20150101T060000Z,20150702T060000", Value.DATE_TIME, tzToronto)))
+        assertEquals("20150101T070000,20150702T120000", AndroidTimeUtils.recurrenceSetsToOpenTasksString(list, tzBerlin))
+    }
+
+    @Test
+    fun testRecurrenceSetsToOpenTasksString_TimesAlthougAllDay() {
+        val list = ArrayList<DateListProperty>(1)
+        list.add(RDate(DateList("20150101T060000,20150702T060000", Value.DATE_TIME, tzToronto)))
+        assertEquals("20150101,20150702", AndroidTimeUtils.recurrenceSetsToOpenTasksString(list, null))
+    }
+
+    @Test
+    fun testRecurrenceSetsToOpenTasksString_Dates() {
+        val list = ArrayList<DateListProperty>(1)
+        list.add(RDate(DateList("20150101,20150702", Value.DATE)))
+        assertEquals("20150101,20150702", AndroidTimeUtils.recurrenceSetsToOpenTasksString(list, null))
+    }
+
+    @Test
+    fun testRecurrenceSetsToOpenTasksString_DatesAlthoughTimeZone() {
+        val list = ArrayList<DateListProperty>(1)
+        list.add(RDate(DateList("20150101,20150702", Value.DATE)))
+        assertEquals("20150101T000000,20150702T000000", AndroidTimeUtils.recurrenceSetsToOpenTasksString(list, tzBerlin))
+    }
+
 
     @Test
     fun testParseDuration() {

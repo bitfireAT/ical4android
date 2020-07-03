@@ -12,7 +12,6 @@ import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
-import net.fortuna.ical4j.util.TimeZones
 import org.junit.Assert.*
 import org.junit.Test
 import java.time.ZoneId

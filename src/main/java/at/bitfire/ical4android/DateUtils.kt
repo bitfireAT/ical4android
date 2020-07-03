@@ -17,7 +17,6 @@ import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.property.DateProperty
 import java.io.StringReader
 import java.time.ZoneId
-import java.time.ZoneOffset
 
 /**
  * Date/time utilities
