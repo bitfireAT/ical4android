@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package at.bitfire.ical4android.util
 
 import android.text.format.Time

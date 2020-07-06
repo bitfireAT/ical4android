@@ -30,9 +30,8 @@ object DateUtils {
      * Global ical4j time zone registry used for event/task processing. Do not
      * modify this registry or its entries!
      */
-    @Deprecated("Use ical4jTimeZone() directly (registry must not be modified)")
     @UsesThreadContextClassLoader
-    val tzRegistry = TimeZoneRegistryFactory.getInstance().createRegistry()
+    private val tzRegistry = TimeZoneRegistryFactory.getInstance().createRegistry()
 
     init {
         Ical4Android.checkThreadContextClassLoader()

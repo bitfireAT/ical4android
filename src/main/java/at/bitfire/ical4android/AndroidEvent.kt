@@ -39,12 +39,11 @@ import java.io.FileNotFoundException
 import java.io.ObjectInputStream
 import java.net.URI
 import java.net.URISyntaxException
-import java.text.ParseException
-import java.text.SimpleDateFormat
 import java.time.*
 import java.time.Duration
 import java.time.Period
 import java.util.*
+import java.util.Calendar
 import java.util.logging.Level
 
 /**
@@ -452,8 +451,6 @@ abstract class AndroidEvent(
 
                     // use EXDATE instead of exceptions for cancelled instances
                     if (exceptionEvent.status == Status.VEVENT_CANCELLED) {
-                        // TODO EXDATE TIMEZONE testen/optimieren
-                        // TODO Test für CANCELLED -> EXDATE
                         val list = DateList(
                                 if (DateUtils.isDate(recurrenceId)) Value.DATE else Value.DATE_TIME,
                                 recurrenceId.timeZone
@@ -552,13 +549,12 @@ abstract class AndroidEvent(
             var date = exception.recurrenceId!!.date
             if (DateUtils.isDate(event.dtStart) && date is DateTime) {
                 // correct VALUE=DATE-TIME RECURRENCE-IDs to VALUE=DATE for all-day events
-                val dateFormatDate = SimpleDateFormat("yyyyMMdd", Locale.US)
-                val dateString = dateFormatDate.format(date)
-                try {
-                    date = Date(dateString)
-                } catch (e: ParseException) {
-                    Ical4Android.log.log(Level.WARNING, "Couldn't parse DATE part of DATE-TIME RECURRENCE-ID", e)
-                }
+                val cal = Calendar.getInstance(date.timeZone)
+                cal.time = date
+                val day = cal.get(Calendar.DAY_OF_MONTH)
+                val month = cal.get(Calendar.MONTH) + 1
+                val year = cal.get(Calendar.YEAR)
+                date = Date("%4d%02d%02d".format(year, month, day))
             }
             exBuilder   .withValue(Events.ORIGINAL_ALL_DAY, if (DateUtils.isDate(event.dtStart)) 1 else 0)
                         .withValue(Events.ORIGINAL_INSTANCE_TIME, date.time)

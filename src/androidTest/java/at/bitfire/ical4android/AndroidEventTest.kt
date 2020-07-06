@@ -1231,7 +1231,70 @@ class AndroidEventTest {
         }
     }
 
-    // TODO tests: build/populate exceptions
+    private fun firstException(values: ContentValues): ContentValues? {
+        val id = values.getAsInteger(Events._ID)
+        provider.query(calendar.syncAdapterURI(Events.CONTENT_URI), null,
+                "${Events.ORIGINAL_ID}=?", arrayOf(id.toString()), null)?.use { cursor ->
+            if (cursor.moveToNext()) {
+                val result = ContentValues(cursor.count)
+                DatabaseUtils.cursorRowToContentValues(cursor, result)
+                return result
+            }
+        }
+        return null
+    }
+
+    @Test
+    fun testBuildException_NonAllDay() {
+        buildEvent(false) {
+            dtStart = DtStart("20200706T193000", tzVienna)
+            rRules += RRule("FREQ=DAILY;COUNT=10")
+            exceptions += Event().apply {
+                recurrenceId = RecurrenceId("20200707T193000", tzVienna)
+                dtStart = DtStart("20200706T203000", tzShanghai)
+                summary = "Event moved to one hour later"
+            }
+        }.let { result ->
+            assertEquals(1594056600000L, result.getAsLong(Events.DTSTART))
+            assertEquals(tzVienna.id, result.getAsString(Events.EVENT_TIMEZONE))
+            assertEquals(0, result.getAsInteger(Events.ALL_DAY))
+            assertEquals("FREQ=DAILY;COUNT=10", result.getAsString(Events.RRULE))
+            firstException(result)!!.let { exception ->
+                assertEquals(1594143000000L, exception.getAsLong(Events.ORIGINAL_INSTANCE_TIME))
+                assertEquals(0, exception.getAsInteger(Events.ORIGINAL_ALL_DAY))
+                assertEquals(1594038600000L, exception.getAsLong(Events.DTSTART))
+                assertEquals(tzShanghai.id, exception.getAsString(Events.EVENT_TIMEZONE))
+                assertEquals(0, exception.getAsInteger(Events.ALL_DAY))
+                assertEquals("Event moved to one hour later", exception.getAsString(Events.TITLE))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildException_AllDay() {
+        buildEvent(false) {
+            dtStart = DtStart(Date("20200706"))
+            rRules += RRule("FREQ=WEEKLY;COUNT=3")
+            exceptions += Event().apply {
+                recurrenceId = RecurrenceId("20200707T000000", tzVienna)     // illegal! should be rewritten to Date("20200707")
+                dtStart = DtStart("20200706T123000", tzVienna)
+                summary = "Today not an all-day event"
+            }
+        }.let { result ->
+            assertEquals(1593993600000L, result.getAsLong(Events.DTSTART))
+            assertEquals(AndroidTimeUtils.TZID_ALLDAY, result.getAsString(Events.EVENT_TIMEZONE))
+            assertEquals(1, result.getAsInteger(Events.ALL_DAY))
+            assertEquals("FREQ=WEEKLY;COUNT=3", result.getAsString(Events.RRULE))
+            firstException(result)!!.let { exception ->
+                assertEquals(1594080000000L, exception.getAsLong(Events.ORIGINAL_INSTANCE_TIME))
+                assertEquals(1, exception.getAsInteger(Events.ORIGINAL_ALL_DAY))
+                assertEquals(1594031400000L, exception.getAsLong(Events.DTSTART))
+                assertEquals(0, exception.getAsInteger(Events.ALL_DAY))
+                assertEquals("Today not an all-day event", exception.getAsString(Events.TITLE))
+            }
+        }
+    }
+
 
 
     private fun populateEvent(
@@ -1906,21 +1969,114 @@ class AndroidEventTest {
         }
     }
 
-
+    @Test
     fun testPopulateUnknownProperty() {
         val params = ParameterList()
         params.add(Language("en"))
         val unknownProperty = XProperty("X-NAME", params, "Custom Value")
         val result = populateEvent(true, valuesBuilder = {}, insertCallback = { id ->
             val values = ContentValues()
+            values.put(ExtendedProperties.EVENT_ID, id)
             values.put(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
             values.put(ExtendedProperties.VALUE, UnknownProperty.toJsonString(unknownProperty))
-            provider.insert(calendar.syncAdapterURI(Reminders.CONTENT_URI), values)
+            provider.insert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI), values)
         }).unknownProperties.first
         assertEquals("X-NAME", result.name)
         assertEquals("en", result.getParameter<Language>(Parameter.LANGUAGE).value)
         assertEquals("Custom Value", result.value)
     }
+
+
+    private fun populateException(mainBuilder: ContentValues.() -> Unit, exceptionBuilder: ContentValues.() -> Unit) =
+            populateEvent(false, asSyncAdapter = true, valuesBuilder = mainBuilder, insertCallback = { id ->
+                val exceptionValues = ContentValues()
+                exceptionValues.put(Events.CALENDAR_ID, calendar.id)
+                exceptionBuilder(exceptionValues)
+                provider.insert(calendar.syncAdapterURI(Events.CONTENT_URI), exceptionValues)
+            })
+
+    @Test
+    fun testPopulateException_NonAllDay() {
+        populateException({
+            put(Events._SYNC_ID, "testPopulateException_NonAllDay")
+            put(Events.TITLE, "Recurring non-all-day event with exception")
+            put(Events.DTSTART, 1594056600000L)
+            put(Events.EVENT_TIMEZONE, tzVienna.id)
+            put(Events.ALL_DAY, 0)
+            put(Events.RRULE, "FREQ=DAILY;COUNT=10")
+        }, {
+            put(Events.ORIGINAL_SYNC_ID, "testPopulateException_NonAllDay")
+            put(Events.ORIGINAL_INSTANCE_TIME, 1594143000000L)
+            put(Events.ORIGINAL_ALL_DAY, 0)
+            put(Events.DTSTART, 1594038600000L)
+            put(Events.EVENT_TIMEZONE, tzShanghai.id)
+            put(Events.ALL_DAY, 0)
+            put(Events.TITLE, "Event moved to one hour later")
+        }).let { event ->
+            assertEquals("Recurring non-all-day event with exception", event.summary)
+            assertEquals(DtStart("20200706T193000", tzVienna), event.dtStart)
+            assertEquals("FREQ=DAILY;COUNT=10", event.rRules.first.value)
+            val exception = event.exceptions.first!!
+            assertEquals(RecurrenceId("20200708T013000", tzShanghai), exception.recurrenceId)
+            assertEquals(DtStart("20200706T203000", tzShanghai), exception.dtStart)
+            assertEquals("Event moved to one hour later", exception.summary)
+        }
+    }
+
+    @Test
+    fun testPopulateException_AllDay() {
+        populateException({
+            put(Events._SYNC_ID, "testPopulateException_AllDay")
+            put(Events.TITLE, "Recurring all-day event with exception")
+            put(Events.DTSTART, 1593993600000L)
+            put(Events.EVENT_TIMEZONE, AndroidTimeUtils.TZID_ALLDAY)
+            put(Events.ALL_DAY, 1)
+            put(Events.RRULE, "FREQ=WEEKLY;COUNT=3")
+        }, {
+            put(Events.ORIGINAL_SYNC_ID, "testPopulateException_AllDay")
+            put(Events.ORIGINAL_INSTANCE_TIME, 1594080000000L)
+            put(Events.ORIGINAL_ALL_DAY, 1)
+            put(Events.DTSTART, 1594031400000L)
+            put(Events.ALL_DAY, 0)
+            put(Events.EVENT_TIMEZONE, tzShanghai.id)
+            put(Events.TITLE, "Today not an all-day event")
+        }).let { event ->
+            assertEquals("Recurring all-day event with exception", event.summary)
+            assertEquals(DtStart(Date("20200706")), event.dtStart)
+            assertEquals("FREQ=WEEKLY;COUNT=3", event.rRules.first.value)
+            val exception = event.exceptions.first!!
+            assertEquals(RecurrenceId(Date("20200707")), exception.recurrenceId)
+            assertEquals(DtStart("20200706T183000", tzShanghai), exception.dtStart)
+            assertEquals("Today not an all-day event", exception.summary)
+        }
+    }
+
+    @Test
+    fun testPopulateException_Exdate() {
+        populateException({
+            put(Events._SYNC_ID, "testPopulateException_AllDay")
+            put(Events.TITLE, "Recurring all-day event with cancelled exception")
+            put(Events.DTSTART, 1594056600000L)
+            put(Events.EVENT_TIMEZONE, tzVienna.id)
+            put(Events.ALL_DAY, 0)
+            put(Events.RRULE, "FREQ=DAILY;COUNT=10")
+        }, {
+            put(Events.ORIGINAL_SYNC_ID, "testPopulateException_AllDay")
+            put(Events.ORIGINAL_INSTANCE_TIME, 1594143000000L)
+            put(Events.ORIGINAL_ALL_DAY, 0)
+            put(Events.DTSTART, 1594143000000L)
+            put(Events.ALL_DAY, 0)
+            put(Events.EVENT_TIMEZONE, tzShanghai.id)
+            put(Events.STATUS, Events.STATUS_CANCELED)
+        }).let { event ->
+            assertEquals("Recurring all-day event with cancelled exception", event.summary)
+            assertEquals(DtStart("20200706T193000", tzVienna), event.dtStart)
+            assertEquals("FREQ=DAILY;COUNT=10", event.rRules.first.value)
+            assertEquals(DateTime("20200708T013000", tzShanghai), event.exDates.first.dates.first())
+            assertTrue(event.exceptions.isEmpty())
+        }
+    }
+
 
 
     @Test
