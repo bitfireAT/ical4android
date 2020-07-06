@@ -316,15 +316,4 @@ class Event: ICalendar() {
         return event
     }
 
-
-    // helpers
-
-    /**
-     * Determines whether this Event is an all-day event.
-     *
-     * @return *true* if [dtStart] is a DATE value; *false* otherwise ([dtStart] is a DATETIME value or *null*)
-     */
-    @Deprecated("Use DateUtils.isDate(dtStart) instead")
-    fun isAllDay() = DateUtils.isDate(dtStart)
-
 }

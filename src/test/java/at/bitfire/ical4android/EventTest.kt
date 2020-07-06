@@ -156,7 +156,7 @@ class EventTest {
     @Test
     fun testRecurringWithException() {
         val event = parseCalendar("recurring-with-exception1.ics").first()
-        assertTrue(event.isAllDay())
+        assertTrue(DateUtils.isDate(event.dtStart))
 
         assertEquals(1, event.exceptions.size)
         val exception = event.exceptions.first

@@ -75,7 +75,7 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${versions.kotlin}"
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.0.5'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.0.9'
 
     api("org.mnode.ical4j:ical4j:${versions.ical4j}") {
         exclude module: 'javax.mail'
