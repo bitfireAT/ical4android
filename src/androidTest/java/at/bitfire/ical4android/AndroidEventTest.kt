@@ -1271,7 +1271,58 @@ class AndroidEventTest {
     }
 
     @Test
+    fun testBuildException_NonAllDay_RecurrenceIdAllDay() {
+        buildEvent(false) {
+            dtStart = DtStart("20200706T193000", tzVienna)
+            rRules += RRule("FREQ=DAILY;COUNT=10")
+            exceptions += Event().apply {
+                recurrenceId = RecurrenceId(Date("20200707"))   // illegal! should be rewritten to DateTime("20200707T193000", tzVienna)
+                dtStart = DtStart("20200706T203000", tzShanghai)
+                summary = "Event moved to one hour later"
+            }
+        }.let { result ->
+            assertEquals(1594056600000L, result.getAsLong(Events.DTSTART))
+            assertEquals(tzVienna.id, result.getAsString(Events.EVENT_TIMEZONE))
+            assertEquals(0, result.getAsInteger(Events.ALL_DAY))
+            assertEquals("FREQ=DAILY;COUNT=10", result.getAsString(Events.RRULE))
+            firstException(result)!!.let { exception ->
+                assertEquals(1594143000000L, exception.getAsLong(Events.ORIGINAL_INSTANCE_TIME))
+                assertEquals(0, exception.getAsInteger(Events.ORIGINAL_ALL_DAY))
+                assertEquals(1594038600000L, exception.getAsLong(Events.DTSTART))
+                assertEquals(tzShanghai.id, exception.getAsString(Events.EVENT_TIMEZONE))
+                assertEquals(0, exception.getAsInteger(Events.ALL_DAY))
+                assertEquals("Event moved to one hour later", exception.getAsString(Events.TITLE))
+            }
+        }
+    }
+
+    @Test
     fun testBuildException_AllDay() {
+        buildEvent(false) {
+            dtStart = DtStart(Date("20200706"))
+            rRules += RRule("FREQ=WEEKLY;COUNT=3")
+            exceptions += Event().apply {
+                recurrenceId = RecurrenceId(Date("20200707"))
+                dtStart = DtStart("20200706T123000", tzVienna)
+                summary = "Today not an all-day event"
+            }
+        }.let { result ->
+            assertEquals(1593993600000L, result.getAsLong(Events.DTSTART))
+            assertEquals(AndroidTimeUtils.TZID_ALLDAY, result.getAsString(Events.EVENT_TIMEZONE))
+            assertEquals(1, result.getAsInteger(Events.ALL_DAY))
+            assertEquals("FREQ=WEEKLY;COUNT=3", result.getAsString(Events.RRULE))
+            firstException(result)!!.let { exception ->
+                assertEquals(1594080000000L, exception.getAsLong(Events.ORIGINAL_INSTANCE_TIME))
+                assertEquals(1, exception.getAsInteger(Events.ORIGINAL_ALL_DAY))
+                assertEquals(1594031400000L, exception.getAsLong(Events.DTSTART))
+                assertEquals(0, exception.getAsInteger(Events.ALL_DAY))
+                assertEquals("Today not an all-day event", exception.getAsString(Events.TITLE))
+            }
+        }
+    }
+
+    @Test
+    fun testBuildException_AllDay_RecurrenceIdNonAllDay() {
         buildEvent(false) {
             dtStart = DtStart(Date("20200706"))
             rRules += RRule("FREQ=WEEKLY;COUNT=3")

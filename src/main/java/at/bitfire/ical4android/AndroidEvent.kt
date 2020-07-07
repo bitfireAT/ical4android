@@ -22,9 +22,13 @@ import androidx.annotation.CallSuper
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import at.bitfire.ical4android.util.AndroidTimeUtils
 import at.bitfire.ical4android.util.TimeApiExtensions
+import at.bitfire.ical4android.util.TimeApiExtensions.requireZoneId
 import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
+import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDateTime
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
+import at.bitfire.ical4android.util.TimeApiExtensions.toLocalTime
 import at.bitfire.ical4android.util.TimeApiExtensions.toRfc5545Duration
+import at.bitfire.ical4android.util.TimeApiExtensions.toZonedDateTime
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.component.VAlarm
@@ -43,7 +47,6 @@ import java.time.*
 import java.time.Duration
 import java.time.Period
 import java.util.*
-import java.util.Calendar
 import java.util.logging.Level
 
 /**
@@ -212,20 +215,19 @@ abstract class AndroidEvent(
             val startTz = row.getAsString(Events.EVENT_TIMEZONE)?.let { tzId ->
                 DateUtils.ical4jTimeZone(tzId)
             }
-            event.dtStart = DtStart(DateTime(tsStart).apply {
+            val dtStartDateTime = DateTime(tsStart).apply {
                 if (startTz != null) {
                     if (TimeZones.isUtc(startTz))
                         isUtc = true
                     else
                         timeZone = startTz
                 }
-            })
+            }
+            event.dtStart = DtStart(dtStartDateTime)
 
             if (duration != null) {
                 // Some servers have problems with DURATION, so we always generate DTEND.
-                val startTzId = DateUtils.getZoneId(startTz?.id) ?: ZoneId.systemDefault()
-                val zonedStart = ZonedDateTime.ofInstant(Instant.ofEpochMilli(tsStart), startTzId)
-
+                val zonedStart = dtStartDateTime.toZonedDateTime()
                 tsEnd = (zonedStart + duration).toInstant().toEpochMilli()
                 duration = null
             }
@@ -349,7 +351,7 @@ abstract class AndroidEvent(
                 attendee = Attendee(URI(idNS, id, null))
                 email?.let { attendee.parameters.add(Email(it)) }
             } else
-            // attendee identified by email address
+                // attendee identified by email address
                 attendee = Attendee(URI("mailto", email, null))
             val params = attendee.parameters
 
@@ -449,7 +451,7 @@ abstract class AndroidEvent(
                     val exceptionEvent = exception.event!!
                     val recurrenceId = exceptionEvent.recurrenceId!!
 
-                    // use EXDATE instead of exceptions for cancelled instances
+                    // generate EXDATE instead of RECURRENCE-ID exceptions for cancelled instances
                     if (exceptionEvent.status == Status.VEVENT_CANCELLED) {
                         val list = DateList(
                                 if (DateUtils.isDate(recurrenceId)) Value.DATE else Value.DATE_TIME,
@@ -543,21 +545,35 @@ abstract class AndroidEvent(
                the exception will appear additionally (and not *instead* of the instance).
              */
 
+            val recurrenceId = exception.recurrenceId
+            if (recurrenceId == null) {
+                Ical4Android.log.warning("Ignoring exception of event ${event.uid} without recurrenceId")
+                continue
+            }
+
             val exBuilder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(eventsSyncURI()))
             buildEvent(exception, exBuilder)
 
-            var date = exception.recurrenceId!!.date
-            if (DateUtils.isDate(event.dtStart) && date is DateTime) {
-                // correct VALUE=DATE-TIME RECURRENCE-IDs to VALUE=DATE for all-day events
-                val cal = Calendar.getInstance(date.timeZone)
-                cal.time = date
-                val day = cal.get(Calendar.DAY_OF_MONTH)
-                val month = cal.get(Calendar.MONTH) + 1
-                val year = cal.get(Calendar.YEAR)
-                date = Date("%4d%02d%02d".format(year, month, day))
+            var recurrenceDate = recurrenceId.date
+            val dtStartDate = event.dtStart!!.date
+            if (recurrenceDate is DateTime && dtStartDate !is DateTime) {
+                // rewrite RECURRENCE-ID;VALUE=DATE-TIME to VALUE=DATE for all-day events
+                val localDate = recurrenceDate.toLocalDate()
+                recurrenceDate = Date(localDate.toIcal4jDate())
+
+            } else if (recurrenceDate !is DateTime && dtStartDate is DateTime) {
+                // rewrite RECURRENCE-ID;VALUE=DATE to VALUE=DATE-TIME for non-all-day-events
+                val localDate = recurrenceDate.toLocalDate()
+                // guess time and time zone from DTSTART
+                val zonedTime = ZonedDateTime.of(
+                        localDate,
+                        dtStartDate.toLocalTime(),
+                        dtStartDate.requireZoneId()
+                )
+                recurrenceDate = zonedTime.toIcal4jDateTime()
             }
             exBuilder   .withValue(Events.ORIGINAL_ALL_DAY, if (DateUtils.isDate(event.dtStart)) 1 else 0)
-                        .withValue(Events.ORIGINAL_INSTANCE_TIME, date.time)
+                        .withValue(Events.ORIGINAL_INSTANCE_TIME, recurrenceDate.time)
 
             val idxException = batch.nextBackrefIdx()
             batch.enqueue(BatchOperation.Operation(exBuilder, Events.ORIGINAL_ID, idxEvent))
@@ -719,10 +735,9 @@ abstract class AndroidEvent(
                         val calcDtEnd = dtStart.date.toLocalDate() + duration
                         dtEnd = DtEnd(calcDtEnd.toIcal4jDate())
                     } else {
-                        val zoneIdStart = DateUtils.getZoneId(dtStart.timeZone?.id) ?: ZoneId.systemDefault()
-                        val zonedStartTime = ZonedDateTime.ofInstant(dtStart.date.toInstant(), zoneIdStart)
+                        val zonedStartTime = (dtStart.date as DateTime).toZonedDateTime()
                         val calcEnd = zonedStartTime + duration
-                        val calcDtEnd = DtEnd(calcEnd.toIcal4jDate())
+                        val calcDtEnd = DtEnd(calcEnd.toIcal4jDateTime())
                         calcDtEnd.timeZone = dtStart.timeZone
                         dtEnd = calcDtEnd
                     }

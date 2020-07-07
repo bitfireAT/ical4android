@@ -23,6 +23,14 @@ object TimeApiExtensions {
     val tzUTC by lazy { TimeZones.getUtcTimeZone() }
 
 
+    /***** Desugaring compat *****/
+
+    /**
+     * [TimeZone.toZoneId] can't be used with the current desugaring library yet!
+     */
+    fun TimeZone.toZoneIdCompat() = ZoneId.of(id)
+
+
     /***** Dates *****/
 
     fun Date.toLocalDate(): LocalDate {
@@ -30,13 +38,34 @@ object TimeApiExtensions {
         return utcDateTime.toLocalDate()
     }
 
+    fun DateTime.requireTimeZone(): TimeZone =
+            if (isUtc)
+                TimeZones.getUtcTimeZone()
+            else
+                timeZone ?: TimeZone.getDefault()
+
+    fun DateTime.requireZoneId(): ZoneId =
+            if (isUtc)
+                ZoneOffset.UTC
+            else
+                timeZone?.toZoneIdCompat() ?: ZoneId.systemDefault()
+
+    fun DateTime.toLocalDate() =
+            toZonedDateTime().toLocalDate()
+
+    fun DateTime.toLocalTime() =
+            toZonedDateTime().toLocalTime()
+
+    fun DateTime.toZonedDateTime() =
+            ZonedDateTime.ofInstant(Instant.ofEpochMilli(time), requireZoneId())
+
     fun LocalDate.toIcal4jDate(): Date {
-        val cal = Calendar.getInstance(tzUTC)
-        cal.set(year, monthValue - 1, dayOfMonth)
+        val cal = Calendar.getInstance(TimeZones.getDateTimeZone())
+        cal.set(year, monthValue - 1, dayOfMonth, 0, 0, 0)
         return Date(cal)
     }
 
-    fun ZonedDateTime.toIcal4jDate(): Date {
+    fun ZonedDateTime.toIcal4jDateTime(): DateTime {
         val date = DateTime(toEpochSecond() * MILLIS_PER_SECOND)
         date.timeZone = DateUtils.ical4jTimeZone(zone.id)!!
         return date
