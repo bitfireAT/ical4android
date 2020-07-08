@@ -143,7 +143,14 @@ abstract class AndroidTask(
         task.summary = values.getAsString(Tasks.TITLE)
         task.location = values.getAsString(Tasks.LOCATION)
 
-        values.getAsString(Tasks.GEO)?.let { task.geoPosition = Geo(it) }
+        values.getAsString(Tasks.GEO)?.let { geo ->
+            val (lng, lat) = geo.split(',')
+            try {
+                task.geoPosition = Geo(lat.toBigDecimal(), lng.toBigDecimal())
+            } catch (e: NumberFormatException) {
+                Ical4Android.log.warning("Invalid GEO value: $geo")
+            }
+        }
 
         task.description = values.getAsString(Tasks.DESCRIPTION)
         task.color = values.getAsInteger(Tasks.TASK_COLOR)

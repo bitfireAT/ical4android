@@ -235,6 +235,17 @@ object AndroidTimeUtils {
         return property
     }
 
+    /**
+     * Concatenates, if necessary, multiple RDATE/EXDATE lists and converts them to
+     * a formatted string which OpenTasks can process.
+     * OpenTasks expect a list of RFC 5545 DATE ("yyyymmdd") or DATE-TIME ("yyyymmdd[Z]") values,
+     * where the time zone is stored in a separate field.
+     *
+     * @param dates         one more more lists of RDATE or EXDATE
+     * @param allDay        whether the event is an all-day event or not
+     *
+     * @return formatted string for Android calendar provider
+     */
     fun recurrenceSetsToOpenTasksString(dates: List<DateListProperty>, tz: TimeZone?): String {
         val allDay = tz == null
         val strDates = LinkedList<String>()
@@ -254,7 +265,7 @@ object AndroidTimeUtils {
                             DateTime(date.toString(), tz)
                         else
                             date
-                if (dateToUse is DateTime)
+                if (dateToUse is DateTime && !dateToUse.isUtc)
                     dateToUse.timeZone = tz!!
                 strDates += dateToUse.toString()
             }

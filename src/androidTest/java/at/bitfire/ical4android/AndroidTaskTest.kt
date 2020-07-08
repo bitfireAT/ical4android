@@ -20,12 +20,13 @@ import at.bitfire.ical4android.impl.TestTaskList
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateList
 import net.fortuna.ical4j.model.DateTime
-import net.fortuna.ical4j.model.parameter.Email
-import net.fortuna.ical4j.model.parameter.RelType
-import net.fortuna.ical4j.model.parameter.Value
+import net.fortuna.ical4j.model.parameter.*
+import net.fortuna.ical4j.model.parameter.TzId
 import net.fortuna.ical4j.model.property.*
 import org.dmfs.tasks.contract.TaskContract
-import org.dmfs.tasks.contract.TaskContract.Tasks
+import org.dmfs.tasks.contract.TaskContract.*
+import org.dmfs.tasks.contract.TaskContract.Property.Category
+import org.dmfs.tasks.contract.TaskContract.Property.Relation
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Assume.assumeNotNull
@@ -36,6 +37,7 @@ import java.time.ZoneId
 class AndroidTaskTest {
 
     private val tzVienna = DateUtils.ical4jTimeZone("Europe/Vienna")!!
+    private val tzChicago = DateUtils.ical4jTimeZone("America/Chicago")!!
     private val tzDefault = DateUtils.ical4jTimeZone(ZoneId.systemDefault().id)!!
 
     private var provider: TaskProvider? = null
@@ -447,14 +449,154 @@ class AndroidTaskTest {
     fun testBuildTask_RDate() {
         buildTask() {
             dtStart = DtStart(DateTime("20200101T010203", tzVienna))
-            rDates += RDate(DateList(Value.DATE_TIME).apply { add(DateTime(1577926864000).apply { isUtc = true }) })
             rDates += RDate(DateList("20200102T020304", Value.DATE_TIME, tzVienna))
+            rDates += RDate(DateList("20200102T020304", Value.DATE_TIME, tzChicago))
+            rDates += RDate(DateList("20200103T020304Z", Value.DATE_TIME))
+            rDates += RDate(DateList("20200103", Value.DATE))
         }.let { result ->
-            assertEquals("Europe/Vienna", result.getAsString(Tasks.TZ))
-            assertEquals("20200102T020104,20200102T020304", result.getAsString(Tasks.RDATE))
+            assertEquals(tzVienna.id, result.getAsString(Tasks.TZ))
+            assertEquals("20200102T020304,20200102T090304,20200103T020304Z,20200103T000000", result.getAsString(Tasks.RDATE))
         }
     }
 
+    @Test
+    fun testBuildTask_ExDate() {
+        buildTask() {
+            dtStart = DtStart(DateTime("20200101T010203", tzVienna))
+            rRule = RRule("FREQ=DAILY;COUNT=10")
+            exDates += ExDate(DateList("20200102T020304", Value.DATE_TIME, tzVienna))
+            exDates += ExDate(DateList("20200102T020304", Value.DATE_TIME, tzChicago))
+            exDates += ExDate(DateList("20200103T020304Z", Value.DATE_TIME))
+            exDates += ExDate(DateList("20200103", Value.DATE))
+        }.let { result ->
+            assertEquals(tzVienna.id, result.getAsString(Tasks.TZ))
+            assertEquals("20200102T020304,20200102T090304,20200103T020304Z,20200103T000000", result.getAsString(Tasks.EXDATE))
+        }
+    }
+
+    @Test
+    fun testBuildTask_Categories() {
+        var hasCat1 = false
+        var hasCat2 = false
+        buildTask() {
+            categories.addAll(arrayOf("Cat_1", "Cat 2"))
+        }.let { result ->
+            val id = result.getAsLong(Tasks._ID)
+            val uri = taskList!!.tasksPropertiesSyncUri()
+            provider!!.client.query(uri, arrayOf(Category.CATEGORY_NAME), "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
+                    arrayOf(Category.CONTENT_ITEM_TYPE, id.toString()), null)!!.use { cursor ->
+                while (cursor.moveToNext())
+                    when (cursor.getString(0)) {
+                        "Cat_1" -> hasCat1 = true
+                        "Cat 2" -> hasCat2 = true
+                    }
+            }
+        }
+        assertTrue(hasCat1)
+        assertTrue(hasCat2)
+    }
+
+    private fun firstProperty(taskId: Long, mimeType: String): ContentValues? {
+        val uri = taskList!!.tasksPropertiesSyncUri()
+        provider!!.client.query(uri, null, "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
+                arrayOf(mimeType, taskId.toString()), null)!!.use { cursor ->
+            if (cursor.moveToNext()) {
+                val result = ContentValues(cursor.count)
+                DatabaseUtils.cursorRowToContentValues(cursor, result)
+                return result
+            }
+        }
+        return null
+    }
+
+    @Test
+    fun testBuildTask_RelatedTo_Parent() {
+        buildTask() {
+            relatedTo.add(RelatedTo("Parent-Task").apply {
+                parameters.add(RelType.PARENT)
+            })
+        }.let { result ->
+            val taskId = result.getAsLong(Tasks._ID)
+            val relation = firstProperty(taskId, Relation.CONTENT_ITEM_TYPE)!!
+            assertEquals("Parent-Task", relation.getAsString(Relation.RELATED_UID))
+            assertNull(relation.get(Relation.RELATED_ID))   // other task not in DB (yet)
+            assertEquals(Relation.RELTYPE_PARENT, relation.getAsInteger(Relation.RELATED_TYPE))
+        }
+    }
+
+    @Test
+    fun testBuildTask_RelatedTo_Child() {
+        buildTask() {
+            relatedTo.add(RelatedTo("Child-Task").apply {
+                parameters.add(RelType.CHILD)
+            })
+        }.let { result ->
+            val taskId = result.getAsLong(Tasks._ID)
+            val relation = firstProperty(taskId, Relation.CONTENT_ITEM_TYPE)!!
+            assertEquals("Child-Task", relation.getAsString(Relation.RELATED_UID))
+            assertNull(relation.get(Relation.RELATED_ID))   // other task not in DB (yet)
+            assertEquals(Relation.RELTYPE_CHILD, relation.getAsInteger(Relation.RELATED_TYPE))
+        }
+    }
+
+    @Test
+    fun testBuildTask_RelatedTo_Sibling() {
+        buildTask() {
+            relatedTo.add(RelatedTo("Sibling-Task").apply {
+                parameters.add(RelType.SIBLING)
+            })
+        }.let { result ->
+            val taskId = result.getAsLong(Tasks._ID)
+            val relation = firstProperty(taskId, Relation.CONTENT_ITEM_TYPE)!!
+            assertEquals("Sibling-Task", relation.getAsString(Relation.RELATED_UID))
+            assertNull(relation.get(Relation.RELATED_ID))   // other task not in DB (yet)
+            assertEquals(Relation.RELTYPE_SIBLING, relation.getAsInteger(Relation.RELATED_TYPE))
+        }
+    }
+
+    @Test
+    fun testBuildTask_RelatedTo_Custom() {
+        buildTask() {
+            relatedTo.add(RelatedTo("Sibling-Task").apply {
+                parameters.add(RelType("custom-relationship"))
+            })
+        }.let { result ->
+            val taskId = result.getAsLong(Tasks._ID)
+            val relation = firstProperty(taskId, Relation.CONTENT_ITEM_TYPE)!!
+            assertEquals("Sibling-Task", relation.getAsString(Relation.RELATED_UID))
+            assertNull(relation.get(Relation.RELATED_ID))   // other task not in DB (yet)
+            assertEquals(Relation.RELTYPE_PARENT, relation.getAsInteger(Relation.RELATED_TYPE))
+        }
+    }
+
+    @Test
+    fun testBuildTask_RelatedTo_Default() {
+        buildTask() {
+            relatedTo.add(RelatedTo("Parent-Task"))
+        }.let { result ->
+            val taskId = result.getAsLong(Tasks._ID)
+            val relation = firstProperty(taskId, Relation.CONTENT_ITEM_TYPE)!!
+            assertEquals("Parent-Task", relation.getAsString(Relation.RELATED_UID))
+            assertNull(relation.get(Relation.RELATED_ID))   // other task not in DB (yet)
+            assertEquals(Relation.RELTYPE_PARENT, relation.getAsInteger(Relation.RELATED_TYPE))
+        }
+    }
+
+
+    @Test
+    fun testBuildTask_UnknownProperty() {
+        val xProperty = XProperty("X-TEST-PROPERTY", "test-value").apply {
+            parameters.add(TzId(tzVienna.id))
+            parameters.add(XParameter("X-TEST-PARAMETER", "12345"))
+        }
+        buildTask() {
+            unknownProperties.add(xProperty)
+        }.let { result ->
+            val taskId = result.getAsLong(Tasks._ID)
+            val unknownProperty = firstProperty(taskId, UnknownProperty.CONTENT_ITEM_TYPE)!!
+            assertEquals(xProperty, UnknownProperty.fromJsonString(unknownProperty.getAsString(AndroidTask.UNKNOWN_PROPERTY_DATA)))
+        }
+    }
 
 
     @MediumTest
