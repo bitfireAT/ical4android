@@ -289,7 +289,7 @@ class AndroidTimeUtilsTest {
     fun testRecurrenceSetsToOpenTasksString_UtcTimes() {
         val list = ArrayList<DateListProperty>(1)
         list.add(RDate(DateList("20150101T060000Z,20150702T060000Z", Value.DATE_TIME)))
-        assertEquals("20150101T070000,20150702T080000", AndroidTimeUtils.recurrenceSetsToOpenTasksString(list, tzBerlin))
+        assertEquals("20150101T060000Z,20150702T060000Z", AndroidTimeUtils.recurrenceSetsToOpenTasksString(list, tzBerlin))
     }
 
     @Test

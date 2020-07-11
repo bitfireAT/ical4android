@@ -67,7 +67,10 @@ object TimeApiExtensions {
 
     fun ZonedDateTime.toIcal4jDateTime(): DateTime {
         val date = DateTime(toEpochSecond() * MILLIS_PER_SECOND)
-        date.timeZone = DateUtils.ical4jTimeZone(zone.id)!!
+        if (zone == ZoneOffset.UTC)
+            date.isUtc = true
+        else
+            date.timeZone = DateUtils.ical4jTimeZone(zone.id)
         return date
     }
 

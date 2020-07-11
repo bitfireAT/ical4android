@@ -182,6 +182,22 @@ class AndroidEventTest {
     }
 
     @Test
+    fun testBuildEvent_NonAllDayUtc_NoDtEnd_Duration_NonRecurring() {
+        val values = buildEvent(false) {
+            dtStart = DtStart(DateTime("20200601T103000Z").apply { isUtc = true })
+            duration = Duration(null, "PT1H30M")
+        }
+        assertEquals(0, values.getAsInteger(Events.ALL_DAY))
+
+        assertEquals(1591007400000L, values.getAsLong(Events.DTSTART))
+        assertEquals(TimeZones.getUtcTimeZone().id, values.get(Events.EVENT_TIMEZONE))
+
+        assertEquals(1591007400000L + 90*60000, values.getAsLong(Events.DTEND))
+        assertEquals(TimeZones.getUtcTimeZone().id, values.get(Events.EVENT_END_TIMEZONE))
+        assertNull(values.get(Events.DURATION))
+    }
+
+    @Test
     fun testBuildEvent_NonAllDay_NoDtEnd_Duration_Recurring() {
         val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzVienna)
