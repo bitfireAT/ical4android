@@ -137,6 +137,14 @@ class TimeApiExtensionsTest {
         )
     }
 
+    @Test
+    fun testZonedDateTimeToIcal4jDateTime_Utc() {
+        assertEquals(
+                DateTime("20200705T010203Z"),
+                ZonedDateTime.of(2020, 7, 5, 1, 2, 3, 0, ZoneOffset.UTC).toIcal4jDateTime()
+        )
+    }
+
 
     @Test
     fun testTemporalAmountToDuration() {
