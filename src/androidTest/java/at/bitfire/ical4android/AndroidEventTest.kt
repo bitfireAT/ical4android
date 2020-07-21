@@ -2037,6 +2037,15 @@ class AndroidEventTest {
     }
 
     @Test
+    fun testPopulateAttendee_Rsvp() {
+        populateAttendee {
+            put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+        }!!.let { attendee ->
+            assertTrue(attendee.getParameter<Rsvp>(Parameter.RSVP).rsvp)
+        }
+    }
+
+    @Test
     fun testPopulateUnknownProperty() {
         val params = ParameterList()
         params.add(Language("en"))

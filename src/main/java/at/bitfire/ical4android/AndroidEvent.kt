@@ -32,10 +32,7 @@ import at.bitfire.ical4android.util.TimeApiExtensions.toZonedDateTime
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.component.VAlarm
-import net.fortuna.ical4j.model.parameter.Cn
-import net.fortuna.ical4j.model.parameter.Email
-import net.fortuna.ical4j.model.parameter.PartStat
-import net.fortuna.ical4j.model.parameter.Value
+import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
 import net.fortuna.ical4j.util.TimeZones
 import java.io.ByteArrayInputStream
@@ -354,6 +351,9 @@ abstract class AndroidEvent(
                 // attendee identified by email address
                 attendee = Attendee(URI("mailto", email, null))
             val params = attendee.parameters
+
+            // always add RSVP (offer attendees to accept/decline)
+            params.add(Rsvp.TRUE)
 
             row.getAsString(Attendees.ATTENDEE_NAME)?.let { cn -> params.add(Cn(cn)) }
 
