@@ -135,14 +135,20 @@ class Task: ICalendar() {
             val dtStart = t.dtStart
             val due = t.due
 
-            if (DateUtils.isDate(dtStart) && DateUtils.isDateTime(due)) {
-                Ical4Android.log.warning("DTSTART is DATE but DUE is DATE-TIME, rewriting DTSTART to DATE-TIME")
-                t.dtStart = DtStart(DateTime(t.dtStart.toString(), t.due!!.timeZone))
-            }
+            if (dtStart != null && due != null) {
+                if (DateUtils.isDate(dtStart) && DateUtils.isDateTime(due)) {
+                    Ical4Android.log.warning("DTSTART is DATE but DUE is DATE-TIME, rewriting DTSTART to DATE-TIME")
+                    t.dtStart = DtStart(DateTime(dtStart.value, due.timeZone))
+                } else if (DateUtils.isDateTime(dtStart) && DateUtils.isDate(due)) {
+                    Ical4Android.log.warning("DTSTART is DATE-TIME but DUE is DATE, rewriting DUE to DATE-TIME")
+                    t.due = Due(DateTime(due.value, dtStart.timeZone))
+                }
 
-            if (dtStart != null && due != null && due.date <= dtStart.date) {
-                Ical4Android.log.warning("Found invalid DUE <= DTSTART; dropping DTSTART")
-                t.dtStart = null
+
+                if (due.date <= dtStart.date) {
+                    Ical4Android.log.warning("Found invalid DUE <= DTSTART; dropping DTSTART")
+                    t.dtStart = null
+                }
             }
 
             if (t.duration != null && t.dtStart == null) {
