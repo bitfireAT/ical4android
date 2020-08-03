@@ -30,16 +30,26 @@ class TaskProvider private constructor(
             val authority: String,
             val packageName: String,
             val minVersionCode: Long,
-            val minVersionName: String
+            val minVersionName: String,
+            private val readPermission: String,
+            private val writePermission: String
     ) {
         //Mirakel("de.azapps.mirakel.provider"),
-        OpenTasks("org.dmfs.tasks", "org.dmfs.tasks", 103, "1.1.8.2")
+        OpenTasks("org.dmfs.tasks", "org.dmfs.tasks", 103, "1.1.8.2", PERMISSION_READ_TASKS, PERMISSION_WRITE_TASKS),
+        TasksOrg("org.tasks.opentasks", "org.tasks", 100000, "10.0", PERMISSION_READ_TASKS_ORG, PERMISSION_WRITE_TASKS_ORG);
+
+        val permissions: Array<String>
+            get() = arrayOf(readPermission, writePermission)
     }
 
     companion object {
 
+        val OPENTASK_PROVIDERS = listOf(ProviderName.OpenTasks, ProviderName.TasksOrg)
+
         const val PERMISSION_READ_TASKS = "org.dmfs.permission.READ_TASKS"
         const val PERMISSION_WRITE_TASKS = "org.dmfs.permission.WRITE_TASKS"
+        const val PERMISSION_READ_TASKS_ORG = "org.tasks.permission.READ_TASKS"
+        const val PERMISSION_WRITE_TASKS_ORG = "org.tasks.permission.WRITE_TASKS"
 
         /**
          * Acquires a content provider for a given task provider. The content provider will
@@ -68,10 +78,13 @@ class TaskProvider private constructor(
             }
         }
 
-        fun fromProviderClient(context: Context, client: ContentProviderClient): TaskProvider {
-            // at the moment, only OpenTasks is supported
-            checkVersion(context, ProviderName.OpenTasks)
-            return TaskProvider(ProviderName.OpenTasks, client)
+        fun fromProviderClient(
+                context: Context,
+                client: ContentProviderClient,
+                provider: ProviderName = ProviderName.OpenTasks
+        ): TaskProvider {
+            checkVersion(context, provider)
+            return TaskProvider(provider, client)
         }
 
         /**
