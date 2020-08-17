@@ -28,7 +28,7 @@ object AttendeeMappings {
      *     TYPE ↓ / RELATIONSHIP → ATTENDEE¹  PERFORMER  SPEAKER   NONE
      *     REQUIRED                indᴰ,reqᴰ  gro,reqᴰ   indᴰ,cha  unk,reqᴰ
      *     OPTIONAL                indᴰ,opt   gro,opt    indᴰ,cha  unk,opt
-     *     NONE                    indᴰ,non   gro,non    indᴰ,cha  unk,non
+     *     NONE                    indᴰ,reqᴰ  gro,reqᴰ   indᴰ,cha  unk,reqᴰ
      *     RESOURCE                res,reqᴰ   roo,reqᴰ   res,cha   res,reqᴰ
      *
      *     ᴰ default value
@@ -58,9 +58,7 @@ object AttendeeMappings {
             }
 
             when (type) {
-                Attendees.TYPE_REQUIRED -> role = Role.REQ_PARTICIPANT
                 Attendees.TYPE_OPTIONAL -> role = Role.OPT_PARTICIPANT
-                Attendees.TYPE_NONE -> role = Role.NON_PARTICIPANT
                 Attendees.TYPE_RESOURCE  -> {
                     cuType =
                             if (relationship == Attendees.RELATIONSHIP_PERFORMER)
@@ -69,6 +67,8 @@ object AttendeeMappings {
                                 CuType.RESOURCE
                     role = Role.REQ_PARTICIPANT
                 }
+                else /* Attendees.TYPE_REQUIRED, Attendees.TYPE_NONE */ ->
+                    role = Role.REQ_PARTICIPANT
             }
 
         }

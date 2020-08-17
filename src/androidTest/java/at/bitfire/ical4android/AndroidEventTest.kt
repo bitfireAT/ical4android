@@ -1918,6 +1918,19 @@ class AndroidEventTest {
     }
 
     @Test
+    fun testPopulateAttendee_TypeNone() {
+        for (relationship in arrayOf(Attendees.RELATIONSHIP_ATTENDEE, Attendees.RELATIONSHIP_ORGANIZER, Attendees.RELATIONSHIP_PERFORMER, Attendees.RELATIONSHIP_NONE, null))
+            populateAttendee {
+                put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
+                put(Attendees.ATTENDEE_TYPE, Attendees.TYPE_NONE)
+                if (relationship != null)
+                    put(Attendees.ATTENDEE_RELATIONSHIP, relationship)
+            }!!.let { attendee ->
+                assertNull(attendee.getParameter<Role>(Parameter.ROLE))
+            }
+    }
+
+    @Test
     fun testPopulateAttendee_Required() {
         for (relationship in arrayOf(Attendees.RELATIONSHIP_ATTENDEE, Attendees.RELATIONSHIP_ORGANIZER, Attendees.RELATIONSHIP_PERFORMER, Attendees.RELATIONSHIP_NONE, null))
             populateAttendee {
@@ -1940,19 +1953,6 @@ class AndroidEventTest {
                     put(Attendees.ATTENDEE_RELATIONSHIP, relationship)
             }!!.let { attendee ->
                 assertEquals(Role.OPT_PARTICIPANT, attendee.getParameter<Role>(Parameter.ROLE))
-            }
-    }
-
-    @Test
-    fun testPopulateAttendee_TypeNone() {
-        for (relationship in arrayOf(Attendees.RELATIONSHIP_ATTENDEE, Attendees.RELATIONSHIP_ORGANIZER, Attendees.RELATIONSHIP_PERFORMER, Attendees.RELATIONSHIP_NONE, null))
-            populateAttendee {
-                put(Attendees.ATTENDEE_EMAIL, "attendee@example.com")
-                put(Attendees.ATTENDEE_TYPE, Attendees.TYPE_NONE)
-                if (relationship != null)
-                    put(Attendees.ATTENDEE_RELATIONSHIP, relationship)
-            }!!.let { attendee ->
-                assertEquals(Role.NON_PARTICIPANT, attendee.getParameter<Role>(Parameter.ROLE))
             }
     }
 
