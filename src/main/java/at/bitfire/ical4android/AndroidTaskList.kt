@@ -37,26 +37,6 @@ abstract class AndroidTaskList<out T: AndroidTask>(
 
 	companion object {
 
-        /**
-         * Acquires a [android.content.ContentProviderClient] for a supported task provider. If multiple providers are
-         * available, a pre-defined priority list is taken into account.
-         *
-         * @return A [TaskProvider], or null if task storage is not available/accessible.
-         * Caller is responsible for calling [TaskProvider.close]!
-         */
-        fun acquireTaskProvider(context: Context): TaskProvider? {
-            val byPriority = arrayOf(
-                TaskProvider.ProviderName.OpenTasks
-            )
-            for (name in byPriority)
-                try {
-                    TaskProvider.acquire(context, name)?.let { return it }
-                } catch (e: Exception) {
-                    // couldn't acquire task provider
-                }
-            return null
-        }
-
         fun create(account: Account, provider: TaskProvider, info: ContentValues): Uri {
             info.put(TaskContract.ACCOUNT_NAME, account.name)
             info.put(TaskContract.ACCOUNT_TYPE, account.type)

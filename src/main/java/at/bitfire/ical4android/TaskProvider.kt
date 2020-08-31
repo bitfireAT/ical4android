@@ -34,9 +34,8 @@ class TaskProvider private constructor(
             private val readPermission: String,
             private val writePermission: String
     ) {
-        //Mirakel("de.azapps.mirakel.provider"),
-        OpenTasks("org.dmfs.tasks", "org.dmfs.tasks", 103, "1.1.8.2", PERMISSION_READ_TASKS, PERMISSION_WRITE_TASKS),
-        TasksOrg("org.tasks.opentasks", "org.tasks", 100000, "10.0", PERMISSION_READ_TASKS_ORG, PERMISSION_WRITE_TASKS_ORG);
+        OpenTasks("org.dmfs.tasks", "org.dmfs.tasks", 103, "1.1.8.2", PERMISSION_OPENTASKS_READ, PERMISSION_OPENTASKS_WRITE),
+        TasksOrg("org.tasks.opentasks", "org.tasks", 100000, "10.0", PERMISSION_TASKS_ORG_READ, PERMISSION_TASKS_ORG_WRITE);
 
         val permissions: Array<String>
             get() = arrayOf(readPermission, writePermission)
@@ -44,12 +43,15 @@ class TaskProvider private constructor(
 
     companion object {
 
-        val OPENTASK_PROVIDERS = listOf(ProviderName.OpenTasks, ProviderName.TasksOrg)
+        val TASK_PROVIDERS = listOf(
+                ProviderName.OpenTasks,
+                ProviderName.TasksOrg
+        )
 
-        const val PERMISSION_READ_TASKS = "org.dmfs.permission.READ_TASKS"
-        const val PERMISSION_WRITE_TASKS = "org.dmfs.permission.WRITE_TASKS"
-        const val PERMISSION_READ_TASKS_ORG = "org.tasks.permission.READ_TASKS"
-        const val PERMISSION_WRITE_TASKS_ORG = "org.tasks.permission.WRITE_TASKS"
+        const val PERMISSION_OPENTASKS_READ = "org.dmfs.permission.READ_TASKS"
+        const val PERMISSION_OPENTASKS_WRITE = "org.dmfs.permission.WRITE_TASKS"
+        const val PERMISSION_TASKS_ORG_READ = "org.tasks.permission.READ_TASKS"
+        const val PERMISSION_TASKS_ORG_WRITE = "org.tasks.permission.WRITE_TASKS"
 
         /**
          * Acquires a content provider for a given task provider. The content provider will

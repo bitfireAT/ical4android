@@ -53,7 +53,7 @@ class AndroidTaskTest {
     @Before
     fun prepare() {
         // connect to OpenTasks
-        val providerOrNull = AndroidTaskList.acquireTaskProvider(getInstrumentation().targetContext)
+        val providerOrNull = TestUtils.acquireTaskProvider(getInstrumentation().targetContext)
         assumeNotNull(providerOrNull)
         provider = providerOrNull!!
 
