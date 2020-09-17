@@ -1,7 +1,7 @@
 
 buildscript {
     ext.versions = [
-        kotlin: '1.3.72',
+        kotlin: '1.4.10',
         dokka: '0.10.1',
         ical4j: '3.0.19'
     ]
@@ -82,14 +82,14 @@ dependencies {
     }
     // ical4j requires JavaMail API (e.g. for EMAIL parameter)
     implementation 'com.sun.mail:android-mail:1.6.5'
-    implementation 'commons-io:commons-io:2.6'
+    implementation 'commons-io:commons-io:2.8.0'
 
     implementation 'org.slf4j:slf4j-jdk14:1.7.30'
     implementation 'androidx.core:core-ktx:1.3.1'
 
-    androidTestImplementation 'androidx.test:core:1.2.0'
-    androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'androidx.test:rules:1.2.0'
+    androidTestImplementation 'androidx.test:core:1.3.0'
+    androidTestImplementation 'androidx.test:runner:1.3.0'
+    androidTestImplementation 'androidx.test:rules:1.3.0'
     testImplementation 'junit:junit:4.13'
 
     // groovy is not really used, but required for running the tests
