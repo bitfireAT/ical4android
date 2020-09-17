@@ -14,7 +14,6 @@ import android.content.ContentValues
 import android.database.DatabaseUtils
 import android.net.Uri
 import androidx.test.filters.MediumTest
-import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import at.bitfire.ical4android.impl.TestTask
 import at.bitfire.ical4android.impl.TestTaskList
 import net.fortuna.ical4j.model.Date
@@ -29,44 +28,37 @@ import org.dmfs.tasks.contract.TaskContract.Property.Category
 import org.dmfs.tasks.contract.TaskContract.Property.Relation
 import org.junit.After
 import org.junit.Assert.*
-import org.junit.Assume.assumeNotNull
 import org.junit.Before
 import org.junit.Test
 import java.time.ZoneId
 
-class AndroidTaskTest {
+class AndroidTaskTest(
+        providerName: TaskProvider.ProviderName
+): AbstractTasksTest(providerName) {
 
     private val tzVienna = DateUtils.ical4jTimeZone("Europe/Vienna")!!
     private val tzChicago = DateUtils.ical4jTimeZone("America/Chicago")!!
     private val tzDefault = DateUtils.ical4jTimeZone(ZoneId.systemDefault().id)!!
 
-    private var provider: TaskProvider? = null
     private val testAccount = Account("AndroidTaskTest", TaskContract.LOCAL_ACCOUNT_TYPE)
 
     private lateinit var taskListUri: Uri
     private var taskList: TestTaskList? = null
 
-    init {
-        TestUtils.requestTaskPermissions()
-    }
-
     @Before
-    fun prepare() {
-        // connect to OpenTasks
-        val providerOrNull = TestUtils.acquireTaskProvider(getInstrumentation().targetContext)
-        assumeNotNull(providerOrNull)
-        provider = providerOrNull!!
+    override fun prepare() {
+        super.prepare()
 
-        taskList = TestTaskList.create(testAccount, providerOrNull)
+        taskList = TestTaskList.create(testAccount, provider)
         assertNotNull("Couldn't find/create test task list", taskList)
 
-        taskListUri = ContentUris.withAppendedId(provider!!.taskListsUri(), taskList!!.id)
+        taskListUri = ContentUris.withAppendedId(provider.taskListsUri(), taskList!!.id)
     }
 
     @After
-    fun shutdown() {
+    override fun shutdown() {
         taskList?.delete()
-        provider?.close()
+        super.shutdown()
     }
 
 
@@ -77,7 +69,7 @@ class AndroidTaskTest {
             taskBuilder()
         }
         val uri = TestTask(taskList!!, task).add()
-        provider!!.client.query(uri, null, null, null, null)!!.use {
+        provider.client.query(uri, null, null, null, null)!!.use {
             it.moveToNext()
             val values = ContentValues()
             DatabaseUtils.cursorRowToContentValues(it, values)
@@ -483,7 +475,7 @@ class AndroidTaskTest {
         }.let { result ->
             val id = result.getAsLong(Tasks._ID)
             val uri = taskList!!.tasksPropertiesSyncUri()
-            provider!!.client.query(uri, arrayOf(Category.CATEGORY_NAME), "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
+            provider.client.query(uri, arrayOf(Category.CATEGORY_NAME), "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
                     arrayOf(Category.CONTENT_ITEM_TYPE, id.toString()), null)!!.use { cursor ->
                 while (cursor.moveToNext())
                     when (cursor.getString(0)) {
@@ -498,7 +490,7 @@ class AndroidTaskTest {
 
     private fun firstProperty(taskId: Long, mimeType: String): ContentValues? {
         val uri = taskList!!.tasksPropertiesSyncUri()
-        provider!!.client.query(uri, null, "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
+        provider.client.query(uri, null, "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
                 arrayOf(mimeType, taskId.toString()), null)!!.use { cursor ->
             if (cursor.moveToNext()) {
                 val result = ContentValues(cursor.count)

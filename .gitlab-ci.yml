@@ -12,7 +12,9 @@ test:
     - privileged
   script:
     - start-emulator.sh
-    - adb install src/androidTest/resources/org.dmfs.tasks_6880.apk
+    - wget https://f-droid.org/repo/org.dmfs.tasks_78500.apk https://f-droid.org/repo/org.tasks_100011.apk
+    - adb install org.dmfs.tasks_78500.apk
+    - adb install org.tasks_100011.apk
     - ./gradlew check connectedCheck
   artifacts:
     paths:
