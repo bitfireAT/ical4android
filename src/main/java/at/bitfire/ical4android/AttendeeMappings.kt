@@ -51,10 +51,10 @@ object AttendeeMappings {
 
         } else /* relationship != Attendees.RELATIONSHIP_SPEAKER */ {
 
-            when (relationship) {
-                Attendees.RELATIONSHIP_PERFORMER -> cuType = CuType.GROUP
-                Attendees.RELATIONSHIP_NONE -> cuType = CuType.UNKNOWN
-                else -> cuType = CuType.INDIVIDUAL
+            cuType = when (relationship) {
+                Attendees.RELATIONSHIP_PERFORMER -> CuType.GROUP
+                Attendees.RELATIONSHIP_NONE -> CuType.UNKNOWN
+                else -> CuType.INDIVIDUAL
             }
 
             when (type) {
@@ -103,7 +103,7 @@ object AttendeeMappings {
      * @param owner      email address of account owner ([CalendarContract.Calendars.OWNER_ACCOUNT]); used to determine whether [attendee] is the organizer
      */
     fun iCalendarToAndroid(attendee: Attendee, row: ContentProviderOperation.Builder, owner: String) {
-        var type: Int
+        val type: Int
         var relationship: Int
 
         val cuType = attendee.getParameter<CuType>(Parameter.CUTYPE) ?: CuType.INDIVIDUAL
@@ -125,13 +125,13 @@ object AttendeeMappings {
 
             else -> {
                 // not a room and not a resource -> individual (default), group or unknown (includes x-custom)
-                when (cuType) {
+                relationship = when (cuType) {
                     CuType.GROUP ->
-                        relationship = Attendees.RELATIONSHIP_PERFORMER
+                        Attendees.RELATIONSHIP_PERFORMER
                     CuType.UNKNOWN ->
-                        relationship = Attendees.RELATIONSHIP_NONE
+                        Attendees.RELATIONSHIP_NONE
                     else -> /* CuType.INDIVIDUAL and custom/unknown values */
-                        relationship = Attendees.RELATIONSHIP_ATTENDEE
+                        Attendees.RELATIONSHIP_ATTENDEE
                 }
 
                 when (role) {
@@ -150,7 +150,7 @@ object AttendeeMappings {
         }
 
         if (relationship == Attendees.RELATIONSHIP_ATTENDEE) {
-            var uri = attendee.calAddress
+            val uri = attendee.calAddress
             val email = if (uri.scheme.equals("mailto", true))
                 uri.schemeSpecificPart
             else

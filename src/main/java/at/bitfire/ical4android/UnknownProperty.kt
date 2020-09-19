@@ -3,9 +3,7 @@ package at.bitfire.ical4android
 import android.content.ContentResolver
 import net.fortuna.ical4j.data.DefaultParameterFactorySupplier
 import net.fortuna.ical4j.data.DefaultPropertyFactorySupplier
-import net.fortuna.ical4j.model.ParameterBuilder
-import net.fortuna.ical4j.model.Property
-import net.fortuna.ical4j.model.PropertyBuilder
+import net.fortuna.ical4j.model.*
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -29,8 +27,8 @@ object UnknownProperty {
      */
     const val MAX_UNKNOWN_PROPERTY_SIZE = 25000
 
-    val propertyFactorySupplier = DefaultPropertyFactorySupplier().get()
-    val parameterFactorySupplier = DefaultParameterFactorySupplier().get()
+    val propertyFactorySupplier: List<PropertyFactory<out Property>> = DefaultPropertyFactorySupplier().get()
+    val parameterFactorySupplier: List<ParameterFactory<out Parameter>> = DefaultParameterFactorySupplier().get()
 
 
     /**

@@ -236,7 +236,7 @@ class Task: ICalendar() {
                 dtStart?.date,
                 due?.date,
                 completedAt?.date
-        ).filterNotNull().sorted().firstOrNull()
+        ).filterNotNull().min()
         // add VTIMEZONE components
         usedTimeZones.forEach {
             var tz = it.vTimeZone

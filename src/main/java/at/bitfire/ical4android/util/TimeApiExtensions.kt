@@ -10,17 +10,17 @@ import java.util.*
 
 object TimeApiExtensions {
 
-    val DAYS_PER_WEEK = 7
+    const val DAYS_PER_WEEK = 7
 
-    val SECONDS_PER_MINUTE = 60
-    val SECONDS_PER_HOUR = SECONDS_PER_MINUTE * 60
-    val SECONDS_PER_DAY = SECONDS_PER_HOUR * 24
-    val SECONDS_PER_WEEK = SECONDS_PER_DAY * DAYS_PER_WEEK
+    const val SECONDS_PER_MINUTE = 60
+    const val SECONDS_PER_HOUR = SECONDS_PER_MINUTE * 60
+    const val SECONDS_PER_DAY = SECONDS_PER_HOUR * 24
+    const val SECONDS_PER_WEEK = SECONDS_PER_DAY * DAYS_PER_WEEK
 
-    val MILLIS_PER_SECOND = 1000
-    val MILLIS_PER_DAY = SECONDS_PER_DAY * MILLIS_PER_SECOND
+    const val MILLIS_PER_SECOND = 1000
+    const val MILLIS_PER_DAY = SECONDS_PER_DAY * MILLIS_PER_SECOND
 
-    val tzUTC by lazy { TimeZones.getUtcTimeZone() }
+    val tzUTC: TimeZone by lazy { TimeZones.getUtcTimeZone() }
 
 
     /***** Desugaring compat *****/
@@ -28,7 +28,7 @@ object TimeApiExtensions {
     /**
      * [TimeZone.toZoneId] can't be used with the current desugaring library yet!
      */
-    fun TimeZone.toZoneIdCompat() = ZoneId.of(id)
+    fun TimeZone.toZoneIdCompat(): ZoneId = ZoneId.of(id)
 
 
     /***** Dates *****/
@@ -50,13 +50,13 @@ object TimeApiExtensions {
             else
                 timeZone?.toZoneIdCompat() ?: ZoneId.systemDefault()
 
-    fun DateTime.toLocalDate() =
+    fun DateTime.toLocalDate(): LocalDate =
             toZonedDateTime().toLocalDate()
 
-    fun DateTime.toLocalTime() =
+    fun DateTime.toLocalTime(): LocalTime =
             toZonedDateTime().toLocalTime()
 
-    fun DateTime.toZonedDateTime() =
+    fun DateTime.toZonedDateTime(): ZonedDateTime =
             ZonedDateTime.ofInstant(Instant.ofEpochMilli(time), requireZoneId())
 
     fun LocalDate.toIcal4jDate(): Date {
@@ -77,21 +77,19 @@ object TimeApiExtensions {
 
     /***** Durations *****/
 
-    fun TemporalAmount.toDuration(position: Instant): Duration {
-        if (this is Duration)
-            return this
+    fun TemporalAmount.toDuration(position: Instant): Duration =
+            if (this is Duration)
+                this
 
-        else if (this is Period) {
-            val calEnd = Calendar.getInstance(tzUTC)
-            calEnd.timeInMillis = position.toEpochMilli()
-            calEnd.add(Calendar.DAY_OF_MONTH, days)
-            calEnd.add(Calendar.MONTH, months)
-            calEnd.add(Calendar.YEAR, years)
-            return Duration.ofMillis(calEnd.timeInMillis - position.toEpochMilli())
-        } else
-
-            throw IllegalArgumentException("TemporalAmount must be Period or Duration")
-    }
+            else if (this is Period) {
+                val calEnd = Calendar.getInstance(tzUTC)
+                calEnd.timeInMillis = position.toEpochMilli()
+                calEnd.add(Calendar.DAY_OF_MONTH, days)
+                calEnd.add(Calendar.MONTH, months)
+                calEnd.add(Calendar.YEAR, years)
+                Duration.ofMillis(calEnd.timeInMillis - position.toEpochMilli())
+            } else
+                throw IllegalArgumentException("TemporalAmount must be Period or Duration")
 
     /**
      * Converts a [TemporalAmount] to an RFC5545 duration value, which only uses

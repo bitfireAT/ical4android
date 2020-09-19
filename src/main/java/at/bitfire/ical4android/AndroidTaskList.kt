@@ -12,7 +12,6 @@ import android.accounts.Account
 import android.content.ContentProviderOperation
 import android.content.ContentUris
 import android.content.ContentValues
-import android.content.Context
 import android.net.Uri
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import org.dmfs.tasks.contract.TaskContract

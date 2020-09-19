@@ -203,7 +203,7 @@ enum class Css3Color(val argb: Int) {
                 val deltaG2 = deltaG*deltaG
                 sqrt(2.0*deltaR2 + 4.0*deltaG2 + 3.0*deltaB*deltaB + (r*(deltaR2 - deltaG2))/256.0)
             }
-            val idx = distance.withIndex().minBy { it.value }!!.index
+            val idx = distance.withIndex().minByOrNull { it.value }!!.index
             return values()[idx]
         }
 

@@ -254,7 +254,7 @@ class Event: ICalendar() {
         // determine first dtStart (there may be exceptions with an earlier DTSTART that the main event)
         val dtStarts = mutableListOf(dtStart.date)
         dtStarts.addAll(exceptions.mapNotNull { it.dtStart?.date })
-        val earliest = dtStarts.sorted().firstOrNull()
+        val earliest = dtStarts.minOrNull()
         // add VTIMEZONE components
         usedTimeZones.forEach {
             var tz = it.vTimeZone

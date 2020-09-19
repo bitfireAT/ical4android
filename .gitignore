@@ -77,14 +77,8 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 
-
-### Gradle ###
-.gradle
-build/
-
 # Ignore Gradle GUI config
 gradle-app.setting
-
 
 ### external libs ###a
 .attach*

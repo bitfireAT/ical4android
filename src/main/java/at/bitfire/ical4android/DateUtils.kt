@@ -74,10 +74,7 @@ object DateUtils {
         }
 
         // if that doesn't work, use device default as fallback
-        return if (result == null)
-            TimeZone.getDefault().id
-        else
-            result
+        return result ?: TimeZone.getDefault().id
     }
 
     /**

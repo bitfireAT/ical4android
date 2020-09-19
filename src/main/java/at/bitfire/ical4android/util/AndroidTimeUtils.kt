@@ -29,13 +29,13 @@ object AndroidTimeUtils {
     @Suppress("DEPRECATION")
     val TZID_ALLDAY = Time.TIMEZONE_UTC
 
-    val RECURRENCE_LIST_TZID_SEPARATOR = ';'
-    val RECURRENCE_LIST_VALUE_SEPARATOR = ","
+    const val RECURRENCE_LIST_TZID_SEPARATOR = ';'
+    const val RECURRENCE_LIST_VALUE_SEPARATOR = ","
 
     /**
      * Used to separate multiple RRULEs/EXRULEs in the RRULE/EXRULE storage field.
      */
-    val RECURRENCE_RULE_SEPARATOR = "\n"
+    const val RECURRENCE_RULE_SEPARATOR = "\n"
 
 
     /**
@@ -70,7 +70,7 @@ object AndroidTimeUtils {
      */
     fun androidifyTimeZone(dateList: DateListProperty) {
         val dates = dateList.dates
-        if (dates.type == Value.DATE_TIME && dates.isUtc == false) {
+        if (dates.type == Value.DATE_TIME && !dates.isUtc) {
             val tzID = dateList.dates.timeZone?.id
             val bestMatchingTzId = DateUtils.findAndroidTimezoneID(tzID)
             if (tzID != bestMatchingTzId) {
@@ -181,7 +181,6 @@ object AndroidTimeUtils {
      *
      * @param dbStr     formatted string from Android calendar provider (RDATE/EXDATE field)
      *                  expected format: "[TZID;]date1,date2,date3" where date is "yyyymmddThhmmss[Z]"
-     * @param type      subclass of DateListProperty, e.g. [RDate] or [ExDate]
      * @param allDay    true: list will contain DATE values; false: list will contain DATE_TIME values
      * @param exclude   this time stamp won't be added to the [DateListProperty]
      * @param generator generates the [DateListProperty]; must call the constructor with the one argument of type [DateList]
@@ -242,7 +241,7 @@ object AndroidTimeUtils {
      * where the time zone is stored in a separate field.
      *
      * @param dates         one more more lists of RDATE or EXDATE
-     * @param allDay        whether the event is an all-day event or not
+     * @param tz            output time zone (*null* for all-day event)
      *
      * @return formatted string for Android calendar provider
      */
