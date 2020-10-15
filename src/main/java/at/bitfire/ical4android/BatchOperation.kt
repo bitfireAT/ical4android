@@ -91,7 +91,7 @@ class BatchOperation(
     private fun toCPO(start: Int, end: Int): ArrayList<ContentProviderOperation> {
         val cpo = ArrayList<ContentProviderOperation>(end - start)
 
-        for ((i, cpoBuilder) in queue.subList(start, end).withIndex()) {
+        for (cpoBuilder in queue.subList(start, end)) {
             for ((backrefKey, backrefIdx) in cpoBuilder.valueBackrefs) {
                 if (backrefIdx < start) {
                     // back reference is outside of the current batch, get result from previous execution ...
