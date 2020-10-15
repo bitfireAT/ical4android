@@ -14,7 +14,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.0.2'
+        classpath 'com.android.tools.build:gradle:4.1.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:${versions.dokka}"
     }
@@ -30,12 +30,12 @@ apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.dokka'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
     buildToolsVersion '30.0.2'
 
     defaultConfig {
         minSdkVersion 21        // Android 5.0
-        targetSdkVersion 29     // Android 10
+        targetSdkVersion 30     // Android 11
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

@@ -8,8 +8,6 @@
 
 package at.bitfire.ical4android
 
-import android.content.ContentProviderOperation
-import android.content.ContentProviderOperation.Builder
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.EntityIterator
@@ -502,19 +500,19 @@ abstract class AndroidEvent(
         val idxEvent = add(batch)
         batch.commit()
 
-        val result = batch.getResult(idxEvent)
+        val resultUri = batch.getResult(idxEvent)?.uri
                 ?: throw CalendarStorageException("Empty result from content provider when adding event")
-        id = ContentUris.parseId(result.uri)
-        return result.uri
+        id = ContentUris.parseId(resultUri)
+        return resultUri
     }
 
     fun add(batch: BatchOperation): Int {
         val event = requireNotNull(event)
-        val builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(eventsSyncURI()))
+        val builder = BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(eventsSyncURI()))
 
         val idxEvent = batch.nextBackrefIdx()
         buildEvent(null, builder)
-        batch.enqueue(BatchOperation.Operation(builder))
+        batch.enqueue(builder)
 
         // add reminders
         event.alarms.forEach { insertReminder(batch, idxEvent, it) }
@@ -551,7 +549,7 @@ abstract class AndroidEvent(
                 continue
             }
 
-            val exBuilder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(eventsSyncURI()))
+            val exBuilder = BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(eventsSyncURI()))
             buildEvent(exception, exBuilder)
 
             var recurrenceDate = recurrenceId.date
@@ -576,7 +574,7 @@ abstract class AndroidEvent(
                         .withValue(Events.ORIGINAL_INSTANCE_TIME, recurrenceDate.time)
 
             val idxException = batch.nextBackrefIdx()
-            batch.enqueue(BatchOperation.Operation(exBuilder, Events.ORIGINAL_ID, idxEvent))
+            batch.enqueue(exBuilder.withValueBackReference(Events.ORIGINAL_ID, idxEvent))
 
             // add exception reminders
             exception.alarms.forEach { insertReminder(batch, idxException, it) }
@@ -623,16 +621,17 @@ abstract class AndroidEvent(
 
     protected fun delete(batch: BatchOperation) {
         // remove exceptions of event, too (CalendarProvider doesn't do this)
-        batch.enqueue(BatchOperation.Operation(ContentProviderOperation.newDelete(eventsSyncURI())
-                .withSelection(Events.ORIGINAL_ID + "=?", arrayOf(id.toString()))))
+        batch.enqueue(BatchOperation.CpoBuilder
+                .newDelete(eventsSyncURI())
+                .withSelection(Events.ORIGINAL_ID + "=?", arrayOf(id.toString())))
 
         // remove event
-        batch.enqueue(BatchOperation.Operation(ContentProviderOperation.newDelete(eventSyncURI())))
+        batch.enqueue(BatchOperation.CpoBuilder.newDelete(eventSyncURI()))
     }
 
 
     @CallSuper
-    protected open fun buildEvent(recurrence: Event?, builder: Builder) {
+    protected open fun buildEvent(recurrence: Event?, builder: BatchOperation.CpoBuilder) {
         val isException = recurrence != null
         val event = if (isException)
             recurrence!!
@@ -820,7 +819,7 @@ abstract class AndroidEvent(
     }
 
     protected open fun insertReminder(batch: BatchOperation, idxEvent: Int, alarm: VAlarm) {
-        val builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(Reminders.CONTENT_URI))
+        val builder =BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(Reminders.CONTENT_URI))
 
         val method = when (alarm.action?.value?.toUpperCase(Locale.US)) {
             Action.DISPLAY.value,
@@ -838,16 +837,16 @@ abstract class AndroidEvent(
                 .withValue(Reminders.MINUTES, minutes)
 
         Ical4Android.log.log(Level.FINE, "Built alarm $minutes minutes before event", builder.build())
-        batch.enqueue(BatchOperation.Operation(builder, Reminders.EVENT_ID, idxEvent))
+        batch.enqueue(builder.withValueBackReference(Reminders.EVENT_ID, idxEvent))
     }
 
     protected open fun insertAttendee(batch: BatchOperation, idxEvent: Int, attendee: Attendee) {
-        val builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(Attendees.CONTENT_URI))
+        val builder =BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(Attendees.CONTENT_URI))
 
         val member = attendee.calAddress
         if (member.scheme.equals("mailto", true))
             // attendee identified by email
-            builder.withValue(Attendees.ATTENDEE_EMAIL, member.schemeSpecificPart)
+            builder .withValue(Attendees.ATTENDEE_EMAIL, member.schemeSpecificPart)
         else {
             // attendee identified by other URI
             builder .withValue(Attendees.ATTENDEE_ID_NAMESPACE, member.scheme)
@@ -878,7 +877,7 @@ abstract class AndroidEvent(
         builder.withValue(Attendees.ATTENDEE_STATUS, status)
 
         Ical4Android.log.log(Level.FINE, "Built attendee", builder.build())
-        batch.enqueue(BatchOperation.Operation(builder, Attendees.EVENT_ID, idxEvent))
+        batch.enqueue(builder.withValueBackReference(Attendees.EVENT_ID, idxEvent))
     }
 
     protected open fun insertCategories(batch: BatchOperation, idxEvent: Int) {
@@ -887,12 +886,12 @@ abstract class AndroidEvent(
                     // drop occurrences of EXT_CATEGORIES_SEPARATOR in category names
                     category.filter { it != EXT_CATEGORIES_SEPARATOR }
                 }
-        val builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
+        val builder =BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
                 .withValue(ExtendedProperties.NAME, EXT_CATEGORIES)
                 .withValue(ExtendedProperties.VALUE, rawCategories)
 
         Ical4Android.log.log(Level.FINE, "Built categories", builder.build())
-        batch.enqueue(BatchOperation.Operation(builder, ExtendedProperties.EVENT_ID, idxEvent))
+        batch.enqueue(builder.withValueBackReference(ExtendedProperties.EVENT_ID, idxEvent))
     }
 
     protected open fun insertUnknownProperty(batch: BatchOperation, idxEvent: Int, property: Property) {
@@ -901,12 +900,12 @@ abstract class AndroidEvent(
             return
         }
 
-        val builder = ContentProviderOperation.newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
+        val builder =BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
                 .withValue(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
                 .withValue(ExtendedProperties.VALUE, UnknownProperty.toJsonString(property))
 
         Ical4Android.log.log(Level.FINE, "Built unknown property: ${property.name}")
-        batch.enqueue(BatchOperation.Operation(builder, ExtendedProperties.EVENT_ID, idxEvent))
+        batch.enqueue(builder.withValueBackReference(ExtendedProperties.EVENT_ID, idxEvent))
     }
 
     private fun useRetainedClassification() {

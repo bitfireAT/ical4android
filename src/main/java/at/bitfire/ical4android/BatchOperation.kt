@@ -9,6 +9,7 @@
 package at.bitfire.ical4android
 
 import android.content.*
+import android.net.Uri
 import android.os.RemoteException
 import android.os.TransactionTooLargeException
 import java.util.*
@@ -17,13 +18,13 @@ class BatchOperation(
         private val providerClient: ContentProviderClient
 ) {
 
-    private val queue = LinkedList<Operation>()
+    private val queue = LinkedList<CpoBuilder>()
     private var results = arrayOfNulls<ContentProviderResult?>(0)
 
 
     fun nextBackrefIdx() = queue.size
 
-    fun enqueue(operation: Operation) = queue.add(operation)
+    fun enqueue(operation: CpoBuilder) = queue.add(operation)
 
     fun commit(): Int {
         var affected = 0
@@ -36,7 +37,7 @@ class BatchOperation(
 
                 for (result in results.filterNotNull())
                     when {
-                        result.count != null -> affected += result.count
+                        result.count != null -> affected += result.count ?: 0
                         result.uri != null   -> affected += 1
                     }
                 Ical4Android.log.fine("… $affected record(s) affected")
@@ -90,34 +91,97 @@ class BatchOperation(
     private fun toCPO(start: Int, end: Int): ArrayList<ContentProviderOperation> {
         val cpo = ArrayList<ContentProviderOperation>(end - start)
 
-        for ((i, op) in queue.subList(start, end).withIndex()) {
-            val builder = op.builder
-            op.backrefKey?.let { key ->
-                if (op.backrefIdx < start)
-                    // back reference is outside of the current batch
-                    results[op.backrefIdx]?.let { result ->
-                        builder .withValueBackReferences(null)
-                                .withValue(key, ContentUris.parseId(result.uri))
-                    }
-                else
-                    // back reference is in current batch, apply offset
-                    builder.withValueBackReference(key, op.backrefIdx - start)
+        for ((i, cpoBuilder) in queue.subList(start, end).withIndex()) {
+            for ((backrefKey, backrefIdx) in cpoBuilder.valueBackrefs) {
+                if (backrefIdx < start) {
+                    // back reference is outside of the current batch, get result from previous execution ...
+                    val resultUri = results[backrefIdx]?.uri ?: throw CalendarStorageException("Referenced operation didn't produce a valid result")
+                    val resultId = ContentUris.parseId(resultUri)
+                    // ... and use result directly instead of using a back reference
+                    cpoBuilder  .removeValueBackReference(backrefKey)
+                                .withValue(backrefKey, resultId)
+                } else
+                    // back reference is in current batch, shift index
+                    cpoBuilder.withValueBackReference(backrefKey, backrefIdx - start)
             }
 
-            // set a yield point at least every 300 operations
-            if (i % 300 == 0)
-                builder.withYieldAllowed(true)
-
-            cpo += builder.build()
+            cpo += cpoBuilder.build()
         }
         return cpo
     }
 
 
-    class Operation constructor(
-            val builder: ContentProviderOperation.Builder,
-            val backrefKey: String? = null,
-            val backrefIdx: Int = -1
-    )
+    /**
+     * Wrapper for [ContentProviderOperation.Builder] that allows to reset previously-set
+     * value back references.
+     */
+    class CpoBuilder private constructor(
+            val uri: Uri,
+            val type: Type
+    ) {
+
+        enum class Type { INSERT, UPDATE, DELETE }
+
+        companion object {
+
+            fun newInsert(uri: Uri) = CpoBuilder(uri, Type.INSERT)
+            fun newUpdate(uri: Uri) = CpoBuilder(uri, Type.UPDATE)
+            fun newDelete(uri: Uri) = CpoBuilder(uri, Type.DELETE)
+
+        }
+
+
+        var selection: String? = null
+        var selectionArguments: Array<String>? = null
+
+        val values = mutableMapOf<String, Any>()
+        val valueBackrefs = mutableMapOf<String, Int>()
+
+
+        fun withSelection(select: String, args: Array<String>): CpoBuilder {
+            selection = select
+            selectionArguments = args
+            return this
+        }
+
+        fun withValueBackReference(key: String, index: Int): CpoBuilder {
+            valueBackrefs[key] = index
+            return this
+        }
+
+        fun removeValueBackReference(key: String): CpoBuilder {
+            if (valueBackrefs.remove(key) == null)
+                throw IllegalArgumentException("$key was not set as value back reference")
+            return this
+        }
+
+        fun withValue(key: String, value: Any?): CpoBuilder {
+            if (value != null)
+                values[key] = value
+            else
+                values -= key
+            return this
+        }
+
+
+        fun build(): ContentProviderOperation {
+            val builder = when (type) {
+                Type.INSERT -> ContentProviderOperation.newInsert(uri)
+                Type.UPDATE -> ContentProviderOperation.newUpdate(uri)
+                Type.DELETE -> ContentProviderOperation.newDelete(uri)
+            }
+
+            if (selection != null)
+                builder.withSelection(selection, selectionArguments)
+
+            for ((key, value) in values)
+                builder.withValue(key, value)
+            for ((key, index) in valueBackrefs)
+                builder.withValueBackReference(key, index)
+
+            return builder.build()
+        }
+
+    }
 
 }

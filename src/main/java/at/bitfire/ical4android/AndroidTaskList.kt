@@ -9,7 +9,6 @@
 package at.bitfire.ical4android
 
 import android.accounts.Account
-import android.content.ContentProviderOperation
 import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
@@ -121,10 +120,10 @@ abstract class AndroidTaskList<out T: AndroidTask>(
                 val values = cursor.toValues()
                 val id = values.getAsLong(Relation.PROPERTY_ID)
                 val propertyContentUri = ContentUris.withAppendedId(tasksPropertiesSyncUri(), id)
-                batchOperation.enqueue(BatchOperation.Operation(
-                        ContentProviderOperation.newUpdate(propertyContentUri)
-                                .withValue(Relation.RELATED_ID, values.getAsLong(Relation.RELATED_ID))
-                ))
+                batchOperation.enqueue(BatchOperation.CpoBuilder
+                        .newUpdate(propertyContentUri)
+                        .withValue(Relation.RELATED_ID, values.getAsLong(Relation.RELATED_ID))
+                )
             }
         }
         return batchOperation.commit()

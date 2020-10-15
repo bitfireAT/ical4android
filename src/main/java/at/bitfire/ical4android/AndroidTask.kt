@@ -8,8 +8,6 @@
 
 package at.bitfire.ical4android
 
-import android.content.ContentProviderOperation
-import android.content.ContentProviderOperation.Builder
 import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
@@ -309,19 +307,19 @@ abstract class AndroidTask(
 
     fun add(): Uri {
         val batch = BatchOperation(taskList.provider.client)
-        val builder = ContentProviderOperation.newInsert(taskList.tasksSyncUri())
+        val builder =BatchOperation.CpoBuilder.newInsert(taskList.tasksSyncUri())
         buildTask(builder, false)
-        batch.enqueue(BatchOperation.Operation(builder))
+        batch.enqueue(builder)
         batch.commit()
 
         // TODO use backref mechanism so that only one commit is required for the whole task
-        val result = batch.getResult(0) ?: throw CalendarStorageException("Empty result from provider when adding a task")
-        id = ContentUris.parseId(result.uri)
+        val resultUri = batch.getResult(0)?.uri ?: throw CalendarStorageException("Empty result from provider when adding a task")
+        id = ContentUris.parseId(resultUri)
 
         insertProperties(batch)
         batch.commit()
 
-        return result.uri
+        return resultUri
     }
 
     fun update(task: Task): Uri {
@@ -329,13 +327,14 @@ abstract class AndroidTask(
 
         val batch = BatchOperation(taskList.provider.client)
         val uri = taskSyncURI()
-        val builder = ContentProviderOperation.newUpdate(uri)
+        val builder =BatchOperation.CpoBuilder.newUpdate(uri)
         buildTask(builder, true)
-        batch.enqueue(BatchOperation.Operation(builder))
+        batch.enqueue(builder)
 
-        val deleteProperties = ContentProviderOperation.newDelete(taskList.tasksPropertiesSyncUri())
+        val deleteProperties = BatchOperation.CpoBuilder
+                .newDelete(taskList.tasksPropertiesSyncUri())
                 .withSelection("${Properties.TASK_ID}=?", arrayOf(id.toString()))
-        batch.enqueue(BatchOperation.Operation(deleteProperties))
+        batch.enqueue(deleteProperties)
         insertProperties(batch)
 
         batch.commit()
@@ -371,7 +370,7 @@ abstract class AndroidTask(
                     Alarm.ALARM_TYPE_NOTHING
             }
 
-            val builder = ContentProviderOperation.newInsert(taskList.tasksPropertiesSyncUri())
+            val builder =BatchOperation.CpoBuilder.newInsert(taskList.tasksPropertiesSyncUri())
                     .withValue(Alarm.TASK_ID, id)
                     .withValue(Alarm.MIMETYPE, Alarm.CONTENT_ITEM_TYPE)
                     .withValue(Alarm.MINUTES_BEFORE, minutes)
@@ -380,18 +379,18 @@ abstract class AndroidTask(
                     .withValue(Alarm.ALARM_TYPE, alarmType)
 
             Ical4Android.log.log(Level.FINE, "Inserting alarm", builder.build())
-            batch.enqueue(BatchOperation.Operation(builder))
+            batch.enqueue(builder)
         }
     }
 
     protected open fun insertCategories(batch: BatchOperation) {
         for (category in requireNotNull(task).categories) {
-            val builder = ContentProviderOperation.newInsert(taskList.tasksPropertiesSyncUri())
+            val builder =BatchOperation.CpoBuilder.newInsert(taskList.tasksPropertiesSyncUri())
                     .withValue(Category.TASK_ID, id)
                     .withValue(Category.MIMETYPE, Category.CONTENT_ITEM_TYPE)
                     .withValue(Category.CATEGORY_NAME, category)
             Ical4Android.log.log(Level.FINE, "Inserting category", builder.build())
-            batch.enqueue(BatchOperation.Operation(builder))
+            batch.enqueue(builder)
         }
     }
 
@@ -405,13 +404,13 @@ abstract class AndroidTask(
                 else /* RelType.PARENT, default value */ ->
                     Relation.RELTYPE_PARENT
             }
-            val builder = ContentProviderOperation.newInsert(taskList.tasksPropertiesSyncUri())
+            val builder =BatchOperation.CpoBuilder.newInsert(taskList.tasksPropertiesSyncUri())
                     .withValue(Relation.TASK_ID, id)
                     .withValue(Relation.MIMETYPE, Relation.CONTENT_ITEM_TYPE)
                     .withValue(Relation.RELATED_UID, relatedTo.value)
                     .withValue(Relation.RELATED_TYPE, relType)
             Ical4Android.log.log(Level.FINE, "Inserting relation", builder.build())
-            batch.enqueue(BatchOperation.Operation(builder))
+            batch.enqueue(builder)
         }
     }
 
@@ -422,12 +421,12 @@ abstract class AndroidTask(
                 return
             }
 
-            val builder = ContentProviderOperation.newInsert(taskList.tasksPropertiesSyncUri())
+            val builder =BatchOperation.CpoBuilder.newInsert(taskList.tasksPropertiesSyncUri())
                     .withValue(Properties.TASK_ID, id)
                     .withValue(Properties.MIMETYPE, UnknownProperty.CONTENT_ITEM_TYPE)
                     .withValue(UNKNOWN_PROPERTY_DATA, UnknownProperty.toJsonString(property))
             Ical4Android.log.log(Level.FINE, "Inserting unknown property", builder.build())
-            batch.enqueue(BatchOperation.Operation(builder))
+            batch.enqueue(builder)
         }
     }
 
@@ -440,7 +439,7 @@ abstract class AndroidTask(
     }
 
     @CallSuper
-    protected open fun buildTask(builder: Builder, update: Boolean) {
+    protected open fun buildTask(builder: BatchOperation.CpoBuilder, update: Boolean) {
         if (!update)
             builder .withValue(Tasks.LIST_ID, taskList.id)
 

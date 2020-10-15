@@ -1,6 +1,5 @@
 package at.bitfire.ical4android
 
-import android.content.ContentProviderOperation
 import android.content.ContentValues
 import android.provider.CalendarContract
 import android.provider.CalendarContract.Attendees
@@ -102,7 +101,7 @@ object AttendeeMappings {
      * @param row        builder for the Android attendee row
      * @param owner      email address of account owner ([CalendarContract.Calendars.OWNER_ACCOUNT]); used to determine whether [attendee] is the organizer
      */
-    fun iCalendarToAndroid(attendee: Attendee, row: ContentProviderOperation.Builder, owner: String) {
+    fun iCalendarToAndroid(attendee: Attendee, row: BatchOperation.CpoBuilder, owner: String) {
         val type: Int
         var relationship: Int
 

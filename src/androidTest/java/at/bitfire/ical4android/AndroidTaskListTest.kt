@@ -21,7 +21,6 @@ import org.dmfs.tasks.contract.TaskContract.Property.Relation
 import org.dmfs.tasks.contract.TaskContract.Tasks
 import org.junit.Assert.*
 import org.junit.Test
-import org.junit.runners.Parameterized
 
 class AndroidTaskListTest(providerName: TaskProvider.ProviderName):
         AbstractTasksTest(providerName) {

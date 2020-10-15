@@ -8,9 +8,7 @@
 
 package at.bitfire.ical4android
 
-import android.content.Context
 import androidx.test.runner.permission.PermissionRequester
-import junit.framework.AssertionFailedError
 
 object TestUtils {
 
