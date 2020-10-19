@@ -789,7 +789,7 @@ abstract class AndroidEvent(
                 val email = if (uri.scheme.equals("mailto", true))
                     uri.schemeSpecificPart
                 else
-                    organizer.getParameter<Parameter>(ICalendar.PARAMETER_EMAIL)?.value
+                    organizer.getParameter<Email>(Parameter.EMAIL)?.value
                 if (email != null)
                     builder.withValue(Events.ORGANIZER, email)
                 else
@@ -852,10 +852,7 @@ abstract class AndroidEvent(
             builder .withValue(Attendees.ATTENDEE_ID_NAMESPACE, member.scheme)
                     .withValue(Attendees.ATTENDEE_IDENTITY, member.schemeSpecificPart)
 
-            // TODO: use attendee.getParameter<Email>(Parameter.EMAIL) when
-            // https://github.com/ical4j/ical4j/pull/413 and
-            // https://github.com/ical4j/ical4j/pull/414 are merged
-            (attendee.getParameter<Parameter>(ICalendar.PARAMETER_EMAIL))?.let { email ->
+            attendee.getParameter<Email>(Parameter.EMAIL)?.let { email ->
                 builder.withValue(Attendees.ATTENDEE_EMAIL, email.value)
             }
         }

@@ -53,11 +53,6 @@ open class ICalendar {
         const val CALENDAR_NAME = "X-WR-CALNAME"
 
         /**
-         * EMAIL parameter name (as used for ORGANIZER). Not declared in ical4j Parameters class yet.
-         */
-        const val PARAMETER_EMAIL = "EMAIL"
-
-        /**
          * Default PRODID used when generating iCalendars. If you want another value, set it
          * statically before writing the first iCalendar.
          */

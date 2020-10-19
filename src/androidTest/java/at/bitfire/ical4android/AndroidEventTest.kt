@@ -1849,7 +1849,7 @@ class AndroidEventTest {
             put(Attendees.ATTENDEE_IDENTITY, "//example.com/principals/attendee")
         }!!.let { attendee ->
             assertEquals(URI("https://example.com/principals/attendee"), attendee.calAddress)
-            assertEquals("attendee@example.com", attendee.getParameter<Parameter>(ICalendar.PARAMETER_EMAIL).value)
+            assertEquals("attendee@example.com", attendee.getParameter<Email>(Parameter.EMAIL).value)
         }
     }
 

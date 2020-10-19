@@ -19,6 +19,7 @@ import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VAlarm
+import net.fortuna.ical4j.model.parameter.Email
 import net.fortuna.ical4j.model.parameter.RelType
 import net.fortuna.ical4j.model.parameter.Related
 import net.fortuna.ical4j.model.property.*
@@ -462,7 +463,7 @@ abstract class AndroidTask(
             val email = if (uri.scheme.equals("mailto", true))
                 uri.schemeSpecificPart
             else
-                organizer.getParameter<Parameter>(ICalendar.PARAMETER_EMAIL)?.value
+                organizer.getParameter<Email>(Parameter.EMAIL)?.value
             if (email != null)
                 builder.withValue(Tasks.ORGANIZER, email)
             else

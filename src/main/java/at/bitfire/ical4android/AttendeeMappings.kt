@@ -5,6 +5,7 @@ import android.provider.CalendarContract
 import android.provider.CalendarContract.Attendees
 import net.fortuna.ical4j.model.Parameter
 import net.fortuna.ical4j.model.parameter.CuType
+import net.fortuna.ical4j.model.parameter.Email
 import net.fortuna.ical4j.model.parameter.Role
 import net.fortuna.ical4j.model.property.Attendee
 
@@ -153,7 +154,7 @@ object AttendeeMappings {
             val email = if (uri.scheme.equals("mailto", true))
                 uri.schemeSpecificPart
             else
-                attendee.getParameter<Parameter>(ICalendar.PARAMETER_EMAIL)?.value
+                attendee.getParameter<Email>(Parameter.EMAIL)?.value
             if (email == owner)
                 relationship = Attendees.RELATIONSHIP_ORGANIZER
         }

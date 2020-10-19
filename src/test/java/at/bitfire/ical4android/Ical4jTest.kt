@@ -1,15 +1,17 @@
 package at.bitfire.ical4android
 
+import net.fortuna.ical4j.model.Parameter
 import net.fortuna.ical4j.model.TemporalAmountAdapter
 import net.fortuna.ical4j.model.parameter.Email
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 import java.io.StringReader
 import java.time.Period
 
 class Ical4jTest {
 
-    @Test(expected = AssertionError::class)
+    @Test
     fun testEmailParameter() {
         // https://github.com/ical4j/ical4j/issues/418
         val e = Event.eventsFromReader(StringReader("BEGIN:VCALENDAR\n" +
@@ -17,18 +19,18 @@ class Ical4jTest {
                 "BEGIN:VEVENT\n" +
                 "SUMMARY:Test\n" +
                 "DTSTART;VALUE=DATE:20200702\n" +
-                "ATTENDEE:EMAIL=attendee1@example.com;sample:attendee1\n" +
+                "ATTENDEE;EMAIL=attendee1@example.com:sample:attendee1\n" +
                 "END:VEVENT\n" +
                 "END:VCALENDAR")).first()
-        assertTrue(e.attendees.first.getParameter<Email>(ICalendar.PARAMETER_EMAIL) is Email)
+        assertEquals("attendee1@example.com", e.attendees.first.getParameter<Email>(Parameter.EMAIL).value)
     }
 
-
-    @Test(expected = AssertionError::class)
+    @Test
     fun testTemporalAmountAdapter_durationToString_DropsMinutes() {
         // https://github.com/ical4j/ical4j/issues/420
         assertEquals("P1DT1H4M", TemporalAmountAdapter.parse("P1DT1H4M").toString())
     }
+
 
     @Test(expected = AssertionError::class)
     fun testTemporalAmountAdapter_Months() {
