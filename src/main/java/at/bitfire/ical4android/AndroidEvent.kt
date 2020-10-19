@@ -819,7 +819,7 @@ abstract class AndroidEvent(
     }
 
     protected open fun insertReminder(batch: BatchOperation, idxEvent: Int, alarm: VAlarm) {
-        val builder =BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(Reminders.CONTENT_URI))
+        val builder = BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(Reminders.CONTENT_URI))
 
         val method = when (alarm.action?.value?.toUpperCase(Locale.US)) {
             Action.DISPLAY.value,
@@ -841,7 +841,7 @@ abstract class AndroidEvent(
     }
 
     protected open fun insertAttendee(batch: BatchOperation, idxEvent: Int, attendee: Attendee) {
-        val builder =BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(Attendees.CONTENT_URI))
+        val builder = BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(Attendees.CONTENT_URI))
 
         val member = attendee.calAddress
         if (member.scheme.equals("mailto", true))
@@ -883,7 +883,7 @@ abstract class AndroidEvent(
                     // drop occurrences of EXT_CATEGORIES_SEPARATOR in category names
                     category.filter { it != EXT_CATEGORIES_SEPARATOR }
                 }
-        val builder =BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
+        val builder = BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
                 .withValue(ExtendedProperties.NAME, EXT_CATEGORIES)
                 .withValue(ExtendedProperties.VALUE, rawCategories)
 
@@ -897,7 +897,7 @@ abstract class AndroidEvent(
             return
         }
 
-        val builder =BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
+        val builder = BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
                 .withValue(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
                 .withValue(ExtendedProperties.VALUE, UnknownProperty.toJsonString(property))
 

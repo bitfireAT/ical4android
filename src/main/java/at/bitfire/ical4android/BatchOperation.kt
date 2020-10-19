@@ -134,7 +134,7 @@ class BatchOperation(
         var selection: String? = null
         var selectionArguments: Array<String>? = null
 
-        val values = mutableMapOf<String, Any>()
+        val values = mutableMapOf<String, Any?>()
         val valueBackrefs = mutableMapOf<String, Int>()
 
 
@@ -156,10 +156,7 @@ class BatchOperation(
         }
 
         fun withValue(key: String, value: Any?): CpoBuilder {
-            if (value != null)
-                values[key] = value
-            else
-                values -= key
+            values[key] = value
             return this
         }
 
