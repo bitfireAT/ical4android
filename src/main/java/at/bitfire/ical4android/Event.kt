@@ -256,12 +256,8 @@ class Event: ICalendar() {
         dtStarts.addAll(exceptions.mapNotNull { it.dtStart?.date })
         val earliest = dtStarts.minOrNull()
         // add VTIMEZONE components
-        usedTimeZones.forEach {
-            var tz = it.vTimeZone
-            if (earliest != null)
-                tz = minifyVTimeZone(tz, earliest)
-            ical.components += tz
-        }
+        for (tz in usedTimeZones)
+            ical.components += minifyVTimeZone(tz.vTimeZone, earliest)
 
         softValidate(ical)
         CalendarOutputter(false).output(ical, os)
