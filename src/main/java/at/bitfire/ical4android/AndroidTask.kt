@@ -360,7 +360,7 @@ abstract class AndroidTask(
                     Alarm.ALARM_REFERENCE_START_DATE
             }
 
-            val alarmType = when (alarm.action?.value?.toUpperCase(Locale.US)) {
+            val alarmType = when (alarm.action?.value?.toUpperCase(Locale.ROOT)) {
                 Action.AUDIO.value ->
                     Alarm.ALARM_TYPE_SOUND
                 Action.DISPLAY.value ->

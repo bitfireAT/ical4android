@@ -821,7 +821,7 @@ abstract class AndroidEvent(
     protected open fun insertReminder(batch: BatchOperation, idxEvent: Int, alarm: VAlarm) {
         val builder = BatchOperation.CpoBuilder.newInsert(calendar.syncAdapterURI(Reminders.CONTENT_URI))
 
-        val method = when (alarm.action?.value?.toUpperCase(Locale.US)) {
+        val method = when (alarm.action?.value?.toUpperCase(Locale.ROOT)) {
             Action.DISPLAY.value,
             Action.AUDIO.value -> Reminders.METHOD_ALERT
 

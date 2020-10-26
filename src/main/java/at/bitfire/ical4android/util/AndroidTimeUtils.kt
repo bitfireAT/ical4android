@@ -132,7 +132,7 @@ object AndroidTimeUtils {
             all-day             store as ...T000000Z                cut off time and store as ...T000000Z
             event with time     (undefined)                         store as ...ThhmmssZ
         */
-        val dateFormatUtcMidnight = SimpleDateFormat("yyyyMMdd'T'000000'Z'", Locale.US)
+        val dateFormatUtcMidnight = SimpleDateFormat("yyyyMMdd'T'000000'Z'", Locale.ROOT)
         val strDates = LinkedList<String>()
 
         // use time zone of first entry for the whole set; null for UTC
