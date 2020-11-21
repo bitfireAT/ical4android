@@ -600,6 +600,9 @@ abstract class AndroidEvent(
 
         val idxEvent = batch.nextBackrefIdx()
 
+        // Updating the event row would delete STATUS_CANCELED events!
+        // https://github.com/aosp-mirror/platform_packages_providers_calendarprovider/blob/master/src/com/android/providers/calendar/CalendarProvider2.java#L4155
+
         add(batch)
         batch.commit()
 

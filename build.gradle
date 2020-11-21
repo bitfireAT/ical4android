@@ -14,7 +14,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.0'
+        classpath 'com.android.tools.build:gradle:4.1.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:${versions.dokka}"
     }
@@ -77,7 +77,7 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${versions.kotlin}"
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.0.10'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.1'
 
     api("org.mnode.ical4j:ical4j:${versions.ical4j}") {
         exclude module: 'javax.mail'
