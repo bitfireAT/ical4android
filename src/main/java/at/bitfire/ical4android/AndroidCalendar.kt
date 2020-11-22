@@ -206,4 +206,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
     fun calendarSyncURI() = syncAdapterURI(ContentUris.withAppendedId(Calendars.CONTENT_URI, id))
     fun eventsSyncURI() = syncAdapterURI(Events.CONTENT_URI)
 
+    fun attendeesSyncUri() = syncAdapterURI(Attendees.CONTENT_URI)
+    fun remindersSyncUri() = syncAdapterURI(Reminders.CONTENT_URI)
+
 }

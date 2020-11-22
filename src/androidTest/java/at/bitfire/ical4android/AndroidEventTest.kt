@@ -112,10 +112,10 @@ class AndroidEventTest {
             eventBuilder()
         }
         val uri = TestEvent(calendar, event).add()
-        provider.query(uri, null, null, null, null)!!.use {
-            it.moveToNext()
-            val values = ContentValues()
-            DatabaseUtils.cursorRowToContentValues(it, values)
+        provider.query(uri, null, null, null, null)!!.use { cursor ->
+            cursor.moveToNext()
+            val values = ContentValues(cursor.columnCount)
+            DatabaseUtils.cursorRowToContentValues(cursor, values)
             return values
         }
     }
@@ -1361,7 +1361,6 @@ class AndroidEventTest {
             }
         }
     }
-
 
 
     private fun populateEvent(

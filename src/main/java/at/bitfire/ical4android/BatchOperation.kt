@@ -24,7 +24,10 @@ class BatchOperation(
 
     fun nextBackrefIdx() = queue.size
 
-    fun enqueue(operation: CpoBuilder) = queue.add(operation)
+    fun enqueue(operation: CpoBuilder): BatchOperation {
+        queue.add(operation)
+        return this
+    }
 
     fun commit(): Int {
         var affected = 0
