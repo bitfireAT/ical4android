@@ -13,6 +13,7 @@ import android.content.ContentValues
 import android.net.Uri
 import android.os.RemoteException
 import androidx.annotation.CallSuper
+import at.bitfire.ical4android.BatchOperation.CpoBuilder
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import at.bitfire.ical4android.util.AndroidTimeUtils
 import net.fortuna.ical4j.model.*
@@ -308,48 +309,53 @@ abstract class AndroidTask(
 
     fun add(): Uri {
         val batch = BatchOperation(taskList.provider.client)
-        val builder =BatchOperation.CpoBuilder.newInsert(taskList.tasksSyncUri())
+
+        val builder = CpoBuilder.newInsert(taskList.tasksSyncUri())
         buildTask(builder, false)
+        val idxTask = batch.nextBackrefIdx()
         batch.enqueue(builder)
+
+        insertProperties(batch, idxTask)
+
         batch.commit()
 
-        // TODO use backref mechanism so that only one commit is required for the whole task
         val resultUri = batch.getResult(0)?.uri ?: throw CalendarStorageException("Empty result from provider when adding a task")
         id = ContentUris.parseId(resultUri)
-
-        insertProperties(batch)
-        batch.commit()
-
         return resultUri
     }
 
     fun update(task: Task): Uri {
         this.task = task
+        val existingId = requireNotNull(id)
 
         val batch = BatchOperation(taskList.provider.client)
+
+        // remove associated rows which are added later again
+        batch.enqueue(CpoBuilder
+                .newDelete(taskList.tasksPropertiesSyncUri())
+                .withSelection("${Properties.TASK_ID}=?", arrayOf(existingId.toString())))
+
+        // update task
         val uri = taskSyncURI()
-        val builder =BatchOperation.CpoBuilder.newUpdate(uri)
+        val builder = CpoBuilder.newUpdate(uri)
         buildTask(builder, true)
         batch.enqueue(builder)
 
-        val deleteProperties = BatchOperation.CpoBuilder
-                .newDelete(taskList.tasksPropertiesSyncUri())
-                .withSelection("${Properties.TASK_ID}=?", arrayOf(id.toString()))
-        batch.enqueue(deleteProperties)
-        insertProperties(batch)
+        // insert task properties again
+        insertProperties(batch, null)
 
         batch.commit()
-        return uri
+        return ContentUris.withAppendedId(taskList.provider.tasksUri(), existingId)
     }
 
-    protected open fun insertProperties(batch: BatchOperation) {
-        insertAlarms(batch)
-        insertCategories(batch)
-        insertRelatedTo(batch)
-        insertUnknownProperties(batch)
+    protected open fun insertProperties(batch: BatchOperation, idxTask: Int?) {
+        insertAlarms(batch, idxTask)
+        insertCategories(batch, idxTask)
+        insertRelatedTo(batch, idxTask)
+        insertUnknownProperties(batch, idxTask)
     }
 
-    protected open fun insertAlarms(batch: BatchOperation) {
+    protected open fun insertAlarms(batch: BatchOperation, idxTask: Int?) {
         val task = requireNotNull(task)
         for (alarm in task.alarms) {
             val (alarmRef, minutes) = ICalendar.vAlarmToMin(alarm, task, true) ?: continue
@@ -371,8 +377,9 @@ abstract class AndroidTask(
                     Alarm.ALARM_TYPE_NOTHING
             }
 
-            val builder =BatchOperation.CpoBuilder.newInsert(taskList.tasksPropertiesSyncUri())
-                    .withValue(Alarm.TASK_ID, id)
+            val builder = CpoBuilder
+                    .newInsert(taskList.tasksPropertiesSyncUri())
+                    .withTaskId(Alarm.TASK_ID, idxTask)
                     .withValue(Alarm.MIMETYPE, Alarm.CONTENT_ITEM_TYPE)
                     .withValue(Alarm.MINUTES_BEFORE, minutes)
                     .withValue(Alarm.REFERENCE, ref)
@@ -384,10 +391,10 @@ abstract class AndroidTask(
         }
     }
 
-    protected open fun insertCategories(batch: BatchOperation) {
+    protected open fun insertCategories(batch: BatchOperation, idxTask: Int?) {
         for (category in requireNotNull(task).categories) {
-            val builder =BatchOperation.CpoBuilder.newInsert(taskList.tasksPropertiesSyncUri())
-                    .withValue(Category.TASK_ID, id)
+            val builder = CpoBuilder.newInsert(taskList.tasksPropertiesSyncUri())
+                    .withTaskId(Category.TASK_ID, idxTask)
                     .withValue(Category.MIMETYPE, Category.CONTENT_ITEM_TYPE)
                     .withValue(Category.CATEGORY_NAME, category)
             Ical4Android.log.log(Level.FINE, "Inserting category", builder.build())
@@ -395,7 +402,7 @@ abstract class AndroidTask(
         }
     }
 
-    protected open fun insertRelatedTo(batch: BatchOperation) {
+    protected open fun insertRelatedTo(batch: BatchOperation, idxTask: Int?) {
         for (relatedTo in requireNotNull(task).relatedTo) {
             val relType = when ((relatedTo.getParameter(Parameter.RELTYPE) as RelType?)) {
                 RelType.CHILD ->
@@ -405,8 +412,8 @@ abstract class AndroidTask(
                 else /* RelType.PARENT, default value */ ->
                     Relation.RELTYPE_PARENT
             }
-            val builder =BatchOperation.CpoBuilder.newInsert(taskList.tasksPropertiesSyncUri())
-                    .withValue(Relation.TASK_ID, id)
+            val builder = CpoBuilder.newInsert(taskList.tasksPropertiesSyncUri())
+                    .withTaskId(Relation.TASK_ID, idxTask)
                     .withValue(Relation.MIMETYPE, Relation.CONTENT_ITEM_TYPE)
                     .withValue(Relation.RELATED_UID, relatedTo.value)
                     .withValue(Relation.RELATED_TYPE, relType)
@@ -415,15 +422,15 @@ abstract class AndroidTask(
         }
     }
 
-    protected open fun insertUnknownProperties(batch: BatchOperation) {
+    protected open fun insertUnknownProperties(batch: BatchOperation, idxTask: Int?) {
         for (property in requireNotNull(task).unknownProperties) {
             if (property.value.length > UnknownProperty.MAX_UNKNOWN_PROPERTY_SIZE) {
                 Ical4Android.log.warning("Ignoring unknown property with ${property.value.length} octets (too long)")
                 return
             }
 
-            val builder =BatchOperation.CpoBuilder.newInsert(taskList.tasksPropertiesSyncUri())
-                    .withValue(Properties.TASK_ID, id)
+            val builder = CpoBuilder.newInsert(taskList.tasksPropertiesSyncUri())
+                    .withTaskId(Properties.TASK_ID, idxTask)
                     .withValue(Properties.MIMETYPE, UnknownProperty.CONTENT_ITEM_TYPE)
                     .withValue(UNKNOWN_PROPERTY_DATA, UnknownProperty.toJsonString(property))
             Ical4Android.log.log(Level.FINE, "Inserting unknown property", builder.build())
@@ -542,11 +549,20 @@ abstract class AndroidTask(
                 DateUtils.ical4jTimeZone(ZoneId.systemDefault().id)!!
     }
 
+
+    protected fun CpoBuilder.withTaskId(column: String, idxTask: Int?): BatchOperation.CpoBuilder {
+        if (idxTask != null)
+            withValueBackReference(column, idxTask)
+        else
+            withValue(column, requireNotNull(id))
+        return this
+    }
+
+
     protected fun taskSyncURI(loadProperties: Boolean = false): Uri {
         val id = requireNotNull(id)
         return ContentUris.withAppendedId(taskList.tasksSyncUri(loadProperties), id)
     }
-
 
     override fun toString() = MiscUtils.reflectionToString(this)
 
