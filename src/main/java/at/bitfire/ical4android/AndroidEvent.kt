@@ -609,27 +609,42 @@ abstract class AndroidEvent(
         this.event = event
         val existingId = requireNotNull(id)
 
-        val batch = BatchOperation(calendar.provider)
+        // There are cases where the event cannot be updated, but must be completely re-created.
+        // Case 1: Events.STATUS shall be updated from a non-null value (like STATUS_CONFIRMED) to null.
+        var rebuild = false
+        if (event.status == null)
+            calendar.provider.query(eventSyncURI(), arrayOf(Events.STATUS), null, null, null)?.use { cursor ->
+                cursor.moveToNext()
+                if (!cursor.isNull(0))      // Events.STATUS != null
+                    rebuild = true
+            }
 
-        // remove associated rows which are added later again
-        deleteExceptions(batch)
-        batch   .enqueue(CpoBuilder
-                        .newDelete(calendar.remindersSyncUri())
-                        .withSelection("${Reminders.EVENT_ID}=?", arrayOf(existingId.toString())))
-                .enqueue(CpoBuilder
-                        .newDelete(calendar.attendeesSyncUri())
-                        .withSelection("${Attendees.EVENT_ID}=?", arrayOf(existingId.toString())))
-                .enqueue(CpoBuilder
-                        .newDelete(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
-                        .withSelection(
-                                "${ExtendedProperties.EVENT_ID}=? AND ${ExtendedProperties.NAME}=?",
-                                arrayOf(existingId.toString(), UnknownProperty.CONTENT_ITEM_TYPE)
-                        ))
+        if (rebuild) {  // delete whole event and insert updated event
+            delete()
+            return add()
 
-        addOrUpdateRows(batch)
-        batch.commit()
+        } else {        // update event
+            // remove associated rows which are added later again
+            val batch = BatchOperation(calendar.provider)
+            deleteExceptions(batch)
+            batch   .enqueue(CpoBuilder
+                            .newDelete(calendar.remindersSyncUri())
+                            .withSelection("${Reminders.EVENT_ID}=?", arrayOf(existingId.toString())))
+                    .enqueue(CpoBuilder
+                            .newDelete(calendar.attendeesSyncUri())
+                            .withSelection("${Attendees.EVENT_ID}=?", arrayOf(existingId.toString())))
+                    .enqueue(CpoBuilder
+                            .newDelete(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
+                            .withSelection(
+                                    "${ExtendedProperties.EVENT_ID}=? AND ${ExtendedProperties.NAME}=?",
+                                    arrayOf(existingId.toString(), UnknownProperty.CONTENT_ITEM_TYPE)
+                            ))
 
-        return ContentUris.withAppendedId(Events.CONTENT_URI, existingId)
+            addOrUpdateRows(batch)
+            batch.commit()
+
+            return ContentUris.withAppendedId(Events.CONTENT_URI, existingId)
+        }
     }
 
     /**
@@ -639,16 +654,15 @@ abstract class AndroidEvent(
      */
     fun delete(): Int {
         val batch = BatchOperation(calendar.provider)
-        delete(batch)
-        return batch.commit()
-    }
 
-    protected fun delete(batch: BatchOperation) {
         // remove exceptions of event, too (CalendarProvider doesn't do this)
         deleteExceptions(batch)
 
-        // remove event
+        // remove event and unset known id
         batch.enqueue(CpoBuilder.newDelete(eventSyncURI()))
+        id = null
+
+        return batch.commit()
     }
 
     protected fun deleteExceptions(batch: BatchOperation) {
@@ -838,14 +852,15 @@ abstract class AndroidEvent(
             builder .withValue(Events.HAS_ATTENDEE_DATA, 0)
                     .withValue(Events.ORGANIZER, null)
 
-        // special case: don't set STATUS to null when updating (causes update operation to fail)
-        event.status?.let { status ->
-            builder .withValue(Events.STATUS, when (status) {
-                Status.VEVENT_CONFIRMED -> Events.STATUS_CONFIRMED
-                Status.VEVENT_CANCELLED -> Events.STATUS_CANCELED
-                else -> Events.STATUS_TENTATIVE
-            })
-        }
+        // Attention: don't update event with STATUS != null to STATUS = null  (causes calendar provider operation to fail)!
+        // In this case, the whole event must be deleted and inserted again.
+        if (/* insert, not an update */id == null || /* update, but we're not updating to null */ event.status != null)
+        builder.withValue(Events.STATUS, when (event.status) {
+            null -> null
+            Status.VEVENT_CONFIRMED -> Events.STATUS_CONFIRMED
+            Status.VEVENT_CANCELLED -> Events.STATUS_CANCELED
+            else -> Events.STATUS_TENTATIVE
+        })
 
         builder .withValue(Events.AVAILABILITY, if (event.opaque) Events.AVAILABILITY_BUSY else Events.AVAILABILITY_FREE)
                 .withValue(Events.ACCESS_LEVEL, when (event.classification) {

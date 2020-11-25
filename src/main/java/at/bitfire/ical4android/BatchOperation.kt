@@ -13,6 +13,7 @@ import android.net.Uri
 import android.os.RemoteException
 import android.os.TransactionTooLargeException
 import java.util.*
+import java.util.logging.Level
 
 class BatchOperation(
         private val providerClient: ContentProviderClient
@@ -33,7 +34,11 @@ class BatchOperation(
         var affected = 0
         if (!queue.isEmpty())
             try {
-                Ical4Android.log.fine("Committing ${queue.size} operations")
+                if (Ical4Android.log.isLoggable(Level.FINE)) {
+                    Ical4Android.log.log(Level.FINE, "Committing ${queue.size} operations:")
+                    for ((idx, op) in queue.withIndex())
+                        Ical4Android.log.log(Level.FINE, "#$idx: ${op.build()}")
+                }
 
                 results = arrayOfNulls(queue.size)
                 runBatch(0, queue.size)
