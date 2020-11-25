@@ -868,8 +868,6 @@ abstract class AndroidEvent(
                     Clazz.CONFIDENTIAL -> Events.ACCESS_CONFIDENTIAL
                     else /* including Events.ACCESS_PRIVATE */ -> Events.ACCESS_PRIVATE
                 })
-
-        Ical4Android.log.log(Level.FINE, "Built event object", builder.build())
     }
 
     protected open fun insertReminder(batch: BatchOperation, idxEvent: Int?, alarm: VAlarm) {
@@ -891,8 +889,6 @@ abstract class AndroidEvent(
 
         builder .withValue(Reminders.METHOD, method)
                 .withValue(Reminders.MINUTES, minutes)
-
-        Ical4Android.log.log(Level.FINE, "Built alarm $minutes minutes before event", builder.build())
         batch.enqueue(builder)
     }
 
@@ -930,8 +926,6 @@ abstract class AndroidEvent(
             else /* default: PartStat.NEEDS_ACTION */ -> Attendees.ATTENDEE_STATUS_INVITED
         }
         builder.withValue(Attendees.ATTENDEE_STATUS, status)
-
-        Ical4Android.log.log(Level.FINE, "Built attendee", builder.build())
         batch.enqueue(builder)
     }
 
@@ -946,8 +940,6 @@ abstract class AndroidEvent(
                 .withEventId(ExtendedProperties.EVENT_ID, idxEvent)
                 .withValue(ExtendedProperties.NAME, EXT_CATEGORIES)
                 .withValue(ExtendedProperties.VALUE, rawCategories)
-
-        Ical4Android.log.log(Level.FINE, "Built categories", builder.build())
         batch.enqueue(builder)
     }
 
@@ -962,8 +954,6 @@ abstract class AndroidEvent(
                 .withEventId(ExtendedProperties.EVENT_ID, idxEvent)
                 .withValue(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
                 .withValue(ExtendedProperties.VALUE, UnknownProperty.toJsonString(property))
-
-        Ical4Android.log.log(Level.FINE, "Built unknown property: ${property.name}")
         batch.enqueue(builder)
     }
 
