@@ -846,15 +846,15 @@ abstract class AndroidEvent(
                             return@let email
                         Ical4Android.log.warning("Ignoring ORGANIZER without email address (not supported by Android)")
                         null
-                    })
+                    } ?: calendar.ownerAccount)
 
         } else /* !groupScheduled */
             builder .withValue(Events.HAS_ATTENDEE_DATA, 0)
-                    .withValue(Events.ORGANIZER, null)
+                    .withValue(Events.ORGANIZER, calendar.ownerAccount)
 
         // Attention: don't update event with STATUS != null to STATUS = null  (causes calendar provider operation to fail)!
         // In this case, the whole event must be deleted and inserted again.
-        if (/* insert, not an update */id == null || /* update, but we're not updating to null */ event.status != null)
+        if (/* insert, not an update */ id == null || /* update, but we're not updating to null */ event.status != null)
         builder.withValue(Events.STATUS, when (event.status) {
             null -> null
             Status.VEVENT_CONFIRMED -> Events.STATUS_CONFIRMED
