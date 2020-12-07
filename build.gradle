@@ -3,7 +3,7 @@ buildscript {
     ext.versions = [
         kotlin: '1.4.10',
         dokka: '0.10.1',
-        ical4j: '3.0.20',
+        ical4j: '3.0.21',
         // latest Apache Commons versions that don't require Java 8 (Android 7)
         commonsIO: '2.6'
     ]
