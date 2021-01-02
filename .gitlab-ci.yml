@@ -13,7 +13,7 @@ test:
   script:
     - start-emulator.sh
     - wget -q https://f-droid.org/repo/org.dmfs.tasks_78500.apk && adb install org.dmfs.tasks_78500.apk
-    - wget -q https://f-droid.org/repo/org.tasks_100301.apk && adb install org.tasks_100301.apk
+    - wget -q https://f-droid.org/repo/org.tasks_110102.apk && adb install org.tasks_110102.apk
     - ./gradlew check connectedCheck
   artifacts:
     paths:
