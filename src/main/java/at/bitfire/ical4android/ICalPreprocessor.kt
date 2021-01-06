@@ -27,8 +27,9 @@ object ICalPreprocessor {
 
     private val propertyRules = arrayOf(
             CreatedPropertyRule(),      // make sure CREATED is UTC
-            DatePropertyRule(),
-            DateListPropertyRule()
+
+            DatePropertyRule(),         // These two rules also replace VTIMEZONEs of the iCalendar ...
+            DateListPropertyRule()      // ... by the ical4j VTIMEZONE with the same TZID!
     )
 
 
@@ -92,9 +93,11 @@ object ICalPreprocessor {
         propertyRules
                 .filter { rule -> rule.supportedType.isAssignableFrom(property::class.java) }
                 .forEach {
-                    Ical4Android.log.log(Level.FINER, "Applying rules to $property")
+                    val beforeStr = property.toString()
                     (it as Rfc5545PropertyRule<Property>).applyTo(property)
-                    Ical4Android.log.log(Level.FINER, "-> $property")
+                    val afterStr = property.toString()
+                    if (beforeStr != afterStr)
+                        Ical4Android.log.log(Level.FINER, "$beforeStr -> $afterStr")
                 }
     }
 
