@@ -15,7 +15,6 @@ import android.content.EntityIterator
 import android.net.Uri
 import android.os.RemoteException
 import android.provider.CalendarContract.*
-import android.util.Base64
 import android.util.Patterns
 import androidx.annotation.CallSuper
 import at.bitfire.ical4android.BatchOperation.CpoBuilder
@@ -35,9 +34,7 @@ import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
 import net.fortuna.ical4j.util.TimeZones
-import java.io.ByteArrayInputStream
 import java.io.FileNotFoundException
-import java.io.ObjectInputStream
 import java.net.URI
 import java.net.URISyntaxException
 import java.time.*
@@ -63,14 +60,8 @@ abstract class AndroidEvent(
 
         const val MUTATORS_SEPARATOR = ','
 
-        @Deprecated("New serialization format", ReplaceWith("MIMETYPE_UNKNOWN2"))
-        const val MIMETYPE_UNKNOWN = "unknown-property"
-
-        @Deprecated("New content item MIME type", ReplaceWith("UnknownProperty.CONTENT_ITEM_TYPE"))
-        const val MIMETYPE_UNKNOWN2 = "unknown-property.v2"
-
         /**
-         * VEVENT CATEGORIES will be stored as an extended property with this [ExtendedProperties.NAME].
+         * VEVENT CATEGORIES are stored as an extended property with this [ExtendedProperties.NAME].
          *
          * The [ExtendedProperties.VALUE] format is the same as used by the AOSP Exchange ActiveSync adapter:
          * the category values are stored as list, separated by [CATEGORIES_SEPARATOR]. (If a category
@@ -81,6 +72,10 @@ abstract class AndroidEvent(
         const val MIMETYPE_CATEGORIES = "categories"
         const val CATEGORIES_SEPARATOR = '\\'
 
+        /**
+         * VEVENT URL is stored as an extended property with this [ExtendedProperties.NAME].
+         * The URL is directly put into [ExtendedProperties.VALUE].
+         */
         const val MIMETYPE_URL = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/vnd.ical4android.url"
     }
 
@@ -414,7 +409,7 @@ abstract class AndroidEvent(
     protected open fun populateExtended(row: ContentValues) {
         val mimeType = row.getAsString(ExtendedProperties.NAME)
         val rawValue = row.getAsString(ExtendedProperties.VALUE)
-        Ical4Android.log.log(Level.FINE, "Read extended property from calender provider (type=$mimeType)")
+        Ical4Android.log.log(Level.FINE, "Read extended property from calender provider", arrayOf(mimeType, rawValue))
         val event = requireNotNull(event)
 
         try {
@@ -429,14 +424,7 @@ abstract class AndroidEvent(
                         Ical4Android.log.warning("Won't process invalid local URL: $rawValue")
                     }
 
-                MIMETYPE_UNKNOWN -> {
-                    // deserialize unknown property (deprecated format)
-                    val stream = ByteArrayInputStream(Base64.decode(rawValue, Base64.NO_WRAP))
-                    ObjectInputStream(stream).use {
-                        event.unknownProperties += it.readObject() as Property
-                    }
-                }
-                MIMETYPE_UNKNOWN2, UnknownProperty.CONTENT_ITEM_TYPE ->
+                UnknownProperty.CONTENT_ITEM_TYPE ->
                     event.unknownProperties += UnknownProperty.fromJsonString(rawValue)
             }
         } catch (e: Exception) {
@@ -958,7 +946,7 @@ abstract class AndroidEvent(
     protected open fun insertCategories(batch: BatchOperation, idxEvent: Int?) {
         val rawCategories = event!!.categories      // concatenate, separate by backslash
                 .joinToString(CATEGORIES_SEPARATOR.toString()) { category ->
-                    // drop occurrences of EXT_CATEGORIES_SEPARATOR in category names
+                    // drop occurrences of CATEGORIES_SEPARATOR in category names
                     category.filter { it != CATEGORIES_SEPARATOR }
                 }
         insertExtendedProperty(batch, idxEvent, MIMETYPE_CATEGORIES, rawCategories)
