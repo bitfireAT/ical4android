@@ -21,6 +21,7 @@ import net.fortuna.ical4j.model.property.*
 import java.io.IOException
 import java.io.OutputStream
 import java.io.Reader
+import java.net.URI
 import java.util.*
 
 class Event: ICalendar() {
@@ -33,6 +34,7 @@ class Event: ICalendar() {
 
     var summary: String? = null
     var location: String? = null
+    var url: URI? = null
     var description: String? = null
     var color: Css3Color? = null
 
@@ -155,6 +157,7 @@ class Event: ICalendar() {
                     is Sequence -> e.sequence = prop.sequenceNo
                     is Summary -> e.summary = prop.value
                     is Location -> e.location = prop.value
+                    is Url -> e.url = prop.uri
                     is Description -> e.description = prop.value
                     is Categories ->
                         for (category in prop.categories)
@@ -281,6 +284,7 @@ class Event: ICalendar() {
 
         summary?.let { props += Summary(it) }
         location?.let { props += Location(it) }
+        url?.let { props += Url(it) }
         description?.let { props += Description(it) }
         color?.let { props += Color(null, it.name) }
 

@@ -8,6 +8,7 @@
 
 package at.bitfire.ical4android
 
+import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.EntityIterator
@@ -62,23 +63,25 @@ abstract class AndroidEvent(
 
         const val MUTATORS_SEPARATOR = ','
 
-        @Deprecated("New serialization format", ReplaceWith("EXT_UNKNOWN_PROPERTY2"))
-        const val EXT_UNKNOWN_PROPERTY = "unknown-property"
+        @Deprecated("New serialization format", ReplaceWith("MIMETYPE_UNKNOWN2"))
+        const val MIMETYPE_UNKNOWN = "unknown-property"
 
         @Deprecated("New content item MIME type", ReplaceWith("UnknownProperty.CONTENT_ITEM_TYPE"))
-        const val EXT_UNKNOWN_PROPERTY2 = "unknown-property.v2"
+        const val MIMETYPE_UNKNOWN2 = "unknown-property.v2"
 
         /**
          * VEVENT CATEGORIES will be stored as an extended property with this [ExtendedProperties.NAME].
          *
          * The [ExtendedProperties.VALUE] format is the same as used by the AOSP Exchange ActiveSync adapter:
-         * the category values are stored as list, separated by [EXT_CATEGORIES_SEPARATOR]. (If a category
-         * value contains [EXT_CATEGORIES_SEPARATOR], [EXT_CATEGORIES_SEPARATOR] will be dropped.)
+         * the category values are stored as list, separated by [CATEGORIES_SEPARATOR]. (If a category
+         * value contains [CATEGORIES_SEPARATOR], [CATEGORIES_SEPARATOR] will be dropped.)
          *
          * Example: `Cat1\Cat2`
          */
-        const val EXT_CATEGORIES = "categories"
-        const val EXT_CATEGORIES_SEPARATOR = '\\'
+        const val MIMETYPE_CATEGORIES = "categories"
+        const val CATEGORIES_SEPARATOR = '\\'
+
+        const val MIMETYPE_URL = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/vnd.ical4android.url"
     }
 
     var id: Long? = null
@@ -410,26 +413,31 @@ abstract class AndroidEvent(
 
     protected open fun populateExtended(row: ContentValues) {
         val name = row.getAsString(ExtendedProperties.NAME)
+        val rawValue = row.getAsString(ExtendedProperties.VALUE)
         Ical4Android.log.log(Level.FINE, "Read extended property from calender provider (name=$name)")
         val event = requireNotNull(event)
 
         try {
             when (row.getAsString(ExtendedProperties.NAME)) {
-                EXT_CATEGORIES -> {
-                    val rawCategories = row.getAsString(ExtendedProperties.VALUE)
-                    event.categories += rawCategories.split(EXT_CATEGORIES_SEPARATOR)
-                }
+                MIMETYPE_CATEGORIES ->
+                    event.categories += rawValue.split(CATEGORIES_SEPARATOR)
 
-                EXT_UNKNOWN_PROPERTY -> {
+                MIMETYPE_URL ->
+                    try {
+                        event.url = URI(rawValue)
+                    } catch(e: URISyntaxException) {
+                        Ical4Android.log.warning("Won't process invalid local URL: $rawValue")
+                    }
+
+                MIMETYPE_UNKNOWN -> {
                     // deserialize unknown property (deprecated format)
-                    val stream = ByteArrayInputStream(Base64.decode(row.getAsString(ExtendedProperties.VALUE), Base64.NO_WRAP))
+                    val stream = ByteArrayInputStream(Base64.decode(rawValue, Base64.NO_WRAP))
                     ObjectInputStream(stream).use {
                         event.unknownProperties += it.readObject() as Property
                     }
                 }
-
-                EXT_UNKNOWN_PROPERTY2, UnknownProperty.CONTENT_ITEM_TYPE ->
-                    event.unknownProperties += UnknownProperty.fromJsonString(row.getAsString(ExtendedProperties.VALUE))
+                MIMETYPE_UNKNOWN2, UnknownProperty.CONTENT_ITEM_TYPE ->
+                    event.unknownProperties += UnknownProperty.fromJsonString(rawValue)
             }
         } catch (e: Exception) {
             Ical4Android.log.log(Level.WARNING, "Couldn't parse extended property", e)
@@ -528,11 +536,20 @@ abstract class AndroidEvent(
         // add attendees
         event.attendees.forEach { insertAttendee(batch, idxEvent, it) }
 
-        // add unknown properties
-        retainClassification()
+        // add extended properties
+        // CATEGORIES
         if (event.categories.isNotEmpty())
             insertCategories(batch, idxEvent)
-        event.unknownProperties.forEach { insertUnknownProperty(batch, idxEvent, it) }
+        // CLASS
+        retainClassification()
+        // URL
+        event.url?.let { url ->
+            insertExtendedProperty(batch, idxEvent, MIMETYPE_URL, url.toString())
+        }
+        // unknown properties
+        event.unknownProperties.forEach {
+            insertUnknownProperty(batch, idxEvent, it)
+        }
 
         // add exceptions
         for (exception in event.exceptions) {
@@ -636,8 +653,8 @@ abstract class AndroidEvent(
                     .enqueue(CpoBuilder
                             .newDelete(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
                             .withSelection(
-                                    "${ExtendedProperties.EVENT_ID}=? AND ${ExtendedProperties.NAME}=?",
-                                    arrayOf(existingId.toString(), UnknownProperty.CONTENT_ITEM_TYPE)
+                                    "${ExtendedProperties.EVENT_ID}=? AND ${ExtendedProperties.NAME} IN (?,?,?)",
+                                    arrayOf(existingId.toString(), MIMETYPE_CATEGORIES, MIMETYPE_URL, UnknownProperty.CONTENT_ITEM_TYPE)
                             ))
 
             addOrUpdateRows(batch)
@@ -929,18 +946,22 @@ abstract class AndroidEvent(
         batch.enqueue(builder)
     }
 
-    protected open fun insertCategories(batch: BatchOperation, idxEvent: Int?) {
-        val rawCategories = event!!.categories      // concatenate, separate by backslash
-                .joinToString(EXT_CATEGORIES_SEPARATOR.toString()) { category ->
-                    // drop occurrences of EXT_CATEGORIES_SEPARATOR in category names
-                    category.filter { it != EXT_CATEGORIES_SEPARATOR }
-                }
+    protected open fun insertExtendedProperty(batch: BatchOperation, idxEvent: Int?, type: String, value: String) {
         val builder = CpoBuilder
                 .newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
                 .withEventId(ExtendedProperties.EVENT_ID, idxEvent)
-                .withValue(ExtendedProperties.NAME, EXT_CATEGORIES)
-                .withValue(ExtendedProperties.VALUE, rawCategories)
+                .withValue(ExtendedProperties.NAME, type)
+                .withValue(ExtendedProperties.VALUE, value)
         batch.enqueue(builder)
+    }
+
+    protected open fun insertCategories(batch: BatchOperation, idxEvent: Int?) {
+        val rawCategories = event!!.categories      // concatenate, separate by backslash
+                .joinToString(CATEGORIES_SEPARATOR.toString()) { category ->
+                    // drop occurrences of EXT_CATEGORIES_SEPARATOR in category names
+                    category.filter { it != CATEGORIES_SEPARATOR }
+                }
+        insertExtendedProperty(batch, idxEvent, MIMETYPE_CATEGORIES, rawCategories)
     }
 
     protected open fun insertUnknownProperty(batch: BatchOperation, idxEvent: Int?, property: Property) {
@@ -949,12 +970,7 @@ abstract class AndroidEvent(
             return
         }
 
-        val builder = CpoBuilder
-                .newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
-                .withEventId(ExtendedProperties.EVENT_ID, idxEvent)
-                .withValue(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
-                .withValue(ExtendedProperties.VALUE, UnknownProperty.toJsonString(property))
-        batch.enqueue(builder)
+        insertExtendedProperty(batch, idxEvent, UnknownProperty.CONTENT_ITEM_TYPE, UnknownProperty.toJsonString(property))
     }
 
     private fun useRetainedClassification() {
