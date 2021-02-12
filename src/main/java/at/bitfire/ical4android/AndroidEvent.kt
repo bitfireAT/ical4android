@@ -412,13 +412,13 @@ abstract class AndroidEvent(
     }
 
     protected open fun populateExtended(row: ContentValues) {
-        val name = row.getAsString(ExtendedProperties.NAME)
+        val mimeType = row.getAsString(ExtendedProperties.NAME)
         val rawValue = row.getAsString(ExtendedProperties.VALUE)
-        Ical4Android.log.log(Level.FINE, "Read extended property from calender provider (name=$name)")
+        Ical4Android.log.log(Level.FINE, "Read extended property from calender provider (type=$mimeType)")
         val event = requireNotNull(event)
 
         try {
-            when (row.getAsString(ExtendedProperties.NAME)) {
+            when (mimeType) {
                 MIMETYPE_CATEGORIES ->
                     event.categories += rawValue.split(CATEGORIES_SEPARATOR)
 
@@ -946,11 +946,11 @@ abstract class AndroidEvent(
         batch.enqueue(builder)
     }
 
-    protected open fun insertExtendedProperty(batch: BatchOperation, idxEvent: Int?, type: String, value: String) {
+    protected open fun insertExtendedProperty(batch: BatchOperation, idxEvent: Int?, mimeType: String, value: String) {
         val builder = CpoBuilder
                 .newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
                 .withEventId(ExtendedProperties.EVENT_ID, idxEvent)
-                .withValue(ExtendedProperties.NAME, type)
+                .withValue(ExtendedProperties.NAME, mimeType)
                 .withValue(ExtendedProperties.VALUE, value)
         batch.enqueue(builder)
     }

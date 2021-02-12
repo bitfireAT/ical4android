@@ -120,14 +120,22 @@ class AndroidEventTest {
         }
     }
 
-    private fun firstUnknownProperty(values: ContentValues): Property? {
+    private fun firstExtendedProperty(values: ContentValues, mimeType: String): String? {
         val id = values.getAsInteger(Events._ID)
         provider.query(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI), arrayOf(ExtendedProperties.VALUE),
                 "${ExtendedProperties.EVENT_ID}=?", arrayOf(id.toString()), null)?.use {
             if (it.moveToNext())
-                return UnknownProperty.fromJsonString(it.getString(0))
+                return it.getString(0)
         }
         return null
+    }
+
+    private fun firstUnknownProperty(values: ContentValues): Property? {
+        val rawValue = firstExtendedProperty(values, UnknownProperty.CONTENT_ITEM_TYPE)
+        return if (rawValue != null)
+            UnknownProperty.fromJsonString(rawValue)
+        else
+            null
     }
 
     @Test
@@ -497,6 +505,15 @@ class AndroidEventTest {
             location = "Sample Location"
         }.let { result ->
             assertEquals("Sample Location", result.get(Events.EVENT_LOCATION))
+        }
+    }
+
+    @Test
+    fun testBuildEvent_Url() {
+        buildEvent(true) {
+            url = URI("https://example.com")
+        }.let { result ->
+            assertEquals("https://example.com", firstExtendedProperty(result, AndroidEvent.MIMETYPE_URL))
         }
     }
 
@@ -1541,6 +1558,19 @@ class AndroidEventTest {
             put(Events.EVENT_LOCATION, "Sample Location")
         }.let { result ->
             assertEquals("Sample Location", result.location)
+        }
+    }
+
+    @Test
+    fun textPopulateEvent_Url() {
+        populateEvent(true, insertCallback = { id ->
+            val urlValues = ContentValues()
+            urlValues.put(ExtendedProperties.EVENT_ID, id)
+            urlValues.put(ExtendedProperties.NAME, AndroidEvent.MIMETYPE_URL)
+            urlValues.put(ExtendedProperties.VALUE, "https://example.com")
+            provider.insert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI), urlValues)
+        }, valuesBuilder = {}).let { result ->
+            assertEquals(URI("https://example.com"), result.url)
         }
     }
 
