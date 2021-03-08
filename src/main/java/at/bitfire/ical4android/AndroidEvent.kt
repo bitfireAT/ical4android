@@ -229,8 +229,8 @@ abstract class AndroidEvent(
             if (tsEnd != null) {
                 if (tsEnd < tsStart)
                     Ical4Android.log.warning("dtEnd $tsEnd < dtStart $tsStart, ignoring")
-                else if (tsEnd == tsStart)
-                    Ical4Android.log.fine("dtEnd $tsEnd == dtStart, won't generate DTEND property")
+                /*else if (tsEnd == tsStart)    // iCloud sends 404 when it receives an iCalendar with DTSTART but without DTEND
+                    Ical4Android.log.fine("dtEnd $tsEnd == dtStart, won't generate DTEND property")*/
                 else /* tsEnd > tsStart */ {
                     val endTz = row.getAsString(Events.EVENT_END_TIMEZONE)?.let { tzId ->
                         DateUtils.ical4jTimeZone(tzId)

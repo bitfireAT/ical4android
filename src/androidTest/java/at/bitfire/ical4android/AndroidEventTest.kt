@@ -1461,7 +1461,8 @@ class AndroidEventTest {
             put(Events.EVENT_END_TIMEZONE, "Europe/Vienna")
         }.let { result ->
             assertEquals(DtStart(DateTime("20200621T143000", tzVienna)), result.dtStart)
-            assertNull(result.dtEnd)
+            //assertNull(result.dtEnd)
+            assertEquals(result.dtEnd!!.date, result.dtStart!!.date)
             assertNull(result.duration)
         }
     }
