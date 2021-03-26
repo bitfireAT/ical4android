@@ -21,7 +21,7 @@ open class Notesx5Collection(val account: Account, val client: ContentProviderCl
             client.query(X5Collection.CONTENT_URI.asSyncAdapter(account), null, where, whereArgs, null)?.use { cursor ->
                 while (cursor.moveToNext()) {
                     val values = cursor.toValues()
-                    val collection = factory.newInstance(account, client, values.getAsLong(X5Collection.COLUMN_COLLECTION_ID))
+                    val collection = factory.newInstance(account, client, values.getAsLong(X5Collection.ID))
                     collection.populate(values)
                     collections += collection
                 }
@@ -41,8 +41,8 @@ open class Notesx5Collection(val account: Account, val client: ContentProviderCl
     }
 
     protected fun populate(values: ContentValues) {
-        id = values.getAsLong(X5Collection.COLUMN_COLLECTION_ID)
-        url = values.getAsString(X5Collection.COLUMN_COLLECTION_URL)
+        id = values.getAsLong(X5Collection.ID)
+        url = values.getAsString(X5Collection.URL)
     }
 
 }
