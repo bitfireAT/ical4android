@@ -4,12 +4,9 @@ import android.accounts.Account
 import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.ContentValues
-import android.net.Uri
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
-import at.bitfire.notesx5.NotesX5Contract
 import at.bitfire.notesx5.NotesX5Contract.X5Collection
 import at.bitfire.notesx5.NotesX5Contract.asSyncAdapter
-import org.dmfs.tasks.contract.TaskContract
 import java.util.*
 
 open class Notesx5Collection(val account: Account, val client: ContentProviderClient) {
