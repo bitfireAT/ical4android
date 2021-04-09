@@ -12,8 +12,8 @@ test:
     - privileged
   script:
     - start-emulator.sh
-    - wget -q -O org.dmfs.tasks.apk https://f-droid.org/repo/org.dmfs.tasks_78500.apk && adb install org.dmfs.tasks.apk
-    - wget -q -O org.tasks.apk https://f-droid.org/repo/org.tasks_110501.apk && adb install org.tasks.apk
+    - wget -q -O org.dmfs.tasks.apk https://f-droid.org/repo/org.dmfs.tasks_82200.apk && adb install org.dmfs.tasks.apk
+    - wget -q -O org.tasks.apk https://f-droid.org/repo/org.tasks_110903.apk && adb install org.tasks.apk
     - ./gradlew check connectedCheck
   artifacts:
     paths:
