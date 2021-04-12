@@ -81,7 +81,7 @@ class AndroidTaskListTest(providerName: TaskProvider.ProviderName):
             val parentContentUri = TestTask(taskList, parent).add()
             val parentId = ContentUris.parseId(parentContentUri)
 
-            // OpenTasks should provide the correct relation…
+            // OpenTasks should provide the correct relation
             taskList.provider.client.query(taskList.tasksPropertiesSyncUri(), null,
                     "${Properties.TASK_ID}=?", arrayOf(childId.toString()),
                     null, null)!!.use { cursor ->
@@ -95,12 +95,6 @@ class AndroidTaskListTest(providerName: TaskProvider.ProviderName):
                 assertEquals(parentId, row.getAsLong(Relation.RELATED_ID))
                 assertEquals(parent.uid, row.getAsString(Relation.RELATED_UID))
                 assertEquals(Relation.RELTYPE_PARENT, row.getAsInteger(Relation.RELATED_TYPE))
-            }
-            // … BUT the parent_id is not updated (https://github.com/dmfs/opentasks/issues/877)
-            taskList.provider.client.query(childContentUri, arrayOf(Tasks.PARENT_ID),
-                    null, null, null)!!.use { cursor ->
-                assertTrue(cursor.moveToNext())
-                assertTrue(cursor.isNull(0))
             }
 
             // touch the relations to update parent_id values
