@@ -236,7 +236,7 @@ class Task: ICalendar() {
                 dtStart?.date,
                 due?.date,
                 completedAt?.date
-        ).filterNotNull().min()
+        ).filterNotNull().minOrNull()
         // add VTIMEZONE components
         for (tz in usedTimeZones)
             ical.components += minifyVTimeZone(tz.vTimeZone, earliest)
