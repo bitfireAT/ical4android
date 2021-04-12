@@ -8,8 +8,9 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
+
 abstract class AbstractTasksTest(
-        providerName: TaskProvider.ProviderName
+        val providerName: TaskProvider.ProviderName
 ) {
 
     companion object {
@@ -19,7 +20,7 @@ abstract class AbstractTasksTest(
     }
 
     private val providerOrNull: TaskProvider? by lazy {
-        TaskProvider.acquire(InstrumentationRegistry.getInstrumentation().targetContext, providerName)
+        TaskProvider.acquire(InstrumentationRegistry.getInstrumentation().context, providerName)
     }
     protected val provider: TaskProvider by lazy {
         Assume.assumeNotNull(providerOrNull)
@@ -27,7 +28,7 @@ abstract class AbstractTasksTest(
     }
 
     init {
-        TestUtils.requestTaskPermissions()
+        TestUtils.requestPermissions(providerName.permissions)
     }
 
     @Before

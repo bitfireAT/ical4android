@@ -27,4 +27,10 @@
 
     <application />
 
+    <queries>
+        <!-- task providers -->
+        <package android:name="org.dmfs.tasks" />
+        <package android:name="org.tasks" />
+    </queries>
+
 </manifest>
