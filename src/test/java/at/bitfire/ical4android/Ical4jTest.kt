@@ -1,7 +1,9 @@
 package at.bitfire.ical4android
 
+import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.Parameter
 import net.fortuna.ical4j.model.TemporalAmountAdapter
+import net.fortuna.ical4j.model.TimeZoneRegistryFactory
 import net.fortuna.ical4j.model.parameter.Email
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -23,6 +25,20 @@ class Ical4jTest {
                 "END:VEVENT\n" +
                 "END:VCALENDAR")).first()
         assertEquals("attendee1@example.com", e.attendees.first.getParameter<Email>(Parameter.EMAIL).value)
+    }
+
+    @Test
+    fun testKarachiTz() {
+        // https://github.com/ical4j/ical4j/issues/475
+        val tzReg = TimeZoneRegistryFactory.getInstance().createRegistry()
+        val karachi = tzReg.getTimeZone("Asia/Karachi")
+
+        val ts1 = 1609945200000
+        val dt1 = DateTime(ts1).apply { isUtc = true }
+        assertEquals(5, karachi.getOffset(ts1)/3600000)
+
+        val dt2 = DateTime("20210106T200000", karachi)
+        assertEquals(1609945200000, dt2.time)
     }
 
     @Test
