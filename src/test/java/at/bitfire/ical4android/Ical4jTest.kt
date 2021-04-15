@@ -13,6 +13,8 @@ import java.time.Period
 
 class Ical4jTest {
 
+    val tzReg = TimeZoneRegistryFactory.getInstance().createRegistry()
+
     @Test
     fun testEmailParameter() {
         // https://github.com/ical4j/ical4j/issues/418
@@ -28,25 +30,10 @@ class Ical4jTest {
     }
 
     @Test
-    fun testKarachiTz() {
-        // https://github.com/ical4j/ical4j/issues/475
-        val tzReg = TimeZoneRegistryFactory.getInstance().createRegistry()
-        val karachi = tzReg.getTimeZone("Asia/Karachi")
-
-        val ts1 = 1609945200000
-        val dt1 = DateTime(ts1).apply { isUtc = true }
-        assertEquals(5, karachi.getOffset(ts1)/3600000)
-
-        val dt2 = DateTime("20210106T200000", karachi)
-        assertEquals(1609945200000, dt2.time)
-    }
-
-    @Test
     fun testTemporalAmountAdapter_durationToString_DropsMinutes() {
         // https://github.com/ical4j/ical4j/issues/420
         assertEquals("P1DT1H4M", TemporalAmountAdapter.parse("P1DT1H4M").toString())
     }
-
 
     @Test(expected = AssertionError::class)
     fun testTemporalAmountAdapter_Months() {
@@ -60,6 +47,31 @@ class Ical4jTest {
         // https://github.com/ical4j/ical4j/issues/419
         // A year has 365 or 366 days, but never 52 weeks = 52*7 days = 364 days.
         assertNotEquals("P52W", TemporalAmountAdapter(Period.ofYears(1)).toString())
+    }
+
+    @Test(expected = AssertionError::class)
+    fun testTzDarwin() {
+        val darwin = tzReg.getTimeZone("Australia/Darwin")
+
+        val ts1 = 1616720400000
+        val dt1 = DateTime(ts1).apply { isUtc = true }
+        assertEquals(9.5, darwin.getOffset(ts1)/3600000.0, .01)
+
+        val dt2 = DateTime("20210326T103000", darwin)
+        assertEquals(1616720400000, dt2.time)
+    }
+
+    @Test
+    fun testTzKarachi() {
+        // https://github.com/ical4j/ical4j/issues/491
+        val karachi = tzReg.getTimeZone("Asia/Karachi")
+
+        val ts1 = 1609945200000
+        val dt1 = DateTime(ts1).apply { isUtc = true }
+        assertEquals(5, karachi.getOffset(ts1)/3600000)
+
+        val dt2 = DateTime("20210106T200000", karachi)
+        assertEquals(1609945200000, dt2.time)
     }
 
 }
