@@ -163,6 +163,7 @@ abstract class AndroidEvent(
      * Reads event data from the calendar provider.
      * @param row values of an [Events] row, as returned by the calendar provider
      */
+    @Suppress("UNUSED_VALUE")
     @CallSuper
     protected open fun populateEvent(row: ContentValues, groupScheduled: Boolean) {
         Ical4Android.log.log(Level.FINE, "Read event entity from calender provider", row)
@@ -184,6 +185,13 @@ abstract class AndroidEvent(
                     null
 
         if (allDay) {
+            event.dtStart = DtStart(Date(tsStart))
+
+            // Android events MUST have duration or dtend [https://developer.android.com/reference/android/provider/CalendarContract.Events#operations].
+            // Assume 1 day if missing (should never occur, but occurs).
+            if (tsEnd == null && duration == null)
+                duration = Duration.ofDays(1)
+
             if (duration != null) {
                 // Some servers have problems with DURATION, so we always generate DTEND.
                 val startDate = ZonedDateTime.ofInstant(Instant.ofEpochMilli(tsStart), ZoneOffset.UTC).toLocalDate()
@@ -193,8 +201,6 @@ abstract class AndroidEvent(
                 duration = null
             }
 
-            // use DATE values
-            event.dtStart = DtStart(Date(tsStart))
             if (tsEnd != null) {
                 if (tsEnd < tsStart)
                     Ical4Android.log.warning("dtEnd $tsEnd (allDay) < dtStart $tsStart (allDay), ignoring")
@@ -218,6 +224,11 @@ abstract class AndroidEvent(
                 }
             }
             event.dtStart = DtStart(dtStartDateTime)
+
+            // Android events MUST have duration or dtend [https://developer.android.com/reference/android/provider/CalendarContract.Events#operations].
+            // Assume 1 hour if missing (should never occur, but occurs).
+            if (tsEnd == null && duration == null)
+                duration = Duration.ofHours(1)
 
             if (duration != null) {
                 // Some servers have problems with DURATION, so we always generate DTEND.

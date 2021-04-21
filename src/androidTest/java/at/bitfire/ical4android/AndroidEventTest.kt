@@ -1528,6 +1528,7 @@ class AndroidEventTest {
             assertNull(result.duration)
         }
     }
+
     @Test
     fun testPopulateEvent_AllDay_NonRecurring_NonAllDayDuration_MoreThanOneDay() {
         /* This should not happen, because according to the documentation, non-recurring events MUST
