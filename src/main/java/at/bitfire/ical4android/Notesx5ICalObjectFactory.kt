@@ -11,9 +11,10 @@ package at.bitfire.ical4android
 import android.accounts.Account
 import android.content.ContentProviderClient
 
-// TODO Ricki please check :-)
+import android.content.ContentValues
+
 interface Notesx5ICalObjectFactory<out T: Notesx5ICalObject> {
 
-    fun newInstance(account: Account, client: ContentProviderClient, id: Long): T
+    fun fromProvider(iCalObject: Notesx5Collection<Notesx5ICalObject>, values: ContentValues): T
 
 }
