@@ -1,9 +1,8 @@
 package at.bitfire.ical4android
 
-import net.fortuna.ical4j.model.DateTime
-import net.fortuna.ical4j.model.Parameter
-import net.fortuna.ical4j.model.TemporalAmountAdapter
-import net.fortuna.ical4j.model.TimeZoneRegistryFactory
+import net.fortuna.ical4j.data.CalendarBuilder
+import net.fortuna.ical4j.model.*
+import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.parameter.Email
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -59,6 +58,37 @@ class Ical4jTest {
 
         val dt2 = DateTime("20210326T103000", darwin)
         assertEquals(1616720400000, dt2.time)
+    }
+
+    @Test(expected = AssertionError::class)
+    fun testTzDublin_external() {
+        // https://github.com/ical4j/ical4j/issues/493
+        val vtzFromGoogle = "BEGIN:VCALENDAR\n" +
+                "CALSCALE:GREGORIAN\n" +
+                "VERSION:2.0\n" +
+                "PRODID:-//Google Inc//Google Calendar 70.9054//EN\n" +
+                "BEGIN:VTIMEZONE\n" +
+                "TZID:Europe/Dublin\n" +
+                "BEGIN:STANDARD\n" +
+                "TZOFFSETFROM:+0000\n" +
+                "TZOFFSETTO:+0100\n" +
+                "TZNAME:IST\n" +
+                "DTSTART:19700329T010000\n" +
+                "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU\n" +
+                "END:STANDARD\n" +
+                "BEGIN:DAYLIGHT\n" +
+                "TZOFFSETFROM:+0100\n" +
+                "TZOFFSETTO:+0000\n" +
+                "TZNAME:GMT\n" +
+                "DTSTART:19701025T020000\n" +
+                "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU\n" +
+                "END:DAYLIGHT\n" +
+                "END:VTIMEZONE\n" +
+                "END:VCALENDAR"
+        val iCalFromGoogle = CalendarBuilder().build(StringReader(vtzFromGoogle))
+        val dublinFromGoogle = iCalFromGoogle.getComponent(Component.VTIMEZONE) as VTimeZone
+        val dt = DateTime("20210108T151500", TimeZone(dublinFromGoogle))
+        assertEquals("20210108T151500", dt.toString())
     }
 
     @Test
