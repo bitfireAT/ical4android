@@ -11,7 +11,7 @@ package at.bitfire.ical4android
 import android.accounts.Account
 import android.content.ContentProviderClient
 
-interface Notesx5CollectionFactory<out T: Notesx5Collection> {
+interface Notesx5CollectionFactory<out T: Notesx5Collection<Notesx5ICalObject>> {
 
     fun newInstance(account: Account, client: ContentProviderClient, id: Long): T
 
