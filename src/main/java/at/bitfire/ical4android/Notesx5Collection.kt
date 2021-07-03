@@ -42,6 +42,8 @@ open class Notesx5Collection<out T: Notesx5ICalObject>(val account: Account,
 
 
     var url: String? = null
+    var displayname: String? = null
+    var syncstate: String? = null
 
 
     fun delete() {
@@ -50,6 +52,8 @@ open class Notesx5Collection<out T: Notesx5ICalObject>(val account: Account,
 
     protected fun populate(values: ContentValues) {
         url = values.getAsString(X5Collection.URL)
+        displayname = values.getAsString(X5Collection.DISPLAYNAME)
+        syncstate = values.getAsString(X5Collection.SYNC_VERSION)
     }
 
 
