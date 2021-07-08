@@ -161,6 +161,7 @@ abstract class AndroidEvent(
 
     /**
      * Reads event data from the calendar provider.
+     *
      * @param row values of an [Events] row, as returned by the calendar provider
      */
     @Suppress("UNUSED_VALUE")
@@ -665,6 +666,8 @@ abstract class AndroidEvent(
 
     /**
      * Deletes an existing event from the calendar storage.
+     *
+     * @return number of affected rows
      *
      * @throws RemoteException on calendar provider errors
      */

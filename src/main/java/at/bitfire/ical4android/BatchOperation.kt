@@ -30,6 +30,11 @@ class BatchOperation(
         return this
     }
 
+    /**
+     * Commits all operations from [queue] and then empties the queue.
+     *
+     * @return number of affected rows
+     */
     fun commit(): Int {
         var affected = 0
         if (!queue.isEmpty())
