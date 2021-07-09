@@ -5,7 +5,6 @@ import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
-import android.provider.CalendarContract.Events
 import at.bitfire.ical4android.AndroidCalendar.Companion.syncAdapterURI
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import at.bitfire.notesx5.NotesX5Contract
