@@ -39,6 +39,8 @@ open class Notesx5ICalObject(
     var classification: X5ICalObject.Classification =
         X5ICalObject.Classification.PUBLIC    // 0 = PUBLIC, 1 = PRIVATE, 2 = CONFIDENTIAL, -1 = NOT SUPPORTED (value in classificationX)
 
+    var priority: Int? = null
+    var percent: Int? = null
     var url: String? = null
     var contact: String? = null
     var geoLat: Float? = null
@@ -59,6 +61,8 @@ open class Notesx5ICalObject(
     var other: String? = null
 
     var collectionId: Long = collection.id
+
+    var categories: MutableList<String> = mutableListOf()
 
     var dirty: Boolean = true
     var deleted: Boolean = false
@@ -116,7 +120,7 @@ open class Notesx5ICalObject(
                     //is Color -> t.color = Css3Color.fromString(prop.value)?.argb
                     is Url -> t.url = prop.value
                     //is Organizer -> t.organizer = prop
-                    //is Priority -> t.priority = prop.level
+                    is Priority -> t.priority = prop.level
                     //is Clazz -> t.classification = prop
                     //is Status -> t.status = prop
                     /* is Due -> {
@@ -130,13 +134,19 @@ open class Notesx5ICalObject(
                     is Completed -> {
                         t.completedAt = prop
                     }
-                    is PercentComplete -> t.percentComplete = prop.percentage
+
+                     */
+                    is PercentComplete -> t.percent = prop.percentage
+                    /*
                     is RRule -> t.rRule = prop
                     is RDate -> t.rDates += prop
                     is ExDate -> t.exDates += prop
+
+                     */
                     is Categories ->
                         for (category in prop.categories)
                             t.categories += category
+                    /*
                     is RelatedTo -> t.relatedTo.add(prop)
                     is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */
                     }
@@ -281,27 +291,36 @@ open class Notesx5ICalObject(
 
     fun add(): Uri {
 
-        val values = ContentValues()
-        values.put(NotesX5Contract.X5ICalObject.SUMMARY, summary)
-        values.put(NotesX5Contract.X5ICalObject.DESCRIPTION, description)
-        values.put(X5ICalObject.COMPONENT, component)
-        //values.put(NotesX5Contract.X5ICalObject.SUMMARY, "sync summary")
-        //values.put(NotesX5Contract.X5ICalObject.DESCRIPTION, "sync description")
-
-        values.put(NotesX5Contract.X5ICalObject.DTSTART, System.currentTimeMillis())
-        values.put(X5ICalObject.ICALOBJECT_COLLECTIONID, collectionId)
-
-
-
+        val values = this.toContentValues()
 
         Log.d("Calling add", "Lets see what happens")
-        return collection.client.insert(NotesX5Contract.X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account), values) ?: Uri.EMPTY
+        val newUri = collection.client.insert(X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account), values) ?: Uri.EMPTY
+        val newId = newUri.lastPathSegment?.toInt()
+        if(newId != null)  {
+            this.categories.forEach {
+                val categoryContentValues = ContentValues().apply {
+                    put(NotesX5Contract.X5Category.ICALOBJECT_ID, newId)
+                    put(NotesX5Contract.X5Category.TEXT, it)
+                }
+                collection.client.insert(NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account), categoryContentValues)
+            }
+        }
+        return newUri
         //TODO("Not yet implemented")
 
 
     }
 
     fun update(data: Notesx5ICalObject): Uri {
+
+        this.applyNewData(data)
+        val values = this.toContentValues()
+
+        var updateUri = X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account)
+        updateUri = Uri.withAppendedPath(updateUri, data.id.toString())
+        collection.client.update(updateUri, values, "${X5ICalObject.ID} = ?", arrayOf(data.id.toString()))
+        return updateUri
+
         TODO("Not yet implemented")
     }
 
@@ -319,7 +338,23 @@ open class Notesx5ICalObject(
         this.summary = newData.summary
         this.location = newData.location
         this.description = newData.description
+
+        this.categories = newData.categories
         // tODO: to be continued
+    }
+
+    fun toContentValues(): ContentValues {
+
+        val values = ContentValues()
+        values.put(X5ICalObject.ID, id)
+        values.put(X5ICalObject.SUMMARY, summary)
+        values.put(X5ICalObject.DESCRIPTION, description)
+        values.put(X5ICalObject.COMPONENT, component)
+        values.put(X5ICalObject.DTSTART, dtstart)
+        values.put(X5ICalObject.ICALOBJECT_COLLECTIONID, collectionId)
+        values.put(X5ICalObject.UID, uid)
+
+        return values
     }
 
 
