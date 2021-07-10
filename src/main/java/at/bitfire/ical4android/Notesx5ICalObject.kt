@@ -338,6 +338,7 @@ open class Notesx5ICalObject(
         this.summary = newData.summary
         this.location = newData.location
         this.description = newData.description
+        this.percent = newData.percent
 
         this.categories = newData.categories
         // tODO: to be continued
@@ -353,6 +354,7 @@ open class Notesx5ICalObject(
         values.put(X5ICalObject.DTSTART, dtstart)
         values.put(X5ICalObject.ICALOBJECT_COLLECTIONID, collectionId)
         values.put(X5ICalObject.UID, uid)
+        values.put(X5ICalObject.PERCENT, percent)
 
         return values
     }
