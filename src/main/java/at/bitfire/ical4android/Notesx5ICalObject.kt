@@ -36,8 +36,9 @@ open class Notesx5ICalObject(
     var dtend: Long? = null
     var dtendTimezone: String? = null
 
-    var classification: X5ICalObject.Classification =
-        X5ICalObject.Classification.PUBLIC    // 0 = PUBLIC, 1 = PRIVATE, 2 = CONFIDENTIAL, -1 = NOT SUPPORTED (value in classificationX)
+    //var classification: X5ICalObject.Classification = X5ICalObject.Classification.PUBLIC    // 0 = PUBLIC, 1 = PRIVATE, 2 = CONFIDENTIAL, -1 = NOT SUPPORTED (value in classificationX)
+    var classification: String? = null
+    var status: String? = null
 
     var priority: Int? = null
     var percent: Int? = null
@@ -121,8 +122,8 @@ open class Notesx5ICalObject(
                     is Url -> t.url = prop.value
                     //is Organizer -> t.organizer = prop
                     is Priority -> t.priority = prop.level
-                    //is Clazz -> t.classification = prop
-                    //is Status -> t.status = prop
+                    is Clazz -> t.classification = prop.value
+                    is Status -> t.status = prop.value
                     /* is Due -> {
                         t.due = prop
                     } */
@@ -339,6 +340,8 @@ open class Notesx5ICalObject(
         this.location = newData.location
         this.description = newData.description
         this.percent = newData.percent
+        this.classification = newData.classification
+        this.status = newData.status
 
         this.categories = newData.categories
         // tODO: to be continued
@@ -351,6 +354,8 @@ open class Notesx5ICalObject(
         values.put(X5ICalObject.SUMMARY, summary)
         values.put(X5ICalObject.DESCRIPTION, description)
         values.put(X5ICalObject.COMPONENT, component)
+        values.put(X5ICalObject.STATUS, status)
+        values.put(X5ICalObject.CLASSIFICATION, classification)
         values.put(X5ICalObject.DTSTART, dtstart)
         values.put(X5ICalObject.ICALOBJECT_COLLECTIONID, collectionId)
         values.put(X5ICalObject.UID, uid)
