@@ -15,6 +15,6 @@ import android.content.ContentValues
 
 interface Notesx5ICalObjectFactory<out T: Notesx5ICalObject> {
 
-    fun fromProvider(iCalObject: Notesx5Collection<Notesx5ICalObject>, values: ContentValues): T
+    fun fromProvider(collection: Notesx5Collection<Notesx5ICalObject>, values: ContentValues): T
 
 }

@@ -68,6 +68,11 @@ open class Notesx5ICalObject(
     var dirty: Boolean = true
     var deleted: Boolean = false
 
+    //@ricki, ist das ok hier?
+    var fileName: String? = null
+    var eTag: String? = null
+    var scheduleTag: String? = null
+    var flags: Int = 0
 
     companion object {
 
@@ -309,7 +314,6 @@ open class Notesx5ICalObject(
         return newUri
         //TODO("Not yet implemented")
 
-
     }
 
     fun update(data: Notesx5ICalObject): Uri {
@@ -318,8 +322,8 @@ open class Notesx5ICalObject(
         val values = this.toContentValues()
 
         var updateUri = X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account)
-        updateUri = Uri.withAppendedPath(updateUri, data.id.toString())
-        collection.client.update(updateUri, values, "${X5ICalObject.ID} = ?", arrayOf(data.id.toString()))
+        updateUri = Uri.withAppendedPath(updateUri, this.id.toString())
+        collection.client.update(updateUri, values, "${X5ICalObject.ID} = ?", arrayOf(this.id.toString()))
         return updateUri
 
         TODO("Not yet implemented")
@@ -354,12 +358,19 @@ open class Notesx5ICalObject(
         values.put(X5ICalObject.SUMMARY, summary)
         values.put(X5ICalObject.DESCRIPTION, description)
         values.put(X5ICalObject.COMPONENT, component)
-        values.put(X5ICalObject.STATUS, status)
-        values.put(X5ICalObject.CLASSIFICATION, classification)
+        if(status?.isNotBlank() == true)
+            values.put(X5ICalObject.STATUS, status)
+        if(classification?.isNotBlank() == true)
+            values.put(X5ICalObject.CLASSIFICATION, classification)
         values.put(X5ICalObject.DTSTART, dtstart)
         values.put(X5ICalObject.ICALOBJECT_COLLECTIONID, collectionId)
         values.put(X5ICalObject.UID, uid)
         values.put(X5ICalObject.PERCENT, percent)
+
+        values.put(X5ICalObject.FILENAME, fileName)
+        values.put(X5ICalObject.ETAG, eTag)
+        values.put(X5ICalObject.SCHEDULETAG, scheduleTag)
+        values.put(X5ICalObject.FLAGS, flags)
 
         return values
     }
