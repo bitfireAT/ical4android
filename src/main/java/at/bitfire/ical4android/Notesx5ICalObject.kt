@@ -41,6 +41,15 @@ open class Notesx5ICalObject(
     var status: String? = null
 
     var priority: Int? = null
+
+    var due: Long? = null      // VTODO only!
+    var dueTimezone: String? = null //VTODO only!
+    var completed: Long? = null // VTODO only!
+    var completedTimezone: String? = null //VTODO only!
+    var duration: String? = null //VTODO only!
+
+
+
     var percent: Int? = null
     var url: String? = null
     var contact: String? = null
@@ -50,13 +59,10 @@ open class Notesx5ICalObject(
 
     var uid: String = "${System.currentTimeMillis()}-${UUID.randomUUID()}@at.bitfire.notesx5"                              //unique identifier, see https://tools.ietf.org/html/rfc5545#section-3.8.4.7
 
-    var created: Long =
-        System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.1
-    var dtstamp: Long =
-        System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.2
-    var lastModified: Long =
-        System.currentTimeMillis() // see https://tools.ietf.org/html/rfc5545#section-3.8.7.3
-    var sequence: Long = 0                             // increase on every change (+1), see https://tools.ietf.org/html/rfc5545#section-3.8.7.4
+    var created: Long = System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.1
+    var dtstamp: Long = System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.2
+    var lastModified: Long = System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.3
+    var sequence: Long = 0           // increase on every change (+1), see https://tools.ietf.org/html/rfc5545#section-3.8.7.4
 
     var color: Int? = null
     var other: String? = null
@@ -129,19 +135,29 @@ open class Notesx5ICalObject(
                     is Priority -> t.priority = prop.level
                     is Clazz -> t.classification = prop.value
                     is Status -> t.status = prop.value
-                    /* is Due -> {
-                        t.due = prop
-                    } */
-                    //is Duration -> t.duration = prop
-                    /*
+                    is Due -> {
+                        t.due = prop.date.toInstant().toEpochMilli()
+                        prop.timeZone?.let { t.dueTimezone = it.toString() }
+                        //TODO: Check if this is right!
+                    }
+                    //is Duration -> t.duration = prop.duration.
+
                     is DtStart -> {
-                        t.dtStart = prop
+                        t.dtstart = prop.date.toInstant().toEpochMilli()
+                        prop.timeZone?.let { t.dtstartTimezone = it.toString() }
+                        //TODO: Check if this is right!
+                    }
+                    is DtEnd -> {
+                        t.dtend = prop.date.toInstant().toEpochMilli()
+                        prop.timeZone?.let { t.dtendTimezone = it.toString() }
+                        //TODO: Check if this is right!
                     }
                     is Completed -> {
-                        t.completedAt = prop
+                        t.completed = prop.date.toInstant().toEpochMilli()
+                        prop.timeZone?.let { t.completedTimezone = it.toString() }
+                        //TODO: Check if this is right!
                     }
 
-                     */
                     is PercentComplete -> t.percent = prop.percentage
                     /*
                     is RRule -> t.rRule = prop
@@ -347,6 +363,15 @@ open class Notesx5ICalObject(
         this.classification = newData.classification
         this.status = newData.status
 
+        this.dtstart = newData.dtstart
+        this.dtstartTimezone = newData.dtstartTimezone
+        this.dtend = newData.dtend
+        this.dtendTimezone = newData.dtendTimezone
+        this.completed = newData.completed
+        this.completedTimezone = newData.completedTimezone
+        this.due = newData.due
+        this.dueTimezone = newData.dueTimezone
+
         this.categories = newData.categories
         // tODO: to be continued
     }
@@ -362,10 +387,18 @@ open class Notesx5ICalObject(
             values.put(X5ICalObject.STATUS, status)
         if(classification?.isNotBlank() == true)
             values.put(X5ICalObject.CLASSIFICATION, classification)
-        values.put(X5ICalObject.DTSTART, dtstart)
         values.put(X5ICalObject.ICALOBJECT_COLLECTIONID, collectionId)
         values.put(X5ICalObject.UID, uid)
         values.put(X5ICalObject.PERCENT, percent)
+        values.put(X5ICalObject.DTSTAMP, dtstamp)
+        values.put(X5ICalObject.DTSTART, dtstart)
+        values.put(X5ICalObject.DTSTART_TIMEZONE, dtstartTimezone)
+        values.put(X5ICalObject.DTEND, dtend)
+        values.put(X5ICalObject.DTEND_TIMEZONE, dtendTimezone)
+        values.put(X5ICalObject.COMPLETED, completed)
+        values.put(X5ICalObject.COMPLETED_TIMEZONE, completedTimezone)
+        values.put(X5ICalObject.DUE, due)
+        values.put(X5ICalObject.DUE_TIMEZONE, dueTimezone)
 
         values.put(X5ICalObject.FILENAME, fileName)
         values.put(X5ICalObject.ETAG, eTag)
