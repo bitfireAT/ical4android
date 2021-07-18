@@ -296,19 +296,37 @@ open class Notesx5ICalObject(
         ICalendar.softValidate(ical)
         CalendarOutputter(false).output(ical, os)
 
-
     }
 
 
 
     fun prepareForUpload(): String {
-        return "new.ics"
+        return "${this.uid}.ics"
     }
 
     fun clearDirty(fileName: String?, eTag: String?, scheduleTag: String?) {
+
+        var updateUri = X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account)
+        updateUri = Uri.withAppendedPath(updateUri, this.id.toString())
+
+        val values = ContentValues()
+        fileName?.let { values.put(X5ICalObject.FILENAME, fileName) }
+        eTag?.let { values.put(X5ICalObject.ETAG, eTag) }
+        scheduleTag?.let { values.put(X5ICalObject.SCHEDULETAG, scheduleTag) }
+        values.put(X5ICalObject.DIRTY, false)
+
+        collection.client.update(updateUri, values, null, null)
     }
 
     fun updateFlags(flags: Int) {
+
+        var updateUri = X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account)
+        updateUri = Uri.withAppendedPath(updateUri, this.id.toString())
+
+        val values = ContentValues()
+        values.put(X5ICalObject.FLAGS, flags)
+
+        collection.client.update(updateUri, values, null, null)
     }
 
     fun add(): Uri {
@@ -346,7 +364,8 @@ open class Notesx5ICalObject(
     }
 
     fun delete(): Int {
-        TODO("Not yet implemented")
+        val uri = Uri.withAppendedPath(X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account), id.toString())
+        return collection.client.delete(uri, null, null)
     }
 
 
