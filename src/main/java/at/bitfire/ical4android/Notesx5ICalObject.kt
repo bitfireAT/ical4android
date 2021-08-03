@@ -381,6 +381,7 @@ open class Notesx5ICalObject(
         this.percent = newData.percent
         this.classification = newData.classification
         this.status = newData.status
+        this.priority = newData.priority
 
         this.dtstart = newData.dtstart
         this.dtstartTimezone = newData.dtstartTimezone
@@ -406,6 +407,7 @@ open class Notesx5ICalObject(
             values.put(X5ICalObject.STATUS, status)
         if(classification?.isNotBlank() == true)
             values.put(X5ICalObject.CLASSIFICATION, classification)
+        values.put(X5ICalObject.PRIORITY, priority)
         values.put(X5ICalObject.ICALOBJECT_COLLECTIONID, collectionId)
         values.put(X5ICalObject.UID, uid)
         values.put(X5ICalObject.PERCENT, percent)
