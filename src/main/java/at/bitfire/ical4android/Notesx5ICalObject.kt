@@ -127,26 +127,19 @@ open class Notesx5ICalObject(
                     is LastModified -> t.lastModified = prop.dateTime.time
                     is Summary -> t.summary = prop.value
                     is Location -> t.location = prop.value
-                    //is Geo -> t.geoPosition = prop
+                    is Geo -> {
+                        t.geoLat = prop.latitude.toFloat()
+                        t.geoLong = prop.longitude.toFloat()
+                        // TODO: name and attributes might get lost here!! Doublecheck what could be a good solution!
+                    }
                     is Description -> t.description = prop.value
-                    //is Color -> t.color = Css3Color.fromString(prop.value)?.argb
+                    is Color -> t.color = Css3Color.fromString(prop.value)?.argb
                     is Url -> t.url = prop.value
                     //is Organizer -> t.organizer = prop
                     is Priority -> t.priority = prop.level
                     is Clazz -> t.classification = prop.value
                     is Status -> t.status = prop.value
-                    is Due -> {
-                        t.due = prop.date.toInstant().toEpochMilli()
-                        prop.timeZone?.let { t.dueTimezone = it.toString() }
-                        //TODO: Check if this is right!
-                    }
-                    //is Duration -> t.duration = prop.duration.
 
-                    is DtStart -> {
-                        t.dtstart = prop.date.toInstant().toEpochMilli()
-                        prop.timeZone?.let { t.dtstartTimezone = it.toString() }
-                        //TODO: Check if this is right!
-                    }
                     is DtEnd -> {
                         t.dtend = prop.date.toInstant().toEpochMilli()
                         prop.timeZone?.let { t.dtendTimezone = it.toString() }
@@ -155,6 +148,20 @@ open class Notesx5ICalObject(
                     is Completed -> {
                         t.completed = prop.date.toInstant().toEpochMilli()
                         prop.timeZone?.let { t.completedTimezone = it.toString() }
+                        //TODO: Check if this is right!
+                    }
+
+                    is Due -> {
+                        t.due = prop.date.toInstant().toEpochMilli()
+                        prop.timeZone?.let { t.dueTimezone = it.toString() }
+                        //TODO: Check if this is right!
+                    }
+                    //is Duration -> t.duration = prop.duration.
+
+                    is DtStart -> {
+                        t.dtstart = prop.date.time
+                        if(!prop.isUtc)
+                            t.dtstartTimezone = prop.timeZone.displayName
                         //TODO: Check if this is right!
                     }
 
@@ -180,8 +187,10 @@ open class Notesx5ICalObject(
             //t.alarms.addAll(todo.alarms)
 
             // There seem to be many invalid tasks out there because of some defect clients, do some validation.
-            /*
-            val dtStart = t.dtStart
+
+
+/*
+            val dtStart = t.dtstart
             val due = t.due
 
             if (dtStart != null && due != null) {
@@ -200,11 +209,13 @@ open class Notesx5ICalObject(
                 }
             }
 
+ */
+
+            /*
             if (t.duration != null && t.dtStart == null) {
                 Ical4Android.log.warning("Found DURATION without DTSTART; ignoring")
                 t.duration = null
             }
-
              */
 
             return t
