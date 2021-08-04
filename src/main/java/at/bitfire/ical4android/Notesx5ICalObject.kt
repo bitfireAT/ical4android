@@ -246,12 +246,13 @@ open class Notesx5ICalObject(
             }
         }
         //organizer?.let { props += it }
-/*
-        if (priority != Priority.UNDEFINED.level)
-            props += Priority(priority)
-        classification?.let { props += it }
-        status?.let { props += it }
 
+        if (priority != Priority.UNDEFINED.level)
+            priority?.let { props += Priority(priority!!) }
+
+        classification?.let { props += Clazz(it) }
+        status?.let { props += Status(it) }
+/*
         rRule?.let { props += it }
         rDates.forEach { props += it }
         exDates.forEach { props += it }
@@ -263,21 +264,28 @@ open class Notesx5ICalObject(
 
         // remember used time zones
         val usedTimeZones = HashSet<TimeZone>()
-        due?.let {
-            props += it
-            it.timeZone?.let(usedTimeZones::add)
-        }
         duration?.let(props::add)
-        dtStart?.let {
-            props += it
-            it.timeZone?.let(usedTimeZones::add)
+        */
+        due?.let {
+            props += Due(DateTime(it))
+            //it.timeZone?.let(usedTimeZones::add)
         }
-        completedAt?.let {
-            props += it
-            it.timeZone?.let(usedTimeZones::add)
-        }
-        percentComplete?.let { props += PercentComplete(it) }
 
+        dtstart?.let {
+            props += DtStart(DateTime(it))
+            //it.timeZone?.let(usedTimeZones::add)
+        }
+        dtend?.let {
+            props += DtEnd(DateTime(it))
+            //it.timeZone?.let(usedTimeZones::add)
+        }
+        completed?.let {
+            props += Completed(DateTime(it))
+            //it.timeZone?.let(usedTimeZones::add)
+        }
+        percent?.let { props += PercentComplete(it) }
+
+        /*
         if (alarms.isNotEmpty())
             vTodo.alarms.addAll(alarms)
 
@@ -360,7 +368,7 @@ open class Notesx5ICalObject(
         collection.client.update(updateUri, values, "${X5ICalObject.ID} = ?", arrayOf(this.id.toString()))
         return updateUri
 
-        TODO("Not yet implemented")
+        //TODO("Not yet implemented")
     }
 
     fun delete(): Int {
