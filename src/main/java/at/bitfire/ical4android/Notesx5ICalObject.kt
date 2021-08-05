@@ -48,8 +48,6 @@ open class Notesx5ICalObject(
     var completedTimezone: String? = null //VTODO only!
     var duration: String? = null //VTODO only!
 
-
-
     var percent: Int? = null
     var url: String? = null
     var contact: String? = null
@@ -160,8 +158,10 @@ open class Notesx5ICalObject(
 
                     is DtStart -> {
                         t.dtstart = prop.date.time
-                        if(!prop.isUtc)
+                        /* if(!prop.isUtc)
                             t.dtstartTimezone = prop.timeZone.displayName
+
+                         */
                         //TODO: Check if this is right!
                     }
 
@@ -377,6 +377,15 @@ open class Notesx5ICalObject(
         var updateUri = X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account)
         updateUri = Uri.withAppendedPath(updateUri, this.id.toString())
         collection.client.update(updateUri, values, "${X5ICalObject.ID} = ?", arrayOf(this.id.toString()))
+
+        this.categories.forEach {
+            val categoryContentValues = ContentValues().apply {
+                put(NotesX5Contract.X5Category.ICALOBJECT_ID, id)
+                put(NotesX5Contract.X5Category.TEXT, it)
+            }
+            collection.client.insert(NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account), categoryContentValues)
+        }
+
         return updateUri
 
         //TODO("Not yet implemented")
