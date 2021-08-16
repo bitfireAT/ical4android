@@ -4,6 +4,7 @@ package at.bitfire.ical4android
 import android.content.ContentValues
 import android.net.Uri
 import android.util.Log
+import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import at.bitfire.notesx5.NotesX5Contract
 import at.bitfire.notesx5.NotesX5Contract.X5ICalObject
 import at.bitfire.notesx5.NotesX5Contract.asSyncAdapter
@@ -286,6 +287,7 @@ open class Notesx5ICalObject(
             }
             props += Categories(textList)
         }
+        // props += Categories(TextList("hardcoded"))
 
         /*
         props.addAll(relatedTo)
@@ -481,6 +483,22 @@ open class Notesx5ICalObject(
 
         return values
     }
+
+
+
+    fun getCategoryContentValues(): List<ContentValues> {
+
+        val categoryUrl = NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account)
+        val categoryValues: MutableList<ContentValues> = mutableListOf()
+        collection.client.query(categoryUrl, null, "${NotesX5Contract.X5Category.ICALOBJECT_ID} = ?", arrayOf(this.id.toString()), null)?.use { cursor ->
+            while (cursor.moveToNext()) {
+                categoryValues.add(cursor.toValues())
+            }
+        }
+
+        return categoryValues
+    }
+
 
 
 
