@@ -67,7 +67,7 @@ open class Notesx5ICalObject(
 
     var collectionId: Long = collection.id
 
-    var categories: MutableList<String> = mutableListOf()
+    //var categories: MutableList<String> = mutableListOf()
 
     var dirty: Boolean = true
     var deleted: Boolean = false
@@ -77,6 +77,16 @@ open class Notesx5ICalObject(
     var eTag: String? = null
     var scheduleTag: String? = null
     var flags: Int = 0
+
+    var categories: MutableList<Category> = mutableListOf()
+
+
+    data class Category (
+        var categoryId: Long = 0L,
+        var text: String = "",
+        var language: String? = null,
+        var other: String? = null
+    )
 
     companion object {
 
@@ -174,7 +184,7 @@ open class Notesx5ICalObject(
                      */
                     is Categories ->
                         for (category in prop.categories)
-                            t.categories += category
+                            t.categories.add(Category(text=category))
                     /*
                     is RelatedTo -> t.relatedTo.add(prop)
                     is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */
@@ -267,9 +277,17 @@ open class Notesx5ICalObject(
         rRule?.let { props += it }
         rDates.forEach { props += it }
         exDates.forEach { props += it }
+*/
 
-        if (categories.isNotEmpty())
-            props += Categories(TextList(categories.toTypedArray()))
+        if (categories.isNotEmpty()) {
+            val textList = TextList()
+            categories.forEach {
+                textList.add(it.text)
+            }
+            props += Categories(textList)
+        }
+
+        /*
         props.addAll(relatedTo)
         props.addAll(unknownProperties)
 
@@ -359,7 +377,10 @@ open class Notesx5ICalObject(
             this.categories.forEach {
                 val categoryContentValues = ContentValues().apply {
                     put(NotesX5Contract.X5Category.ICALOBJECT_ID, newId)
-                    put(NotesX5Contract.X5Category.TEXT, it)
+                    put(NotesX5Contract.X5Category.TEXT, it.text)
+                    put(NotesX5Contract.X5Category.ID, it.categoryId)
+                    put(NotesX5Contract.X5Category.LANGUAGE, it.language)
+                    put(NotesX5Contract.X5Category.OTHER, it.other)
                 }
                 collection.client.insert(NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account), categoryContentValues)
             }
@@ -378,10 +399,14 @@ open class Notesx5ICalObject(
         updateUri = Uri.withAppendedPath(updateUri, this.id.toString())
         collection.client.update(updateUri, values, "${X5ICalObject.ID} = ?", arrayOf(this.id.toString()))
 
+        collection.client.delete(NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account), "${NotesX5Contract.X5Category.ICALOBJECT_ID} = ?", arrayOf(this.id.toString()))
         this.categories.forEach {
             val categoryContentValues = ContentValues().apply {
                 put(NotesX5Contract.X5Category.ICALOBJECT_ID, id)
-                put(NotesX5Contract.X5Category.TEXT, it)
+                put(NotesX5Contract.X5Category.TEXT, it.text)
+                put(NotesX5Contract.X5Category.ID, it.categoryId)
+                put(NotesX5Contract.X5Category.LANGUAGE, it.language)
+                put(NotesX5Contract.X5Category.OTHER, it.other)
             }
             collection.client.insert(NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account), categoryContentValues)
         }
