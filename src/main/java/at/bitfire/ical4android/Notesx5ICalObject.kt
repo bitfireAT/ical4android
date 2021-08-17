@@ -12,6 +12,7 @@ import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Calendar
+import net.fortuna.ical4j.model.component.VJournal
 import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.property.*
 import java.io.IOException
@@ -56,12 +57,17 @@ open class Notesx5ICalObject(
     var geoLong: Float? = null
     var location: String? = null
 
-    var uid: String = "${System.currentTimeMillis()}-${UUID.randomUUID()}@at.bitfire.notesx5"                              //unique identifier, see https://tools.ietf.org/html/rfc5545#section-3.8.4.7
+    var uid: String =
+        "${System.currentTimeMillis()}-${UUID.randomUUID()}@at.bitfire.notesx5"                              //unique identifier, see https://tools.ietf.org/html/rfc5545#section-3.8.4.7
 
-    var created: Long = System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.1
-    var dtstamp: Long = System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.2
-    var lastModified: Long = System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.3
-    var sequence: Long = 0           // increase on every change (+1), see https://tools.ietf.org/html/rfc5545#section-3.8.7.4
+    var created: Long =
+        System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.1
+    var dtstamp: Long =
+        System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.2
+    var lastModified: Long =
+        System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.3
+    var sequence: Long =
+        0           // increase on every change (+1), see https://tools.ietf.org/html/rfc5545#section-3.8.7.4
 
     var color: Int? = null
     var other: String? = null
@@ -80,14 +86,38 @@ open class Notesx5ICalObject(
     var flags: Int = 0
 
     var categories: MutableList<Category> = mutableListOf()
+    var attachments: MutableList<Attachment> = mutableListOf()
+    var relatedTo: MutableList<RelatedTo> = mutableListOf()
 
 
-    data class Category (
+    data class Category(
         var categoryId: Long = 0L,
         var text: String = "",
         var language: String? = null,
         var other: String? = null
     )
+
+    data class Attachment(
+        var attachmentId: Long = 0L,
+        var uri: String? = null,
+        //var encoding: String? = null,
+        var value: String? = null,
+        var fmttype: String? = null,
+        var other: String? = null,
+        var filename: String? = null,
+        var extension: String? = null,
+        var filesize: Long? = null
+    )
+
+    data class RelatedTo(
+        var relatedtoId: Long = 0L,
+        //var icalObjectId: Long = 0L,
+        var linkedICalObjectId: Long = 0L,
+        var text: String? = null,
+        var reltype: String? = null,
+        var other: String? = null
+    )
+
 
     companion object {
 
@@ -104,20 +134,46 @@ open class Notesx5ICalObject(
          * @throws IOException on I/O errors
          */
         @UsesThreadContextClassLoader
-        fun   tasksFromReader(reader: Reader, collection: Notesx5Collection<Notesx5ICalObject>): List<Notesx5ICalObject> {
+        fun tasksFromReader(
+            reader: Reader,
+            collection: Notesx5Collection<Notesx5ICalObject>
+        ): List<Notesx5ICalObject> {
             val ical = ICalendar.fromReader(reader)
             val vToDos = ical.getComponents<VToDo>(Component.VTODO)
-            return vToDos.mapTo(LinkedList()) { this.fromVToDo(collection, it ) }
+            return vToDos.mapTo(LinkedList()) { this.fromVToDo(collection, it) }
+        }
+
+        /**
+         * Parses an iCalendar resource, applies [ICalPreprocessor] to increase compatibility
+         * and extracts the VJOURNALs.
+         *
+         * @param reader where the iCalendar is taken from
+         *
+         * @return array of filled [Notesx5ICalObject] data objects (may have size 0)
+         *
+         * @throws ParserException when the iCalendar can't be parsed
+         * @throws IllegalArgumentException when the iCalendar resource contains an invalid value
+         * @throws IOException on I/O errors
+         */
+        @UsesThreadContextClassLoader
+        fun journalsFromReader(
+            reader: Reader,
+            collection: Notesx5Collection<Notesx5ICalObject>
+        ): List<Notesx5ICalObject> {
+            val ical = ICalendar.fromReader(reader)
+            val vJournals = ical.getComponents<VJournal>(Component.VJOURNAL)
+            return vJournals.mapTo(LinkedList()) { this.fromVJournal(collection, it) }
         }
 
         private fun fromVToDo(
             collection: Notesx5Collection<Notesx5ICalObject>,
             //component: X5ICalObject.Component,
-            todo: VToDo): Notesx5ICalObject {
+            todo: VToDo
+        ): Notesx5ICalObject {
 
             val t = Notesx5ICalObject(collection)
 
-            t.component = "VTODO"
+            t.component = X5ICalObject.Component.VTODO.name
 
             if (todo.uid != null)
                 t.uid = todo.uid.value
@@ -185,14 +241,31 @@ open class Notesx5ICalObject(
                      */
                     is Categories ->
                         for (category in prop.categories)
-                            t.categories.add(Category(text=category))
-                    /*
-                    is RelatedTo -> t.relatedTo.add(prop)
-                    is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */
-                    }
-                    else -> t.unknownProperties += prop
+                            t.categories.add(Category(text = category))
 
+                    /*
+                    is Attach -> {
+                        val attachment = Attachment()
+                        attachment.value = prop.value
+                        attachment.uri = prop.uri.toString()
+                    }
                      */
+
+                    is net.fortuna.ical4j.model.property.RelatedTo -> {
+
+                        val relatedTo = RelatedTo()
+                        relatedTo.text = prop.value  // TODO ????????
+                        relatedTo.reltype = prop.name   // TODO ??????????
+                        t.relatedTo.add(relatedTo)
+                    }
+
+                    /*
+                        is RelatedTo -> t.relatedTo.add(prop)
+                        is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */
+                        }
+                        else -> t.unknownProperties += prop
+
+                         */
                 }
 
             //t.alarms.addAll(todo.alarms)
@@ -231,6 +304,91 @@ open class Notesx5ICalObject(
 
             return t
         }
+
+
+        private fun fromVJournal(
+            collection: Notesx5Collection<Notesx5ICalObject>,
+            //component: X5ICalObject.Component,
+            journal: VJournal
+        ): Notesx5ICalObject {
+
+            val j = Notesx5ICalObject(collection)
+
+            j.component = X5ICalObject.Component.VJOURNAL.name
+
+            if (journal.uid != null)
+                j.uid = journal.uid.value
+            else {
+                Ical4Android.log.warning("Received VJOURNAL without UID, generating new one")
+                j.uid = UUID.randomUUID().toString()
+            }
+
+            // sequence must only be null for locally created, not-yet-synchronized events
+            j.sequence = 0
+
+            for (prop in journal.properties)
+                when (prop) {
+                    is Sequence -> j.sequence = prop.sequenceNo.toLong()
+                    is Created -> j.created = prop.dateTime.time
+                    is LastModified -> j.lastModified = prop.dateTime.time
+                    is Summary -> j.summary = prop.value
+                    is Location -> j.location = prop.value
+                    is Geo -> {
+                        j.geoLat = prop.latitude.toFloat()
+                        j.geoLong = prop.longitude.toFloat()
+                        // TODO: name and attributes might get lost here!! Doublecheck what could be a good solution!
+                    }
+                    is Description -> j.description = prop.value
+                    is Color -> j.color = Css3Color.fromString(prop.value)?.argb
+                    is Url -> j.url = prop.value
+                    //is Organizer -> t.organizer = prop
+                    //is Priority -> t.priority = prop.level
+                    is Clazz -> j.classification = prop.value
+                    is Status -> j.status = prop.value
+
+                    is DtEnd -> {
+                        j.dtend = prop.date.toInstant().toEpochMilli()
+                        prop.timeZone?.let { j.dtendTimezone = it.toString() }
+                        //TODO: Check if this is right!
+                    }
+                    is Completed -> {
+                        j.completed = prop.date.toInstant().toEpochMilli()
+                        prop.timeZone?.let { j.completedTimezone = it.toString() }
+                        //TODO: Check if this is right!
+                    }
+
+                    is DtStart -> {
+                        j.dtstart = prop.date.time
+                        /* if(!prop.isUtc)
+                            t.dtstartTimezone = prop.timeZone.displayName
+
+                         */
+                        //TODO: Check if this is right!
+                    }
+
+                    is Categories ->
+                        for (category in prop.categories)
+                            j.categories.add(Category(text = category))
+
+                    /*
+                    is Attach -> {
+                        val attachment = Attachment()
+                        attachment.value = prop.value
+                        attachment.uri = prop.uri.toString()
+                    }
+                     */
+
+                    is net.fortuna.ical4j.model.property.RelatedTo -> {
+
+                        val relatedTo = RelatedTo()
+                        relatedTo.text = prop.value  // TODO ????????
+                        relatedTo.reltype = prop.name   // TODO ??????????
+                        j.relatedTo.add(relatedTo)
+                    }
+                }
+
+            return j
+        }
     }
 
 
@@ -242,54 +400,62 @@ open class Notesx5ICalObject(
         ical.properties += Version.VERSION_2_0
         ical.properties += ICalendar.prodId
 
-        val vTodo = VToDo(true /* generates DTSTAMP */)
-        ical.components += vTodo
-        val props = vTodo.properties
+        if(component == X5ICalObject.Component.VTODO.name) {
+            val vTodo = VToDo(true /* generates DTSTAMP */)
+            ical.components += vTodo
+            val props = vTodo.properties
 
-        uid.let { props += Uid(uid) }
-        sequence.let {
-            if (it != 0L)
-                props += Sequence(it.toInt())
-        }
-
-        created.let { props += Created(DateTime(it)) }
-        lastModified.let { props += LastModified(DateTime(it)) }
-
-        summary?.let { props += Summary(it) }
-        location?.let { props += Location(it) }
-        //geoPosition?.let { props += it }
-        description?.let { props += Description(it) }
-        color?.let { props += Color(null, Css3Color.nearestMatch(it).name) }
-        url?.let {
-            try {
-                props += Url(URI(it))
-            } catch (e: URISyntaxException) {
-                Ical4Android.log.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
+            uid.let { props += Uid(uid) }
+            sequence.let {
+                if (it != 0L)
+                    props += Sequence(it.toInt())
             }
-        }
-        //organizer?.let { props += it }
 
-        if (priority != Priority.UNDEFINED.level)
-            priority?.let { props += Priority(priority!!) }
+            created.let { props += Created(DateTime(it)) }
+            lastModified.let { props += LastModified(DateTime(it)) }
 
-        classification?.let { props += Clazz(it) }
-        status?.let { props += Status(it) }
+            summary?.let { props += Summary(it) }
+            location?.let { props += Location(it) }
+            //geoPosition?.let { props += it }
+            description?.let { props += Description(it) }
+            color?.let { props += Color(null, Css3Color.nearestMatch(it).name) }
+            url?.let {
+                try {
+                    props += Url(URI(it))
+                } catch (e: URISyntaxException) {
+                    Ical4Android.log.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
+                }
+            }
+            //organizer?.let { props += it }
+
+            if (priority != Priority.UNDEFINED.level)
+                priority?.let { props += Priority(priority!!) }
+
+            classification?.let { props += Clazz(it) }
+            status?.let { props += Status(it) }
 /*
         rRule?.let { props += it }
         rDates.forEach { props += it }
         exDates.forEach { props += it }
 */
 
-        if (categories.isNotEmpty()) {
-            val textList = TextList()
-            categories.forEach {
-                textList.add(it.text)
+            if (categories.isNotEmpty()) {
+                val textList = TextList()
+                categories.forEach {
+                    textList.add(it.text)
+                }
+                props += Categories(textList)
             }
-            props += Categories(textList)
-        }
-        // props += Categories(TextList("hardcoded"))
 
-        /*
+            /*
+        if(relatedTo.isNotEmpty()) {
+            var rel: net.fortuna.ical4j.model.property.RelatedTo = net.fortuna.ical4j.model.property.RelatedTo()
+
+        }
+
+         */
+
+            /*
         props.addAll(relatedTo)
         props.addAll(unknownProperties)
 
@@ -297,26 +463,26 @@ open class Notesx5ICalObject(
         val usedTimeZones = HashSet<TimeZone>()
         duration?.let(props::add)
         */
-        due?.let {
-            props += Due(DateTime(it))
-            //it.timeZone?.let(usedTimeZones::add)
-        }
+            due?.let {
+                props += Due(DateTime(it))
+                //it.timeZone?.let(usedTimeZones::add)
+            }
 
-        dtstart?.let {
-            props += DtStart(DateTime(it))
-            //it.timeZone?.let(usedTimeZones::add)
-        }
-        dtend?.let {
-            props += DtEnd(DateTime(it))
-            //it.timeZone?.let(usedTimeZones::add)
-        }
-        completed?.let {
-            props += Completed(DateTime(it))
-            //it.timeZone?.let(usedTimeZones::add)
-        }
-        percent?.let { props += PercentComplete(it) }
+            dtstart?.let {
+                props += DtStart(DateTime(it))
+                //it.timeZone?.let(usedTimeZones::add)
+            }
+            dtend?.let {
+                props += DtEnd(DateTime(it))
+                //it.timeZone?.let(usedTimeZones::add)
+            }
+            completed?.let {
+                props += Completed(DateTime(it))
+                //it.timeZone?.let(usedTimeZones::add)
+            }
+            percent?.let { props += PercentComplete(it) }
 
-        /*
+            /*
         if (alarms.isNotEmpty())
             vTodo.alarms.addAll(alarms)
 
@@ -332,11 +498,64 @@ open class Notesx5ICalObject(
 
 
  */
+        } else if(component == X5ICalObject.Component.VJOURNAL.name) {
+            val vJournal = VJournal(true /* generates DTSTAMP */)
+            ical.components += vJournal
+            val props = vJournal.properties
+
+            uid.let { props += Uid(uid) }
+            sequence.let {
+                if (it != 0L)
+                    props += Sequence(it.toInt())
+            }
+
+            created.let { props += Created(DateTime(it)) }
+            lastModified.let { props += LastModified(DateTime(it)) }
+
+            summary?.let { props += Summary(it) }
+            location?.let { props += Location(it) }
+            //geoPosition?.let { props += it }
+            description?.let { props += Description(it) }
+            color?.let { props += Color(null, Css3Color.nearestMatch(it).name) }
+            url?.let {
+                try {
+                    props += Url(URI(it))
+                } catch (e: URISyntaxException) {
+                    Ical4Android.log.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
+                }
+            }
+            //organizer?.let { props += it }
+
+            if (priority != Priority.UNDEFINED.level)
+                priority?.let { props += Priority(priority!!) }
+
+            classification?.let { props += Clazz(it) }
+            status?.let { props += Status(it) }
+
+            if (categories.isNotEmpty()) {
+                val textList = TextList()
+                categories.forEach {
+                    textList.add(it.text)
+                }
+                props += Categories(textList)
+            }
+
+            dtstart?.let {
+                props += DtStart(DateTime(it))
+                //it.timeZone?.let(usedTimeZones::add)
+            }
+            dtend?.let {
+                props += DtEnd(DateTime(it))
+                //it.timeZone?.let(usedTimeZones::add)
+            }
+        }
+
+
+
         ICalendar.softValidate(ical)
         CalendarOutputter(false).output(ical, os)
 
     }
-
 
 
     fun prepareForUpload(): String {
@@ -373,9 +592,12 @@ open class Notesx5ICalObject(
         val values = this.toContentValues()
 
         Log.d("Calling add", "Lets see what happens")
-        val newUri = collection.client.insert(X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account), values) ?: Uri.EMPTY
+        val newUri = collection.client.insert(
+            X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account),
+            values
+        ) ?: Uri.EMPTY
         val newId = newUri.lastPathSegment?.toInt()
-        if(newId != null)  {
+        if (newId != null) {
             this.categories.forEach {
                 val categoryContentValues = ContentValues().apply {
                     put(NotesX5Contract.X5Category.ICALOBJECT_ID, newId)
@@ -384,7 +606,11 @@ open class Notesx5ICalObject(
                     put(NotesX5Contract.X5Category.LANGUAGE, it.language)
                     put(NotesX5Contract.X5Category.OTHER, it.other)
                 }
-                collection.client.insert(NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account), categoryContentValues)
+                collection.client.insert(
+                    NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(
+                        collection.account
+                    ), categoryContentValues
+                )
             }
         }
         return newUri
@@ -399,9 +625,18 @@ open class Notesx5ICalObject(
 
         var updateUri = X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account)
         updateUri = Uri.withAppendedPath(updateUri, this.id.toString())
-        collection.client.update(updateUri, values, "${X5ICalObject.ID} = ?", arrayOf(this.id.toString()))
+        collection.client.update(
+            updateUri,
+            values,
+            "${X5ICalObject.ID} = ?",
+            arrayOf(this.id.toString())
+        )
 
-        collection.client.delete(NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account), "${NotesX5Contract.X5Category.ICALOBJECT_ID} = ?", arrayOf(this.id.toString()))
+        collection.client.delete(
+            NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account),
+            "${NotesX5Contract.X5Category.ICALOBJECT_ID} = ?",
+            arrayOf(this.id.toString())
+        )
         this.categories.forEach {
             val categoryContentValues = ContentValues().apply {
                 put(NotesX5Contract.X5Category.ICALOBJECT_ID, id)
@@ -410,7 +645,10 @@ open class Notesx5ICalObject(
                 put(NotesX5Contract.X5Category.LANGUAGE, it.language)
                 put(NotesX5Contract.X5Category.OTHER, it.other)
             }
-            collection.client.insert(NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account), categoryContentValues)
+            collection.client.insert(
+                NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account),
+                categoryContentValues
+            )
         }
 
         return updateUri
@@ -419,7 +657,10 @@ open class Notesx5ICalObject(
     }
 
     fun delete(): Int {
-        val uri = Uri.withAppendedPath(X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account), id.toString())
+        val uri = Uri.withAppendedPath(
+            X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account),
+            id.toString()
+        )
         return collection.client.delete(uri, null, null)
     }
 
@@ -458,9 +699,9 @@ open class Notesx5ICalObject(
         values.put(X5ICalObject.SUMMARY, summary)
         values.put(X5ICalObject.DESCRIPTION, description)
         values.put(X5ICalObject.COMPONENT, component)
-        if(status?.isNotBlank() == true)
+        if (status?.isNotBlank() == true)
             values.put(X5ICalObject.STATUS, status)
-        if(classification?.isNotBlank() == true)
+        if (classification?.isNotBlank() == true)
             values.put(X5ICalObject.CLASSIFICATION, classification)
         values.put(X5ICalObject.PRIORITY, priority)
         values.put(X5ICalObject.ICALOBJECT_COLLECTIONID, collectionId)
@@ -485,12 +726,17 @@ open class Notesx5ICalObject(
     }
 
 
-
     fun getCategoryContentValues(): List<ContentValues> {
 
         val categoryUrl = NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account)
         val categoryValues: MutableList<ContentValues> = mutableListOf()
-        collection.client.query(categoryUrl, null, "${NotesX5Contract.X5Category.ICALOBJECT_ID} = ?", arrayOf(this.id.toString()), null)?.use { cursor ->
+        collection.client.query(
+            categoryUrl,
+            null,
+            "${NotesX5Contract.X5Category.ICALOBJECT_ID} = ?",
+            arrayOf(this.id.toString()),
+            null
+        )?.use { cursor ->
             while (cursor.moveToNext()) {
                 categoryValues.add(cursor.toValues())
             }
@@ -498,8 +744,6 @@ open class Notesx5ICalObject(
 
         return categoryValues
     }
-
-
 
 
 }
