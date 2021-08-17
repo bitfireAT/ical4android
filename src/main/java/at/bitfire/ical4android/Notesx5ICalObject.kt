@@ -415,9 +415,11 @@ open class Notesx5ICalObject(
             lastModified.let { props += LastModified(DateTime(it)) }
 
             summary?.let { props += Summary(it) }
-            location?.let { props += Location(it) }
-            //geoPosition?.let { props += it }
             description?.let { props += Description(it) }
+
+            location?.let { props += Location(it) }
+            if(geoLat != null && geoLong != null)
+                props += Geo(geoLat!!.toBigDecimal(), geoLong!!.toBigDecimal())
             color?.let { props += Color(null, Css3Color.nearestMatch(it).name) }
             url?.let {
                 try {
@@ -513,9 +515,11 @@ open class Notesx5ICalObject(
             lastModified.let { props += LastModified(DateTime(it)) }
 
             summary?.let { props += Summary(it) }
-            location?.let { props += Location(it) }
-            //geoPosition?.let { props += it }
             description?.let { props += Description(it) }
+
+            location?.let { props += Location(it) }
+            if(geoLat != null && geoLong != null)
+                props += Geo(geoLat!!.toBigDecimal(), geoLong!!.toBigDecimal())
             color?.let { props += Color(null, Css3Color.nearestMatch(it).name) }
             url?.let {
                 try {
@@ -549,7 +553,6 @@ open class Notesx5ICalObject(
                 //it.timeZone?.let(usedTimeZones::add)
             }
         }
-
 
 
         ICalendar.softValidate(ical)
