@@ -12,6 +12,7 @@ import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.Parameter
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory
 import net.fortuna.ical4j.model.component.VAlarm
+import net.fortuna.ical4j.model.parameter.Email
 import net.fortuna.ical4j.model.property.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -103,11 +104,7 @@ class EventTest {
         assertEquals("Test Description", event.description)
         assertEquals("中华人民共和国", event.location)
         assertEquals(Css3Color.aliceblue, event.color)
-
-        // TODO: use attendee.getParameter<Email>(Parameter.EMAIL) when
-        // https://github.com/ical4j/ical4j/pull/413 and
-        // https://github.com/ical4j/ical4j/pull/414 are merged
-        assertEquals("cyrus@example.com", event.attendees.first.parameters.getParameter<Parameter>("EMAIL").value)
+        assertEquals("cyrus@example.com", event.attendees.first.parameters.getParameter<Email>("EMAIL").value)
 
         val unknown = event.unknownProperties.first
         assertEquals("X-UNKNOWN-PROP", unknown.name)

@@ -12,12 +12,9 @@ import androidx.test.runner.permission.PermissionRequester
 
 object TestUtils {
 
-    fun requestTaskPermissions() {
+    fun requestPermissions(permissions: Array<String>) {
         PermissionRequester().apply {
-            addPermissions(
-                    *TaskProvider.PERMISSIONS_OPENTASKS,
-                    *TaskProvider.PERMISSIONS_TASKS_ORG
-            )
+            addPermissions(*permissions)
         }.requestPermissions()
     }
 

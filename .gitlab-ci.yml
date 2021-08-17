@@ -6,14 +6,16 @@ before_script:
 cache:
   paths:
      - .gradle/
+     - apk/
 
 test:
   tags:
     - privileged
   script:
     - start-emulator.sh
-    - wget -q -O org.dmfs.tasks.apk https://f-droid.org/repo/org.dmfs.tasks_78500.apk && adb install org.dmfs.tasks.apk
-    - wget -q -O org.tasks.apk https://f-droid.org/repo/org.tasks_110501.apk && adb install org.tasks.apk
+    - mkdir -p apk
+    - (cd apk && wget -q -O org.dmfs.tasks.apk https://f-droid.org/archive/org.dmfs.tasks_80800.apk && adb install org.dmfs.tasks.apk)
+    - (cd apk && wget -q -O org.tasks.apk https://f-droid.org/archive/org.tasks_110701.apk && adb install org.tasks.apk)
     - ./gradlew check connectedCheck
   artifacts:
     paths:
