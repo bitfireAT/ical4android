@@ -87,6 +87,8 @@ open class Notesx5ICalObject(
 
     var categories: MutableList<Category> = mutableListOf()
     var attachments: MutableList<Attachment> = mutableListOf()
+    var comments: MutableList<Comment> = mutableListOf()
+
     var relatedTo: MutableList<RelatedTo> = mutableListOf()
 
 
@@ -107,6 +109,14 @@ open class Notesx5ICalObject(
         var filename: String? = null,
         var extension: String? = null,
         var filesize: Long? = null
+    )
+
+    data class Comment (
+        var commentId: Long = 0L,
+        var text: String = "",
+        var altrep: String? = null,
+        var language: String? = null,
+        var other: String? = null
     )
 
     data class RelatedTo(
@@ -243,6 +253,9 @@ open class Notesx5ICalObject(
                         for (category in prop.categories)
                             t.categories.add(Category(text = category))
 
+                    is net.fortuna.ical4j.model.property.Comment ->
+                        t.comments.add(Comment(text = prop.value))
+
                     /*
                     is Attach -> {
                         val attachment = Attachment()
@@ -370,6 +383,9 @@ open class Notesx5ICalObject(
                         for (category in prop.categories)
                             j.categories.add(Category(text = category))
 
+                    is net.fortuna.ical4j.model.property.Comment ->
+                        j.comments.add(Comment(text = prop.value))
+
                     /*
                     is Attach -> {
                         val attachment = Attachment()
@@ -447,6 +463,10 @@ open class Notesx5ICalObject(
                     textList.add(it.text)
                 }
                 props += Categories(textList)
+            }
+
+            comments.forEach {
+                props += Comment(it.text)
             }
 
             /*
@@ -544,6 +564,10 @@ open class Notesx5ICalObject(
                 props += Categories(textList)
             }
 
+            comments.forEach {
+                props += Comment(it.text)
+            }
+
             dtstart?.let {
                 props += DtStart(DateTime(it))
                 //it.timeZone?.let(usedTimeZones::add)
@@ -615,6 +639,21 @@ open class Notesx5ICalObject(
                     ), categoryContentValues
                 )
             }
+
+            this.comments.forEach {
+                val commentContentValues = ContentValues().apply {
+                    put(NotesX5Contract.X5Comment.ICALOBJECT_ID, newId)
+                    put(NotesX5Contract.X5Comment.TEXT, it.text)
+                    put(NotesX5Contract.X5Comment.ID, it.commentId)
+                    put(NotesX5Contract.X5Comment.LANGUAGE, it.language)
+                    put(NotesX5Contract.X5Comment.OTHER, it.other)
+                }
+                collection.client.insert(
+                    NotesX5Contract.X5Comment.CONTENT_URI.asSyncAdapter(
+                        collection.account
+                    ), commentContentValues
+                )
+            }
         }
         return newUri
         //TODO("Not yet implemented")
@@ -654,6 +693,26 @@ open class Notesx5ICalObject(
             )
         }
 
+        collection.client.delete(
+            NotesX5Contract.X5Comment.CONTENT_URI.asSyncAdapter(collection.account),
+            "${NotesX5Contract.X5Comment.ICALOBJECT_ID} = ?",
+            arrayOf(this.id.toString())
+        )
+
+        this.comments.forEach {
+            val commentContentValues = ContentValues().apply {
+                put(NotesX5Contract.X5Comment.ICALOBJECT_ID, id)
+                put(NotesX5Contract.X5Comment.TEXT, it.text)
+                put(NotesX5Contract.X5Comment.ID, it.commentId)
+                put(NotesX5Contract.X5Comment.LANGUAGE, it.language)
+                put(NotesX5Contract.X5Comment.OTHER, it.other)
+            }
+            collection.client.insert(
+                NotesX5Contract.X5Comment.CONTENT_URI.asSyncAdapter(collection.account),
+                commentContentValues
+            )
+        }
+
         return updateUri
 
         //TODO("Not yet implemented")
@@ -675,8 +734,11 @@ open class Notesx5ICalObject(
         this.created = newData.created
         this.lastModified = newData.lastModified
         this.summary = newData.summary
-        this.location = newData.location
         this.description = newData.description
+
+        this.location = newData.location
+        this.geoLat = newData.geoLat
+        this.geoLong = newData.geoLong
         this.percent = newData.percent
         this.classification = newData.classification
         this.status = newData.status
@@ -692,6 +754,7 @@ open class Notesx5ICalObject(
         this.dueTimezone = newData.dueTimezone
 
         this.categories = newData.categories
+        this.comments = newData.comments
         // tODO: to be continued
     }
 
@@ -709,6 +772,8 @@ open class Notesx5ICalObject(
         values.put(X5ICalObject.PRIORITY, priority)
         values.put(X5ICalObject.ICALOBJECT_COLLECTIONID, collectionId)
         values.put(X5ICalObject.UID, uid)
+        values.put(X5ICalObject.GEO_LAT, geoLat)
+        values.put(X5ICalObject.GEO_LONG, geoLong)
         values.put(X5ICalObject.PERCENT, percent)
         values.put(X5ICalObject.DTSTAMP, dtstamp)
         values.put(X5ICalObject.DTSTART, dtstart)
@@ -746,6 +811,25 @@ open class Notesx5ICalObject(
         }
 
         return categoryValues
+    }
+
+    fun getCommentContentValues(): List<ContentValues> {
+
+        val commentUrl = NotesX5Contract.X5Comment.CONTENT_URI.asSyncAdapter(collection.account)
+        val commentValues: MutableList<ContentValues> = mutableListOf()
+        collection.client.query(
+            commentUrl,
+            null,
+            "${NotesX5Contract.X5Comment.ICALOBJECT_ID} = ?",
+            arrayOf(this.id.toString()),
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                commentValues.add(cursor.toValues())
+            }
+        }
+
+        return commentValues
     }
 
 
