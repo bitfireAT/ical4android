@@ -792,6 +792,7 @@ open class Notesx5ICalObject(
         this.lastModified = newData.lastModified
         this.summary = newData.summary
         this.description = newData.description
+        this.uid = newData.uid
 
         this.location = newData.location
         this.geoLat = newData.geoLat
