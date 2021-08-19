@@ -268,7 +268,7 @@ open class Notesx5ICalObject(
                     is net.fortuna.ical4j.model.property.RelatedTo -> {
 
                         val relatedTo = RelatedTo()
-                        relatedTo.reltype = prop.getParameter<RelType>(RelType.RELTYPE).toString()
+                        relatedTo.reltype = prop.getParameter<RelType>(RelType.RELTYPE).value
                         relatedTo.text = prop.value
                         t.relatedTo.add(relatedTo)
                     }
@@ -473,9 +473,9 @@ open class Notesx5ICalObject(
             relatedTo.forEach {
                 val param: Parameter =
                     when (it.reltype) {
-                        RelType.CHILD.name -> RelType.CHILD
-                        RelType.SIBLING.name -> RelType.SIBLING
-                        RelType.PARENT.name -> RelType.PARENT
+                        RelType.CHILD.value -> RelType.CHILD
+                        RelType.SIBLING.value -> RelType.SIBLING
+                        RelType.PARENT.value -> RelType.PARENT
                         else -> return@forEach
                     }
                 val parameterList = ParameterList()
