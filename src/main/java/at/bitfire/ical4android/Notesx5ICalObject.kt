@@ -14,6 +14,7 @@ import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.component.VJournal
 import net.fortuna.ical4j.model.component.VToDo
+import net.fortuna.ical4j.model.parameter.RelType
 import net.fortuna.ical4j.model.property.*
 import java.io.IOException
 import java.io.OutputStream
@@ -122,7 +123,7 @@ open class Notesx5ICalObject(
     data class RelatedTo(
         var relatedtoId: Long = 0L,
         //var icalObjectId: Long = 0L,
-        var linkedICalObjectId: Long = 0L,
+        //var linkedICalObjectId: Long = 0L,
         var text: String? = null,
         var reltype: String? = null,
         var other: String? = null
@@ -267,8 +268,8 @@ open class Notesx5ICalObject(
                     is net.fortuna.ical4j.model.property.RelatedTo -> {
 
                         val relatedTo = RelatedTo()
-                        relatedTo.text = prop.value  // TODO ????????
-                        relatedTo.reltype = prop.name   // TODO ??????????
+                        relatedTo.reltype = prop.getParameter<RelType>(RelType.RELTYPE).toString()
+                        relatedTo.text = prop.value
                         t.relatedTo.add(relatedTo)
                     }
 
@@ -397,8 +398,8 @@ open class Notesx5ICalObject(
                     is net.fortuna.ical4j.model.property.RelatedTo -> {
 
                         val relatedTo = RelatedTo()
-                        relatedTo.text = prop.value  // TODO ????????
-                        relatedTo.reltype = prop.name   // TODO ??????????
+                        relatedTo.reltype = prop.getParameter<RelType>(RelType.RELTYPE).value
+                        relatedTo.text = prop.value
                         j.relatedTo.add(relatedTo)
                     }
                 }
@@ -469,13 +470,19 @@ open class Notesx5ICalObject(
                 props += Comment(it.text)
             }
 
-            /*
-        if(relatedTo.isNotEmpty()) {
-            var rel: net.fortuna.ical4j.model.property.RelatedTo = net.fortuna.ical4j.model.property.RelatedTo()
+            relatedTo.forEach {
+                val param: Parameter =
+                    when (it.reltype) {
+                        RelType.CHILD.name -> RelType.CHILD
+                        RelType.SIBLING.name -> RelType.SIBLING
+                        RelType.PARENT.name -> RelType.PARENT
+                        else -> return@forEach
+                    }
+                val parameterList = ParameterList()
+                parameterList.add(param)
+                props += RelatedTo(parameterList, it.text)
+            }
 
-        }
-
-         */
 
             /*
         props.addAll(relatedTo)
@@ -568,6 +575,19 @@ open class Notesx5ICalObject(
                 props += Comment(it.text)
             }
 
+            relatedTo.forEach {
+                val param: Parameter =
+                    when (it.reltype) {
+                        RelType.CHILD.value -> RelType.CHILD
+                        RelType.SIBLING.value -> RelType.SIBLING
+                        RelType.PARENT.value -> RelType.PARENT
+                        else -> return@forEach
+                    }
+                val parameterList = ParameterList()
+                parameterList.add(param)
+                props += RelatedTo(parameterList, it.text)
+            }
+
             dtstart?.let {
                 props += DtStart(DateTime(it))
                 //it.timeZone?.let(usedTimeZones::add)
@@ -576,6 +596,8 @@ open class Notesx5ICalObject(
                 props += DtEnd(DateTime(it))
                 //it.timeZone?.let(usedTimeZones::add)
             }
+
+
         }
 
 
@@ -654,6 +676,21 @@ open class Notesx5ICalObject(
                     ), commentContentValues
                 )
             }
+
+
+            this.relatedTo.forEach {
+                val relatedToContentValues = ContentValues().apply {
+                    put(NotesX5Contract.X5Relatedto.ICALOBJECT_ID, newId)
+                    put(NotesX5Contract.X5Relatedto.TEXT, it.text)
+                    put(NotesX5Contract.X5Relatedto.RELTYPE, it.reltype)
+                    put(NotesX5Contract.X5Relatedto.OTHER, it.other)
+                }
+                collection.client.insert(
+                    NotesX5Contract.X5Relatedto.CONTENT_URI.asSyncAdapter(
+                        collection.account
+                    ), relatedToContentValues
+                )
+            }
         }
         return newUri
         //TODO("Not yet implemented")
@@ -713,6 +750,26 @@ open class Notesx5ICalObject(
             )
         }
 
+
+        collection.client.delete(
+            NotesX5Contract.X5Relatedto.CONTENT_URI.asSyncAdapter(collection.account),
+            "${NotesX5Contract.X5Relatedto.ICALOBJECT_ID} = ?",
+            arrayOf(this.id.toString())
+        )
+
+        this.relatedTo.forEach {
+            val relatedToContentValues = ContentValues().apply {
+                put(NotesX5Contract.X5Relatedto.ICALOBJECT_ID, id)
+                put(NotesX5Contract.X5Relatedto.TEXT, it.text)
+                put(NotesX5Contract.X5Relatedto.RELTYPE, it.reltype)
+                put(NotesX5Contract.X5Relatedto.OTHER, it.other)
+            }
+            collection.client.insert(
+                NotesX5Contract.X5Relatedto.CONTENT_URI.asSyncAdapter(collection.account),
+                relatedToContentValues
+            )
+        }
+
         return updateUri
 
         //TODO("Not yet implemented")
@@ -755,6 +812,7 @@ open class Notesx5ICalObject(
 
         this.categories = newData.categories
         this.comments = newData.comments
+        this.relatedTo = newData.relatedTo
         // tODO: to be continued
     }
 
@@ -830,6 +888,26 @@ open class Notesx5ICalObject(
         }
 
         return commentValues
+    }
+
+
+    fun getRelatedToContentValues(): List<ContentValues> {
+
+        val relatedToUrl = NotesX5Contract.X5Relatedto.CONTENT_URI.asSyncAdapter(collection.account)
+        val relatedToValues: MutableList<ContentValues> = mutableListOf()
+        collection.client.query(
+            relatedToUrl,
+            null,
+            "${NotesX5Contract.X5Relatedto.ICALOBJECT_ID} = ?",
+            arrayOf(this.id.toString()),
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                relatedToValues.add(cursor.toValues())
+            }
+        }
+
+        return relatedToValues
     }
 
 
