@@ -30,12 +30,12 @@ apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.dokka'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 31
     buildToolsVersion '30.0.3'
 
     defaultConfig {
         minSdkVersion 21        // Android 5.0
-        targetSdkVersion 30     // Android 11
+        targetSdkVersion 31     // Android 12
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
