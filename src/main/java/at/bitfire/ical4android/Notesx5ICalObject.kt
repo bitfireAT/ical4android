@@ -833,6 +833,7 @@ open class Notesx5ICalObject(
         values.put(X5ICalObject.UID, uid)
         values.put(X5ICalObject.GEO_LAT, geoLat)
         values.put(X5ICalObject.GEO_LONG, geoLong)
+        values.put(X5ICalObject.LOCATION, location)
         values.put(X5ICalObject.PERCENT, percent)
         values.put(X5ICalObject.DTSTAMP, dtstamp)
         values.put(X5ICalObject.DTSTART, dtstart)
