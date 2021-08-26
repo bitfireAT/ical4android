@@ -88,9 +88,11 @@ open class Notesx5ICalObject(
 
     var categories: MutableList<Category> = mutableListOf()
     var attachments: MutableList<Attachment> = mutableListOf()
+    var attendees: MutableList<Attendee> = mutableListOf()
     var comments: MutableList<Comment> = mutableListOf()
 
     var relatedTo: MutableList<RelatedTo> = mutableListOf()
+
 
 
     data class Category(
@@ -127,6 +129,25 @@ open class Notesx5ICalObject(
         var text: String? = null,
         var reltype: String? = null,
         var other: String? = null
+    )
+
+    data class Attendee(
+        var attendeeId: Long = 0L,
+        //var icalObjectId: Long = 0L,
+        var caladdress: String = "",
+        var cutype: String? = NotesX5Contract.X5Attendee.Cutype.INDIVIDUAL.name,
+        var member: String? = null,
+        var role: String? = NotesX5Contract.X5Attendee.Role.`REQ-PARTICIPANT`.name,
+        var partstat: String? = null,
+        var rsvp: Boolean? = null,
+        var delegatedto: String? = null,
+        var delegatedfrom: String? = null,
+        var sentby: String? = null,
+        var cn: String? = null,
+        var dir: String? = null,
+        var language: String? = null,
+        var other: String? = null
+
     )
 
 
@@ -273,6 +294,13 @@ open class Notesx5ICalObject(
                         t.relatedTo.add(relatedTo)
                     }
 
+                    is net.fortuna.ical4j.model.property.Attendee -> {
+                        t.attendees.add(
+                            Attendee(caladdress = prop.calAddress.toString())
+                            //todo: take care of other attributes for attendees
+                        )
+                    }
+
                     /*
                         is RelatedTo -> t.relatedTo.add(prop)
                         is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */
@@ -387,6 +415,15 @@ open class Notesx5ICalObject(
                     is net.fortuna.ical4j.model.property.Comment ->
                         j.comments.add(Comment(text = prop.value))
 
+                    is net.fortuna.ical4j.model.property.Attendee -> {
+                        j.attendees.add(
+                            Attendee(caladdress = prop.calAddress.toString())
+                        //todo: take care of other attributes for attendees
+                        )
+                    }
+
+
+
                     /*
                     is Attach -> {
                         val attachment = Attachment()
@@ -468,6 +505,11 @@ open class Notesx5ICalObject(
 
             comments.forEach {
                 props += Comment(it.text)
+            }
+
+            attendees.forEach {
+                props += net.fortuna.ical4j.model.property.Attendee(it.caladdress)
+                //todo: take care of other attributes for attendees
             }
 
             relatedTo.forEach {
@@ -575,6 +617,12 @@ open class Notesx5ICalObject(
                 props += Comment(it.text)
             }
 
+            attendees.forEach {
+                props += net.fortuna.ical4j.model.property.Attendee(it.caladdress)
+                //todo: take care of other attributes for attendees
+
+            }
+
             relatedTo.forEach {
                 val param: Parameter =
                     when (it.reltype) {
@@ -677,6 +725,31 @@ open class Notesx5ICalObject(
                 )
             }
 
+            this.attendees.forEach {
+                val attendeeContentValues = ContentValues().apply {
+                    put(NotesX5Contract.X5Attendee.ICALOBJECT_ID, newId)
+                    put(NotesX5Contract.X5Attendee.CALADDRESS, it.caladdress)
+
+                    put(NotesX5Contract.X5Attendee.CN, it.cn)
+                    put(NotesX5Contract.X5Attendee.CUTYPE, it.cutype)
+                    put(NotesX5Contract.X5Attendee.DELEGATEDFROM, it.delegatedfrom)
+                    put(NotesX5Contract.X5Attendee.DELEGATEDTO, it.delegatedto)
+                    put(NotesX5Contract.X5Attendee.DIR, it.dir)
+                    put(NotesX5Contract.X5Attendee.LANGUAGE, it.language)
+                    put(NotesX5Contract.X5Attendee.MEMBER, it.member)
+                    put(NotesX5Contract.X5Attendee.PARTSTAT, it.partstat)
+                    put(NotesX5Contract.X5Attendee.ROLE, it.role)
+                    put(NotesX5Contract.X5Attendee.RSVP, it.rsvp)
+                    put(NotesX5Contract.X5Attendee.SENTBY, it.sentby)
+                    put(NotesX5Contract.X5Attendee.OTHER, it.other)
+                }
+                collection.client.insert(
+                    NotesX5Contract.X5Attendee.CONTENT_URI.asSyncAdapter(
+                        collection.account
+                    ), attendeeContentValues
+                )
+            }
+
 
             this.relatedTo.forEach {
                 val relatedToContentValues = ContentValues().apply {
@@ -757,6 +830,7 @@ open class Notesx5ICalObject(
             arrayOf(this.id.toString())
         )
 
+
         this.relatedTo.forEach {
             val relatedToContentValues = ContentValues().apply {
                 put(NotesX5Contract.X5Relatedto.ICALOBJECT_ID, id)
@@ -767,6 +841,37 @@ open class Notesx5ICalObject(
             collection.client.insert(
                 NotesX5Contract.X5Relatedto.CONTENT_URI.asSyncAdapter(collection.account),
                 relatedToContentValues
+            )
+        }
+
+        collection.client.delete(
+            NotesX5Contract.X5Attendee.CONTENT_URI.asSyncAdapter(collection.account),
+            "${NotesX5Contract.X5Attendee.ICALOBJECT_ID} = ?",
+            arrayOf(this.id.toString())
+        )
+
+        this.attendees.forEach {
+            val attendeeContentValues = ContentValues().apply {
+                put(NotesX5Contract.X5Attendee.ICALOBJECT_ID, id)
+                put(NotesX5Contract.X5Attendee.CALADDRESS, it.caladdress)
+
+                put(NotesX5Contract.X5Attendee.CN, it.cn)
+                put(NotesX5Contract.X5Attendee.CUTYPE, it.cutype)
+                put(NotesX5Contract.X5Attendee.DELEGATEDFROM, it.delegatedfrom)
+                put(NotesX5Contract.X5Attendee.DELEGATEDTO, it.delegatedto)
+                put(NotesX5Contract.X5Attendee.DIR, it.dir)
+                put(NotesX5Contract.X5Attendee.LANGUAGE, it.language)
+                put(NotesX5Contract.X5Attendee.MEMBER, it.member)
+                put(NotesX5Contract.X5Attendee.PARTSTAT, it.partstat)
+                put(NotesX5Contract.X5Attendee.ROLE, it.role)
+                put(NotesX5Contract.X5Attendee.RSVP, it.rsvp)
+                put(NotesX5Contract.X5Attendee.SENTBY, it.sentby)
+                put(NotesX5Contract.X5Attendee.OTHER, it.other)
+            }
+            collection.client.insert(
+                NotesX5Contract.X5Attendee.CONTENT_URI.asSyncAdapter(
+                    collection.account
+                ), attendeeContentValues
             )
         }
 
@@ -814,6 +919,7 @@ open class Notesx5ICalObject(
         this.categories = newData.categories
         this.comments = newData.comments
         this.relatedTo = newData.relatedTo
+        this.attendees = newData.attendees
         // tODO: to be continued
     }
 
@@ -910,6 +1016,25 @@ open class Notesx5ICalObject(
         }
 
         return relatedToValues
+    }
+
+    fun getAttendeesContentValues(): List<ContentValues> {
+
+        val attendeesUrl = NotesX5Contract.X5Attendee.CONTENT_URI.asSyncAdapter(collection.account)
+        val attendeesValues: MutableList<ContentValues> = mutableListOf()
+        collection.client.query(
+            attendeesUrl,
+            null,
+            "${NotesX5Contract.X5Attendee.ICALOBJECT_ID} = ?",
+            arrayOf(this.id.toString()),
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                attendeesValues.add(cursor.toValues())
+            }
+        }
+
+        return attendeesValues
     }
 
 
