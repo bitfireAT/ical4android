@@ -197,6 +197,7 @@ open class Notesx5ICalObject(
             return vJournals.mapTo(LinkedList()) { this.fromVJournal(collection, it) }
         }
 
+
         private fun fromVToDo(
             collection: Notesx5Collection<Notesx5ICalObject>,
             //component: X5ICalObject.Component,
@@ -204,145 +205,16 @@ open class Notesx5ICalObject(
         ): Notesx5ICalObject {
 
             val t = Notesx5ICalObject(collection)
-
             t.component = X5ICalObject.Component.VTODO.name
 
             if (todo.uid != null)
                 t.uid = todo.uid.value
             else {
-                Ical4Android.log.warning("Received VTODO without UID, generating new one")
+                Ical4Android.log.warning("Received VJOURNAL without UID, generating new one")
                 t.uid = UUID.randomUUID().toString()
             }
 
-            // sequence must only be null for locally created, not-yet-synchronized events
-            t.sequence = 0
-
-            for (prop in todo.properties)
-                when (prop) {
-                    is Sequence -> t.sequence = prop.sequenceNo.toLong()
-                    is Created -> t.created = prop.dateTime.time
-                    is LastModified -> t.lastModified = prop.dateTime.time
-                    is Summary -> t.summary = prop.value
-                    is Location -> t.location = prop.value
-                    is Geo -> {
-                        t.geoLat = prop.latitude.toFloat()
-                        t.geoLong = prop.longitude.toFloat()
-                        // TODO: name and attributes might get lost here!! Doublecheck what could be a good solution!
-                    }
-                    is Description -> t.description = prop.value
-                    is Color -> t.color = Css3Color.fromString(prop.value)?.argb
-                    is Url -> t.url = prop.value
-                    //is Organizer -> t.organizer = prop
-                    is Priority -> t.priority = prop.level
-                    is Clazz -> t.classification = prop.value
-                    is Status -> t.status = prop.value
-
-                    is DtEnd -> {
-                        t.dtend = prop.date.toInstant().toEpochMilli()
-                        prop.timeZone?.let { t.dtendTimezone = it.toString() }
-                        //TODO: Check if this is right!
-                    }
-                    is Completed -> {
-                        t.completed = prop.date.toInstant().toEpochMilli()
-                        prop.timeZone?.let { t.completedTimezone = it.toString() }
-                        //TODO: Check if this is right!
-                    }
-
-                    is Due -> {
-                        t.due = prop.date.toInstant().toEpochMilli()
-                        prop.timeZone?.let { t.dueTimezone = it.toString() }
-                        //TODO: Check if this is right!
-                    }
-                    //is Duration -> t.duration = prop.duration.
-
-                    is DtStart -> {
-                        t.dtstart = prop.date.time
-                        /* if(!prop.isUtc)
-                            t.dtstartTimezone = prop.timeZone.displayName
-
-                         */
-                        //TODO: Check if this is right!
-                    }
-
-                    is PercentComplete -> t.percent = prop.percentage
-                    /*
-                    is RRule -> t.rRule = prop
-                    is RDate -> t.rDates += prop
-                    is ExDate -> t.exDates += prop
-
-                     */
-                    is Categories ->
-                        for (category in prop.categories)
-                            t.categories.add(Category(text = category))
-
-                    is net.fortuna.ical4j.model.property.Comment ->
-                        t.comments.add(Comment(text = prop.value))
-
-                    /*
-                    is Attach -> {
-                        val attachment = Attachment()
-                        attachment.value = prop.value
-                        attachment.uri = prop.uri.toString()
-                    }
-                     */
-
-                    is net.fortuna.ical4j.model.property.RelatedTo -> {
-
-                        val relatedTo = RelatedTo()
-                        relatedTo.reltype = prop.getParameter<RelType>(RelType.RELTYPE).value
-                        relatedTo.text = prop.value
-                        t.relatedTo.add(relatedTo)
-                    }
-
-                    is net.fortuna.ical4j.model.property.Attendee -> {
-                        t.attendees.add(
-                            Attendee(caladdress = prop.calAddress.toString())
-                            //todo: take care of other attributes for attendees
-                        )
-                    }
-
-                    /*
-                        is RelatedTo -> t.relatedTo.add(prop)
-                        is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */
-                        }
-                        else -> t.unknownProperties += prop
-
-                         */
-                }
-
-            //t.alarms.addAll(todo.alarms)
-
-            // There seem to be many invalid tasks out there because of some defect clients, do some validation.
-
-
-/*
-            val dtStart = t.dtstart
-            val due = t.due
-
-            if (dtStart != null && due != null) {
-                if (DateUtils.isDate(dtStart) && DateUtils.isDateTime(due)) {
-                    Ical4Android.log.warning("DTSTART is DATE but DUE is DATE-TIME, rewriting DTSTART to DATE-TIME")
-                    t.dtStart = DtStart(DateTime(dtStart.value, due.timeZone))
-                } else if (DateUtils.isDateTime(dtStart) && DateUtils.isDate(due)) {
-                    Ical4Android.log.warning("DTSTART is DATE-TIME but DUE is DATE, rewriting DUE to DATE-TIME")
-                    t.due = Due(DateTime(due.value, dtStart.timeZone))
-                }
-
-
-                if (due.date <= dtStart.date) {
-                    Ical4Android.log.warning("Found invalid DUE <= DTSTART; dropping DTSTART")
-                    t.dtStart = null
-                }
-            }
-
- */
-
-            /*
-            if (t.duration != null && t.dtStart == null) {
-                Ical4Android.log.warning("Found DURATION without DTSTART; ignoring")
-                t.duration = null
-            }
-             */
+            processProperties(t, todo.properties)
 
             return t
         }
@@ -365,42 +237,58 @@ open class Notesx5ICalObject(
                 j.uid = UUID.randomUUID().toString()
             }
 
-            // sequence must only be null for locally created, not-yet-synchronized events
-            j.sequence = 0
+            processProperties(j, journal.properties)
 
-            for (prop in journal.properties)
+            return j
+        }
+
+        private fun processProperties(iCalObject: Notesx5ICalObject, properties: PropertyList<*>) {
+
+            // sequence must only be null for locally created, not-yet-synchronized events
+            iCalObject.sequence = 0
+
+            for (prop in properties)
                 when (prop) {
-                    is Sequence -> j.sequence = prop.sequenceNo.toLong()
-                    is Created -> j.created = prop.dateTime.time
-                    is LastModified -> j.lastModified = prop.dateTime.time
-                    is Summary -> j.summary = prop.value
-                    is Location -> j.location = prop.value
+                    is Sequence -> iCalObject.sequence = prop.sequenceNo.toLong()
+                    is Created -> iCalObject.created = prop.dateTime.time
+                    is LastModified -> iCalObject.lastModified = prop.dateTime.time
+                    is Summary -> iCalObject.summary = prop.value
+                    is Location -> iCalObject.location = prop.value
                     is Geo -> {
-                        j.geoLat = prop.latitude.toFloat()
-                        j.geoLong = prop.longitude.toFloat()
+                        iCalObject.geoLat = prop.latitude.toFloat()
+                        iCalObject.geoLong = prop.longitude.toFloat()
                         // TODO: name and attributes might get lost here!! Doublecheck what could be a good solution!
                     }
-                    is Description -> j.description = prop.value
-                    is Color -> j.color = Css3Color.fromString(prop.value)?.argb
-                    is Url -> j.url = prop.value
+                    is Description -> iCalObject.description = prop.value
+                    is Color -> iCalObject.color = Css3Color.fromString(prop.value)?.argb
+                    is Url -> iCalObject.url = prop.value
                     //is Organizer -> t.organizer = prop
-                    //is Priority -> t.priority = prop.level
-                    is Clazz -> j.classification = prop.value
-                    is Status -> j.status = prop.value
-
-                    is DtEnd -> {
-                        j.dtend = prop.date.toInstant().toEpochMilli()
-                        prop.timeZone?.let { j.dtendTimezone = it.toString() }
-                        //TODO: Check if this is right!
-                    }
+                    is Priority -> iCalObject.priority = prop.level
+                    is Clazz -> iCalObject.classification = prop.value
+                    is Status -> iCalObject.status = prop.value
+                    is DtEnd -> Ical4Android.log.warning("The property DtEnd must not be used for VTODO and VJOURNAL, this value is rejected.")
                     is Completed -> {
-                        j.completed = prop.date.toInstant().toEpochMilli()
-                        prop.timeZone?.let { j.completedTimezone = it.toString() }
-                        //TODO: Check if this is right!
+                        if (iCalObject.component == X5ICalObject.Component.VTODO.name) {
+                            iCalObject.completed = prop.date.toInstant().toEpochMilli()
+                            prop.timeZone?.let { iCalObject.completedTimezone = it.toString() }
+                            //TODO: Check if this is right!
+                        } else
+                            Ical4Android.log.warning("The property Completed is only supported for VTODO, this value is rejected.")
                     }
+
+                    is Due -> {
+                        if (iCalObject.component == X5ICalObject.Component.VTODO.name) {
+                            iCalObject.due = prop.date.toInstant().toEpochMilli()
+                            prop.timeZone?.let { iCalObject.dueTimezone = it.toString() }
+                            //TODO: Check if this is right!
+                        } else
+                            Ical4Android.log.warning("The property Due is only supported for VTODO, this value is rejected.")
+                    }
+
+                    //is Duration -> t.duration = prop.duration.
 
                     is DtStart -> {
-                        j.dtstart = prop.date.time
+                        iCalObject.dtstart = prop.date.time
                         /* if(!prop.isUtc)
                             t.dtstartTimezone = prop.timeZone.displayName
 
@@ -408,21 +296,24 @@ open class Notesx5ICalObject(
                         //TODO: Check if this is right!
                     }
 
+                    is PercentComplete -> {
+                        if (iCalObject.component == X5ICalObject.Component.VTODO.name)
+                            iCalObject.percent = prop.percentage
+                        else
+                            Ical4Android.log.warning("The property PercentComplete is only supported for VTODO, this value is rejected.")
+                    }
+                    /*
+                    is RRule -> t.rRule = prop
+                    is RDate -> t.rDates += prop
+                    is ExDate -> t.exDates += prop
+
+                     */
                     is Categories ->
                         for (category in prop.categories)
-                            j.categories.add(Category(text = category))
+                            iCalObject.categories.add(Category(text = category))
 
                     is net.fortuna.ical4j.model.property.Comment ->
-                        j.comments.add(Comment(text = prop.value))
-
-                    is net.fortuna.ical4j.model.property.Attendee -> {
-                        j.attendees.add(
-                            Attendee(caladdress = prop.calAddress.toString())
-                        //todo: take care of other attributes for attendees
-                        )
-                    }
-
-
+                        iCalObject.comments.add(Comment(text = prop.value))
 
                     /*
                     is Attach -> {
@@ -437,11 +328,58 @@ open class Notesx5ICalObject(
                         val relatedTo = RelatedTo()
                         relatedTo.reltype = prop.getParameter<RelType>(RelType.RELTYPE).value
                         relatedTo.text = prop.value
-                        j.relatedTo.add(relatedTo)
+                        iCalObject.relatedTo.add(relatedTo)
+                    }
+
+                    is net.fortuna.ical4j.model.property.Attendee -> {
+                        iCalObject.attendees.add(
+                            Attendee(caladdress = prop.calAddress.toString())
+                            //todo: take care of other attributes for attendees
+                        )
+                    }
+
+                    /*
+                        is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */
+                        }
+                        else -> t.unknownProperties += prop
+
+                         */
+                }
+
+            //t.alarms.addAll(todo.alarms)
+
+            // There seem to be many invalid tasks out there because of some defect clients, do some validation.
+
+
+            /*
+                val dtStart = t.dtstart
+                val due = t.due
+
+                if (dtStart != null && due != null) {
+                    if (DateUtils.isDate(dtStart) && DateUtils.isDateTime(due)) {
+                        Ical4Android.log.warning("DTSTART is DATE but DUE is DATE-TIME, rewriting DTSTART to DATE-TIME")
+                        t.dtStart = DtStart(DateTime(dtStart.value, due.timeZone))
+                    } else if (DateUtils.isDateTime(dtStart) && DateUtils.isDate(due)) {
+                        Ical4Android.log.warning("DTSTART is DATE-TIME but DUE is DATE, rewriting DUE to DATE-TIME")
+                        t.due = Due(DateTime(due.value, dtStart.timeZone))
+                    }
+
+
+                    if (due.date <= dtStart.date) {
+                        Ical4Android.log.warning("Found invalid DUE <= DTSTART; dropping DTSTART")
+                        t.dtStart = null
                     }
                 }
 
-            return j
+     */
+
+            /*
+            if (t.duration != null && t.dtStart == null) {
+                Ical4Android.log.warning("Found DURATION without DTSTART; ignoring")
+                t.duration = null
+            }
+             */
+
         }
     }
 
@@ -692,79 +630,11 @@ open class Notesx5ICalObject(
         val newUri = collection.client.insert(
             X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account),
             values
-        ) ?: Uri.EMPTY
-        val newId = newUri.lastPathSegment?.toInt()
-        if (newId != null) {
-            this.categories.forEach {
-                val categoryContentValues = ContentValues().apply {
-                    put(NotesX5Contract.X5Category.ICALOBJECT_ID, newId)
-                    put(NotesX5Contract.X5Category.TEXT, it.text)
-                    put(NotesX5Contract.X5Category.ID, it.categoryId)
-                    put(NotesX5Contract.X5Category.LANGUAGE, it.language)
-                    put(NotesX5Contract.X5Category.OTHER, it.other)
-                }
-                collection.client.insert(
-                    NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(
-                        collection.account
-                    ), categoryContentValues
-                )
-            }
+        ) ?: return Uri.EMPTY
+        this.id = newUri.lastPathSegment?.toLong() ?: return Uri.EMPTY
 
-            this.comments.forEach {
-                val commentContentValues = ContentValues().apply {
-                    put(NotesX5Contract.X5Comment.ICALOBJECT_ID, newId)
-                    put(NotesX5Contract.X5Comment.TEXT, it.text)
-                    put(NotesX5Contract.X5Comment.ID, it.commentId)
-                    put(NotesX5Contract.X5Comment.LANGUAGE, it.language)
-                    put(NotesX5Contract.X5Comment.OTHER, it.other)
-                }
-                collection.client.insert(
-                    NotesX5Contract.X5Comment.CONTENT_URI.asSyncAdapter(
-                        collection.account
-                    ), commentContentValues
-                )
-            }
+        insertOrUpdateListProperties(false)
 
-            this.attendees.forEach {
-                val attendeeContentValues = ContentValues().apply {
-                    put(NotesX5Contract.X5Attendee.ICALOBJECT_ID, newId)
-                    put(NotesX5Contract.X5Attendee.CALADDRESS, it.caladdress)
-
-                    put(NotesX5Contract.X5Attendee.CN, it.cn)
-                    put(NotesX5Contract.X5Attendee.CUTYPE, it.cutype)
-                    put(NotesX5Contract.X5Attendee.DELEGATEDFROM, it.delegatedfrom)
-                    put(NotesX5Contract.X5Attendee.DELEGATEDTO, it.delegatedto)
-                    put(NotesX5Contract.X5Attendee.DIR, it.dir)
-                    put(NotesX5Contract.X5Attendee.LANGUAGE, it.language)
-                    put(NotesX5Contract.X5Attendee.MEMBER, it.member)
-                    put(NotesX5Contract.X5Attendee.PARTSTAT, it.partstat)
-                    put(NotesX5Contract.X5Attendee.ROLE, it.role)
-                    put(NotesX5Contract.X5Attendee.RSVP, it.rsvp)
-                    put(NotesX5Contract.X5Attendee.SENTBY, it.sentby)
-                    put(NotesX5Contract.X5Attendee.OTHER, it.other)
-                }
-                collection.client.insert(
-                    NotesX5Contract.X5Attendee.CONTENT_URI.asSyncAdapter(
-                        collection.account
-                    ), attendeeContentValues
-                )
-            }
-
-
-            this.relatedTo.forEach {
-                val relatedToContentValues = ContentValues().apply {
-                    put(NotesX5Contract.X5Relatedto.ICALOBJECT_ID, newId)
-                    put(NotesX5Contract.X5Relatedto.TEXT, it.text)
-                    put(NotesX5Contract.X5Relatedto.RELTYPE, it.reltype)
-                    put(NotesX5Contract.X5Relatedto.OTHER, it.other)
-                }
-                collection.client.insert(
-                    NotesX5Contract.X5Relatedto.CONTENT_URI.asSyncAdapter(
-                        collection.account
-                    ), relatedToContentValues
-                )
-            }
-        }
         return newUri
         //TODO("Not yet implemented")
 
@@ -784,11 +654,43 @@ open class Notesx5ICalObject(
             arrayOf(this.id.toString())
         )
 
-        collection.client.delete(
-            NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account),
-            "${NotesX5Contract.X5Category.ICALOBJECT_ID} = ?",
-            arrayOf(this.id.toString())
-        )
+        insertOrUpdateListProperties(true)
+
+        return updateUri
+
+        //TODO("Not yet implemented")
+    }
+
+
+    fun insertOrUpdateListProperties(isUpdate: Boolean) {
+
+        // delete the categories, attendees, ... and insert them again after. Only relevant for Update, for an insert there will be no entries
+        if(isUpdate) {
+            collection.client.delete(
+                NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account),
+                "${NotesX5Contract.X5Category.ICALOBJECT_ID} = ?",
+                arrayOf(this.id.toString())
+            )
+
+            collection.client.delete(
+                NotesX5Contract.X5Comment.CONTENT_URI.asSyncAdapter(collection.account),
+                "${NotesX5Contract.X5Comment.ICALOBJECT_ID} = ?",
+                arrayOf(this.id.toString())
+            )
+
+            collection.client.delete(
+                NotesX5Contract.X5Relatedto.CONTENT_URI.asSyncAdapter(collection.account),
+                "${NotesX5Contract.X5Relatedto.ICALOBJECT_ID} = ?",
+                arrayOf(this.id.toString())
+            )
+
+            collection.client.delete(
+                NotesX5Contract.X5Attendee.CONTENT_URI.asSyncAdapter(collection.account),
+                "${NotesX5Contract.X5Attendee.ICALOBJECT_ID} = ?",
+                arrayOf(this.id.toString())
+            )
+        }
+
         this.categories.forEach {
             val categoryContentValues = ContentValues().apply {
                 put(NotesX5Contract.X5Category.ICALOBJECT_ID, id)
@@ -802,12 +704,6 @@ open class Notesx5ICalObject(
                 categoryContentValues
             )
         }
-
-        collection.client.delete(
-            NotesX5Contract.X5Comment.CONTENT_URI.asSyncAdapter(collection.account),
-            "${NotesX5Contract.X5Comment.ICALOBJECT_ID} = ?",
-            arrayOf(this.id.toString())
-        )
 
         this.comments.forEach {
             val commentContentValues = ContentValues().apply {
@@ -824,13 +720,6 @@ open class Notesx5ICalObject(
         }
 
 
-        collection.client.delete(
-            NotesX5Contract.X5Relatedto.CONTENT_URI.asSyncAdapter(collection.account),
-            "${NotesX5Contract.X5Relatedto.ICALOBJECT_ID} = ?",
-            arrayOf(this.id.toString())
-        )
-
-
         this.relatedTo.forEach {
             val relatedToContentValues = ContentValues().apply {
                 put(NotesX5Contract.X5Relatedto.ICALOBJECT_ID, id)
@@ -843,12 +732,6 @@ open class Notesx5ICalObject(
                 relatedToContentValues
             )
         }
-
-        collection.client.delete(
-            NotesX5Contract.X5Attendee.CONTENT_URI.asSyncAdapter(collection.account),
-            "${NotesX5Contract.X5Attendee.ICALOBJECT_ID} = ?",
-            arrayOf(this.id.toString())
-        )
 
         this.attendees.forEach {
             val attendeeContentValues = ContentValues().apply {
@@ -874,11 +757,8 @@ open class Notesx5ICalObject(
                 ), attendeeContentValues
             )
         }
-
-        return updateUri
-
-        //TODO("Not yet implemented")
     }
+
 
     fun delete(): Int {
         val uri = Uri.withAppendedPath(
