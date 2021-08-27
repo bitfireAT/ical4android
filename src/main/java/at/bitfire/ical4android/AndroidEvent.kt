@@ -161,6 +161,7 @@ abstract class AndroidEvent(
 
     /**
      * Reads event data from the calendar provider.
+     *
      * @param row values of an [Events] row, as returned by the calendar provider
      */
     @Suppress("UNUSED_VALUE")
@@ -666,6 +667,8 @@ abstract class AndroidEvent(
     /**
      * Deletes an existing event from the calendar storage.
      *
+     * @return number of affected rows
+     *
      * @throws RemoteException on calendar provider errors
      */
     fun delete(): Int {
@@ -891,7 +894,7 @@ abstract class AndroidEvent(
                 .newInsert(calendar.remindersSyncUri())
                 .withEventId(Reminders.EVENT_ID, idxEvent)
 
-        val method = when (alarm.action?.value?.toUpperCase(Locale.ROOT)) {
+        val method = when (alarm.action?.value?.uppercase(Locale.ROOT)) {
             Action.DISPLAY.value,
             Action.AUDIO.value -> Reminders.METHOD_ALERT
 

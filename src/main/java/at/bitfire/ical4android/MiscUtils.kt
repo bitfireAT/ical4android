@@ -13,10 +13,13 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.database.DatabaseUtils
 import android.os.Build
+import org.apache.commons.lang3.StringUtils
 import java.lang.reflect.Modifier
 import java.util.*
 
 object MiscUtils {
+
+    const val TOSTRING_MAXCHARS = 10000
 
     /**
      * Generates useful toString info (fields and values) from [obj] by reflection.
@@ -30,7 +33,12 @@ object MiscUtils {
         while (clazz != null) {
             for (prop in clazz.declaredFields.filterNot { Modifier.isStatic(it.modifiers) }) {
                 prop.isAccessible = true
-                s += "${prop.name}=" + prop.get(obj)?.toString()?.trim()
+                val valueStr = try {
+                    StringUtils.abbreviate(prop.get(obj)?.toString(), TOSTRING_MAXCHARS)
+                } catch(e: OutOfMemoryError) {
+                    "![" + e.toString() + "]"
+                }
+                s += "${prop.name}=" + valueStr
             }
             clazz = clazz.superclass
         }
