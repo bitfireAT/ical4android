@@ -315,13 +315,13 @@ open class Notesx5ICalObject(
                     is net.fortuna.ical4j.model.property.Comment ->
                         iCalObject.comments.add(Comment(text = prop.value))
 
-                    /*
                     is Attach -> {
                         val attachment = Attachment()
-                        attachment.value = prop.value
+                        //attachment.value = prop.value
                         attachment.uri = prop.uri.toString()
+                        iCalObject.attachments.add(attachment)
+                        //todo: get additional parameters
                     }
-                     */
 
                     is net.fortuna.ical4j.model.property.RelatedTo -> {
 
@@ -337,6 +337,7 @@ open class Notesx5ICalObject(
                             //todo: take care of other attributes for attendees
                         )
                     }
+
 
                     /*
                         is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */
@@ -450,6 +451,14 @@ open class Notesx5ICalObject(
                 //todo: take care of other attributes for attendees
             }
 
+            attachments.forEach {
+                props += Attach().apply {
+                    this.uri = URI(it.uri)
+                    //this.value = it.value
+                    // todo: take care of additional parameters
+                }
+            }
+
             relatedTo.forEach {
                 val param: Parameter =
                     when (it.reltype) {
@@ -558,7 +567,14 @@ open class Notesx5ICalObject(
             attendees.forEach {
                 props += net.fortuna.ical4j.model.property.Attendee(it.caladdress)
                 //todo: take care of other attributes for attendees
+            }
 
+            attachments.forEach {
+                props += Attach().apply {
+                    this.uri = URI(it.uri)
+                    //this.value = it.value
+                    // todo: take care of additional parameters
+                }
             }
 
             relatedTo.forEach {
@@ -689,6 +705,12 @@ open class Notesx5ICalObject(
                 "${NotesX5Contract.X5Attendee.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
+
+            collection.client.delete(
+                NotesX5Contract.X5Attachment.CONTENT_URI.asSyncAdapter(collection.account),
+                "${NotesX5Contract.X5Attachment.ICALOBJECT_ID} = ?",
+                arrayOf(this.id.toString())
+            )
         }
 
         this.categories.forEach {
@@ -757,6 +779,17 @@ open class Notesx5ICalObject(
                 ), attendeeContentValues
             )
         }
+
+        this.attachments.forEach {
+            val attachmentContentValues = ContentValues().apply {
+                put(NotesX5Contract.X5Attachment.ICALOBJECT_ID, id)
+                put(NotesX5Contract.X5Attachment.URI, it.uri)
+                put(NotesX5Contract.X5Attachment.VALUE, it.value)
+                put(NotesX5Contract.X5Attachment.FMTTYPE, it.fmttype)
+                put(NotesX5Contract.X5Attachment.OTHER, it.other)
+            }
+            collection.client.insert(NotesX5Contract.X5Attachment.CONTENT_URI.asSyncAdapter(collection.account), attachmentContentValues)
+        }
     }
 
 
@@ -800,6 +833,7 @@ open class Notesx5ICalObject(
         this.comments = newData.comments
         this.relatedTo = newData.relatedTo
         this.attendees = newData.attendees
+        this.attachments = newData.attachments
         // tODO: to be continued
     }
 
@@ -915,6 +949,25 @@ open class Notesx5ICalObject(
         }
 
         return attendeesValues
+    }
+
+    fun getAttachmentsContentValues(): List<ContentValues> {
+
+        val attachmentsUrl = NotesX5Contract.X5Attachment.CONTENT_URI.asSyncAdapter(collection.account)
+        val attachmentsValues: MutableList<ContentValues> = mutableListOf()
+        collection.client.query(
+            attachmentsUrl,
+            null,
+            "${NotesX5Contract.X5Attachment.ICALOBJECT_ID} = ?",
+            arrayOf(this.id.toString()),
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                attachmentsValues.add(cursor.toValues())
+            }
+        }
+
+        return attachmentsValues
     }
 
 
