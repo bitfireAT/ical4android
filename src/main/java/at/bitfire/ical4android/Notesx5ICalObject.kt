@@ -2,6 +2,7 @@ package at.bitfire.ical4android
 
 
 import android.content.ContentValues
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
@@ -12,13 +13,12 @@ import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Calendar
+import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.component.VJournal
 import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.parameter.RelType
 import net.fortuna.ical4j.model.property.*
-import java.io.IOException
-import java.io.OutputStream
-import java.io.Reader
+import java.io.*
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
@@ -269,18 +269,21 @@ open class Notesx5ICalObject(
                     is DtEnd -> Ical4Android.log.warning("The property DtEnd must not be used for VTODO and VJOURNAL, this value is rejected.")
                     is Completed -> {
                         if (iCalObject.component == X5ICalObject.Component.VTODO.name) {
-                            iCalObject.completed = prop.date.toInstant().toEpochMilli()
-                            prop.timeZone?.let { iCalObject.completedTimezone = it.toString() }
-                            //TODO: Check if this is right!
+                            iCalObject.completed = prop.date.time
+                            // TODO: Take care of Timezone!
+                            //prop.timeZone?.let { iCalObject.completedTimezone = it.toString() }
                         } else
                             Ical4Android.log.warning("The property Completed is only supported for VTODO, this value is rejected.")
                     }
 
                     is Due -> {
                         if (iCalObject.component == X5ICalObject.Component.VTODO.name) {
-                            iCalObject.due = prop.date.toInstant().toEpochMilli()
-                            prop.timeZone?.let { iCalObject.dueTimezone = it.toString() }
-                            //TODO: Check if this is right!
+                            iCalObject.due = prop.date.time
+                            if (prop.date is DateTime)
+                                Log.d("timezone", "Take care of timezone here")           // TODO: Take care of Timezone!
+                            else                                           // prop.date is Date (and not DateTime), therefore it must be Allday
+                                iCalObject.dueTimezone = "ALLDAY"
+                            //prop.timeZone?.let { iCalObject.dueTimezone = it.toString() }
                         } else
                             Ical4Android.log.warning("The property Due is only supported for VTODO, this value is rejected.")
                     }
@@ -289,11 +292,13 @@ open class Notesx5ICalObject(
 
                     is DtStart -> {
                         iCalObject.dtstart = prop.date.time
+                        if (prop.date is DateTime)
+                            Log.d("timezone", "Take care of timezone here")           // TODO: Take care of Timezone!
+                        else                                           // prop.date is Date (and not DateTime), therefore it must be Allday
+                            iCalObject.dtstartTimezone = "ALLDAY"
                         /* if(!prop.isUtc)
                             t.dtstartTimezone = prop.timeZone.displayName
-
                          */
-                        //TODO: Check if this is right!
                     }
 
                     is PercentComplete -> {
@@ -386,7 +391,7 @@ open class Notesx5ICalObject(
 
 
     @UsesThreadContextClassLoader
-    fun write(os: OutputStream) {
+    fun write(os: OutputStream, context: Context) {
         Ical4Android.checkThreadContextClassLoader()
 
         val ical = Calendar()
@@ -454,7 +459,10 @@ open class Notesx5ICalObject(
             attachments.forEach {
                 props += Attach().apply {
                     this.uri = URI(it.uri)
-                    //this.value = it.value
+                    //val file = context.contentResolver.openInputStream(Uri.parse(this.uri.toString()))
+                    //this.binary = IOUtils.toByteArray(file)
+                    //TODO: Find a solution to store the binary
+                //this.value = it.value
                     // todo: take care of additional parameters
                 }
             }
@@ -482,20 +490,34 @@ open class Notesx5ICalObject(
         duration?.let(props::add)
         */
             due?.let {
-                props += Due(DateTime(it))
+                props += if(dueTimezone == "ALLDAY")
+                    Due(Date(it))
+                else
+                    Due(DateTime(it))
+                //todo: Take care of Timezone
                 //it.timeZone?.let(usedTimeZones::add)
             }
 
             dtstart?.let {
-                props += DtStart(DateTime(it))
+                props += if(dtstartTimezone == "ALLDAY")
+                    DtStart(Date(it))
+                else
+                    DtStart(DateTime(it))
+                //todo: Take care of Timezone
                 //it.timeZone?.let(usedTimeZones::add)
             }
             dtend?.let {
-                props += DtEnd(DateTime(it))
+                props += if(dtendTimezone == "ALLDAY")
+                    DtEnd(Date(it))
+                else
+                    DtEnd(DateTime(it))
+                //todo: Take care of Timezone
                 //it.timeZone?.let(usedTimeZones::add)
             }
             completed?.let {
+                //Completed is defines as always DateTime!
                 props += Completed(DateTime(it))
+                //todo: Take care of Timezone
                 //it.timeZone?.let(usedTimeZones::add)
             }
             percent?.let { props += PercentComplete(it) }
@@ -572,6 +594,9 @@ open class Notesx5ICalObject(
             attachments.forEach {
                 props += Attach().apply {
                     this.uri = URI(it.uri)
+                    //val file = context.contentResolver.openInputStream(Uri.parse(this.uri.toString()))
+                    //this.binary = IOUtils.toByteArray(file)
+                    //TODO: Find a solution to store the binary
                     //this.value = it.value
                     // todo: take care of additional parameters
                 }
@@ -591,14 +616,13 @@ open class Notesx5ICalObject(
             }
 
             dtstart?.let {
-                props += DtStart(DateTime(it))
+                props += if(dtstartTimezone == "ALLDAY")
+                    DtStart(Date(it))
+                else
+                    DtStart(DateTime(it))
+                //todo: Take care of Timezone
                 //it.timeZone?.let(usedTimeZones::add)
             }
-            dtend?.let {
-                props += DtEnd(DateTime(it))
-                //it.timeZone?.let(usedTimeZones::add)
-            }
-
 
         }
 
