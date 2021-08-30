@@ -270,8 +270,6 @@ open class Notesx5ICalObject(
                     is Completed -> {
                         if (iCalObject.component == X5ICalObject.Component.VTODO.name) {
                             iCalObject.completed = prop.date.time
-                            // TODO: Take care of Timezone!
-                            //prop.timeZone?.let { iCalObject.completedTimezone = it.toString() }
                         } else
                             Ical4Android.log.warning("The property Completed is only supported for VTODO, this value is rejected.")
                     }
@@ -279,11 +277,11 @@ open class Notesx5ICalObject(
                     is Due -> {
                         if (iCalObject.component == X5ICalObject.Component.VTODO.name) {
                             iCalObject.due = prop.date.time
-                            if (prop.date is DateTime)
-                                Log.d("timezone", "Take care of timezone here")           // TODO: Take care of Timezone!
-                            else                                           // prop.date is Date (and not DateTime), therefore it must be Allday
-                                iCalObject.dueTimezone = "ALLDAY"
-                            //prop.timeZone?.let { iCalObject.dueTimezone = it.toString() }
+                            when {
+                                prop.date is DateTime && prop.timeZone != null -> iCalObject.dueTimezone = prop.timeZone.id
+                                prop.date is DateTime && prop.timeZone == null -> iCalObject.dueTimezone = null                   // this comparison is kept on purpose as "prop.date is Date" did not work as expected.
+                                else -> iCalObject.dueTimezone = "ALLDAY"     // prop.date is Date (and not DateTime), therefore it must be Allday
+                            }
                         } else
                             Ical4Android.log.warning("The property Due is only supported for VTODO, this value is rejected.")
                     }
@@ -292,10 +290,11 @@ open class Notesx5ICalObject(
 
                     is DtStart -> {
                         iCalObject.dtstart = prop.date.time
-                        if (prop.date is DateTime)
-                            Log.d("timezone", "Take care of timezone here")           // TODO: Take care of Timezone!
-                        else                                           // prop.date is Date (and not DateTime), therefore it must be Allday
-                            iCalObject.dtstartTimezone = "ALLDAY"
+                        when {
+                            prop.date is DateTime && prop.timeZone != null -> iCalObject.dtstartTimezone = prop.timeZone.id
+                            prop.date is DateTime && prop.timeZone == null -> iCalObject.dtstartTimezone = null                   // this comparison is kept on purpose as "prop.date is Date" did not work as expected.
+                            else -> iCalObject.dtstartTimezone = "ALLDAY"     // prop.date is Date (and not DateTime), therefore it must be Allday
+                        }
                         /* if(!prop.isUtc)
                             t.dtstartTimezone = prop.timeZone.displayName
                          */
@@ -490,35 +489,45 @@ open class Notesx5ICalObject(
         duration?.let(props::add)
         */
             due?.let {
-                props += if(dueTimezone == "ALLDAY")
-                    Due(Date(it))
-                else
-                    Due(DateTime(it))
-                //todo: Take care of Timezone
-                //it.timeZone?.let(usedTimeZones::add)
+                when {
+                    dueTimezone == "ALLDAY" -> props += Due(Date(it))
+                    dueTimezone.isNullOrEmpty() -> props += Due(DateTime(it))
+                    else -> {
+                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dueTimezone)
+                        val withTimezone = Due(DateTime(it))
+                        withTimezone.timeZone = timezone
+                        props += withTimezone
+                    }
+                }
             }
 
             dtstart?.let {
-                props += if(dtstartTimezone == "ALLDAY")
-                    DtStart(Date(it))
-                else
-                    DtStart(DateTime(it))
-                //todo: Take care of Timezone
-                //it.timeZone?.let(usedTimeZones::add)
+                when {
+                    dtstartTimezone == "ALLDAY" -> props += DtStart(Date(it))
+                    dtstartTimezone.isNullOrEmpty() -> props += DtStart(DateTime(it))
+                    else -> {
+                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dtstartTimezone)
+                        val withTimezone = DtStart(DateTime(it))
+                        withTimezone.timeZone = timezone
+                        props += withTimezone
+                    }
+                }
             }
             dtend?.let {
-                props += if(dtendTimezone == "ALLDAY")
-                    DtEnd(Date(it))
-                else
-                    DtEnd(DateTime(it))
-                //todo: Take care of Timezone
-                //it.timeZone?.let(usedTimeZones::add)
+                when {
+                    dtendTimezone == "ALLDAY" -> props += DtEnd(Date(it))
+                    dtendTimezone.isNullOrEmpty() -> props += DtEnd(DateTime(it))
+                    else -> {
+                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dtendTimezone)
+                        val withTimezone = DtEnd(DateTime(it))
+                        withTimezone.timeZone = timezone
+                        props += withTimezone
+                    }
+                }
             }
             completed?.let {
-                //Completed is defines as always DateTime!
+                //Completed is defines as always DateTime! And is always UTC!?
                 props += Completed(DateTime(it))
-                //todo: Take care of Timezone
-                //it.timeZone?.let(usedTimeZones::add)
             }
             percent?.let { props += PercentComplete(it) }
 
@@ -535,9 +544,8 @@ open class Notesx5ICalObject(
         // add VTIMEZONE components
         for (tz in usedTimeZones)
             ical.components += ICalendar.minifyVTimeZone(tz.vTimeZone, earliest)
-
-
  */
+
         } else if(component == X5ICalObject.Component.VJOURNAL.name) {
             val vJournal = VJournal(true /* generates DTSTAMP */)
             ical.components += vJournal
@@ -616,12 +624,16 @@ open class Notesx5ICalObject(
             }
 
             dtstart?.let {
-                props += if(dtstartTimezone == "ALLDAY")
-                    DtStart(Date(it))
-                else
-                    DtStart(DateTime(it))
-                //todo: Take care of Timezone
-                //it.timeZone?.let(usedTimeZones::add)
+                when {
+                    dtstartTimezone == "ALLDAY" -> props += DtStart(Date(it))
+                    dtstartTimezone.isNullOrEmpty() -> props += DtStart(DateTime(it))
+                    else -> {
+                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dtstartTimezone)
+                        val withTimezone = DtStart(DateTime(it))
+                        withTimezone.timeZone = timezone
+                        props += withTimezone
+                    }
+                }
             }
 
         }
