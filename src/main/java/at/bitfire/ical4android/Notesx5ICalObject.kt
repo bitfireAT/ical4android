@@ -4,6 +4,7 @@ package at.bitfire.ical4android
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
+import android.util.Base64
 import android.util.Log
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import at.bitfire.notesx5.NotesX5Contract
@@ -16,6 +17,7 @@ import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.component.VJournal
 import net.fortuna.ical4j.model.component.VToDo
+import net.fortuna.ical4j.model.parameter.FmtType
 import net.fortuna.ical4j.model.parameter.RelType
 import net.fortuna.ical4j.model.property.*
 import org.apache.commons.io.IOUtils
@@ -106,8 +108,7 @@ open class Notesx5ICalObject(
     data class Attachment(
         var attachmentId: Long = 0L,
         var uri: String? = null,
-        //var encoding: String? = null,
-        var value: String? = null,
+        var binary: String? = null,
         var fmttype: String? = null,
         var other: String? = null,
         var filename: String? = null,
@@ -322,10 +323,15 @@ open class Notesx5ICalObject(
 
                     is Attach -> {
                         val attachment = Attachment()
-                        //attachment.value = prop.value
-                        attachment.uri = prop.uri.toString()
-                        iCalObject.attachments.add(attachment)
-                        //todo: get additional parameters
+                        if (prop.uri != null)
+                            attachment.uri = prop.uri.toString()
+                        if (prop.binary != null)
+                            attachment.binary = Base64.encodeToString(prop.binary, Base64.DEFAULT)
+                        if (prop.parameters.getParameter<FmtType>(Parameter.FMTTYPE) != null)
+                            attachment.fmttype = prop.parameters.getParameter<FmtType>(Parameter.FMTTYPE).value
+
+                        if (attachment.uri?.isNotEmpty() == true || attachment.binary?.isNotEmpty() == true)   // either uri or value must be present!
+                            iCalObject.attachments.add(attachment)
                     }
 
                     is net.fortuna.ical4j.model.property.RelatedTo -> {
@@ -457,14 +463,12 @@ open class Notesx5ICalObject(
             }
 
             attachments.forEach {
-                props += Attach().apply {
-                    this.uri = URI(it.uri)
-                    //val file = context.contentResolver.openInputStream(Uri.parse(this.uri.toString()))
-                    //this.binary = IOUtils.toByteArray(file)
-                    //TODO: Find a solution to store the binary
-                //this.value = it.value
-                    // todo: take care of additional parameters
-                }
+                if(it.uri?.isNotEmpty() == true)
+                    context.contentResolver.openInputStream(Uri.parse(URI(it.uri).toString())).use { file ->
+                        val att = Attach(IOUtils.toByteArray(file))
+                        att.parameters.add(FmtType(it.fmttype))
+                        props += att
+                    }
             }
 
             relatedTo.forEach {
@@ -601,20 +605,12 @@ open class Notesx5ICalObject(
             }
 
             attachments.forEach {
-                /*
-                props += Attach().apply {
-                    this.uri = URI(it.uri)
-                    val file = context.contentResolver.openInputStream(Uri.parse(this.uri.toString()))
-                    this.binary = IOUtils.toByteArray(file)
-                    //TODO: Find a solution to store the binary
-                    //this.value = it.value
-                    // todo: take care of additional parameters
-                }
-
-                 */
-                context.contentResolver.openInputStream(Uri.parse(URI(it.uri).toString())).use { file ->
-                    props += Attach(IOUtils.toByteArray(file))
-                }
+                if(it.uri?.isNotEmpty() == true)
+                    context.contentResolver.openInputStream(Uri.parse(URI(it.uri).toString())).use { file ->
+                        val att = Attach(IOUtils.toByteArray(file))
+                        att.parameters.add(FmtType(it.fmttype))
+                        props += att
+                    }
             }
 
             relatedTo.forEach {
@@ -827,7 +823,7 @@ open class Notesx5ICalObject(
             val attachmentContentValues = ContentValues().apply {
                 put(NotesX5Contract.X5Attachment.ICALOBJECT_ID, id)
                 put(NotesX5Contract.X5Attachment.URI, it.uri)
-                put(NotesX5Contract.X5Attachment.VALUE, it.value)
+                put(NotesX5Contract.X5Attachment.BINARY, it.binary)
                 put(NotesX5Contract.X5Attachment.FMTTYPE, it.fmttype)
                 put(NotesX5Contract.X5Attachment.OTHER, it.other)
             }
