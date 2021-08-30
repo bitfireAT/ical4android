@@ -18,6 +18,7 @@ import net.fortuna.ical4j.model.component.VJournal
 import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.parameter.RelType
 import net.fortuna.ical4j.model.property.*
+import org.apache.commons.io.IOUtils
 import java.io.*
 import java.net.URI
 import java.net.URISyntaxException
@@ -600,13 +601,19 @@ open class Notesx5ICalObject(
             }
 
             attachments.forEach {
+                /*
                 props += Attach().apply {
                     this.uri = URI(it.uri)
-                    //val file = context.contentResolver.openInputStream(Uri.parse(this.uri.toString()))
-                    //this.binary = IOUtils.toByteArray(file)
+                    val file = context.contentResolver.openInputStream(Uri.parse(this.uri.toString()))
+                    this.binary = IOUtils.toByteArray(file)
                     //TODO: Find a solution to store the binary
                     //this.value = it.value
                     // todo: take care of additional parameters
+                }
+
+                 */
+                context.contentResolver.openInputStream(Uri.parse(URI(it.uri).toString())).use { file ->
+                    props += Attach(IOUtils.toByteArray(file))
                 }
             }
 
