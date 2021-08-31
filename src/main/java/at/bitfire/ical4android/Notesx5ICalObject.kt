@@ -323,12 +323,11 @@ open class Notesx5ICalObject(
 
                     is Attach -> {
                         val attachment = Attachment()
-                        if (prop.uri != null)
-                            attachment.uri = prop.uri.toString()
-                        if (prop.binary != null)
-                            attachment.binary = Base64.encodeToString(prop.binary, Base64.DEFAULT)
-                        if (prop.parameters.getParameter<FmtType>(Parameter.FMTTYPE) != null)
-                            attachment.fmttype = prop.parameters.getParameter<FmtType>(Parameter.FMTTYPE).value
+                        prop.uri?.let { attachment.uri = it.toString() }
+                        prop.binary?.let { attachment.binary = Base64.encodeToString(it, Base64.DEFAULT) }
+                        prop.parameters?.getParameter<FmtType>(Parameter.FMTTYPE)?.let {
+                            attachment.fmttype = it.value
+                        }
 
                         if (attachment.uri?.isNotEmpty() == true || attachment.binary?.isNotEmpty() == true)   // either uri or value must be present!
                             iCalObject.attachments.add(attachment)
