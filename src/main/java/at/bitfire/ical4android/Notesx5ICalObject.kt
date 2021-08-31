@@ -457,7 +457,7 @@ open class Notesx5ICalObject(
             }
 
             attendees.forEach {
-                props += net.fortuna.ical4j.model.property.Attendee(it.caladdress)
+                props += Attendee(it.caladdress)
                 //todo: take care of other attributes for attendees
             }
 
@@ -599,7 +599,7 @@ open class Notesx5ICalObject(
             }
 
             attendees.forEach {
-                props += net.fortuna.ical4j.model.property.Attendee(it.caladdress)
+                props += Attendee(it.caladdress)
                 //todo: take care of other attributes for attendees
             }
 
