@@ -25,7 +25,6 @@ import java.io.*
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
-import java.util.logging.Level
 
 
 open class Notesx5ICalObject(
@@ -97,7 +96,6 @@ open class Notesx5ICalObject(
     var relatedTo: MutableList<RelatedTo> = mutableListOf()
 
 
-
     data class Category(
         var categoryId: Long = 0L,
         var text: String = "",
@@ -116,7 +114,7 @@ open class Notesx5ICalObject(
         var filesize: Long? = null
     )
 
-    data class Comment (
+    data class Comment(
         var commentId: Long = 0L,
         var text: String = "",
         var altrep: String? = null,
@@ -157,29 +155,7 @@ open class Notesx5ICalObject(
 
         /**
          * Parses an iCalendar resource, applies [ICalPreprocessor] to increase compatibility
-         * and extracts the VTODOs.
-         *
-         * @param reader where the iCalendar is taken from
-         *
-         * @return array of filled [Task] data objects (may have size 0)
-         *
-         * @throws ParserException when the iCalendar can't be parsed
-         * @throws IllegalArgumentException when the iCalendar resource contains an invalid value
-         * @throws IOException on I/O errors
-         */
-        @UsesThreadContextClassLoader
-        fun tasksFromReader(
-            reader: Reader,
-            collection: Notesx5Collection<Notesx5ICalObject>
-        ): List<Notesx5ICalObject> {
-            val ical = ICalendar.fromReader(reader)
-            val vToDos = ical.getComponents<VToDo>(Component.VTODO)
-            return vToDos.mapTo(LinkedList()) { this.fromVToDo(collection, it) }
-        }
-
-        /**
-         * Parses an iCalendar resource, applies [ICalPreprocessor] to increase compatibility
-         * and extracts the VJOURNALs.
+         * and extracts the VTODOs and/or VJOURNALS.
          *
          * @param reader where the iCalendar is taken from
          *
@@ -190,61 +166,53 @@ open class Notesx5ICalObject(
          * @throws IOException on I/O errors
          */
         @UsesThreadContextClassLoader
-        fun journalsFromReader(
+        fun fromReader(
             reader: Reader,
             collection: Notesx5Collection<Notesx5ICalObject>
         ): List<Notesx5ICalObject> {
             val ical = ICalendar.fromReader(reader)
+            val vToDos = ical.getComponents<VToDo>(Component.VTODO)
             val vJournals = ical.getComponents<VJournal>(Component.VJOURNAL)
-            return vJournals.mapTo(LinkedList()) { this.fromVJournal(collection, it) }
-        }
 
+            val iCalObjectList = mutableListOf<Notesx5ICalObject>()
 
-        private fun fromVToDo(
-            collection: Notesx5Collection<Notesx5ICalObject>,
-            //component: X5ICalObject.Component,
-            todo: VToDo
-        ): Notesx5ICalObject {
+            // extract vToDos if available
+            vToDos.forEach {
+                val t = Notesx5ICalObject(collection)
+                t.component = X5ICalObject.Component.VTODO.name
 
-            val t = Notesx5ICalObject(collection)
-            t.component = X5ICalObject.Component.VTODO.name
+                if (it.uid != null)
+                    t.uid = it.uid.value
+                else {
+                    Ical4Android.log.warning("Received VTODO without UID, generating new one")
+                    t.uid = UUID.randomUUID().toString()
+                }
 
-            if (todo.uid != null)
-                t.uid = todo.uid.value
-            else {
-                Ical4Android.log.warning("Received VJOURNAL without UID, generating new one")
-                t.uid = UUID.randomUUID().toString()
+                extractProperties(t, it.properties)
+                iCalObjectList.add(t)
             }
 
-            processProperties(t, todo.properties)
+            // extract vJournals if available
+            vJournals.forEach {
+                val j = Notesx5ICalObject(collection)
+                j.component = X5ICalObject.Component.VJOURNAL.name
 
-            return t
-        }
+                if (it.uid != null)
+                    j.uid = it.uid.value
+                else {
+                    Ical4Android.log.warning("Received VJOURNAL without UID, generating new one")
+                    j.uid = UUID.randomUUID().toString()
+                }
 
-
-        private fun fromVJournal(
-            collection: Notesx5Collection<Notesx5ICalObject>,
-            //component: X5ICalObject.Component,
-            journal: VJournal
-        ): Notesx5ICalObject {
-
-            val j = Notesx5ICalObject(collection)
-
-            j.component = X5ICalObject.Component.VJOURNAL.name
-
-            if (journal.uid != null)
-                j.uid = journal.uid.value
-            else {
-                Ical4Android.log.warning("Received VJOURNAL without UID, generating new one")
-                j.uid = UUID.randomUUID().toString()
+                extractProperties(j, it.properties)
+                iCalObjectList.add(j)
             }
 
-            processProperties(j, journal.properties)
-
-            return j
+            return iCalObjectList
         }
 
-        private fun processProperties(iCalObject: Notesx5ICalObject, properties: PropertyList<*>) {
+
+        private fun extractProperties(iCalObject: Notesx5ICalObject, properties: PropertyList<*>) {
 
             // sequence must only be null for locally created, not-yet-synchronized events
             iCalObject.sequence = 0
@@ -280,9 +248,12 @@ open class Notesx5ICalObject(
                         if (iCalObject.component == X5ICalObject.Component.VTODO.name) {
                             iCalObject.due = prop.date.time
                             when {
-                                prop.date is DateTime && prop.timeZone != null -> iCalObject.dueTimezone = prop.timeZone.id
-                                prop.date is DateTime && prop.timeZone == null -> iCalObject.dueTimezone = null                   // this comparison is kept on purpose as "prop.date is Date" did not work as expected.
-                                else -> iCalObject.dueTimezone = "ALLDAY"     // prop.date is Date (and not DateTime), therefore it must be Allday
+                                prop.date is DateTime && prop.timeZone != null -> iCalObject.dueTimezone =
+                                    prop.timeZone.id
+                                prop.date is DateTime && prop.timeZone == null -> iCalObject.dueTimezone =
+                                    null                   // this comparison is kept on purpose as "prop.date is Date" did not work as expected.
+                                else -> iCalObject.dueTimezone =
+                                    "ALLDAY"     // prop.date is Date (and not DateTime), therefore it must be Allday
                             }
                         } else
                             Ical4Android.log.warning("The property Due is only supported for VTODO, this value is rejected.")
@@ -293,9 +264,12 @@ open class Notesx5ICalObject(
                     is DtStart -> {
                         iCalObject.dtstart = prop.date.time
                         when {
-                            prop.date is DateTime && prop.timeZone != null -> iCalObject.dtstartTimezone = prop.timeZone.id
-                            prop.date is DateTime && prop.timeZone == null -> iCalObject.dtstartTimezone = null                   // this comparison is kept on purpose as "prop.date is Date" did not work as expected.
-                            else -> iCalObject.dtstartTimezone = "ALLDAY"     // prop.date is Date (and not DateTime), therefore it must be Allday
+                            prop.date is DateTime && prop.timeZone != null -> iCalObject.dtstartTimezone =
+                                prop.timeZone.id
+                            prop.date is DateTime && prop.timeZone == null -> iCalObject.dtstartTimezone =
+                                null                   // this comparison is kept on purpose as "prop.date is Date" did not work as expected.
+                            else -> iCalObject.dtstartTimezone =
+                                "ALLDAY"     // prop.date is Date (and not DateTime), therefore it must be Allday
                         }
                         /* if(!prop.isUtc)
                             t.dtstartTimezone = prop.timeZone.displayName
@@ -324,7 +298,9 @@ open class Notesx5ICalObject(
                     is Attach -> {
                         val attachment = Attachment()
                         prop.uri?.let { attachment.uri = it.toString() }
-                        prop.binary?.let { attachment.binary = Base64.encodeToString(it, Base64.DEFAULT) }
+                        prop.binary?.let {
+                            attachment.binary = Base64.encodeToString(it, Base64.DEFAULT)
+                        }
                         prop.parameters?.getParameter<FmtType>(Parameter.FMTTYPE)?.let {
                             attachment.fmttype = it.value
                         }
@@ -403,126 +379,133 @@ open class Notesx5ICalObject(
         ical.properties += Version.VERSION_2_0
         ical.properties += ICalendar.prodId
 
-        if(component == X5ICalObject.Component.VTODO.name) {
+        if (component == X5ICalObject.Component.VTODO.name) {
             val vTodo = VToDo(true /* generates DTSTAMP */)
             ical.components += vTodo
             val props = vTodo.properties
+            addProperties(props, context)
+        } else if (component == X5ICalObject.Component.VJOURNAL.name) {
+            val vJournal = VJournal(true /* generates DTSTAMP */)
+            ical.components += vJournal
+            val props = vJournal.properties
+            addProperties(props, context)
+        }
 
-            uid.let { props += Uid(uid) }
-            sequence.let {
-                if (it != 0L)
-                    props += Sequence(it.toInt())
+
+        ICalendar.softValidate(ical)
+        CalendarOutputter(false).output(ical, os)
+
+    }
+
+
+    private fun addProperties(props: PropertyList<Property>, context: Context) {
+
+        uid.let { props += Uid(it) }
+        sequence.let { props += Sequence(it.toInt()) }
+
+        created.let { props += Created(DateTime(it)) }
+        lastModified.let { props += LastModified(DateTime(it)) }
+
+        summary?.let { props += Summary(it) }
+        description?.let { props += Description(it) }
+
+        location?.let { props += Location(it) }
+        if (geoLat != null && geoLong != null)
+            props += Geo(geoLat!!.toBigDecimal(), geoLong!!.toBigDecimal())
+        color?.let { props += Color(null, Css3Color.nearestMatch(it).name) }
+        url?.let {
+            try {
+                props += Url(URI(it))
+            } catch (e: URISyntaxException) {
+                Log.w("ical4j processing", "Ignoring invalid task URL: $url", e)
             }
+        }
+        //organizer?.let { props += it }
 
-            created.let { props += Created(DateTime(it)) }
-            lastModified.let { props += LastModified(DateTime(it)) }
 
-            summary?.let { props += Summary(it) }
-            description?.let { props += Description(it) }
+        classification.let { props += Clazz(it) }
+        status.let { props += Status(it) }
 
-            location?.let { props += Location(it) }
-            if(geoLat != null && geoLong != null)
-                props += Geo(geoLat!!.toBigDecimal(), geoLong!!.toBigDecimal())
-            color?.let { props += Color(null, Css3Color.nearestMatch(it).name) }
-            url?.let {
-                try {
-                    props += Url(URI(it))
-                } catch (e: URISyntaxException) {
-                    Ical4Android.log.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
-                }
-            }
-            //organizer?.let { props += it }
 
-            if (priority != Priority.UNDEFINED.level)
-                priority?.let { props += Priority(priority!!) }
+        val categoryTextList = TextList()
+        categories.forEach {
+            categoryTextList.add(it.text)
+        }
+        if (!categoryTextList.isEmpty)
+            props += Categories(categoryTextList)
 
-            classification?.let { props += Clazz(it) }
-            status?.let { props += Status(it) }
-/*
-        rRule?.let { props += it }
-        rDates.forEach { props += it }
-        exDates.forEach { props += it }
-*/
 
-            if (categories.isNotEmpty()) {
-                val textList = TextList()
-                categories.forEach {
-                    textList.add(it.text)
-                }
-                props += Categories(textList)
-            }
+        comments.forEach {
+            props += Comment(it.text)
+        }
 
-            comments.forEach {
-                props += Comment(it.text)
-            }
+        attendees.forEach {
+            props += Attendee(it.caladdress)
+            //todo: take care of other attributes for attendees
+        }
 
-            attendees.forEach {
-                props += Attendee(it.caladdress)
-                //todo: take care of other attributes for attendees
-            }
-
-            attachments.forEach {
-                if(it.uri?.isNotEmpty() == true)
-                    context.contentResolver.openInputStream(Uri.parse(URI(it.uri).toString())).use { file ->
+        attachments.forEach {
+            if (it.uri?.isNotEmpty() == true)
+                context.contentResolver.openInputStream(Uri.parse(URI(it.uri).toString()))
+                    .use { file ->
                         val att = Attach(IOUtils.toByteArray(file))
                         att.parameters.add(FmtType(it.fmttype))
                         props += att
                     }
-            }
+        }
 
-            relatedTo.forEach {
-                val param: Parameter =
-                    when (it.reltype) {
-                        RelType.CHILD.value -> RelType.CHILD
-                        RelType.SIBLING.value -> RelType.SIBLING
-                        RelType.PARENT.value -> RelType.PARENT
-                        else -> return@forEach
-                    }
-                val parameterList = ParameterList()
-                parameterList.add(param)
-                props += RelatedTo(parameterList, it.text)
-            }
+        relatedTo.forEach {
+            val param: Parameter =
+                when (it.reltype) {
+                    RelType.CHILD.value -> RelType.CHILD
+                    RelType.SIBLING.value -> RelType.SIBLING
+                    RelType.PARENT.value -> RelType.PARENT
+                    else -> return@forEach
+                }
+            val parameterList = ParameterList()
+            parameterList.add(param)
+            props += RelatedTo(parameterList, it.text)
+        }
 
 
-            /*
-        props.addAll(relatedTo)
-        props.addAll(unknownProperties)
+        /*
+    props.addAll(unknownProperties)
 
-        // remember used time zones
-        val usedTimeZones = HashSet<TimeZone>()
-        duration?.let(props::add)
-        */
-            due?.let {
-                when {
-                    dueTimezone == "ALLDAY" -> props += Due(Date(it))
-                    dueTimezone.isNullOrEmpty() -> props += Due(DateTime(it))
-                    else -> {
-                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dueTimezone)
-                        val withTimezone = Due(DateTime(it))
-                        withTimezone.timeZone = timezone
-                        props += withTimezone
-                    }
+    // remember used time zones
+    val usedTimeZones = HashSet<TimeZone>()
+    duration?.let(props::add)
+    */
+
+        /*
+    rRule?.let { props += it }
+    rDates.forEach { props += it }
+    exDates.forEach { props += it }
+*/
+
+
+        dtstart?.let {
+            when {
+                dtstartTimezone == "ALLDAY" -> props += DtStart(Date(it))
+                dtstartTimezone.isNullOrEmpty() -> props += DtStart(DateTime(it))
+                else -> {
+                    val timezone = TimeZoneRegistryFactory.getInstance().createRegistry()
+                        .getTimeZone(dtstartTimezone)
+                    val withTimezone = DtStart(DateTime(it))
+                    withTimezone.timeZone = timezone
+                    props += withTimezone
                 }
             }
+        }
 
-            dtstart?.let {
-                when {
-                    dtstartTimezone == "ALLDAY" -> props += DtStart(Date(it))
-                    dtstartTimezone.isNullOrEmpty() -> props += DtStart(DateTime(it))
-                    else -> {
-                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dtstartTimezone)
-                        val withTimezone = DtStart(DateTime(it))
-                        withTimezone.timeZone = timezone
-                        props += withTimezone
-                    }
-                }
-            }
+        // Attributes only for VTODOs
+        if (component == X5ICalObject.Component.VTODO.name) {
             dtend?.let {
                 when {
                     dtendTimezone == "ALLDAY" -> props += DtEnd(Date(it))
                     dtendTimezone.isNullOrEmpty() -> props += DtEnd(DateTime(it))
                     else -> {
-                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dtendTimezone)
+                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry()
+                            .getTimeZone(dtendTimezone)
                         val withTimezone = DtEnd(DateTime(it))
                         withTimezone.timeZone = timezone
                         props += withTimezone
@@ -535,114 +518,40 @@ open class Notesx5ICalObject(
             }
             percent?.let { props += PercentComplete(it) }
 
-            /*
-        if (alarms.isNotEmpty())
-            vTodo.alarms.addAll(alarms)
-
-        // determine earliest referenced date
-        val earliest = arrayOf(
-            dtStart?.date,
-            due?.date,
-            completedAt?.date
-        ).filterNotNull().min()
-        // add VTIMEZONE components
-        for (tz in usedTimeZones)
-            ical.components += ICalendar.minifyVTimeZone(tz.vTimeZone, earliest)
- */
-
-        } else if(component == X5ICalObject.Component.VJOURNAL.name) {
-            val vJournal = VJournal(true /* generates DTSTAMP */)
-            ical.components += vJournal
-            val props = vJournal.properties
-
-            uid.let { props += Uid(uid) }
-            sequence.let {
-                if (it != 0L)
-                    props += Sequence(it.toInt())
-            }
-
-            created.let { props += Created(DateTime(it)) }
-            lastModified.let { props += LastModified(DateTime(it)) }
-
-            summary?.let { props += Summary(it) }
-            description?.let { props += Description(it) }
-
-            location?.let { props += Location(it) }
-            if(geoLat != null && geoLong != null)
-                props += Geo(geoLat!!.toBigDecimal(), geoLong!!.toBigDecimal())
-            color?.let { props += Color(null, Css3Color.nearestMatch(it).name) }
-            url?.let {
-                try {
-                    props += Url(URI(it))
-                } catch (e: URISyntaxException) {
-                    Ical4Android.log.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
-                }
-            }
-            //organizer?.let { props += it }
 
             if (priority != Priority.UNDEFINED.level)
                 priority?.let { props += Priority(priority!!) }
 
-            classification?.let { props += Clazz(it) }
-            status?.let { props += Status(it) }
-
-            if (categories.isNotEmpty()) {
-                val textList = TextList()
-                categories.forEach {
-                    textList.add(it.text)
-                }
-                props += Categories(textList)
-            }
-
-            comments.forEach {
-                props += Comment(it.text)
-            }
-
-            attendees.forEach {
-                props += Attendee(it.caladdress)
-                //todo: take care of other attributes for attendees
-            }
-
-            attachments.forEach {
-                if(it.uri?.isNotEmpty() == true)
-                    context.contentResolver.openInputStream(Uri.parse(URI(it.uri).toString())).use { file ->
-                        val att = Attach(IOUtils.toByteArray(file))
-                        att.parameters.add(FmtType(it.fmttype))
-                        props += att
-                    }
-            }
-
-            relatedTo.forEach {
-                val param: Parameter =
-                    when (it.reltype) {
-                        RelType.CHILD.value -> RelType.CHILD
-                        RelType.SIBLING.value -> RelType.SIBLING
-                        RelType.PARENT.value -> RelType.PARENT
-                        else -> return@forEach
-                    }
-                val parameterList = ParameterList()
-                parameterList.add(param)
-                props += RelatedTo(parameterList, it.text)
-            }
-
-            dtstart?.let {
+            due?.let {
                 when {
-                    dtstartTimezone == "ALLDAY" -> props += DtStart(Date(it))
-                    dtstartTimezone.isNullOrEmpty() -> props += DtStart(DateTime(it))
+                    dueTimezone == "ALLDAY" -> props += Due(Date(it))
+                    dueTimezone.isNullOrEmpty() -> props += Due(DateTime(it))
                     else -> {
-                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dtstartTimezone)
-                        val withTimezone = DtStart(DateTime(it))
+                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry()
+                            .getTimeZone(dueTimezone)
+                        val withTimezone = Due(DateTime(it))
                         withTimezone.timeZone = timezone
                         props += withTimezone
                     }
                 }
             }
-
         }
 
+        /*
+    if (alarms.isNotEmpty())
+        vTodo.alarms.addAll(alarms)
 
-        ICalendar.softValidate(ical)
-        CalendarOutputter(false).output(ical, os)
+    // determine earliest referenced date
+    val earliest = arrayOf(
+        dtStart?.date,
+        due?.date,
+        completedAt?.date
+    ).filterNotNull().min()
+    // add VTIMEZONE components
+    for (tz in usedTimeZones)
+        ical.components += ICalendar.minifyVTimeZone(tz.vTimeZone, earliest)
+*/
+
 
     }
 
@@ -719,7 +628,7 @@ open class Notesx5ICalObject(
     fun insertOrUpdateListProperties(isUpdate: Boolean) {
 
         // delete the categories, attendees, ... and insert them again after. Only relevant for Update, for an insert there will be no entries
-        if(isUpdate) {
+        if (isUpdate) {
             collection.client.delete(
                 NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account),
                 "${NotesX5Contract.X5Category.ICALOBJECT_ID} = ?",
@@ -826,7 +735,11 @@ open class Notesx5ICalObject(
                 put(NotesX5Contract.X5Attachment.FMTTYPE, it.fmttype)
                 put(NotesX5Contract.X5Attachment.OTHER, it.other)
             }
-            collection.client.insert(NotesX5Contract.X5Attachment.CONTENT_URI.asSyncAdapter(collection.account), attachmentContentValues)
+            collection.client.insert(
+                NotesX5Contract.X5Attachment.CONTENT_URI.asSyncAdapter(
+                    collection.account
+                ), attachmentContentValues
+            )
         }
     }
 
@@ -991,7 +904,8 @@ open class Notesx5ICalObject(
 
     fun getAttachmentsContentValues(): List<ContentValues> {
 
-        val attachmentsUrl = NotesX5Contract.X5Attachment.CONTENT_URI.asSyncAdapter(collection.account)
+        val attachmentsUrl =
+            NotesX5Contract.X5Attachment.CONTENT_URI.asSyncAdapter(collection.account)
         val attachmentsValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             attachmentsUrl,
