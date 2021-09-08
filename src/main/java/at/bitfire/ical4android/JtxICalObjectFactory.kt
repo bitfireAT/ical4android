@@ -8,13 +8,10 @@
 
 package at.bitfire.ical4android
 
-import android.accounts.Account
-import android.content.ContentProviderClient
-
 import android.content.ContentValues
 
-interface Notesx5ICalObjectFactory<out T: Notesx5ICalObject> {
+interface JtxICalObjectFactory<out T: JtxICalObject> {
 
-    fun fromProvider(collection: Notesx5Collection<Notesx5ICalObject>, values: ContentValues): T
+    fun fromProvider(collection: Jtx5Collection<JtxICalObject>, values: ContentValues): T
 
 }

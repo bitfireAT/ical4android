@@ -1,12 +1,19 @@
-package at.bitfire.notesx5
+/*
+ * Copyright (c) Patrick Lang in collaboration with bitfire web engineering.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Public License v3.0
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/gpl.html
+ */
+
+package at.bitfire.jtx
 
 import android.accounts.Account
 import android.net.Uri
 import android.provider.BaseColumns
 
-
 @Suppress("unused")
-object NotesX5Contract {
+object SyncContentProviderContract {
 
     /**
      * URI parameter to signal that the caller is a sync adapter.
@@ -24,7 +31,7 @@ object NotesX5Contract {
     const val ACCOUNT_TYPE = "account_type"
 
     /** The authority under which the content provider can be accessed */
-    const val AUTHORITY = "at.bitfire.notesx5.provider"
+    const val AUTHORITY = "at.techbee.jtx.provider"
 
     /** The version of this SyncContentProviderContract */
     const val CONTRACT_VERSION = 1
@@ -37,8 +44,9 @@ object NotesX5Contract {
             .appendQueryParameter(ACCOUNT_TYPE, account.type)
             .build()
 
+
     @Suppress("unused")
-    object X5ICalObject {
+    object JtxICalObject {
 
         /** The name of the the content URI for IcalObjects.
          * This is a general purpose table containing general columns
@@ -275,7 +283,7 @@ object NotesX5Contract {
         const val COLOR = "color"
 
         /**
-         * Purpose:  This column is the foreign key to the [X5Collection].
+         * Purpose:  This column is the foreign key to the [JtxCollection].
          * Type: [Long]
          */
         const val ICALOBJECT_COLLECTIONID = "collectionId"
@@ -318,27 +326,28 @@ object NotesX5Contract {
 
 
 
-        /** This enum class defines the possible values for the attribute status of an [X5ICalObject] for Journals/Notes */
+
+        /** This enum class defines the possible values for the attribute status of an [JtxICalObject] for Journals/Notes */
         enum class StatusJournal {
             DRAFT, FINAL, CANCELLED
         }
 
-        /** This enum class defines the possible values for the attribute status of an [X5ICalObject] for Todos */
+        /** This enum class defines the possible values for the attribute status of an [JtxICalObject] for Todos */
         enum class StatusTodo {
             `NEEDS-ACTION`, COMPLETED, `IN-PROCESS`, CANCELLED
         }
 
-        /** This enum class defines the possible values for the attribute classification of an [X5ICalObject]  */
+        /** This enum class defines the possible values for the attribute classification of an [JtxICalObject]  */
         enum class Classification {
             PUBLIC, PRIVATE, CONFIDENTIAL
         }
 
-        /** This enum class defines the possible values for the attribute component of an [X5ICalObject]  */
+        /** This enum class defines the possible values for the attribute component of an [JtxICalObject]  */
         enum class Component {
             VJOURNAL, VTODO
         }
 
-        /** This enum class defines the possible values for the attribute module of an [X5ICalObject]  */
+        /** This enum class defines the possible values for the attribute module of an [JtxICalObject]  */
         enum class Module {
             JOURNAL, NOTE, TODO
         }
@@ -348,7 +357,7 @@ object NotesX5Contract {
 
 
     @Suppress("unused")
-    object X5Attendee {
+    object JtxAttendee {
 
         /** The name of the the table for Attendees that are linked to an ICalObject.
          *  [https://tools.ietf.org/html/rfc5545#section-3.8.4.1] */
@@ -467,12 +476,12 @@ object NotesX5Contract {
         const val OTHER = "other"
 
 
-        /** This enum class defines the possible values for the attribute Cutype of an [X5Attendee]  */
+        /** This enum class defines the possible values for the attribute Cutype of an [JtxAttendee]  */
         enum class Cutype {
             INDIVIDUAL, GROUP, RESOURCE, ROOM, UNKNOWN
         }
 
-        /** This enum class defines the possible values for the attribute Role of an [X5Attendee]  */
+        /** This enum class defines the possible values for the attribute Role of an [JtxAttendee]  */
         enum class Role {
             CHAIR, `REQ-PARTICIPANT`, `OPT-PARTICIPANT`, `NON-PARTICIPANT`
         }
@@ -481,7 +490,7 @@ object NotesX5Contract {
     }
 
     @Suppress("unused")
-    object X5Category {
+    object JtxCategory {
 
         /** The name of the the table for Categories that are linked to an ICalObject.
          * [https://tools.ietf.org/html/rfc5545#section-3.8.1.2]*/
@@ -525,7 +534,7 @@ object NotesX5Contract {
     }
 
     @Suppress("unused")
-    object X5Comment {
+    object JtxComment {
 
         /** The name of the the table for Comments that are linked to an ICalObject.
          * [https://tools.ietf.org/html/rfc5545#section-3.8.1.4]*/
@@ -576,7 +585,7 @@ object NotesX5Contract {
     }
 
     @Suppress("unused")
-    object X5Contact {
+    object JtxContact {
 
         /** The name of the the table for Contact that are linked to an ICalObject.
          * [https://tools.ietf.org/html/rfc5545#section-3.8.4.2]
@@ -628,7 +637,7 @@ object NotesX5Contract {
     }
 
     @Suppress("unused")
-    object X5Organizer {
+    object JtxOrganizer {
         /** The name of the the table for Organizer that are linked to an ICalObject.
          * [https://tools.ietf.org/html/rfc5545#section-3.8.4.3]
          */
@@ -695,7 +704,7 @@ object NotesX5Contract {
     }
 
     @Suppress("unused")
-    object X5Relatedto {
+    object JtxRelatedto {
 
         /** The name of the the table for Relationships (related-to) that are linked to an ICalObject.
          * [https://tools.ietf.org/html/rfc5545#section-3.8.4.5]
@@ -747,7 +756,7 @@ object NotesX5Contract {
         const val OTHER = "other"
 
 
-        /** This enum class defines the possible values for the attribute Reltype of an [X5Relatedto]  */
+        /** This enum class defines the possible values for the attribute Reltype of an [JtxRelatedto]  */
         enum class Reltype {
             PARENT, CHILD, SIBLING
         }
@@ -755,7 +764,7 @@ object NotesX5Contract {
     }
 
     @Suppress("unused")
-    object X5Resource {
+    object JtxResource {
         /** The name of the the table for Resources that are linked to an ICalObject.
          * [https://tools.ietf.org/html/rfc5545#section-3.8.1.10]*/
         private const val CONTENT_URI_PATH = "resource"
@@ -799,7 +808,7 @@ object NotesX5Contract {
     }
 
     @Suppress("unused")
-    object X5Collection {
+    object JtxCollection {
 
         /** The name of the the table for Collections
          * ICalObjects MUST be linked to a collection! */
@@ -896,7 +905,7 @@ object NotesX5Contract {
 
 
     @Suppress("unused")
-    object X5Attachment {
+    object JtxAttachment {
 
         /** The name of the the table for Attachments that are linked to an ICalObject.*/
         private const val CONTENT_URI_PATH = "attachment"
@@ -946,7 +955,4 @@ object NotesX5Contract {
 
     }
 }
-
-
-
 

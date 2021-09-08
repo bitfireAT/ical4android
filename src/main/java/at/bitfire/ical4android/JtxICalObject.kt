@@ -7,9 +7,8 @@ import android.net.Uri
 import android.util.Base64
 import android.util.Log
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
-import at.bitfire.notesx5.NotesX5Contract
-import at.bitfire.notesx5.NotesX5Contract.X5ICalObject
-import at.bitfire.notesx5.NotesX5Contract.asSyncAdapter
+import at.bitfire.jtx.SyncContentProviderContract
+import at.bitfire.jtx.SyncContentProviderContract.asSyncAdapter
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
@@ -27,8 +26,8 @@ import java.net.URISyntaxException
 import java.util.*
 
 
-open class Notesx5ICalObject(
-    val collection: Notesx5Collection<Notesx5ICalObject>
+open class JtxICalObject(
+    val collection: Jtx5Collection<JtxICalObject>
     //component: X5ICalObject.Component
 ) {
 
@@ -41,7 +40,6 @@ open class Notesx5ICalObject(
     var dtend: Long? = null
     var dtendTimezone: String? = null
 
-    //var classification: X5ICalObject.Classification = X5ICalObject.Classification.PUBLIC    // 0 = PUBLIC, 1 = PRIVATE, 2 = CONFIDENTIAL, -1 = NOT SUPPORTED (value in classificationX)
     var classification: String? = null
     var status: String? = null
 
@@ -61,7 +59,7 @@ open class Notesx5ICalObject(
     var location: String? = null
 
     var uid: String =
-        "${System.currentTimeMillis()}-${UUID.randomUUID()}@at.bitfire.notesx5"                              //unique identifier, see https://tools.ietf.org/html/rfc5545#section-3.8.4.7
+        "${System.currentTimeMillis()}-${UUID.randomUUID()}@at.techbee.jtx"                              //unique identifier, see https://tools.ietf.org/html/rfc5545#section-3.8.4.7
 
     var created: Long =
         System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.1
@@ -135,9 +133,9 @@ open class Notesx5ICalObject(
         var attendeeId: Long = 0L,
         //var icalObjectId: Long = 0L,
         var caladdress: String = "",
-        var cutype: String? = NotesX5Contract.X5Attendee.Cutype.INDIVIDUAL.name,
+        var cutype: String? = SyncContentProviderContract.JtxAttendee.Cutype.INDIVIDUAL.name,
         var member: String? = null,
-        var role: String? = NotesX5Contract.X5Attendee.Role.`REQ-PARTICIPANT`.name,
+        var role: String? = SyncContentProviderContract.JtxAttendee.Role.`REQ-PARTICIPANT`.name,
         var partstat: String? = null,
         var rsvp: Boolean? = null,
         var delegatedto: String? = null,
@@ -159,7 +157,7 @@ open class Notesx5ICalObject(
          *
          * @param reader where the iCalendar is taken from
          *
-         * @return array of filled [Notesx5ICalObject] data objects (may have size 0)
+         * @return array of filled [JtxICalObject] data objects (may have size 0)
          *
          * @throws ParserException when the iCalendar can't be parsed
          * @throws IllegalArgumentException when the iCalendar resource contains an invalid value
@@ -168,18 +166,18 @@ open class Notesx5ICalObject(
         @UsesThreadContextClassLoader
         fun fromReader(
             reader: Reader,
-            collection: Notesx5Collection<Notesx5ICalObject>
-        ): List<Notesx5ICalObject> {
+            collection: Jtx5Collection<JtxICalObject>
+        ): List<JtxICalObject> {
             val ical = ICalendar.fromReader(reader)
             val vToDos = ical.getComponents<VToDo>(Component.VTODO)
             val vJournals = ical.getComponents<VJournal>(Component.VJOURNAL)
 
-            val iCalObjectList = mutableListOf<Notesx5ICalObject>()
+            val iCalObjectList = mutableListOf<JtxICalObject>()
 
             // extract vToDos if available
             vToDos.forEach {
-                val t = Notesx5ICalObject(collection)
-                t.component = X5ICalObject.Component.VTODO.name
+                val t = JtxICalObject(collection)
+                t.component = SyncContentProviderContract.JtxICalObject.Component.VTODO.name
 
                 if (it.uid != null)
                     t.uid = it.uid.value
@@ -194,8 +192,8 @@ open class Notesx5ICalObject(
 
             // extract vJournals if available
             vJournals.forEach {
-                val j = Notesx5ICalObject(collection)
-                j.component = X5ICalObject.Component.VJOURNAL.name
+                val j = JtxICalObject(collection)
+                j.component = SyncContentProviderContract.JtxICalObject.Component.VJOURNAL.name
 
                 if (it.uid != null)
                     j.uid = it.uid.value
@@ -212,7 +210,7 @@ open class Notesx5ICalObject(
         }
 
 
-        private fun extractProperties(iCalObject: Notesx5ICalObject, properties: PropertyList<*>) {
+        private fun extractProperties(iCalObject: JtxICalObject, properties: PropertyList<*>) {
 
             // sequence must only be null for locally created, not-yet-synchronized events
             iCalObject.sequence = 0
@@ -238,14 +236,14 @@ open class Notesx5ICalObject(
                     is Status -> iCalObject.status = prop.value
                     is DtEnd -> Ical4Android.log.warning("The property DtEnd must not be used for VTODO and VJOURNAL, this value is rejected.")
                     is Completed -> {
-                        if (iCalObject.component == X5ICalObject.Component.VTODO.name) {
+                        if (iCalObject.component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name) {
                             iCalObject.completed = prop.date.time
                         } else
                             Ical4Android.log.warning("The property Completed is only supported for VTODO, this value is rejected.")
                     }
 
                     is Due -> {
-                        if (iCalObject.component == X5ICalObject.Component.VTODO.name) {
+                        if (iCalObject.component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name) {
                             iCalObject.due = prop.date.time
                             when {
                                 prop.date is DateTime && prop.timeZone != null -> iCalObject.dueTimezone =
@@ -277,7 +275,7 @@ open class Notesx5ICalObject(
                     }
 
                     is PercentComplete -> {
-                        if (iCalObject.component == X5ICalObject.Component.VTODO.name)
+                        if (iCalObject.component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name)
                             iCalObject.percent = prop.percentage
                         else
                             Ical4Android.log.warning("The property PercentComplete is only supported for VTODO, this value is rejected.")
@@ -379,12 +377,12 @@ open class Notesx5ICalObject(
         ical.properties += Version.VERSION_2_0
         ical.properties += ICalendar.prodId
 
-        if (component == X5ICalObject.Component.VTODO.name) {
+        if (component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name) {
             val vTodo = VToDo(true /* generates DTSTAMP */)
             ical.components += vTodo
             val props = vTodo.properties
             addProperties(props, context)
-        } else if (component == X5ICalObject.Component.VJOURNAL.name) {
+        } else if (component == SyncContentProviderContract.JtxICalObject.Component.VJOURNAL.name) {
             val vJournal = VJournal(true /* generates DTSTAMP */)
             ical.components += vJournal
             val props = vJournal.properties
@@ -498,7 +496,7 @@ open class Notesx5ICalObject(
         }
 
         // Attributes only for VTODOs
-        if (component == X5ICalObject.Component.VTODO.name) {
+        if (component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name) {
             dtend?.let {
                 when {
                     dtendTimezone == "ALLDAY" -> props += DtEnd(Date(it))
@@ -562,25 +560,25 @@ open class Notesx5ICalObject(
 
     fun clearDirty(fileName: String?, eTag: String?, scheduleTag: String?) {
 
-        var updateUri = X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account)
+        var updateUri = SyncContentProviderContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account)
         updateUri = Uri.withAppendedPath(updateUri, this.id.toString())
 
         val values = ContentValues()
-        fileName?.let { values.put(X5ICalObject.FILENAME, fileName) }
-        eTag?.let { values.put(X5ICalObject.ETAG, eTag) }
-        scheduleTag?.let { values.put(X5ICalObject.SCHEDULETAG, scheduleTag) }
-        values.put(X5ICalObject.DIRTY, false)
+        fileName?.let { values.put(SyncContentProviderContract.JtxICalObject.FILENAME, fileName) }
+        eTag?.let { values.put(SyncContentProviderContract.JtxICalObject.ETAG, eTag) }
+        scheduleTag?.let { values.put(SyncContentProviderContract.JtxICalObject.SCHEDULETAG, scheduleTag) }
+        values.put(SyncContentProviderContract.JtxICalObject.DIRTY, false)
 
         collection.client.update(updateUri, values, null, null)
     }
 
     fun updateFlags(flags: Int) {
 
-        var updateUri = X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account)
+        var updateUri = SyncContentProviderContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account)
         updateUri = Uri.withAppendedPath(updateUri, this.id.toString())
 
         val values = ContentValues()
-        values.put(X5ICalObject.FLAGS, flags)
+        values.put(SyncContentProviderContract.JtxICalObject.FLAGS, flags)
 
         collection.client.update(updateUri, values, null, null)
     }
@@ -591,7 +589,7 @@ open class Notesx5ICalObject(
 
         Log.d("Calling add", "Lets see what happens")
         val newUri = collection.client.insert(
-            X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account),
+            SyncContentProviderContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account),
             values
         ) ?: return Uri.EMPTY
         this.id = newUri.lastPathSegment?.toLong() ?: return Uri.EMPTY
@@ -603,17 +601,17 @@ open class Notesx5ICalObject(
 
     }
 
-    fun update(data: Notesx5ICalObject): Uri {
+    fun update(data: JtxICalObject): Uri {
 
         this.applyNewData(data)
         val values = this.toContentValues()
 
-        var updateUri = X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account)
+        var updateUri = SyncContentProviderContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account)
         updateUri = Uri.withAppendedPath(updateUri, this.id.toString())
         collection.client.update(
             updateUri,
             values,
-            "${X5ICalObject.ID} = ?",
+            "${SyncContentProviderContract.JtxICalObject.ID} = ?",
             arrayOf(this.id.toString())
         )
 
@@ -630,60 +628,60 @@ open class Notesx5ICalObject(
         // delete the categories, attendees, ... and insert them again after. Only relevant for Update, for an insert there will be no entries
         if (isUpdate) {
             collection.client.delete(
-                NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account),
-                "${NotesX5Contract.X5Category.ICALOBJECT_ID} = ?",
+                SyncContentProviderContract.JtxCategory.CONTENT_URI.asSyncAdapter(collection.account),
+                "${SyncContentProviderContract.JtxCategory.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
 
             collection.client.delete(
-                NotesX5Contract.X5Comment.CONTENT_URI.asSyncAdapter(collection.account),
-                "${NotesX5Contract.X5Comment.ICALOBJECT_ID} = ?",
+                SyncContentProviderContract.JtxComment.CONTENT_URI.asSyncAdapter(collection.account),
+                "${SyncContentProviderContract.JtxComment.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
 
             collection.client.delete(
-                NotesX5Contract.X5Relatedto.CONTENT_URI.asSyncAdapter(collection.account),
-                "${NotesX5Contract.X5Relatedto.ICALOBJECT_ID} = ?",
+                SyncContentProviderContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(collection.account),
+                "${SyncContentProviderContract.JtxRelatedto.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
 
             collection.client.delete(
-                NotesX5Contract.X5Attendee.CONTENT_URI.asSyncAdapter(collection.account),
-                "${NotesX5Contract.X5Attendee.ICALOBJECT_ID} = ?",
+                SyncContentProviderContract.JtxAttendee.CONTENT_URI.asSyncAdapter(collection.account),
+                "${SyncContentProviderContract.JtxAttendee.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
 
             collection.client.delete(
-                NotesX5Contract.X5Attachment.CONTENT_URI.asSyncAdapter(collection.account),
-                "${NotesX5Contract.X5Attachment.ICALOBJECT_ID} = ?",
+                SyncContentProviderContract.JtxAttachment.CONTENT_URI.asSyncAdapter(collection.account),
+                "${SyncContentProviderContract.JtxAttachment.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
         }
 
         this.categories.forEach {
             val categoryContentValues = ContentValues().apply {
-                put(NotesX5Contract.X5Category.ICALOBJECT_ID, id)
-                put(NotesX5Contract.X5Category.TEXT, it.text)
-                put(NotesX5Contract.X5Category.ID, it.categoryId)
-                put(NotesX5Contract.X5Category.LANGUAGE, it.language)
-                put(NotesX5Contract.X5Category.OTHER, it.other)
+                put(SyncContentProviderContract.JtxCategory.ICALOBJECT_ID, id)
+                put(SyncContentProviderContract.JtxCategory.TEXT, it.text)
+                put(SyncContentProviderContract.JtxCategory.ID, it.categoryId)
+                put(SyncContentProviderContract.JtxCategory.LANGUAGE, it.language)
+                put(SyncContentProviderContract.JtxCategory.OTHER, it.other)
             }
             collection.client.insert(
-                NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account),
+                SyncContentProviderContract.JtxCategory.CONTENT_URI.asSyncAdapter(collection.account),
                 categoryContentValues
             )
         }
 
         this.comments.forEach {
             val commentContentValues = ContentValues().apply {
-                put(NotesX5Contract.X5Comment.ICALOBJECT_ID, id)
-                put(NotesX5Contract.X5Comment.TEXT, it.text)
-                put(NotesX5Contract.X5Comment.ID, it.commentId)
-                put(NotesX5Contract.X5Comment.LANGUAGE, it.language)
-                put(NotesX5Contract.X5Comment.OTHER, it.other)
+                put(SyncContentProviderContract.JtxComment.ICALOBJECT_ID, id)
+                put(SyncContentProviderContract.JtxComment.TEXT, it.text)
+                put(SyncContentProviderContract.JtxComment.ID, it.commentId)
+                put(SyncContentProviderContract.JtxComment.LANGUAGE, it.language)
+                put(SyncContentProviderContract.JtxComment.OTHER, it.other)
             }
             collection.client.insert(
-                NotesX5Contract.X5Comment.CONTENT_URI.asSyncAdapter(collection.account),
+                SyncContentProviderContract.JtxComment.CONTENT_URI.asSyncAdapter(collection.account),
                 commentContentValues
             )
         }
@@ -691,37 +689,37 @@ open class Notesx5ICalObject(
 
         this.relatedTo.forEach {
             val relatedToContentValues = ContentValues().apply {
-                put(NotesX5Contract.X5Relatedto.ICALOBJECT_ID, id)
-                put(NotesX5Contract.X5Relatedto.TEXT, it.text)
-                put(NotesX5Contract.X5Relatedto.RELTYPE, it.reltype)
-                put(NotesX5Contract.X5Relatedto.OTHER, it.other)
+                put(SyncContentProviderContract.JtxRelatedto.ICALOBJECT_ID, id)
+                put(SyncContentProviderContract.JtxRelatedto.TEXT, it.text)
+                put(SyncContentProviderContract.JtxRelatedto.RELTYPE, it.reltype)
+                put(SyncContentProviderContract.JtxRelatedto.OTHER, it.other)
             }
             collection.client.insert(
-                NotesX5Contract.X5Relatedto.CONTENT_URI.asSyncAdapter(collection.account),
+                SyncContentProviderContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(collection.account),
                 relatedToContentValues
             )
         }
 
         this.attendees.forEach {
             val attendeeContentValues = ContentValues().apply {
-                put(NotesX5Contract.X5Attendee.ICALOBJECT_ID, id)
-                put(NotesX5Contract.X5Attendee.CALADDRESS, it.caladdress)
+                put(SyncContentProviderContract.JtxAttendee.ICALOBJECT_ID, id)
+                put(SyncContentProviderContract.JtxAttendee.CALADDRESS, it.caladdress)
 
-                put(NotesX5Contract.X5Attendee.CN, it.cn)
-                put(NotesX5Contract.X5Attendee.CUTYPE, it.cutype)
-                put(NotesX5Contract.X5Attendee.DELEGATEDFROM, it.delegatedfrom)
-                put(NotesX5Contract.X5Attendee.DELEGATEDTO, it.delegatedto)
-                put(NotesX5Contract.X5Attendee.DIR, it.dir)
-                put(NotesX5Contract.X5Attendee.LANGUAGE, it.language)
-                put(NotesX5Contract.X5Attendee.MEMBER, it.member)
-                put(NotesX5Contract.X5Attendee.PARTSTAT, it.partstat)
-                put(NotesX5Contract.X5Attendee.ROLE, it.role)
-                put(NotesX5Contract.X5Attendee.RSVP, it.rsvp)
-                put(NotesX5Contract.X5Attendee.SENTBY, it.sentby)
-                put(NotesX5Contract.X5Attendee.OTHER, it.other)
+                put(SyncContentProviderContract.JtxAttendee.CN, it.cn)
+                put(SyncContentProviderContract.JtxAttendee.CUTYPE, it.cutype)
+                put(SyncContentProviderContract.JtxAttendee.DELEGATEDFROM, it.delegatedfrom)
+                put(SyncContentProviderContract.JtxAttendee.DELEGATEDTO, it.delegatedto)
+                put(SyncContentProviderContract.JtxAttendee.DIR, it.dir)
+                put(SyncContentProviderContract.JtxAttendee.LANGUAGE, it.language)
+                put(SyncContentProviderContract.JtxAttendee.MEMBER, it.member)
+                put(SyncContentProviderContract.JtxAttendee.PARTSTAT, it.partstat)
+                put(SyncContentProviderContract.JtxAttendee.ROLE, it.role)
+                put(SyncContentProviderContract.JtxAttendee.RSVP, it.rsvp)
+                put(SyncContentProviderContract.JtxAttendee.SENTBY, it.sentby)
+                put(SyncContentProviderContract.JtxAttendee.OTHER, it.other)
             }
             collection.client.insert(
-                NotesX5Contract.X5Attendee.CONTENT_URI.asSyncAdapter(
+                SyncContentProviderContract.JtxAttendee.CONTENT_URI.asSyncAdapter(
                     collection.account
                 ), attendeeContentValues
             )
@@ -729,14 +727,14 @@ open class Notesx5ICalObject(
 
         this.attachments.forEach {
             val attachmentContentValues = ContentValues().apply {
-                put(NotesX5Contract.X5Attachment.ICALOBJECT_ID, id)
-                put(NotesX5Contract.X5Attachment.URI, it.uri)
-                put(NotesX5Contract.X5Attachment.BINARY, it.binary)
-                put(NotesX5Contract.X5Attachment.FMTTYPE, it.fmttype)
-                put(NotesX5Contract.X5Attachment.OTHER, it.other)
+                put(SyncContentProviderContract.JtxAttachment.ICALOBJECT_ID, id)
+                put(SyncContentProviderContract.JtxAttachment.URI, it.uri)
+                put(SyncContentProviderContract.JtxAttachment.BINARY, it.binary)
+                put(SyncContentProviderContract.JtxAttachment.FMTTYPE, it.fmttype)
+                put(SyncContentProviderContract.JtxAttachment.OTHER, it.other)
             }
             collection.client.insert(
-                NotesX5Contract.X5Attachment.CONTENT_URI.asSyncAdapter(
+                SyncContentProviderContract.JtxAttachment.CONTENT_URI.asSyncAdapter(
                     collection.account
                 ), attachmentContentValues
             )
@@ -746,14 +744,14 @@ open class Notesx5ICalObject(
 
     fun delete(): Int {
         val uri = Uri.withAppendedPath(
-            X5ICalObject.CONTENT_URI.asSyncAdapter(collection.account),
+            SyncContentProviderContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account),
             id.toString()
         )
         return collection.client.delete(uri, null, null)
     }
 
 
-    fun applyNewData(newData: Notesx5ICalObject) {
+    fun applyNewData(newData: JtxICalObject) {
 
         this.component = newData.component
         this.sequence = newData.sequence
@@ -791,35 +789,35 @@ open class Notesx5ICalObject(
     fun toContentValues(): ContentValues {
 
         val values = ContentValues()
-        values.put(X5ICalObject.ID, id)
-        values.put(X5ICalObject.SUMMARY, summary)
-        values.put(X5ICalObject.DESCRIPTION, description)
-        values.put(X5ICalObject.COMPONENT, component)
+        values.put(SyncContentProviderContract.JtxICalObject.ID, id)
+        values.put(SyncContentProviderContract.JtxICalObject.SUMMARY, summary)
+        values.put(SyncContentProviderContract.JtxICalObject.DESCRIPTION, description)
+        values.put(SyncContentProviderContract.JtxICalObject.COMPONENT, component)
         if (status?.isNotBlank() == true)
-            values.put(X5ICalObject.STATUS, status)
+            values.put(SyncContentProviderContract.JtxICalObject.STATUS, status)
         if (classification?.isNotBlank() == true)
-            values.put(X5ICalObject.CLASSIFICATION, classification)
-        values.put(X5ICalObject.PRIORITY, priority)
-        values.put(X5ICalObject.ICALOBJECT_COLLECTIONID, collectionId)
-        values.put(X5ICalObject.UID, uid)
-        values.put(X5ICalObject.GEO_LAT, geoLat)
-        values.put(X5ICalObject.GEO_LONG, geoLong)
-        values.put(X5ICalObject.LOCATION, location)
-        values.put(X5ICalObject.PERCENT, percent)
-        values.put(X5ICalObject.DTSTAMP, dtstamp)
-        values.put(X5ICalObject.DTSTART, dtstart)
-        values.put(X5ICalObject.DTSTART_TIMEZONE, dtstartTimezone)
-        values.put(X5ICalObject.DTEND, dtend)
-        values.put(X5ICalObject.DTEND_TIMEZONE, dtendTimezone)
-        values.put(X5ICalObject.COMPLETED, completed)
-        values.put(X5ICalObject.COMPLETED_TIMEZONE, completedTimezone)
-        values.put(X5ICalObject.DUE, due)
-        values.put(X5ICalObject.DUE_TIMEZONE, dueTimezone)
+            values.put(SyncContentProviderContract.JtxICalObject.CLASSIFICATION, classification)
+        values.put(SyncContentProviderContract.JtxICalObject.PRIORITY, priority)
+        values.put(SyncContentProviderContract.JtxICalObject.ICALOBJECT_COLLECTIONID, collectionId)
+        values.put(SyncContentProviderContract.JtxICalObject.UID, uid)
+        values.put(SyncContentProviderContract.JtxICalObject.GEO_LAT, geoLat)
+        values.put(SyncContentProviderContract.JtxICalObject.GEO_LONG, geoLong)
+        values.put(SyncContentProviderContract.JtxICalObject.LOCATION, location)
+        values.put(SyncContentProviderContract.JtxICalObject.PERCENT, percent)
+        values.put(SyncContentProviderContract.JtxICalObject.DTSTAMP, dtstamp)
+        values.put(SyncContentProviderContract.JtxICalObject.DTSTART, dtstart)
+        values.put(SyncContentProviderContract.JtxICalObject.DTSTART_TIMEZONE, dtstartTimezone)
+        values.put(SyncContentProviderContract.JtxICalObject.DTEND, dtend)
+        values.put(SyncContentProviderContract.JtxICalObject.DTEND_TIMEZONE, dtendTimezone)
+        values.put(SyncContentProviderContract.JtxICalObject.COMPLETED, completed)
+        values.put(SyncContentProviderContract.JtxICalObject.COMPLETED_TIMEZONE, completedTimezone)
+        values.put(SyncContentProviderContract.JtxICalObject.DUE, due)
+        values.put(SyncContentProviderContract.JtxICalObject.DUE_TIMEZONE, dueTimezone)
 
-        values.put(X5ICalObject.FILENAME, fileName)
-        values.put(X5ICalObject.ETAG, eTag)
-        values.put(X5ICalObject.SCHEDULETAG, scheduleTag)
-        values.put(X5ICalObject.FLAGS, flags)
+        values.put(SyncContentProviderContract.JtxICalObject.FILENAME, fileName)
+        values.put(SyncContentProviderContract.JtxICalObject.ETAG, eTag)
+        values.put(SyncContentProviderContract.JtxICalObject.SCHEDULETAG, scheduleTag)
+        values.put(SyncContentProviderContract.JtxICalObject.FLAGS, flags)
 
         return values
     }
@@ -827,12 +825,12 @@ open class Notesx5ICalObject(
 
     fun getCategoryContentValues(): List<ContentValues> {
 
-        val categoryUrl = NotesX5Contract.X5Category.CONTENT_URI.asSyncAdapter(collection.account)
+        val categoryUrl = SyncContentProviderContract.JtxCategory.CONTENT_URI.asSyncAdapter(collection.account)
         val categoryValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             categoryUrl,
             null,
-            "${NotesX5Contract.X5Category.ICALOBJECT_ID} = ?",
+            "${SyncContentProviderContract.JtxCategory.ICALOBJECT_ID} = ?",
             arrayOf(this.id.toString()),
             null
         )?.use { cursor ->
@@ -846,12 +844,12 @@ open class Notesx5ICalObject(
 
     fun getCommentContentValues(): List<ContentValues> {
 
-        val commentUrl = NotesX5Contract.X5Comment.CONTENT_URI.asSyncAdapter(collection.account)
+        val commentUrl = SyncContentProviderContract.JtxComment.CONTENT_URI.asSyncAdapter(collection.account)
         val commentValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             commentUrl,
             null,
-            "${NotesX5Contract.X5Comment.ICALOBJECT_ID} = ?",
+            "${SyncContentProviderContract.JtxComment.ICALOBJECT_ID} = ?",
             arrayOf(this.id.toString()),
             null
         )?.use { cursor ->
@@ -866,12 +864,12 @@ open class Notesx5ICalObject(
 
     fun getRelatedToContentValues(): List<ContentValues> {
 
-        val relatedToUrl = NotesX5Contract.X5Relatedto.CONTENT_URI.asSyncAdapter(collection.account)
+        val relatedToUrl = SyncContentProviderContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(collection.account)
         val relatedToValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             relatedToUrl,
             null,
-            "${NotesX5Contract.X5Relatedto.ICALOBJECT_ID} = ?",
+            "${SyncContentProviderContract.JtxRelatedto.ICALOBJECT_ID} = ?",
             arrayOf(this.id.toString()),
             null
         )?.use { cursor ->
@@ -885,12 +883,12 @@ open class Notesx5ICalObject(
 
     fun getAttendeesContentValues(): List<ContentValues> {
 
-        val attendeesUrl = NotesX5Contract.X5Attendee.CONTENT_URI.asSyncAdapter(collection.account)
+        val attendeesUrl = SyncContentProviderContract.JtxAttendee.CONTENT_URI.asSyncAdapter(collection.account)
         val attendeesValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             attendeesUrl,
             null,
-            "${NotesX5Contract.X5Attendee.ICALOBJECT_ID} = ?",
+            "${SyncContentProviderContract.JtxAttendee.ICALOBJECT_ID} = ?",
             arrayOf(this.id.toString()),
             null
         )?.use { cursor ->
@@ -905,12 +903,12 @@ open class Notesx5ICalObject(
     fun getAttachmentsContentValues(): List<ContentValues> {
 
         val attachmentsUrl =
-            NotesX5Contract.X5Attachment.CONTENT_URI.asSyncAdapter(collection.account)
+            SyncContentProviderContract.JtxAttachment.CONTENT_URI.asSyncAdapter(collection.account)
         val attachmentsValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             attachmentsUrl,
             null,
-            "${NotesX5Contract.X5Attachment.ICALOBJECT_ID} = ?",
+            "${SyncContentProviderContract.JtxAttachment.ICALOBJECT_ID} = ?",
             arrayOf(this.id.toString()),
             null
         )?.use { cursor ->
@@ -928,9 +926,9 @@ open class Notesx5ICalObject(
 /*
 
 class Notesx5Todo(account: Account, client: ContentProviderClient, collectionId: Long) :
-    Notesx5ICalObject(account, client, collectionId, X5ICalObject.Component.TODO) {
+    NotesSyncContentProviderContract.JtxICalObject(account, client, collectionId, SyncContentProviderContract.JtxICalObject.Component.TODO) {
 
-    var status: X5ICalObject.StatusTodo? = null
+    var status: SyncContentProviderContract.JtxICalObject.StatusTodo? = null
 
     var percent: Int? = null    // VTODO only!
     var priority: Int? = null   // VTODO and VEVENT
@@ -945,7 +943,7 @@ class Notesx5Todo(account: Account, client: ContentProviderClient, collectionId:
 class Notesx5Journal(account: Account, client: ContentProviderClient, collectionId: Long) :
     Notesx5ICalObject(account, client, collectionId, X5ICalObject.Component.JOURNAL) {
 
-    var status: X5ICalObject.StatusJournal? = null
+    var status: SyncContentProviderContract.JtxICalObject.StatusJournal? = null
 
 
 }
