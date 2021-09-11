@@ -42,7 +42,7 @@ object AttendeeMappings {
         val relationship = row.getAsInteger(Attendees.ATTENDEE_RELATIONSHIP) ?: Attendees.RELATIONSHIP_NONE
 
         var cuType: CuType? = null
-        var role: Role? = null
+        val role: Role?
 
         if (relationship == Attendees.RELATIONSHIP_SPEAKER) {
             role = Role.CHAIR

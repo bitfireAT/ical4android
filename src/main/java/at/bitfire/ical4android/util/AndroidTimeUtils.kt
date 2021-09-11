@@ -29,8 +29,8 @@ object AndroidTimeUtils {
     @Suppress("DEPRECATION")
     val TZID_ALLDAY = Time.TIMEZONE_UTC
 
-    const val RECURRENCE_LIST_TZID_SEPARATOR = ';'
-    const val RECURRENCE_LIST_VALUE_SEPARATOR = ","
+    private const val RECURRENCE_LIST_TZID_SEPARATOR = ';'
+    private const val RECURRENCE_LIST_VALUE_SEPARATOR = ","
 
     /**
      * Used to separate multiple RRULEs/EXRULEs in the RRULE/EXRULE storage field.

@@ -203,12 +203,16 @@ abstract class AndroidEvent(
             }
 
             if (tsEnd != null) {
-                if (tsEnd < tsStart)
-                    Ical4Android.log.warning("dtEnd $tsEnd (allDay) < dtStart $tsStart (allDay), ignoring")
-                else if (tsEnd == tsStart)
-                    Ical4Android.log.fine("dtEnd $tsEnd (allDay) = dtStart, won't generate DTEND property")
-                else /* tsEnd > tsStart */
-                    event.dtEnd = DtEnd(Date(tsEnd))
+                when {
+                    tsEnd < tsStart ->
+                        Ical4Android.log.warning("dtEnd $tsEnd (allDay) < dtStart $tsStart (allDay), ignoring")
+
+                    tsEnd == tsStart ->
+                        Ical4Android.log.fine("dtEnd $tsEnd (allDay) = dtStart, won't generate DTEND property")
+
+                    else /* tsEnd > tsStart */ ->
+                        event.dtEnd = DtEnd(Date(tsEnd))
+                }
             }
 
         } else /* !allDay */ {

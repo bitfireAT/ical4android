@@ -25,6 +25,7 @@ import java.util.Map;
 /**
  * TODO
  */
+@SuppressWarnings("ALL")
 public final class UriFactory
 {
     private final String mAuthority;
