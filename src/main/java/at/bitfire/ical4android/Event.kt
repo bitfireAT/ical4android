@@ -17,6 +17,7 @@ import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VEvent
+import net.fortuna.ical4j.model.parameter.Email
 import net.fortuna.ical4j.model.property.*
 import java.io.IOException
 import java.io.OutputStream
@@ -314,6 +315,20 @@ class Event: ICalendar() {
         event.alarms.addAll(alarms)
 
         return event
+    }
+
+
+    val organizerEmail: String?
+    get() {
+        var email: String? = null
+        organizer?.let { organizer ->
+            val uri = organizer.calAddress
+            email = if (uri.scheme.equals("mailto", true))
+                uri.schemeSpecificPart
+            else
+                organizer.getParameter<Email>(Parameter.EMAIL)?.value
+        }
+        return email
     }
 
 }

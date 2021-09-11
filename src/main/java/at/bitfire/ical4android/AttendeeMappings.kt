@@ -95,14 +95,14 @@ object AttendeeMappings {
      *     ¹ custom/unknown ROLE values must be treated as REQ-PARTICIPANT
      *     ² custom/unknown CUTYPE values must be treated as UNKNOWN
      *
-     *  When [attendee] is the ORGANIZER, [CalendarContract.Attendees.ATTENDEE_RELATIONSHIP] = RELATIONSHIP_ATTENDEE
+     *  When [attendee] is the [organizer], [CalendarContract.Attendees.ATTENDEE_RELATIONSHIP] = RELATIONSHIP_ATTENDEE
      *  is replaced by [CalendarContract.Attendees.RELATIONSHIP_ORGANIZER].
      *
      * @param attendee   iCalendar attendee to map
      * @param row        builder for the Android attendee row
-     * @param owner      email address of account owner ([CalendarContract.Calendars.OWNER_ACCOUNT]); used to determine whether [attendee] is the organizer
+     * @param organizer  email address of iCalendar ORGANIZER; used to determine whether [attendee] is the organizer
      */
-    fun iCalendarToAndroid(attendee: Attendee, row: BatchOperation.CpoBuilder, owner: String) {
+    fun iCalendarToAndroid(attendee: Attendee, row: BatchOperation.CpoBuilder, organizer: String) {
         val type: Int
         var relationship: Int
 
@@ -155,7 +155,8 @@ object AttendeeMappings {
                 uri.schemeSpecificPart
             else
                 attendee.getParameter<Email>(Parameter.EMAIL)?.value
-            if (email == owner)
+
+            if (email == organizer)
                 relationship = Attendees.RELATIONSHIP_ORGANIZER
         }
 

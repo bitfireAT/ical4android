@@ -534,7 +534,10 @@ abstract class AndroidEvent(
         event.alarms.forEach { insertReminder(batch, idxEvent, it) }
 
         // add attendees
-        event.attendees.forEach { insertAttendee(batch, idxEvent, it) }
+        val organizer = event.organizerEmail ?:
+                /* no ORGANIZER, use current account owner as ORGANIZER */
+                calendar.ownerAccount ?: calendar.account.name
+        event.attendees.forEach { insertAttendee(batch, idxEvent, it, organizer) }
 
         // add extended properties
         // CATEGORIES
@@ -610,7 +613,7 @@ abstract class AndroidEvent(
             exception.alarms.forEach { insertReminder(batch, idxException, it) }
 
             // add exception attendees
-            exception.attendees.forEach { insertAttendee(batch, idxException, it) }
+            exception.attendees.forEach { insertAttendee(batch, idxException, it, organizer) }
         }
 
         return idxEvent
@@ -911,7 +914,7 @@ abstract class AndroidEvent(
         batch.enqueue(builder)
     }
 
-    protected open fun insertAttendee(batch: BatchOperation, idxEvent: Int?, attendee: Attendee) {
+    protected open fun insertAttendee(batch: BatchOperation, idxEvent: Int?, attendee: Attendee, organizer: String) {
         val builder = CpoBuilder
                 .newInsert(calendar.syncAdapterURI(Attendees.CONTENT_URI))
                 .withEventId(Attendees.EVENT_ID, idxEvent)
@@ -935,7 +938,7 @@ abstract class AndroidEvent(
         }
 
         // type/relation mapping is complex and thus outsourced to AttendeeMappings
-        AttendeeMappings.iCalendarToAndroid(attendee, builder, calendar.ownerAccount ?: calendar.account.name)
+        AttendeeMappings.iCalendarToAndroid(attendee, builder, organizer)
 
         val status = when(attendee.getParameter(Parameter.PARTSTAT) as? PartStat) {
             PartStat.ACCEPTED     -> Attendees.ATTENDEE_STATUS_ACCEPTED
