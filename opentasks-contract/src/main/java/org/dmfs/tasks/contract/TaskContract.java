@@ -45,6 +45,7 @@ import java.util.Map;
  * @author Marten Gajda <marten@dmfs.org>
  * @author Tobias Reinsch <tobias@dmfs.org>
  */
+@SuppressWarnings("ALL")
 public final class TaskContract
 {
 

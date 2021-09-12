@@ -313,14 +313,13 @@ open class ICalendar {
                 // 2) Android doesn't know alarm seconds, but only minutes. Cut off seconds from the final result.
                 // 3) DURATION can be a Duration (time-based) or a Period (date-based), which have to be treated differently.
                 var millisBefore =
-                        if (triggerDur is Duration)
-                            -triggerDur.toMillis()
-                        else if (triggerDur is Period)
-                            // TODO: Take time zones into account (will probably be possible with ical4j 4.x).
+                    when (triggerDur) {
+                        is Duration -> -triggerDur.toMillis()
+                        is Period -> // TODO: Take time zones into account (will probably be possible with ical4j 4.x).
                             // For instance, an alarm one day before the DST change should be 23/25 hours before the event.
                             -triggerDur.days.toLong()*24*3600000     // months and years are not used in DURATION values; weeks are calculated to days
-                        else
-                            throw AssertionError("triggerDur must be Duration or Period")
+                        else -> throw AssertionError("triggerDur must be Duration or Period")
+                    }
 
                 if (related == Related.END && !allowRelEnd) {
                     if (duration == null) {

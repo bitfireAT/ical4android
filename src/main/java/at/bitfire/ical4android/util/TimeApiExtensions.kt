@@ -15,9 +15,9 @@ object TimeApiExtensions {
     const val SECONDS_PER_MINUTE = 60
     const val SECONDS_PER_HOUR = SECONDS_PER_MINUTE * 60
     const val SECONDS_PER_DAY = SECONDS_PER_HOUR * 24
-    const val SECONDS_PER_WEEK = SECONDS_PER_DAY * DAYS_PER_WEEK
+    private const val SECONDS_PER_WEEK = SECONDS_PER_DAY * DAYS_PER_WEEK
 
-    const val MILLIS_PER_SECOND = 1000
+    private const val MILLIS_PER_SECOND = 1000
     const val MILLIS_PER_DAY = SECONDS_PER_DAY * MILLIS_PER_SECOND
 
     val tzUTC: TimeZone by lazy { TimeZones.getUtcTimeZone() }
@@ -78,18 +78,18 @@ object TimeApiExtensions {
     /***** Durations *****/
 
     fun TemporalAmount.toDuration(position: Instant): Duration =
-            if (this is Duration)
-                this
-
-            else if (this is Period) {
+        when (this) {
+            is Duration -> this
+            is Period -> {
                 val calEnd = Calendar.getInstance(tzUTC)
                 calEnd.timeInMillis = position.toEpochMilli()
                 calEnd.add(Calendar.DAY_OF_MONTH, days)
                 calEnd.add(Calendar.MONTH, months)
                 calEnd.add(Calendar.YEAR, years)
                 Duration.ofMillis(calEnd.timeInMillis - position.toEpochMilli())
-            } else
-                throw IllegalArgumentException("TemporalAmount must be Period or Duration")
+            }
+            else -> throw IllegalArgumentException("TemporalAmount must be Period or Duration")
+        }
 
     /**
      * Converts a [TemporalAmount] to an RFC5545 duration value, which only uses

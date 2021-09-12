@@ -447,7 +447,7 @@ abstract class AndroidTask(
     }
 
     @CallSuper
-    protected open fun buildTask(builder: BatchOperation.CpoBuilder, update: Boolean) {
+    protected open fun buildTask(builder: CpoBuilder, update: Boolean) {
         if (!update)
             builder .withValue(Tasks.LIST_ID, taskList.id)
 
@@ -550,7 +550,7 @@ abstract class AndroidTask(
     }
 
 
-    protected fun CpoBuilder.withTaskId(column: String, idxTask: Int?): BatchOperation.CpoBuilder {
+    protected fun CpoBuilder.withTaskId(column: String, idxTask: Int?): CpoBuilder {
         if (idxTask != null)
             withValueBackReference(column, idxTask)
         else

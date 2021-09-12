@@ -36,7 +36,7 @@ object MiscUtils {
                 val valueStr = try {
                     StringUtils.abbreviate(prop.get(obj)?.toString(), TOSTRING_MAXCHARS)
                 } catch(e: OutOfMemoryError) {
-                    "![" + e.toString() + "]"
+                    "![$e]"
                 }
                 s += "${prop.name}=" + valueStr
             }

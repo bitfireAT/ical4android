@@ -280,6 +280,30 @@ class EventTest {
     }
 
 
+    // methods / fields
+
+    @Test
+    fun testOrganizerEmail_None() {
+        assertNull(Event().organizerEmail)
+    }
+
+    @Test
+    fun testOrganizerEmail_EmailParameter() {
+        assertEquals("organizer@example.com", Event().apply {
+            organizer = Organizer("SomeFancyOrganizer").apply {
+                parameters.add(Email("organizer@example.com"))
+            }
+        }.organizerEmail)
+    }
+
+    @Test
+    fun testOrganizerEmail_MailtoValue() {
+        assertEquals("organizer@example.com", Event().apply {
+            organizer = Organizer("mailto:organizer@example.com")
+        }.organizerEmail)
+    }
+
+
     // helpers
 
     private fun findEvent(events: Iterable<Event>, uid: String): Event {
