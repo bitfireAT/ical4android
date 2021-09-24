@@ -27,7 +27,7 @@ import java.util.*
 
 
 open class JtxICalObject(
-    val collection: Jtx5Collection<JtxICalObject>
+    val collection: JtxCollection<JtxICalObject>
     //component: X5ICalObject.Component
 ) {
 
@@ -166,7 +166,7 @@ open class JtxICalObject(
         @UsesThreadContextClassLoader
         fun fromReader(
             reader: Reader,
-            collection: Jtx5Collection<JtxICalObject>
+            collection: JtxCollection<JtxICalObject>
         ): List<JtxICalObject> {
             val ical = ICalendar.fromReader(reader)
             val vToDos = ical.getComponents<VToDo>(Component.VTODO)

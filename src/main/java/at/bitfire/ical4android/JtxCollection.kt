@@ -11,10 +11,10 @@ import at.bitfire.jtx.SyncContentProviderContract
 import at.bitfire.jtx.SyncContentProviderContract.asSyncAdapter
 import java.util.*
 
-open class Jtx5Collection<out T: JtxICalObject>(val account: Account,
-                                                val client: ContentProviderClient,
-                                                val iCalObjectFactory: JtxICalObjectFactory<JtxICalObject>,
-                                                val id: Long) {
+open class JtxCollection<out T: JtxICalObject>(val account: Account,
+                                               val client: ContentProviderClient,
+                                               val iCalObjectFactory: JtxICalObjectFactory<JtxICalObject>,
+                                               val id: Long) {
 
 
     companion object {
@@ -23,7 +23,7 @@ open class Jtx5Collection<out T: JtxICalObject>(val account: Account,
             client.insert(SyncContentProviderContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), values)?: throw CalendarStorageException("Couldn't create JTX Collection")
 
 
-        fun<T: Jtx5Collection<JtxICalObject>> find(account: Account, client: ContentProviderClient, factory: JtxCollectionFactory<T>, where: String?, whereArgs: Array<String>?): List<T> {
+        fun<T: JtxCollection<JtxICalObject>> find(account: Account, client: ContentProviderClient, factory: JtxCollectionFactory<T>, where: String?, whereArgs: Array<String>?): List<T> {
             val collections = LinkedList<T>()
             client.query(SyncContentProviderContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), null, where, whereArgs, null)?.use { cursor ->
                 while (cursor.moveToNext()) {

@@ -12,6 +12,6 @@ import android.content.ContentValues
 
 interface JtxICalObjectFactory<out T: JtxICalObject> {
 
-    fun fromProvider(collection: Jtx5Collection<JtxICalObject>, values: ContentValues): T
+    fun fromProvider(collection: JtxCollection<JtxICalObject>, values: ContentValues): T
 
 }
