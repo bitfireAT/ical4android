@@ -237,21 +237,21 @@ object SyncContentProviderContract {
          * to-dos, journal entries, or time zone definitions.
          * Type: [String]
          */
-        const val COLUMN_RRULE = "rrule"
+        const val RRULE = "rrule"
 
         /**
          * Purpose:  This property defines the list of DATE-TIME values for
          * recurring events, to-dos, journal entries, or time zone definitions.
          * Type: [String], contains a list of comma-separated date values as Long
          */
-        const val COLUMN_RDATE = "rdate"
+        const val RDATE = "rdate"
 
         /**
          * Purpose:  This property defines the list of DATE-TIME exceptions for
          * recurring events, to-dos, journal entries, or time zone definitions.
          * Type: [String], contains a list of comma-separated date values as Long
          */
-        const val COLUMN_EXDATE = "exdate"
+        const val EXDATE = "exdate"
 
         /**
          * Purpose:  This property is used in conjunction with the "UID" and
@@ -260,14 +260,14 @@ object SyncContentProviderContract {
          * The property value is the original value of the "DTSTART" property
          * of the recurrence instance.
          */
-        const val COLUMN_RECURID = "recurid"
+        const val RECURID = "recurid"
 
         /**
          * Stores the reference to the original event from which the recurring event was derived.
          * This value is NULL for the orignal event.
          * Type: [Long]
          */
-        const val COLUMN_RECUR_ORIGINALICALOBJECTID = "original_id"
+        const val RECUR_ORIGINALICALOBJECTID = "original_id"
 
 
         /**
