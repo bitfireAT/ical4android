@@ -18,6 +18,7 @@ import net.fortuna.ical4j.model.component.VJournal
 import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.parameter.FmtType
 import net.fortuna.ical4j.model.parameter.RelType
+import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.*
 import org.apache.commons.io.IOUtils
 import java.io.*
@@ -71,6 +72,12 @@ open class JtxICalObject(
         0           // increase on every change (+1), see https://tools.ietf.org/html/rfc5545#section-3.8.7.4
 
     var color: Int? = null
+
+    var rrule: String? = null    //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5.3
+    var exdate: String? = null   //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5.1
+    var rdate: String? = null    //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5.2
+    //var recurid: String? = null  //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5
+
     var other: String? = null
 
     var collectionId: Long = collection.id
@@ -280,20 +287,31 @@ open class JtxICalObject(
                         else
                             Ical4Android.log.warning("The property PercentComplete is only supported for VTODO, this value is rejected.")
                     }
-                    /*
-                    is RRule -> t.rRule = prop
-                    is RDate -> t.rDates += prop
-                    is ExDate -> t.exDates += prop
 
-                     */
-                    is Categories ->
+                    is RRule -> iCalObject.rrule = prop.value
+                    is RDate -> {
+                        val rdateList = mutableListOf<Long>()
+                        prop.dates.forEach {
+                            rdateList.add(it.time)
+                        }
+                        iCalObject.rdate = rdateList.toTypedArray().joinToString(separator = ",")
+                    }
+                    is ExDate -> {
+                        val exdateList = mutableListOf<Long>()
+                        prop.dates.forEach {
+                            exdateList.add(it.time)
+                        }
+                        iCalObject.exdate = exdateList.toTypedArray().joinToString(separator = ",")
+                    }
+
+                        is Categories ->
                         for (category in prop.categories)
                             iCalObject.categories.add(Category(text = category))
 
-                    is net.fortuna.ical4j.model.property.Comment ->
+                        is net.fortuna.ical4j.model.property.Comment ->
                         iCalObject.comments.add(Comment(text = prop.value))
 
-                    is Attach -> {
+                        is Attach -> {
                         val attachment = Attachment()
                         prop.uri?.let { attachment.uri = it.toString() }
                         prop.binary?.let {
@@ -307,7 +325,7 @@ open class JtxICalObject(
                             iCalObject.attachments.add(attachment)
                     }
 
-                    is net.fortuna.ical4j.model.property.RelatedTo -> {
+                        is net.fortuna.ical4j.model.property.RelatedTo -> {
 
                         val relatedTo = RelatedTo()
                         relatedTo.reltype = prop.getParameter<RelType>(RelType.RELTYPE).value
@@ -315,7 +333,7 @@ open class JtxICalObject(
                         iCalObject.relatedTo.add(relatedTo)
                     }
 
-                    is net.fortuna.ical4j.model.property.Attendee -> {
+                        is net.fortuna.ical4j.model.property.Attendee -> {
                         iCalObject.attendees.add(
                             Attendee(caladdress = prop.calAddress.toString())
                             //todo: take care of other attributes for attendees
@@ -323,12 +341,13 @@ open class JtxICalObject(
                     }
 
 
-                    /*
-                        is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */
-                        }
-                        else -> t.unknownProperties += prop
+                        /*
+                            is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */
+                            }
+                            else -> t.unknownProperties += prop
 
-                         */
+                             */
+                    }
                 }
 
             //t.alarms.addAll(todo.alarms)
@@ -365,7 +384,7 @@ open class JtxICalObject(
             }
              */
 
-        }
+
     }
 
 
@@ -491,6 +510,143 @@ open class JtxICalObject(
                     val withTimezone = DtStart(DateTime(it))
                     withTimezone.timeZone = timezone
                     props += withTimezone
+                }
+            }
+        }
+
+        rrule?.let { rrule ->
+            props += RRule(rrule)
+        }
+
+        // exdate and rdate for VJOURNAL (based on dtStart)
+        if (component == SyncContentProviderContract.JtxICalObject.Component.VJOURNAL.name) {
+                rdate?.let { rdateString ->
+
+                    when {
+                        dtstartTimezone == "ALLDAY" -> {
+                            val dateListDate = DateList(Value.DATE)
+                            getLongListFromString(rdateString).forEach {
+                                dateListDate.add(Date(it))
+                            }
+                            props += RDate(dateListDate)
+
+                        }
+                        dtstartTimezone.isNullOrEmpty() -> {
+                            val dateListDateTime = DateList(Value.DATE_TIME)
+                            getLongListFromString(rdateString).forEach {
+                                dateListDateTime.add(DateTime(it))
+                            }
+                            props += RDate(dateListDateTime)
+                        }
+                        else -> {
+                            val dateListDateTime = DateList(Value.DATE_TIME)
+                            val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dtstartTimezone)
+                            getLongListFromString(rdateString).forEach {
+                                val withTimezone = DateTime(it)
+                                withTimezone.timeZone = timezone
+                                dateListDateTime.add(DateTime(withTimezone))
+                            }
+                            props += RDate(dateListDateTime)
+                        }
+                    }
+                }
+
+                exdate?.let { exdateString ->
+
+                    when {
+                        dtstartTimezone == "ALLDAY" -> {
+                            val dateListDate = DateList(Value.DATE)
+                            getLongListFromString(exdateString).forEach {
+                                dateListDate.add(Date(it))
+                            }
+                            props += ExDate(dateListDate)
+
+                        }
+                        dtstartTimezone.isNullOrEmpty() -> {
+                            val dateListDateTime = DateList(Value.DATE_TIME)
+                            getLongListFromString(exdateString).forEach {
+                                dateListDateTime.add(DateTime(it))
+                            }
+                            props += ExDate(dateListDateTime)
+                        }
+                        else -> {
+                            val dateListDateTime = DateList(Value.DATE_TIME)
+                            val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dtstartTimezone)
+                            getLongListFromString(exdateString).forEach {
+                                val withTimezone = DateTime(it)
+                                withTimezone.timeZone = timezone
+                                dateListDateTime.add(DateTime(withTimezone))
+                            }
+                            props += ExDate(dateListDateTime)
+                        }
+                    }
+                }
+            }
+
+
+
+        // exdate and rdate for VTODO (based on Due Date)
+        if (component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name) {
+
+            rdate?.let { rdateString ->
+
+                when {
+                    dueTimezone == "ALLDAY" -> {
+                        val dateListDate = DateList(Value.DATE)
+                        getLongListFromString(rdateString).forEach {
+                            dateListDate.add(Date(it))
+                        }
+                        props += RDate(dateListDate)
+
+                    }
+                    dueTimezone.isNullOrEmpty() -> {
+                        val dateListDateTime = DateList(Value.DATE_TIME)
+                        getLongListFromString(rdateString).forEach {
+                            dateListDateTime.add(DateTime(it))
+                        }
+                        props += RDate(dateListDateTime)
+                    }
+                    else -> {
+                        val dateListDateTime = DateList(Value.DATE_TIME)
+                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dueTimezone)
+                        getLongListFromString(rdateString).forEach {
+                            val withTimezone = DateTime(it)
+                            withTimezone.timeZone = timezone
+                            dateListDateTime.add(DateTime(withTimezone))
+                        }
+                        props += RDate(dateListDateTime)
+                    }
+                }
+            }
+
+            exdate?.let { exdateString ->
+
+                when {
+                    dueTimezone == "ALLDAY" -> {
+                        val dateListDate = DateList(Value.DATE)
+                        getLongListFromString(exdateString).forEach {
+                            dateListDate.add(Date(it))
+                        }
+                        props += ExDate(dateListDate)
+
+                    }
+                    dueTimezone.isNullOrEmpty() -> {
+                        val dateListDateTime = DateList(Value.DATE_TIME)
+                        getLongListFromString(exdateString).forEach {
+                            dateListDateTime.add(DateTime(it))
+                        }
+                        props += ExDate(dateListDateTime)
+                    }
+                    else -> {
+                        val dateListDateTime = DateList(Value.DATE_TIME)
+                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dueTimezone)
+                        getLongListFromString(exdateString).forEach {
+                            val withTimezone = DateTime(it)
+                            withTimezone.timeZone = timezone
+                            dateListDateTime.add(DateTime(withTimezone))
+                        }
+                        props += ExDate(dateListDateTime)
+                    }
                 }
             }
         }
@@ -778,6 +934,10 @@ open class JtxICalObject(
         this.due = newData.due
         this.dueTimezone = newData.dueTimezone
 
+        this.rrule = newData.rrule
+        this.rdate = newData.rdate
+        this.exdate = newData.exdate
+
         this.categories = newData.categories
         this.comments = newData.comments
         this.relatedTo = newData.relatedTo
@@ -813,6 +973,10 @@ open class JtxICalObject(
         values.put(SyncContentProviderContract.JtxICalObject.COMPLETED_TIMEZONE, completedTimezone)
         values.put(SyncContentProviderContract.JtxICalObject.DUE, due)
         values.put(SyncContentProviderContract.JtxICalObject.DUE_TIMEZONE, dueTimezone)
+
+        values.put(SyncContentProviderContract.JtxICalObject.RRULE, rrule)
+        values.put(SyncContentProviderContract.JtxICalObject.RDATE, rdate)
+        values.put(SyncContentProviderContract.JtxICalObject.EXDATE, exdate)
 
         values.put(SyncContentProviderContract.JtxICalObject.FILENAME, fileName)
         values.put(SyncContentProviderContract.JtxICalObject.ETAG, eTag)
@@ -920,7 +1084,21 @@ open class JtxICalObject(
         return attachmentsValues
     }
 
+    fun getLongListFromString(string: String): List<Long> {
 
+        val stringList = string.split(",")
+        val longList = mutableListOf<Long>()
+
+        stringList.forEach {
+            try {
+                longList.add(it.toLong())
+            } catch (e: NumberFormatException) {
+                Log.w("getLongListFromString", "String could not be cast to Long ($it)")
+                return@forEach
+            }
+        }
+        return longList
+    }
 }
 
 /*
