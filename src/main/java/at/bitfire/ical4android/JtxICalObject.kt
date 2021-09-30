@@ -76,7 +76,7 @@ open class JtxICalObject(
     var rrule: String? = null    //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5.3
     var exdate: String? = null   //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5.1
     var rdate: String? = null    //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5.2
-    //var recurid: String? = null  //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5
+    var recurid: String? = null  //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5
 
     var other: String? = null
 
@@ -303,52 +303,53 @@ open class JtxICalObject(
                         }
                         iCalObject.exdate = exdateList.toTypedArray().joinToString(separator = ",")
                     }
+                    is RecurrenceId -> iCalObject.recurid = prop.value
 
-                        is Categories ->
-                        for (category in prop.categories)
-                            iCalObject.categories.add(Category(text = category))
+                    is Categories ->
+                    for (category in prop.categories)
+                        iCalObject.categories.add(Category(text = category))
 
-                        is net.fortuna.ical4j.model.property.Comment ->
-                        iCalObject.comments.add(Comment(text = prop.value))
+                    is net.fortuna.ical4j.model.property.Comment ->
+                    iCalObject.comments.add(Comment(text = prop.value))
 
-                        is Attach -> {
-                        val attachment = Attachment()
-                        prop.uri?.let { attachment.uri = it.toString() }
-                        prop.binary?.let {
-                            attachment.binary = Base64.encodeToString(it, Base64.DEFAULT)
-                        }
-                        prop.parameters?.getParameter<FmtType>(Parameter.FMTTYPE)?.let {
-                            attachment.fmttype = it.value
-                        }
-
-                        if (attachment.uri?.isNotEmpty() == true || attachment.binary?.isNotEmpty() == true)   // either uri or value must be present!
-                            iCalObject.attachments.add(attachment)
+                    is Attach -> {
+                    val attachment = Attachment()
+                    prop.uri?.let { attachment.uri = it.toString() }
+                    prop.binary?.let {
+                        attachment.binary = Base64.encodeToString(it, Base64.DEFAULT)
+                    }
+                    prop.parameters?.getParameter<FmtType>(Parameter.FMTTYPE)?.let {
+                        attachment.fmttype = it.value
                     }
 
-                        is net.fortuna.ical4j.model.property.RelatedTo -> {
-
-                        val relatedTo = RelatedTo()
-                        relatedTo.reltype = prop.getParameter<RelType>(RelType.RELTYPE).value
-                        relatedTo.text = prop.value
-                        iCalObject.relatedTo.add(relatedTo)
-                    }
-
-                        is net.fortuna.ical4j.model.property.Attendee -> {
-                        iCalObject.attendees.add(
-                            Attendee(caladdress = prop.calAddress.toString())
-                            //todo: take care of other attributes for attendees
-                        )
-                    }
-
-
-                        /*
-                            is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */
-                            }
-                            else -> t.unknownProperties += prop
-
-                             */
-                    }
+                    if (attachment.uri?.isNotEmpty() == true || attachment.binary?.isNotEmpty() == true)   // either uri or value must be present!
+                        iCalObject.attachments.add(attachment)
                 }
+
+                    is net.fortuna.ical4j.model.property.RelatedTo -> {
+
+                    val relatedTo = RelatedTo()
+                    relatedTo.reltype = prop.getParameter<RelType>(RelType.RELTYPE).value
+                    relatedTo.text = prop.value
+                    iCalObject.relatedTo.add(relatedTo)
+                }
+
+                    is net.fortuna.ical4j.model.property.Attendee -> {
+                    iCalObject.attendees.add(
+                        Attendee(caladdress = prop.calAddress.toString())
+                        //todo: take care of other attributes for attendees
+                    )
+                }
+
+
+                    /*
+                        is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */
+                        }
+                        else -> t.unknownProperties += prop
+
+                         */
+                }
+            }
 
             //t.alarms.addAll(todo.alarms)
 
@@ -516,6 +517,9 @@ open class JtxICalObject(
 
         rrule?.let { rrule ->
             props += RRule(rrule)
+        }
+        recurid?.let { recurid ->
+            props += RecurrenceId(recurid)
         }
 
         // exdate and rdate for VJOURNAL (based on dtStart)
@@ -937,6 +941,7 @@ open class JtxICalObject(
         this.rrule = newData.rrule
         this.rdate = newData.rdate
         this.exdate = newData.exdate
+        this.recurid = newData.recurid
 
         this.categories = newData.categories
         this.comments = newData.comments
@@ -977,6 +982,7 @@ open class JtxICalObject(
         values.put(SyncContentProviderContract.JtxICalObject.RRULE, rrule)
         values.put(SyncContentProviderContract.JtxICalObject.RDATE, rdate)
         values.put(SyncContentProviderContract.JtxICalObject.EXDATE, exdate)
+        values.put(SyncContentProviderContract.JtxICalObject.RECURID, recurid)
 
         values.put(SyncContentProviderContract.JtxICalObject.FILENAME, fileName)
         values.put(SyncContentProviderContract.JtxICalObject.ETAG, eTag)
