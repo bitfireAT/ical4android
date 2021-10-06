@@ -57,6 +57,10 @@ object SyncContentProviderContract {
         val CONTENT_URI: Uri by lazy { Uri.parse("content://$AUTHORITY/$CONTENT_URI_PATH") }
 
 
+        /** Constant to define all day values (for dtstart, due, completed timezone fields */
+        const val TZ_ALLDAY = "ALLDAY"
+
+
         /** The name of the ID column.
          * This is the unique identifier of an ICalObject
          * Type: [Long]*/

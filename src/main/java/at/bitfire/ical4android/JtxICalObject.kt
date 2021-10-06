@@ -8,6 +8,7 @@ import android.util.Base64
 import android.util.Log
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import at.bitfire.jtx.SyncContentProviderContract
+import at.bitfire.jtx.SyncContentProviderContract.JtxICalObject.TZ_ALLDAY
 import at.bitfire.jtx.SyncContentProviderContract.asSyncAdapter
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
@@ -258,13 +259,13 @@ open class JtxICalObject(
                                 prop.date is DateTime && prop.timeZone == null -> iCalObject.dueTimezone =
                                     null                   // this comparison is kept on purpose as "prop.date is Date" did not work as expected.
                                 else -> iCalObject.dueTimezone =
-                                    "ALLDAY"     // prop.date is Date (and not DateTime), therefore it must be Allday
+                                    TZ_ALLDAY     // prop.date is Date (and not DateTime), therefore it must be Allday
                             }
                         } else
                             Ical4Android.log.warning("The property Due is only supported for VTODO, this value is rejected.")
                     }
 
-                    //is Duration -> t.duration = prop.duration.
+                    is Duration -> iCalObject.duration = prop.value
 
                     is DtStart -> {
                         iCalObject.dtstart = prop.date.time
@@ -274,7 +275,7 @@ open class JtxICalObject(
                             prop.date is DateTime && prop.timeZone == null -> iCalObject.dtstartTimezone =
                                 null                   // this comparison is kept on purpose as "prop.date is Date" did not work as expected.
                             else -> iCalObject.dtstartTimezone =
-                                "ALLDAY"     // prop.date is Date (and not DateTime), therefore it must be Allday
+                                TZ_ALLDAY     // prop.date is Date (and not DateTime), therefore it must be Allday
                         }
                         /* if(!prop.isUtc)
                             t.dtstartTimezone = prop.timeZone.displayName
@@ -324,7 +325,7 @@ open class JtxICalObject(
 
                     if (attachment.uri?.isNotEmpty() == true || attachment.binary?.isNotEmpty() == true)   // either uri or value must be present!
                         iCalObject.attachments.add(attachment)
-                }
+                    }
 
                     is net.fortuna.ical4j.model.property.RelatedTo -> {
 
@@ -332,58 +333,49 @@ open class JtxICalObject(
                     relatedTo.reltype = prop.getParameter<RelType>(RelType.RELTYPE).value
                     relatedTo.text = prop.value
                     iCalObject.relatedTo.add(relatedTo)
-                }
+                    }
 
                     is net.fortuna.ical4j.model.property.Attendee -> {
                     iCalObject.attendees.add(
                         Attendee(caladdress = prop.calAddress.toString())
                         //todo: take care of other attributes for attendees
                     )
+                    }
+
+                    is Uid, is ProdId, is DtStamp -> {  }    /* don't save these as unknown properties */
+                    else -> iCalObject.other += prop                // save the whole property for unknown properties
+
                 }
 
 
-                    /*
-                        is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */
-                        }
-                        else -> t.unknownProperties += prop
-
-                         */
-                }
-            }
-
-            //t.alarms.addAll(todo.alarms)
 
             // There seem to be many invalid tasks out there because of some defect clients, do some validation.
+            val dtStartTZ = iCalObject.dtstartTimezone
+            val dueTZ = iCalObject.dueTimezone
 
-
-            /*
-                val dtStart = t.dtstart
-                val due = t.due
-
-                if (dtStart != null && due != null) {
-                    if (DateUtils.isDate(dtStart) && DateUtils.isDateTime(due)) {
-                        Ical4Android.log.warning("DTSTART is DATE but DUE is DATE-TIME, rewriting DTSTART to DATE-TIME")
-                        t.dtStart = DtStart(DateTime(dtStart.value, due.timeZone))
-                    } else if (DateUtils.isDateTime(dtStart) && DateUtils.isDate(due)) {
-                        Ical4Android.log.warning("DTSTART is DATE-TIME but DUE is DATE, rewriting DUE to DATE-TIME")
-                        t.due = Due(DateTime(due.value, dtStart.timeZone))
-                    }
-
-
-                    if (due.date <= dtStart.date) {
-                        Ical4Android.log.warning("Found invalid DUE <= DTSTART; dropping DTSTART")
-                        t.dtStart = null
-                    }
+            if (dtStartTZ != null && dueTZ != null) {
+                if (dtStartTZ == TZ_ALLDAY && dueTZ != TZ_ALLDAY) {
+                    Ical4Android.log.warning("DTSTART is DATE but DUE is DATE-TIME, rewriting DTSTART to DATE-TIME")
+                    iCalObject.dtstartTimezone = dueTZ
+                } else if (dtStartTZ != TZ_ALLDAY && dueTZ == TZ_ALLDAY) {
+                    Ical4Android.log.warning("DTSTART is DATE-TIME but DUE is DATE, rewriting DUE to DATE-TIME")
+                    iCalObject.dueTimezone = dtStartTZ
                 }
 
-     */
-
-            /*
-            if (t.duration != null && t.dtStart == null) {
-                Ical4Android.log.warning("Found DURATION without DTSTART; ignoring")
-                t.duration = null
+                if ( iCalObject.dtstart != null && iCalObject.due != null && iCalObject.due!! <= iCalObject.dtstart!!) {
+                    Ical4Android.log.warning("Found invalid DUE <= DTSTART; dropping DUE")     // Dtstart must not be dropped as it might be the basis for recurring tasks
+                    iCalObject.due = null
+                    iCalObject.dueTimezone = null
+                }
             }
-             */
+
+            if (iCalObject.duration != null && iCalObject.dtstart == null) {
+                Ical4Android.log.warning("Found DURATION without DTSTART; ignoring")
+                iCalObject.duration = null
+            }
+        }
+
+            //t.alarms.addAll(todo.alarms)
 
 
     }
@@ -409,10 +401,8 @@ open class JtxICalObject(
             addProperties(props, context)
         }
 
-
         ICalendar.softValidate(ical)
         CalendarOutputter(false).output(ical, os)
-
     }
 
 
@@ -486,24 +476,9 @@ open class JtxICalObject(
         }
 
 
-        /*
-    props.addAll(unknownProperties)
-
-    // remember used time zones
-    val usedTimeZones = HashSet<TimeZone>()
-    duration?.let(props::add)
-    */
-
-        /*
-    rRule?.let { props += it }
-    rDates.forEach { props += it }
-    exDates.forEach { props += it }
-*/
-
-
         dtstart?.let {
             when {
-                dtstartTimezone == "ALLDAY" -> props += DtStart(Date(it))
+                dtstartTimezone == TZ_ALLDAY -> props += DtStart(Date(it))
                 dtstartTimezone.isNullOrEmpty() -> props += DtStart(DateTime(it))
                 else -> {
                     val timezone = TimeZoneRegistryFactory.getInstance().createRegistry()
@@ -522,156 +497,106 @@ open class JtxICalObject(
             props += RecurrenceId(recurid)
         }
 
-        // exdate and rdate for VJOURNAL (based on dtStart)
-        if (component == SyncContentProviderContract.JtxICalObject.Component.VJOURNAL.name) {
-                rdate?.let { rdateString ->
+        rdate?.let { rdateString ->
 
-                    when {
-                        dtstartTimezone == "ALLDAY" -> {
-                            val dateListDate = DateList(Value.DATE)
-                            getLongListFromString(rdateString).forEach {
-                                dateListDate.add(Date(it))
-                            }
-                            props += RDate(dateListDate)
-
-                        }
-                        dtstartTimezone.isNullOrEmpty() -> {
-                            val dateListDateTime = DateList(Value.DATE_TIME)
-                            getLongListFromString(rdateString).forEach {
-                                dateListDateTime.add(DateTime(it))
-                            }
-                            props += RDate(dateListDateTime)
-                        }
-                        else -> {
-                            val dateListDateTime = DateList(Value.DATE_TIME)
-                            val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dtstartTimezone)
-                            getLongListFromString(rdateString).forEach {
-                                val withTimezone = DateTime(it)
-                                withTimezone.timeZone = timezone
-                                dateListDateTime.add(DateTime(withTimezone))
-                            }
-                            props += RDate(dateListDateTime)
-                        }
+            when {
+                dtstartTimezone == TZ_ALLDAY -> {
+                    val dateListDate = DateList(Value.DATE)
+                    getLongListFromString(rdateString).forEach {
+                        dateListDate.add(Date(it))
                     }
+                    props += RDate(dateListDate)
+
                 }
-
-                exdate?.let { exdateString ->
-
-                    when {
-                        dtstartTimezone == "ALLDAY" -> {
-                            val dateListDate = DateList(Value.DATE)
-                            getLongListFromString(exdateString).forEach {
-                                dateListDate.add(Date(it))
-                            }
-                            props += ExDate(dateListDate)
-
-                        }
-                        dtstartTimezone.isNullOrEmpty() -> {
-                            val dateListDateTime = DateList(Value.DATE_TIME)
-                            getLongListFromString(exdateString).forEach {
-                                dateListDateTime.add(DateTime(it))
-                            }
-                            props += ExDate(dateListDateTime)
-                        }
-                        else -> {
-                            val dateListDateTime = DateList(Value.DATE_TIME)
-                            val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dtstartTimezone)
-                            getLongListFromString(exdateString).forEach {
-                                val withTimezone = DateTime(it)
-                                withTimezone.timeZone = timezone
-                                dateListDateTime.add(DateTime(withTimezone))
-                            }
-                            props += ExDate(dateListDateTime)
-                        }
+                dtstartTimezone.isNullOrEmpty() -> {
+                    val dateListDateTime = DateList(Value.DATE_TIME)
+                    getLongListFromString(rdateString).forEach {
+                        dateListDateTime.add(DateTime(it))
                     }
+                    props += RDate(dateListDateTime)
                 }
-            }
-
-
-
-        // exdate and rdate for VTODO (based on Due Date)
-        if (component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name) {
-
-            rdate?.let { rdateString ->
-
-                when {
-                    dueTimezone == "ALLDAY" -> {
-                        val dateListDate = DateList(Value.DATE)
-                        getLongListFromString(rdateString).forEach {
-                            dateListDate.add(Date(it))
-                        }
-                        props += RDate(dateListDate)
-
+                else -> {
+                    val dateListDateTime = DateList(Value.DATE_TIME)
+                    val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dtstartTimezone)
+                    getLongListFromString(rdateString).forEach {
+                        val withTimezone = DateTime(it)
+                        withTimezone.timeZone = timezone
+                        dateListDateTime.add(DateTime(withTimezone))
                     }
-                    dueTimezone.isNullOrEmpty() -> {
-                        val dateListDateTime = DateList(Value.DATE_TIME)
-                        getLongListFromString(rdateString).forEach {
-                            dateListDateTime.add(DateTime(it))
-                        }
-                        props += RDate(dateListDateTime)
-                    }
-                    else -> {
-                        val dateListDateTime = DateList(Value.DATE_TIME)
-                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dueTimezone)
-                        getLongListFromString(rdateString).forEach {
-                            val withTimezone = DateTime(it)
-                            withTimezone.timeZone = timezone
-                            dateListDateTime.add(DateTime(withTimezone))
-                        }
-                        props += RDate(dateListDateTime)
-                    }
-                }
-            }
-
-            exdate?.let { exdateString ->
-
-                when {
-                    dueTimezone == "ALLDAY" -> {
-                        val dateListDate = DateList(Value.DATE)
-                        getLongListFromString(exdateString).forEach {
-                            dateListDate.add(Date(it))
-                        }
-                        props += ExDate(dateListDate)
-
-                    }
-                    dueTimezone.isNullOrEmpty() -> {
-                        val dateListDateTime = DateList(Value.DATE_TIME)
-                        getLongListFromString(exdateString).forEach {
-                            dateListDateTime.add(DateTime(it))
-                        }
-                        props += ExDate(dateListDateTime)
-                    }
-                    else -> {
-                        val dateListDateTime = DateList(Value.DATE_TIME)
-                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dueTimezone)
-                        getLongListFromString(exdateString).forEach {
-                            val withTimezone = DateTime(it)
-                            withTimezone.timeZone = timezone
-                            dateListDateTime.add(DateTime(withTimezone))
-                        }
-                        props += ExDate(dateListDateTime)
-                    }
+                    props += RDate(dateListDateTime)
                 }
             }
         }
 
-        // Attributes only for VTODOs
-        if (component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name) {
-            dtend?.let {
-                when {
-                    dtendTimezone == "ALLDAY" -> props += DtEnd(Date(it))
-                    dtendTimezone.isNullOrEmpty() -> props += DtEnd(DateTime(it))
-                    else -> {
-                        val timezone = TimeZoneRegistryFactory.getInstance().createRegistry()
-                            .getTimeZone(dtendTimezone)
-                        val withTimezone = DtEnd(DateTime(it))
-                        withTimezone.timeZone = timezone
-                        props += withTimezone
+        exdate?.let { exdateString ->
+
+            when {
+                dtstartTimezone == TZ_ALLDAY -> {
+                    val dateListDate = DateList(Value.DATE)
+                    getLongListFromString(exdateString).forEach {
+                        dateListDate.add(Date(it))
                     }
+                    props += ExDate(dateListDate)
+
+                }
+                dtstartTimezone.isNullOrEmpty() -> {
+                    val dateListDateTime = DateList(Value.DATE_TIME)
+                    getLongListFromString(exdateString).forEach {
+                        dateListDateTime.add(DateTime(it))
+                    }
+                    props += ExDate(dateListDateTime)
+                }
+                else -> {
+                    val dateListDateTime = DateList(Value.DATE_TIME)
+                    val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dtstartTimezone)
+                    getLongListFromString(exdateString).forEach {
+                        val withTimezone = DateTime(it)
+                        withTimezone.timeZone = timezone
+                        dateListDateTime.add(DateTime(withTimezone))
+                    }
+                    props += ExDate(dateListDateTime)
                 }
             }
+        }
+
+        duration?.let {
+            val dur = Duration()
+            dur.value = it
+            props += dur }    // TODO: Check how to deal with duration
+
+
+
+
+        /*
+props.addAll(unknownProperties)
+
+// remember used time zones
+val usedTimeZones = HashSet<TimeZone>()
+duration?.let(props::add)
+*/
+
+
+
+        /* Currently not in use
+        dtend?.let {
+            when {
+                dtendTimezone == TZ_ALLDAY -> props += DtEnd(Date(it))
+                dtendTimezone.isNullOrEmpty() -> props += DtEnd(DateTime(it))
+                else -> {
+                    val timezone = TimeZoneRegistryFactory.getInstance().createRegistry()
+                        .getTimeZone(dtendTimezone)
+                    val withTimezone = DtEnd(DateTime(it))
+                    withTimezone.timeZone = timezone
+                    props += withTimezone
+                }
+            }
+        }
+         */
+
+        if(component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name) {
             completed?.let {
                 //Completed is defines as always DateTime! And is always UTC!?
+
                 props += Completed(DateTime(it))
             }
             percent?.let { props += PercentComplete(it) }
@@ -682,7 +607,7 @@ open class JtxICalObject(
 
             due?.let {
                 when {
-                    dueTimezone == "ALLDAY" -> props += Due(Date(it))
+                    dueTimezone == TZ_ALLDAY -> props += Due(Date(it))
                     dueTimezone.isNullOrEmpty() -> props += Due(DateTime(it))
                     else -> {
                         val timezone = TimeZoneRegistryFactory.getInstance().createRegistry()
@@ -709,8 +634,6 @@ open class JtxICalObject(
     for (tz in usedTimeZones)
         ical.components += ICalendar.minifyVTimeZone(tz.vTimeZone, earliest)
 */
-
-
     }
 
 
@@ -937,6 +860,7 @@ open class JtxICalObject(
         this.completedTimezone = newData.completedTimezone
         this.due = newData.due
         this.dueTimezone = newData.dueTimezone
+        this.duration = newData.duration
 
         this.rrule = newData.rrule
         this.rdate = newData.rdate
@@ -978,6 +902,7 @@ open class JtxICalObject(
         values.put(SyncContentProviderContract.JtxICalObject.COMPLETED_TIMEZONE, completedTimezone)
         values.put(SyncContentProviderContract.JtxICalObject.DUE, due)
         values.put(SyncContentProviderContract.JtxICalObject.DUE_TIMEZONE, dueTimezone)
+        values.put(SyncContentProviderContract.JtxICalObject.DURATION, duration)
 
         values.put(SyncContentProviderContract.JtxICalObject.RRULE, rrule)
         values.put(SyncContentProviderContract.JtxICalObject.RDATE, rdate)
@@ -1090,7 +1015,7 @@ open class JtxICalObject(
         return attachmentsValues
     }
 
-    fun getLongListFromString(string: String): List<Long> {
+    private fun getLongListFromString(string: String): List<Long> {
 
         val stringList = string.split(",")
         val longList = mutableListOf<Long>()
