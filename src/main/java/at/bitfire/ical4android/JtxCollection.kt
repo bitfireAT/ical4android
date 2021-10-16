@@ -13,7 +13,7 @@ import java.util.*
 
 open class JtxCollection<out T: JtxICalObject>(val account: Account,
                                                val client: ContentProviderClient,
-                                               val iCalObjectFactory: JtxICalObjectFactory<JtxICalObject>,
+                                               private val iCalObjectFactory: JtxICalObjectFactory<JtxICalObject>,
                                                val id: Long) {
 
 
@@ -35,7 +35,6 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
             }
             return collections
         }
-
     }
 
 
@@ -45,7 +44,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
 
 
     fun delete() {
-        client.delete(ContentUris.withAppendedId(SyncContentProviderContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), requireNotNull(id)), null, null)
+        client.delete(ContentUris.withAppendedId(SyncContentProviderContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), id), null, null)
     }
 
     protected fun populate(values: ContentValues) {
@@ -75,9 +74,6 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
     }
 
 
-
-    fun eventsSyncURI() = syncAdapterURI(SyncContentProviderContract.JtxICalObject.CONTENT_URI, account)
-
-
+    private fun eventsSyncURI() = syncAdapterURI(SyncContentProviderContract.JtxICalObject.CONTENT_URI, account)
 
 }

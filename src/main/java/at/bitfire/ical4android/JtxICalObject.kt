@@ -79,8 +79,6 @@ open class JtxICalObject(
     var rdate: String? = null    //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5.2
     var recurid: String? = null  //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5
 
-    var other: String? = null
-
     var collectionId: Long = collection.id
 
     //var categories: MutableList<String> = mutableListOf()
@@ -98,6 +96,9 @@ open class JtxICalObject(
     var attachments: MutableList<Attachment> = mutableListOf()
     var attendees: MutableList<Attendee> = mutableListOf()
     var comments: MutableList<Comment> = mutableListOf()
+    var alarms: MutableList<Alarm> = mutableListOf()
+    var unknown: MutableList<Unknown> = mutableListOf()
+
 
     var relatedTo: MutableList<RelatedTo> = mutableListOf()
 
@@ -153,7 +154,16 @@ open class JtxICalObject(
         var dir: String? = null,
         var language: String? = null,
         var other: String? = null
+    )
 
+    data class Alarm(
+        var alarmId: Long = 0L,
+        var value: String? = null
+    )
+
+    data class Unknown(
+        var unknownId: Long = 0L,
+        var value: String? = null
     )
 
 
@@ -342,9 +352,12 @@ open class JtxICalObject(
                     )
                     }
 
-                    is Uid, is ProdId, is DtStamp -> {  }    /* don't save these as unknown properties */
-                    else -> iCalObject.other += prop                // save the whole property for unknown properties
+                    is Uid -> iCalObject.uid = prop.value
+                    //is Uid,
+                    is ProdId, is DtStamp -> {  }    /* don't save these as unknown properties */
+                    else -> iCalObject.unknown.add(Unknown(value = UnknownProperty.toJsonString(prop)))               // save the whole property for unknown properties
 
+                    // TODO: How to deal with alarms?
                 }
 
 
@@ -462,6 +475,12 @@ open class JtxICalObject(
                     }
         }
 
+        unknown.forEach {
+            it.value?.let {  jsonString ->
+                props.add(UnknownProperty.fromJsonString(jsonString))
+            }
+        }
+
         relatedTo.forEach {
             val param: Parameter =
                 when (it.reltype) {
@@ -562,9 +581,8 @@ open class JtxICalObject(
         duration?.let {
             val dur = Duration()
             dur.value = it
-            props += dur }    // TODO: Check how to deal with duration
-
-
+            props += dur
+        }    // TODO: Check how to deal with duration
 
 
         /*
@@ -739,6 +757,18 @@ duration?.let(props::add)
                 "${SyncContentProviderContract.JtxAttachment.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
+
+            collection.client.delete(
+                SyncContentProviderContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account),
+                "${SyncContentProviderContract.JtxAlarm.ICALOBJECT_ID} = ?",
+                arrayOf(this.id.toString())
+            )
+
+            collection.client.delete(
+                SyncContentProviderContract.JtxUnknown.CONTENT_URI.asSyncAdapter(collection.account),
+                "${SyncContentProviderContract.JtxUnknown.ICALOBJECT_ID} = ?",
+                arrayOf(this.id.toString())
+            )
         }
 
         this.categories.forEach {
@@ -822,6 +852,28 @@ duration?.let(props::add)
                 ), attachmentContentValues
             )
         }
+
+        this.alarms.forEach {
+            val alarmContentValues = ContentValues().apply {
+                put(SyncContentProviderContract.JtxAlarm.ICALOBJECT_ID, id)
+                put(SyncContentProviderContract.JtxAlarm.ALARM_VALUE, it.value)
+            }
+            collection.client.insert(
+                SyncContentProviderContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account),
+                alarmContentValues
+            )
+        }
+
+        this.unknown.forEach {
+            val unknownContentValues = ContentValues().apply {
+                put(SyncContentProviderContract.JtxUnknown.ICALOBJECT_ID, id)
+                put(SyncContentProviderContract.JtxUnknown.UNKNOWN_VALUE, it.value)
+            }
+            collection.client.insert(
+                SyncContentProviderContract.JtxUnknown.CONTENT_URI.asSyncAdapter(collection.account),
+                unknownContentValues
+            )
+        }
     }
 
 
@@ -867,11 +919,14 @@ duration?.let(props::add)
         this.exdate = newData.exdate
         this.recurid = newData.recurid
 
+
         this.categories = newData.categories
         this.comments = newData.comments
         this.relatedTo = newData.relatedTo
         this.attendees = newData.attendees
         this.attachments = newData.attachments
+        this.alarms = newData.alarms
+        this.unknown = newData.unknown
         // tODO: to be continued
     }
 
@@ -1013,6 +1068,46 @@ duration?.let(props::add)
         }
 
         return attachmentsValues
+    }
+
+    fun getAlarmsContentValues(): List<ContentValues> {
+
+        val alarmsUrl =
+            SyncContentProviderContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account)
+        val alarmValues: MutableList<ContentValues> = mutableListOf()
+        collection.client.query(
+            alarmsUrl,
+            null,
+            "${SyncContentProviderContract.JtxAlarm.ICALOBJECT_ID} = ?",
+            arrayOf(this.id.toString()),
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                alarmValues.add(cursor.toValues())
+            }
+        }
+
+        return alarmValues
+    }
+
+    fun getUnknownContentValues(): List<ContentValues> {
+
+        val unknownUrl =
+            SyncContentProviderContract.JtxUnknown.CONTENT_URI.asSyncAdapter(collection.account)
+        val unknownValues: MutableList<ContentValues> = mutableListOf()
+        collection.client.query(
+            unknownUrl,
+            null,
+            "${SyncContentProviderContract.JtxUnknown.ICALOBJECT_ID} = ?",
+            arrayOf(this.id.toString()),
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                unknownValues.add(cursor.toValues())
+            }
+        }
+
+        return unknownValues
     }
 
     private fun getLongListFromString(string: String): List<Long> {
