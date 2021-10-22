@@ -17,11 +17,10 @@ import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.component.VJournal
 import net.fortuna.ical4j.model.component.VToDo
-import net.fortuna.ical4j.model.parameter.FmtType
-import net.fortuna.ical4j.model.parameter.RelType
-import net.fortuna.ical4j.model.parameter.Value
+import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
 import org.apache.commons.io.IOUtils
+import org.json.JSONObject
 import java.io.*
 import java.net.URI
 import java.net.URISyntaxException
@@ -96,6 +95,7 @@ open class JtxICalObject(
     var attachments: MutableList<Attachment> = mutableListOf()
     var attendees: MutableList<Attendee> = mutableListOf()
     var comments: MutableList<Comment> = mutableListOf()
+    var resources: MutableList<Resource> = mutableListOf()
     var alarms: MutableList<Alarm> = mutableListOf()
     var unknown: MutableList<Unknown> = mutableListOf()
 
@@ -152,6 +152,14 @@ open class JtxICalObject(
         var sentby: String? = null,
         var cn: String? = null,
         var dir: String? = null,
+        var language: String? = null,
+        var other: String? = null
+    )
+
+    data class Resource(
+        var resourceId: Long = 0L,
+        var text: String? = "",
+        var altrep: String? = null,
         var language: String? = null,
         var other: String? = null
     )
@@ -233,7 +241,7 @@ open class JtxICalObject(
             // sequence must only be null for locally created, not-yet-synchronized events
             iCalObject.sequence = 0
 
-            for (prop in properties)
+            for (prop in properties) {
                 when (prop) {
                     is Sequence -> iCalObject.sequence = prop.sequenceNo.toLong()
                     is Created -> iCalObject.created = prop.dateTime.time
@@ -317,49 +325,106 @@ open class JtxICalObject(
                     is RecurrenceId -> iCalObject.recurid = prop.value
 
                     is Categories ->
-                    for (category in prop.categories)
-                        iCalObject.categories.add(Category(text = category))
+                        for (category in prop.categories)
+                            iCalObject.categories.add(Category(text = category))
 
-                    is net.fortuna.ical4j.model.property.Comment ->
-                    iCalObject.comments.add(Comment(text = prop.value))
+                    is net.fortuna.ical4j.model.property.Comment -> {
+                        iCalObject.comments.add(
+                            Comment().apply {
+                                this.text = prop.value
+                                this.language = prop.parameters?.getParameter<Language>(Parameter.LANGUAGE)?.value
+                                this.altrep = prop.parameters?.getParameter<AltRep>(Parameter.ALTREP)?.value
+
+                                // remove the known parameter
+                                prop.parameters?.removeAll(Parameter.LANGUAGE)
+                                prop.parameters?.removeAll(Parameter.ALTREP)
+
+                                // save unknown parameters in the other field
+                                this.other = getJsonStringFromXParameters(prop.parameters)
+                            })
+
+                    }
+
+                    is Resources ->
+                        for (resource in prop.resources)
+                            iCalObject.resources.add(Resource(text = resource))
 
                     is Attach -> {
-                    val attachment = Attachment()
-                    prop.uri?.let { attachment.uri = it.toString() }
-                    prop.binary?.let {
-                        attachment.binary = Base64.encodeToString(it, Base64.DEFAULT)
-                    }
-                    prop.parameters?.getParameter<FmtType>(Parameter.FMTTYPE)?.let {
-                        attachment.fmttype = it.value
-                    }
+                        val attachment = Attachment()
+                        prop.uri?.let { attachment.uri = it.toString() }
+                        prop.binary?.let {
+                            attachment.binary = Base64.encodeToString(it, Base64.DEFAULT)
+                        }
+                        prop.parameters?.getParameter<FmtType>(Parameter.FMTTYPE)?.let {
+                            attachment.fmttype = it.value
+                            prop.parameters?.remove(it)
+                        }
 
-                    if (attachment.uri?.isNotEmpty() == true || attachment.binary?.isNotEmpty() == true)   // either uri or value must be present!
-                        iCalObject.attachments.add(attachment)
+                        attachment.other = getJsonStringFromXParameters(prop.parameters)
+
+                        if (attachment.uri?.isNotEmpty() == true || attachment.binary?.isNotEmpty() == true)   // either uri or value must be present!
+                            iCalObject.attachments.add(attachment)
                     }
 
                     is net.fortuna.ical4j.model.property.RelatedTo -> {
 
-                    val relatedTo = RelatedTo()
-                    relatedTo.reltype = prop.getParameter<RelType>(RelType.RELTYPE).value
-                    relatedTo.text = prop.value
-                    iCalObject.relatedTo.add(relatedTo)
+                        iCalObject.relatedTo.add(
+                            RelatedTo().apply {
+                                this.text = prop.value
+                                this.reltype = prop.getParameter<RelType>(RelType.RELTYPE)?.value
+
+                                // remove the known parameter
+                                prop.parameters?.removeAll(RelType.RELTYPE)
+
+                                // save unknown parameters in the other field
+                                this.other = getJsonStringFromXParameters(prop.parameters)
+                            })
                     }
 
                     is net.fortuna.ical4j.model.property.Attendee -> {
-                    iCalObject.attendees.add(
-                        Attendee(caladdress = prop.calAddress.toString())
-                        //todo: take care of other attributes for attendees
-                    )
+                        iCalObject.attendees.add(
+                            Attendee().apply {
+                                this.caladdress = prop.calAddress.toString()
+                                this.cn = prop.parameters?.getParameter<Cn>(Parameter.CN)?.value
+                                this.delegatedto = prop.parameters?.getParameter<DelegatedTo>(Parameter.DELEGATED_TO)?.value
+                                this.delegatedfrom = prop.parameters?.getParameter<DelegatedFrom>(Parameter.DELEGATED_FROM)?.value
+                                this.cutype = prop.parameters?.getParameter<CuType>(Parameter.CUTYPE)?.value
+                                this.dir = prop.parameters?.getParameter<Dir>(Parameter.DIR)?.value
+                                this.language = prop.parameters?.getParameter<Language>(Parameter.LANGUAGE)?.value
+                                this.member = prop.parameters?.getParameter<Member>(Parameter.MEMBER)?.value
+                                this.partstat = prop.parameters?.getParameter<PartStat>(Parameter.PARTSTAT)?.value
+                                this.role = prop.parameters?.getParameter<Role>(Parameter.ROLE)?.value
+                                this.rsvp = prop.parameters?.getParameter<Rsvp>(Parameter.RSVP)?.value?.toBoolean()
+                                this.sentby = prop.parameters?.getParameter<SentBy>(Parameter.SENT_BY)?.value
+
+                                // remove all known parameters so that only unknown parameters remain
+                                prop.parameters?.removeAll(Parameter.CN)
+                                prop.parameters?.removeAll(Parameter.DELEGATED_TO)
+                                prop.parameters?.removeAll(Parameter.DELEGATED_FROM)
+                                prop.parameters?.removeAll(Parameter.CUTYPE)
+                                prop.parameters?.removeAll(Parameter.DIR)
+                                prop.parameters?.removeAll(Parameter.LANGUAGE)
+                                prop.parameters?.removeAll(Parameter.MEMBER)
+                                prop.parameters?.removeAll(Parameter.PARTSTAT)
+                                prop.parameters?.removeAll(Parameter.ROLE)
+                                prop.parameters?.removeAll(Parameter.RSVP)
+                                prop.parameters?.removeAll(Parameter.SENT_BY)
+
+                                // save unknown parameters in the other field
+                                this.other = getJsonStringFromXParameters(prop.parameters)
+                            }
+                        )
                     }
 
                     is Uid -> iCalObject.uid = prop.value
                     //is Uid,
-                    is ProdId, is DtStamp -> {  }    /* don't save these as unknown properties */
+                    is ProdId, is DtStamp -> {
+                    }    /* don't save these as unknown properties */
                     else -> iCalObject.unknown.add(Unknown(value = UnknownProperty.toJsonString(prop)))               // save the whole property for unknown properties
 
                     // TODO: How to deal with alarms?
                 }
-
+            }
 
 
             // There seem to be many invalid tasks out there because of some defect clients, do some validation.
@@ -390,7 +455,20 @@ open class JtxICalObject(
 
             //t.alarms.addAll(todo.alarms)
 
+        private fun getJsonStringFromXParameters(parameters: ParameterList?): String? {
 
+            if(parameters == null)
+                return null
+
+            val jsonObject = JSONObject()
+            parameters.forEach { parameter ->
+                jsonObject.put(parameter.name, parameter.value)
+            }
+            return if(jsonObject.length() == 0)
+                null
+            else
+                jsonObject.toString()
+        }
     }
 
 
@@ -456,21 +534,91 @@ open class JtxICalObject(
             props += Categories(categoryTextList)
 
 
-        comments.forEach {
-            props += Comment(it.text)
+        val resourceTextList = TextList()
+        resources.forEach {
+            resourceTextList.add(it.text)
+        }
+        if (!resourceTextList.isEmpty)
+            props += Resources(resourceTextList)
+
+
+        comments.forEach { comment ->
+            val c = Comment(comment.text).apply {
+                comment.altrep?.let { this.parameters.add(AltRep(it)) }
+                comment.language?.let { this.parameters.add(Language(it)) }
+                comment.other?.let {
+                    val xparams = getXParametersFromJson(it)
+                    xparams.forEach { xparam ->
+                        this.parameters.add(xparam)
+                    }
+                }
+            }
+            props += c
         }
 
-        attendees.forEach {
-            props += Attendee(it.caladdress)
+
+        attendees.forEach { attendee ->
+            val attendeeProp = net.fortuna.ical4j.model.property.Attendee().apply {
+                this.calAddress = URI(attendee.caladdress)
+
+                attendee.cn?.let {
+                    this.parameters.add(Cn(it))
+                }
+                attendee.cutype?.let {
+                    when {
+                        it.equals(CuType.INDIVIDUAL.value, ignoreCase = true) -> this.parameters.add(CuType.INDIVIDUAL)
+                        it.equals(CuType.GROUP.value, ignoreCase = true) -> this.parameters.add(CuType.GROUP)
+                        it.equals(CuType.ROOM.value, ignoreCase = true) -> this.parameters.add(CuType.ROOM)
+                        it.equals(CuType.RESOURCE.value, ignoreCase = true) -> this.parameters.add(CuType.RESOURCE)
+                        it.equals(CuType.UNKNOWN.value, ignoreCase = true) -> this.parameters.add(CuType.UNKNOWN)
+                        else -> this.parameters.add(CuType.UNKNOWN)
+                    }
+                }
+                attendee.delegatedfrom?.let {
+                    this.parameters.add(DelegatedFrom(it))
+                }
+                attendee.delegatedto?.let {
+                    this.parameters.add(DelegatedTo(it))
+                }
+                attendee.dir?.let {
+                    this.parameters.add(Dir(it))
+                }
+                attendee.language?.let {
+                    this.parameters.add(Language(it))
+                }
+                attendee.member?.let {
+                    this.parameters.add(Member(it))
+                }
+                attendee.partstat?.let {
+                    this.parameters.add(PartStat(it))
+                }
+                attendee.role?.let {
+                    this.parameters.add(Role(it))
+                }
+                attendee.rsvp?.let {
+                    this.parameters.add(Rsvp(it))
+                }
+                attendee.sentby?.let {
+                    this.parameters.add(SentBy(it))
+                }
+                attendee.other?.let {
+                    val params = getXParametersFromJson(it)
+                    params.forEach { xparam ->
+                        this.parameters.add(xparam)
+                    }
+                }
+            }
+            props += attendeeProp
             //todo: take care of other attributes for attendees
         }
 
-        attachments.forEach {
-            if (it.uri?.isNotEmpty() == true)
-                context.contentResolver.openInputStream(Uri.parse(URI(it.uri).toString()))
+        attachments.forEach { attachment ->
+            if (attachment.uri?.isNotEmpty() == true)
+                context.contentResolver.openInputStream(Uri.parse(URI(attachment.uri).toString()))
                     .use { file ->
-                        val att = Attach(IOUtils.toByteArray(file))
-                        att.parameters.add(FmtType(it.fmttype))
+                        val att = Attach(IOUtils.toByteArray(file)).apply {
+                            attachment.fmttype?.let { this.parameters.add(FmtType(it)) }
+                        }
                         props += att
                     }
         }
@@ -741,6 +889,12 @@ duration?.let(props::add)
             )
 
             collection.client.delete(
+                SyncContentProviderContract.JtxResource.CONTENT_URI.asSyncAdapter(collection.account),
+                "${SyncContentProviderContract.JtxResource.ICALOBJECT_ID} = ?",
+                arrayOf(this.id.toString())
+            )
+
+            collection.client.delete(
                 SyncContentProviderContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(collection.account),
                 "${SyncContentProviderContract.JtxRelatedto.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
@@ -796,6 +950,21 @@ duration?.let(props::add)
             collection.client.insert(
                 SyncContentProviderContract.JtxComment.CONTENT_URI.asSyncAdapter(collection.account),
                 commentContentValues
+            )
+        }
+
+
+        this.resources.forEach {
+            val resourceContentValues = ContentValues().apply {
+                put(SyncContentProviderContract.JtxResource.ICALOBJECT_ID, id)
+                put(SyncContentProviderContract.JtxResource.TEXT, it.text)
+                put(SyncContentProviderContract.JtxResource.ID, it.resourceId)
+                put(SyncContentProviderContract.JtxResource.LANGUAGE, it.language)
+                put(SyncContentProviderContract.JtxResource.OTHER, it.other)
+            }
+            collection.client.insert(
+                SyncContentProviderContract.JtxResource.CONTENT_URI.asSyncAdapter(collection.account),
+                resourceContentValues
             )
         }
 
@@ -922,12 +1091,12 @@ duration?.let(props::add)
 
         this.categories = newData.categories
         this.comments = newData.comments
+        this.resources = newData.resources
         this.relatedTo = newData.relatedTo
         this.attendees = newData.attendees
         this.attachments = newData.attachments
         this.alarms = newData.alarms
         this.unknown = newData.unknown
-        // tODO: to be continued
     }
 
     fun toContentValues(): ContentValues {
@@ -1009,6 +1178,25 @@ duration?.let(props::add)
         }
 
         return commentValues
+    }
+
+
+    fun getResourceContentValues(): List<ContentValues> {
+
+        val resourceUrl = SyncContentProviderContract.JtxResource.CONTENT_URI.asSyncAdapter(collection.account)
+        val resourceValues: MutableList<ContentValues> = mutableListOf()
+        collection.client.query(
+            resourceUrl,
+            null,
+            "${SyncContentProviderContract.JtxResource.ICALOBJECT_ID} = ?",
+            arrayOf(this.id.toString()),
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                resourceValues.add(cursor.toValues())
+            }
+        }
+        return resourceValues
     }
 
 
@@ -1125,6 +1313,27 @@ duration?.let(props::add)
         }
         return longList
     }
+
+
+
+    // member function to this method
+    fun getXParametersFromJson(string: String): List<XParameter> {
+
+        val jsonObject = JSONObject(string)
+        val xparamList = mutableListOf<XParameter>()
+        for (i in 0..jsonObject.length()-1) {
+            val names = jsonObject.names() ?: break
+            val xparamName = names[i]?.toString() ?: break
+            val xparamValue = jsonObject.getString(xparamName).toString()
+            if(xparamName.isNotBlank() && xparamValue.isNotBlank()) {
+                val xparam = XParameter(xparamName, xparamValue)
+                xparamList.add(xparam)
+            }
+        }
+        return xparamList
+    }
+
+
 }
 
 /*

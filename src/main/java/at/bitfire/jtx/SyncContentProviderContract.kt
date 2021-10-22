@@ -833,11 +833,11 @@ object SyncContentProviderContract {
         const val TEXT = "text"
 
         /**
-         * Purpose:  To specify the language for text values in a property or property parameter, in this case of the resource.
-         * see [https://tools.ietf.org/html/rfc5545#section-3.8.1.10] and [https://tools.ietf.org/html/rfc5545#section-3.2.10]
+         * Purpose:  To specify an alternate text representation for the property value, in this case of the resource.
+         * see [https://tools.ietf.org/html/rfc5545#section-3.8.1.4]
          * Type: [String]
          */
-        const val RELTYPE = "reltype"
+        const val LANGUAGE = "language"
 
         /**
          * Purpose:  To specify other properties for the resource.
