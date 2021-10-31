@@ -15,6 +15,7 @@ import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Date
+import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VJournal
 import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.parameter.*
@@ -197,6 +198,7 @@ open class JtxICalObject(
             val ical = ICalendar.fromReader(reader)
             val vToDos = ical.getComponents<VToDo>(Component.VTODO)
             val vJournals = ical.getComponents<VJournal>(Component.VJOURNAL)
+            val vAlarms = ical.getComponents<VAlarm>(Component.VALARM)
 
             val iCalObjectList = mutableListOf<JtxICalObject>()
 
@@ -213,6 +215,10 @@ open class JtxICalObject(
                 }
 
                 extractProperties(t, it.properties)
+                vAlarms.forEach {
+                    // TODO Continue checking how to deal with alarms
+                    t.alarms.add(Alarm(value = it.toString()))
+                }
                 iCalObjectList.add(t)
             }
 
@@ -229,6 +235,10 @@ open class JtxICalObject(
                 }
 
                 extractProperties(j, it.properties)
+                vAlarms.forEach {
+                    // TODO Continue checking how to deal with alarms
+                    j.alarms.add(Alarm(value = it.toString()))
+                }
                 iCalObjectList.add(j)
             }
 
