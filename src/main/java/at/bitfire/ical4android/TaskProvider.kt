@@ -35,7 +35,8 @@ class TaskProvider private constructor(
             private val writePermission: String
     ) {
         OpenTasks("org.dmfs.tasks", "org.dmfs.tasks", 103, "1.1.8.2", PERMISSION_OPENTASKS_READ, PERMISSION_OPENTASKS_WRITE),
-        TasksOrg("org.tasks.opentasks", "org.tasks", 100000, "10.0", PERMISSION_TASKS_ORG_READ, PERMISSION_TASKS_ORG_WRITE);
+        TasksOrg("org.tasks.opentasks", "org.tasks", 100000, "10.0", PERMISSION_TASKS_ORG_READ, PERMISSION_TASKS_ORG_WRITE),
+        JtxBoard("at.techbee.jtx.provider", "at.techbee.jtx", 1, "0.1", PERMISSION_JTX_READ, PERMISSION_JTX_WRITE);
 
         companion object {
             fun fromAuthority(authority: String): ProviderName {
@@ -54,7 +55,8 @@ class TaskProvider private constructor(
 
         val TASK_PROVIDERS = listOf(
                 ProviderName.OpenTasks,
-                ProviderName.TasksOrg
+                ProviderName.TasksOrg,
+                ProviderName.JtxBoard
         )
 
         const val PERMISSION_OPENTASKS_READ = "org.dmfs.permission.READ_TASKS"
@@ -64,6 +66,10 @@ class TaskProvider private constructor(
         const val PERMISSION_TASKS_ORG_READ = "org.tasks.permission.READ_TASKS"
         const val PERMISSION_TASKS_ORG_WRITE = "org.tasks.permission.WRITE_TASKS"
         val PERMISSIONS_TASKS_ORG = arrayOf(PERMISSION_TASKS_ORG_READ, PERMISSION_TASKS_ORG_WRITE)
+
+        const val PERMISSION_JTX_READ = "at.techbee.jtx.permission.READ"
+        const val PERMISSION_JTX_WRITE = "at.techbee.jtx.permission.WRITE"
+        val PERMISSIONS_JTX = arrayOf(PERMISSION_JTX_READ, PERMISSION_JTX_WRITE)
 
         /**
          * Acquires a content provider for a given task provider. The content provider will
