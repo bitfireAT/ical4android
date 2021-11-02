@@ -167,7 +167,15 @@ open class JtxICalObject(
 
     data class Alarm(
         var alarmId: Long = 0L,
-        var value: String? = null
+        var action: String? = null,
+        var description: String? = null,
+        var trigger: String? = null,
+        var summary: String? = null,
+        var attendee: String? = null,
+        var duration: String? = null,
+        var repeat: String? = null,
+        var attach: String? = null,
+        var other: String? = null,
     )
 
     data class Unknown(
@@ -215,9 +223,19 @@ open class JtxICalObject(
                 }
 
                 extractProperties(t, it.properties)
-                vAlarms.forEach {
-                    // TODO Continue checking how to deal with alarms
-                    t.alarms.add(Alarm(value = it.toString()))
+
+                vAlarms.forEach { vAlarm ->
+                    val jtxAlarm = Alarm().apply {
+                        vAlarm.action?.let { vAlarmAction -> this.action = vAlarmAction.toString() }
+                        vAlarm.attachment?.let { vAlarmAttach -> this.attach = vAlarmAttach.toString() }
+                        vAlarm.description?.let { vAlarmDesc -> this.description = vAlarmDesc.toString() }
+                        vAlarm.duration?.let { vAlarmDur -> this.duration = vAlarmDur.toString() }
+                        vAlarm.repeat?.let { vAlarmRep -> this.repeat = vAlarmRep.toString() }
+                        vAlarm.summary?.let { vAlarmSummary -> this.summary = vAlarmSummary.toString() }
+                        vAlarm.trigger?.let { vAlarmTrigger -> this.trigger = vAlarmTrigger.toString() }
+                        vAlarm.properties?.let { vAlarmProps -> this.other = vAlarmProps.toString() }
+                    }
+                    t.alarms.add(jtxAlarm)
                 }
                 iCalObjectList.add(t)
             }
@@ -235,9 +253,19 @@ open class JtxICalObject(
                 }
 
                 extractProperties(j, it.properties)
-                vAlarms.forEach {
-                    // TODO Continue checking how to deal with alarms
-                    j.alarms.add(Alarm(value = it.toString()))
+
+                vAlarms.forEach { vAlarm ->
+                    val jtxAlarm = Alarm().apply {
+                        vAlarm.action?.let { vAlarmAction -> this.action = vAlarmAction.toString() }
+                        vAlarm.attachment?.let { vAlarmAttach -> this.attach = vAlarmAttach.toString() }
+                        vAlarm.description?.let { vAlarmDesc -> this.description = vAlarmDesc.toString() }
+                        vAlarm.duration?.let { vAlarmDur -> this.duration = vAlarmDur.toString() }
+                        vAlarm.repeat?.let { vAlarmRep -> this.repeat = vAlarmRep.toString() }
+                        vAlarm.summary?.let { vAlarmSummary -> this.summary = vAlarmSummary.toString() }
+                        vAlarm.trigger?.let { vAlarmTrigger -> this.trigger = vAlarmTrigger.toString() }
+                        vAlarm.properties?.let { vAlarmProps -> this.other = getJsonStringFromXProperties(vAlarmProps) }
+                    }
+                    j.alarms.add(jtxAlarm)
                 }
                 iCalObjectList.add(j)
             }
@@ -479,6 +507,21 @@ open class JtxICalObject(
             else
                 jsonObject.toString()
         }
+
+        private fun getJsonStringFromXProperties(propertyList: PropertyList<*>?): String? {
+
+            if(propertyList == null)
+                return null
+
+            val jsonObject = JSONObject()
+            propertyList.forEach { property ->
+                jsonObject.put(property.name, property.value)
+            }
+            return if(jsonObject.length() == 0)
+                null
+            else
+                jsonObject.toString()
+        }
     }
 
 
@@ -500,6 +543,20 @@ open class JtxICalObject(
             ical.components += vJournal
             val props = vJournal.properties
             addProperties(props, context)
+        }
+
+        alarms.forEach { alarm ->
+            val vAlarm = VAlarm().apply {
+                alarm.action?.let { this.action.value = it }
+                alarm.trigger?.let { this.trigger.value = it }
+                alarm.summary?.let {this.summary.value = it }
+                alarm.repeat?.let { this.repeat.value = it }
+                alarm.duration?.let { this.duration.value = it }
+                alarm.description?.let { this.description.value = it }
+                alarm.attach?.let { this.attachment.value = it }
+                alarm.other?.let { this.properties.addAll(getXPropertyListFromJson(it)) }
+            }
+            ical.components += vAlarm
         }
 
         ICalendar.softValidate(ical)
@@ -1035,7 +1092,15 @@ duration?.let(props::add)
         this.alarms.forEach {
             val alarmContentValues = ContentValues().apply {
                 put(SyncContentProviderContract.JtxAlarm.ICALOBJECT_ID, id)
-                put(SyncContentProviderContract.JtxAlarm.ALARM_VALUE, it.value)
+                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_ACTION, it.action)
+                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_ATTACH, it.attach)
+                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_ATTENDEE, it.attendee)
+                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_DESCRIPTION, it.description)
+                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_DURATION, it.duration)
+                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_REPEAT, it.repeat)
+                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_SUMMARY, it.summary)
+                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_TRIGGER, it.trigger)
+                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_OTHER, it.other)
             }
             collection.client.insert(
                 SyncContentProviderContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1326,12 +1391,11 @@ duration?.let(props::add)
 
 
 
-    // member function to this method
-    fun getXParametersFromJson(string: String): List<XParameter> {
+    private fun getXParametersFromJson(string: String): List<XParameter> {
 
         val jsonObject = JSONObject(string)
         val xparamList = mutableListOf<XParameter>()
-        for (i in 0..jsonObject.length()-1) {
+        for (i in 0 until jsonObject.length()) {
             val names = jsonObject.names() ?: break
             val xparamName = names[i]?.toString() ?: break
             val xparamValue = jsonObject.getString(xparamName).toString()
@@ -1343,7 +1407,21 @@ duration?.let(props::add)
         return xparamList
     }
 
+    private fun getXPropertyListFromJson(string: String): PropertyList<Property> {
 
+        val jsonObject = JSONObject(string)
+        val propertyList = PropertyList<Property>()
+        for (i in 0 until jsonObject.length()) {
+            val names = jsonObject.names() ?: break
+            val propertyName = names[i]?.toString() ?: break
+            val propertyValue = jsonObject.getString(propertyName).toString()
+            if(propertyName.isNotBlank() && propertyValue.isNotBlank()) {
+                val prop = XProperty(propertyName, propertyValue)
+                propertyList.add(prop)
+            }
+        }
+        return propertyList
+    }
 }
 
 /*
