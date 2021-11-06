@@ -162,7 +162,7 @@ object SyncContentProviderContract {
          * This property is split in the fields [GEO_LAT] for the latitude
          * and [GEO_LONG] for the longitude coordinates.
          * See [https://tools.ietf.org/html/rfc5545#section-3.8.1.6]
-         * Type: [Float]
+         * Type: [Double]
          */
         const val GEO_LAT = "geolat"
 
@@ -171,9 +171,10 @@ object SyncContentProviderContract {
          * This property is split in the fields [GEO_LAT] for the latitude
          * and [GEO_LONG] for the longitude coordinates.
          * See [https://tools.ietf.org/html/rfc5545#section-3.8.1.6]
-         * Type: [Float]
+         * Type: [Double]
          */
         const val GEO_LONG = "geolong"
+
 
         /**
          * Purpose:  This property defines the intended venue for the activity defined by a calendar component.
@@ -181,6 +182,13 @@ object SyncContentProviderContract {
          * Type: [String]
          */
         const val LOCATION = "location"
+
+        /**
+         * Purpose:  This property defines the alternative representation of the intended venue for the activity defined by a calendar component.
+         * See [https://tools.ietf.org/html/rfc5545#section-3.8.1.7]
+         * Type: [String]
+         */
+        const val LOCATION_ALTREP = "locationaltrep"
 
         /**
          * Purpose:  This property is used by an assignee or delegatee of a to-do to convey the percent completion of a to-do to the "Organizer".
@@ -1016,14 +1024,14 @@ object SyncContentProviderContract {
          * Type: [Long] */
         const val ICALOBJECT_ID = "icalObjectId"
 
-        const val COLUMN_ALARM_ACTION = "action"
-        const val COLUMN_ALARM_DESCRIPTION = "description"
-        const val COLUMN_ALARM_TRIGGER = "trigger"
-        const val COLUMN_ALARM_SUMMARY = "summary"
-        const val COLUMN_ALARM_ATTENDEE = "attendee"
-        const val COLUMN_ALARM_DURATION = "duration"
-        const val COLUMN_ALARM_REPEAT = "repeat"
-        const val COLUMN_ALARM_ATTACH = "attach"
+        const val ALARM_ACTION = "action"
+        const val ALARM_DESCRIPTION = "description"
+        const val ALARM_TRIGGER = "trigger"
+        const val ALARM_SUMMARY = "summary"
+        const val ALARM_ATTENDEE = "attendee"
+        const val ALARM_DURATION = "duration"
+        const val ALARM_REPEAT = "repeat"
+        const val ALARM_ATTACH = "attach"
 
 
         /* The names of all the other columns  */
@@ -1031,7 +1039,7 @@ object SyncContentProviderContract {
          * Purpose:  This property stores the unknown value as json
          * Type: [String]
          */
-        const val COLUMN_ALARM_OTHER = "other"
+        const val ALARM_OTHER = "other"
     }
 
     @Suppress("unused")

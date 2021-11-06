@@ -26,6 +26,7 @@ import java.io.*
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
+import java.util.TimeZone
 
 
 open class JtxICalObject(
@@ -56,9 +57,10 @@ open class JtxICalObject(
     var percent: Int? = null
     var url: String? = null
     var contact: String? = null
-    var geoLat: Float? = null
-    var geoLong: Float? = null
+    var geoLat: Double? = null
+    var geoLong: Double? = null
     var location: String? = null
+    var locationAltrep: String? = null
 
     var uid: String =
         "${System.currentTimeMillis()}-${UUID.randomUUID()}@at.techbee.jtx"                              //unique identifier, see https://tools.ietf.org/html/rfc5545#section-3.8.4.7
@@ -78,6 +80,8 @@ open class JtxICalObject(
     var exdate: String? = null   //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5.1
     var rdate: String? = null    //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5.2
     var recurid: String? = null  //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5
+
+    var rstatus: String? = null
 
     var collectionId: Long = collection.id
 
@@ -285,10 +289,14 @@ open class JtxICalObject(
                     is Created -> iCalObject.created = prop.dateTime.time
                     is LastModified -> iCalObject.lastModified = prop.dateTime.time
                     is Summary -> iCalObject.summary = prop.value
-                    is Location -> iCalObject.location = prop.value
+                    is Location -> {
+                        iCalObject.location = prop.value
+                        if(!prop.parameters.isEmpty && prop.parameters.getParameter<AltRep>(Parameter.ALTREP) != null)
+                            iCalObject.locationAltrep = prop.parameters.getParameter<AltRep>(Parameter.ALTREP).value
+                    }
                     is Geo -> {
-                        iCalObject.geoLat = prop.latitude.toFloat()
-                        iCalObject.geoLong = prop.longitude.toFloat()
+                        iCalObject.geoLat = prop.latitude.toDouble()
+                        iCalObject.geoLong = prop.longitude.toDouble()
                         // TODO: name and attributes might get lost here!! Doublecheck what could be a good solution!
                     }
                     is Description -> iCalObject.description = prop.value
@@ -310,12 +318,10 @@ open class JtxICalObject(
                         if (iCalObject.component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name) {
                             iCalObject.due = prop.date.time
                             when {
-                                prop.date is DateTime && prop.timeZone != null -> iCalObject.dueTimezone =
-                                    prop.timeZone.id
-                                prop.date is DateTime && prop.timeZone == null -> iCalObject.dueTimezone =
-                                    null                   // this comparison is kept on purpose as "prop.date is Date" did not work as expected.
-                                else -> iCalObject.dueTimezone =
-                                    TZ_ALLDAY     // prop.date is Date (and not DateTime), therefore it must be Allday
+                                prop.date is DateTime && prop.timeZone != null -> iCalObject.dueTimezone = prop.timeZone.id
+                                prop.date is DateTime && prop.isUtc -> iCalObject.dueTimezone = TimeZone.getTimeZone("UTC").id
+                                prop.date is DateTime && !prop.isUtc && prop.timeZone == null -> iCalObject.dueTimezone = null                   // this comparison is kept on purpose as "prop.date is Date" did not work as expected.
+                                else -> iCalObject.dueTimezone = TZ_ALLDAY     // prop.date is Date (and not DateTime), therefore it must be Allday
                             }
                         } else
                             Ical4Android.log.warning("The property Due is only supported for VTODO, this value is rejected.")
@@ -326,12 +332,10 @@ open class JtxICalObject(
                     is DtStart -> {
                         iCalObject.dtstart = prop.date.time
                         when {
-                            prop.date is DateTime && prop.timeZone != null -> iCalObject.dtstartTimezone =
-                                prop.timeZone.id
-                            prop.date is DateTime && prop.timeZone == null -> iCalObject.dtstartTimezone =
-                                null                   // this comparison is kept on purpose as "prop.date is Date" did not work as expected.
-                            else -> iCalObject.dtstartTimezone =
-                                TZ_ALLDAY     // prop.date is Date (and not DateTime), therefore it must be Allday
+                            prop.date is DateTime && prop.timeZone != null -> iCalObject.dtstartTimezone = prop.timeZone.id
+                            prop.date is DateTime && prop.isUtc -> iCalObject.dtstartTimezone = TimeZone.getTimeZone("UTC").id
+                            prop.date is DateTime && !prop.isUtc && prop.timeZone == null -> iCalObject.dtstartTimezone = null                   // this comparison is kept on purpose as "prop.date is Date" did not work as expected.
+                            else -> iCalObject.dtstartTimezone = TZ_ALLDAY     // prop.date is Date (and not DateTime), therefore it must be Allday
                         }
                         /* if(!prop.isUtc)
                             t.dtstartTimezone = prop.timeZone.displayName
@@ -347,20 +351,28 @@ open class JtxICalObject(
 
                     is RRule -> iCalObject.rrule = prop.value
                     is RDate -> {
-                        val rdateList = mutableListOf<Long>()
+                        val rdateList = if(iCalObject.rdate.isNullOrEmpty())
+                            mutableListOf()
+                        else
+                            iCalObject.getLongListFromString(iCalObject.rdate!!)
                         prop.dates.forEach {
                             rdateList.add(it.time)
                         }
                         iCalObject.rdate = rdateList.toTypedArray().joinToString(separator = ",")
                     }
                     is ExDate -> {
-                        val exdateList = mutableListOf<Long>()
+                        val exdateList = if(iCalObject.exdate.isNullOrEmpty())
+                            mutableListOf()
+                        else
+                            iCalObject.getLongListFromString(iCalObject.exdate!!)
                         prop.dates.forEach {
                             exdateList.add(it.time)
                         }
                         iCalObject.exdate = exdateList.toTypedArray().joinToString(separator = ",")
                     }
                     is RecurrenceId -> iCalObject.recurid = prop.value
+
+                    //is RequestStatus -> iCalObject.rstatus = prop.value
 
                     is Categories ->
                         for (category in prop.categories)
@@ -575,9 +587,16 @@ open class JtxICalObject(
         summary?.let { props += Summary(it) }
         description?.let { props += Description(it) }
 
-        location?.let { props += Location(it) }
-        if (geoLat != null && geoLong != null)
+        location?.let { location ->
+            val loc = Location(location)
+            locationAltrep?.let { locationAltrep ->
+                loc.parameters.add(AltRep(locationAltrep))
+            }
+            props += loc
+        }
+        if (geoLat != null && geoLong != null) {
             props += Geo(geoLat!!.toBigDecimal(), geoLong!!.toBigDecimal())
+        }
         color?.let { props += Color(null, Css3Color.nearestMatch(it).name) }
         url?.let {
             try {
@@ -589,8 +608,8 @@ open class JtxICalObject(
         //organizer?.let { props += it }
 
 
-        classification.let { props += Clazz(it) }
-        status.let { props += Status(it) }
+        classification?.let { props += Clazz(it) }
+        status?.let { props += Status(it) }
 
 
         val categoryTextList = TextList()
@@ -713,7 +732,12 @@ open class JtxICalObject(
         dtstart?.let {
             when {
                 dtstartTimezone == TZ_ALLDAY -> props += DtStart(Date(it))
-                dtstartTimezone.isNullOrEmpty() -> props += DtStart(DateTime(it))
+                dtstartTimezone == TimeZone.getTimeZone("UTC").id -> props += DtStart(DateTime(it).apply {
+                    this.isUtc = true
+                })
+                dtstartTimezone.isNullOrEmpty() -> props += DtStart(DateTime(it).apply {
+                    this.isUtc = false
+                })
                 else -> {
                     val timezone = TimeZoneRegistryFactory.getInstance().createRegistry()
                         .getTimeZone(dtstartTimezone)
@@ -742,10 +766,21 @@ open class JtxICalObject(
                     props += RDate(dateListDate)
 
                 }
+                dtstartTimezone == TimeZone.getTimeZone("UTC").id -> {
+                    val dateListDateTime = DateList(Value.DATE_TIME)
+                    getLongListFromString(rdateString).forEach {
+                        dateListDateTime.add(DateTime(it).apply {
+                            this.isUtc = true
+                        })
+                    }
+                    props += RDate(dateListDateTime)
+                }
                 dtstartTimezone.isNullOrEmpty() -> {
                     val dateListDateTime = DateList(Value.DATE_TIME)
                     getLongListFromString(rdateString).forEach {
-                        dateListDateTime.add(DateTime(it))
+                        dateListDateTime.add(DateTime(it).apply {
+                            this.isUtc = false
+                        })
                     }
                     props += RDate(dateListDateTime)
                 }
@@ -773,10 +808,21 @@ open class JtxICalObject(
                     props += ExDate(dateListDate)
 
                 }
+                dtstartTimezone == TimeZone.getTimeZone("UTC").id -> {
+                    val dateListDateTime = DateList(Value.DATE_TIME)
+                    getLongListFromString(exdateString).forEach {
+                        dateListDateTime.add(DateTime(it).apply {
+                            this.isUtc = true
+                        })
+                    }
+                    props += ExDate(dateListDateTime)
+                }
                 dtstartTimezone.isNullOrEmpty() -> {
                     val dateListDateTime = DateList(Value.DATE_TIME)
                     getLongListFromString(exdateString).forEach {
-                        dateListDateTime.add(DateTime(it))
+                        dateListDateTime.add(DateTime(it).apply {
+                            this.isUtc = false
+                        })
                     }
                     props += ExDate(dateListDateTime)
                 }
@@ -832,16 +878,28 @@ duration?.let(props::add)
 
                 props += Completed(DateTime(it))
             }
-            percent?.let { props += PercentComplete(it) }
+            percent?.let {
+                props += PercentComplete(it)
+            }
 
 
-            if (priority != Priority.UNDEFINED.level)
-                priority?.let { props += Priority(priority!!) }
+            if (priority != null && priority != Priority.UNDEFINED.level)
+                priority?.let {
+                    props += Priority(it)
+                }
+            else {
+                props += Priority(Priority.UNDEFINED.level)
+            }
 
             due?.let {
                 when {
                     dueTimezone == TZ_ALLDAY -> props += Due(Date(it))
-                    dueTimezone.isNullOrEmpty() -> props += Due(DateTime(it))
+                    dueTimezone == TimeZone.getTimeZone("UTC").id -> props += Due(DateTime(it).apply {
+                    this.isUtc = true
+                    })
+                    dueTimezone.isNullOrEmpty() -> props += Due(DateTime(it).apply {
+                        this.isUtc = false
+                    })
                     else -> {
                         val timezone = TimeZoneRegistryFactory.getInstance().createRegistry()
                             .getTimeZone(dueTimezone)
@@ -939,7 +997,7 @@ duration?.let(props::add)
     }
 
 
-    fun insertOrUpdateListProperties(isUpdate: Boolean) {
+    private fun insertOrUpdateListProperties(isUpdate: Boolean) {
 
         // delete the categories, attendees, ... and insert them again after. Only relevant for Update, for an insert there will be no entries
         if (isUpdate) {
@@ -1092,15 +1150,15 @@ duration?.let(props::add)
         this.alarms.forEach {
             val alarmContentValues = ContentValues().apply {
                 put(SyncContentProviderContract.JtxAlarm.ICALOBJECT_ID, id)
-                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_ACTION, it.action)
-                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_ATTACH, it.attach)
-                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_ATTENDEE, it.attendee)
-                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_DESCRIPTION, it.description)
-                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_DURATION, it.duration)
-                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_REPEAT, it.repeat)
-                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_SUMMARY, it.summary)
-                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_TRIGGER, it.trigger)
-                put(SyncContentProviderContract.JtxAlarm.COLUMN_ALARM_OTHER, it.other)
+                put(SyncContentProviderContract.JtxAlarm.ALARM_ACTION, it.action)
+                put(SyncContentProviderContract.JtxAlarm.ALARM_ATTACH, it.attach)
+                put(SyncContentProviderContract.JtxAlarm.ALARM_ATTENDEE, it.attendee)
+                put(SyncContentProviderContract.JtxAlarm.ALARM_DESCRIPTION, it.description)
+                put(SyncContentProviderContract.JtxAlarm.ALARM_DURATION, it.duration)
+                put(SyncContentProviderContract.JtxAlarm.ALARM_REPEAT, it.repeat)
+                put(SyncContentProviderContract.JtxAlarm.ALARM_SUMMARY, it.summary)
+                put(SyncContentProviderContract.JtxAlarm.ALARM_TRIGGER, it.trigger)
+                put(SyncContentProviderContract.JtxAlarm.ALARM_OTHER, it.other)
             }
             collection.client.insert(
                 SyncContentProviderContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1141,6 +1199,7 @@ duration?.let(props::add)
         this.uid = newData.uid
 
         this.location = newData.location
+        this.locationAltrep = newData.locationAltrep
         this.geoLat = newData.geoLat
         this.geoLong = newData.geoLong
         this.percent = newData.percent
@@ -1174,7 +1233,7 @@ duration?.let(props::add)
         this.unknown = newData.unknown
     }
 
-    fun toContentValues(): ContentValues {
+    private fun toContentValues(): ContentValues {
 
         val values = ContentValues()
         values.put(SyncContentProviderContract.JtxICalObject.ID, id)
@@ -1191,6 +1250,7 @@ duration?.let(props::add)
         values.put(SyncContentProviderContract.JtxICalObject.GEO_LAT, geoLat)
         values.put(SyncContentProviderContract.JtxICalObject.GEO_LONG, geoLong)
         values.put(SyncContentProviderContract.JtxICalObject.LOCATION, location)
+        values.put(SyncContentProviderContract.JtxICalObject.LOCATION_ALTREP, locationAltrep)
         values.put(SyncContentProviderContract.JtxICalObject.PERCENT, percent)
         values.put(SyncContentProviderContract.JtxICalObject.DTSTAMP, dtstamp)
         values.put(SyncContentProviderContract.JtxICalObject.DTSTART, dtstart)
@@ -1373,21 +1433,6 @@ duration?.let(props::add)
         return unknownValues
     }
 
-    private fun getLongListFromString(string: String): List<Long> {
-
-        val stringList = string.split(",")
-        val longList = mutableListOf<Long>()
-
-        stringList.forEach {
-            try {
-                longList.add(it.toLong())
-            } catch (e: NumberFormatException) {
-                Log.w("getLongListFromString", "String could not be cast to Long ($it)")
-                return@forEach
-            }
-        }
-        return longList
-    }
 
 
 
@@ -1422,6 +1467,23 @@ duration?.let(props::add)
         }
         return propertyList
     }
+
+    private fun getLongListFromString(string: String): MutableList<Long> {
+
+        val stringList = string.split(",")
+        val longList = mutableListOf<Long>()
+
+        stringList.forEach {
+            try {
+                longList.add(it.toLong())
+            } catch (e: NumberFormatException) {
+                Log.w("getLongListFromString", "String could not be cast to Long ($it)")
+                return@forEach
+            }
+        }
+        return longList
+    }
+
 }
 
 /*
