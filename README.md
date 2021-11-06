@@ -1,5 +1,6 @@
 
-[![build status](https://gitlab.com/bitfireAT/ical4android/badges/master/build.svg)](https://gitlab.com/bitfireAT/ical4android/builds)
+[![Development tests](https://github.com/bitfireAT/ical4android/actions/workflows/test-dev.yml/badge.svg)](https://github.com/bitfireAT/ical4android/actions/workflows/test-dev.yml)
+[![Documentation](https://img.shields.io/badge/documentation-kdoc-brightgreen)](https://bitfireat.github.io/ical4android/)
 
 
 # ical4android
@@ -17,16 +18,21 @@ It has been primarily developed for:
 * [DAVx⁵](https://www.davx5.com)
 * [ICSx⁵](https://icsx5.bitfire.at)
 
+and is currently used as git submodule.
+
+Generated KDoc: https://bitfireat.github.io/ical4android/
+
+For questions, suggestions etc. use [Github discussions](https://github.com/bitfireAT/ical4android/discussions).
+We're happy about contributions! In case of bigger changes, please let us know in the discussions before.
+Then make the changes in your own repository and send a pull request.
+
 _This software is not affiliated to, nor has it been authorized, sponsored or otherwise approved
 by Google LLC. Android is a trademark of Google LLC._
 
-Generated KDoc: https://bitfireAT.gitlab.io/ical4android/dokka/ical4android/
-
-Discussion: https://forums.bitfire.at/category/18/libraries
 
 ## How to use
 
-You can use [jitpack.io to include ical4android](https://jitpack.io/#com.gitlab.bitfireAT/ical4android):
+You can use ical4android as a git submodule or using [jitpack.io](https://jitpack.io/#bitfireAT/ical4android):
 
     allprojects {
         repositories {
@@ -34,26 +40,23 @@ You can use [jitpack.io to include ical4android](https://jitpack.io/#com.gitlab.
         }
     }
     dependencies {
-        implementation 'com.gitlab.bitfireAT:ical4android:<version>'  // see tags for latest version, like 1.0
-        //implementation 'com.gitlab.bitfireAT:ical4android:master-SNAPSHOT'  // alternative
+        implementation 'com.github.bitfireAT:ical4android:<version>'        // see tags for latest version, like 1.0, or use the latest commit ID from main branch
+        //implementation 'com.github.bitfireAT:ical4android:main-SNAPSHOT'  // use it only for testing because it doesn't generate reproducible builds
     }
-
 
 
 ## Contact
 
 ```
-bitfire web engineering – Stockmann, Hirner GesnbR
+bitfire web engineering GmbH
 Florastraße 27
 2540 Bad Vöslau, AUSTRIA
 ```
 
-Email: [play@bitfire.at](mailto:play@bitfire.at) (do not use this)
-
 
 ## License 
 
-Copyright (C) bitfire web engineering (Ricki Hirner, Bernhard Stockmann) and contributors.
+Copyright (C) Ricki Hirner and [contributors](https://github.com/bitfireAT/ical4android/graphs/contributors).
 
 This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome
 to redistribute it under the conditions of the [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.html).
