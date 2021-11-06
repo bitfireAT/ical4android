@@ -1,9 +1,9 @@
 
 buildscript {
     ext.versions = [
-        kotlin: '1.5.21',
-        dokka: '0.10.1',
-        ical4j: '3.1.0',
+        kotlin: '1.5.31',
+        dokka: '1.5.0',
+        ical4j: '3.1.1',
         // latest Apache Commons versions that don't require Java 8 (Android 7)
         commonsIO: '2.6'
     ]
@@ -68,13 +68,14 @@ android {
         main.java.srcDirs = [ "src/main/java", "opentasks-contract/src/main/java" ]
     }
 
-    dokka.configuration {
+    // TODO currently doesn't work with dokka 1.5.0, but dokka 0.10.1 doesn't work with new gradle
+    /*dokka.configuration {
         sourceLink {
             url = "https://gitlab.com/bitfireAT/ical4android/tree/master/"
             lineSuffix = "#L"
         }
         jdkVersion = 8
-    }
+    }*/
 }
 
 dependencies {
@@ -98,7 +99,7 @@ dependencies {
     implementation "commons-io:commons-io:${versions.commonsIO}"
 
     implementation 'org.slf4j:slf4j-jdk14:1.7.32'
-    implementation 'androidx.core:core-ktx:1.6.0'
+    implementation 'androidx.core:core-ktx:1.7.0'
 
     androidTestImplementation 'androidx.test:core:1.4.0'
     androidTestImplementation 'androidx.test:runner:1.4.0'
