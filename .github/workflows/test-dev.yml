@@ -52,6 +52,12 @@ jobs:
 
       - name: Start emulator
         run: start-emulator.sh
+      - name: Install task apps
+        run: |
+          mkdir apk && cd apk
+          wget -q -O org.dmfs.tasks.apk https://f-droid.org/archive/org.dmfs.tasks_80800.apk && adb install org.dmfs.tasks.apk
+          wget -q -O org.tasks.apk https://f-droid.org/archive/org.tasks_110701.apk && adb install org.tasks.apk
+          cd ..
       - name: Run connected tests
         run: ./gradlew connectedDebugAndroidTest
       - name: Archive results
@@ -60,4 +66,3 @@ jobs:
           name: test-results
           path: |
             build/reports
-
