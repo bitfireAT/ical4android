@@ -581,8 +581,12 @@ open class JtxICalObject(
         uid.let { props += Uid(it) }
         sequence.let { props += Sequence(it.toInt()) }
 
-        created.let { props += Created(DateTime(it)) }
-        lastModified.let { props += LastModified(DateTime(it)) }
+        created.let { props += Created(DateTime(it).apply {
+            this.isUtc = true
+        }) }
+        lastModified.let { props += LastModified(DateTime(it).apply {
+            this.isUtc = true
+        }) }
 
         summary?.let { props += Summary(it) }
         description?.let { props += Description(it) }
