@@ -522,6 +522,13 @@ abstract class AndroidEvent(
         return resultUri
     }
 
+    /**
+     * Adds or updates the calendar provider [Events] main row for this [event].
+     *
+     * @param batch batch operation for insert/update operation
+     *
+     * @return [Events._ID] of the created/updated row; *null* if now ID is available
+     */
     fun addOrUpdateRows(batch: BatchOperation): Int? {
         val event = requireNotNull(event)
         val builder =
@@ -699,6 +706,12 @@ abstract class AndroidEvent(
     }
 
 
+    /**
+     * Builds an Android [Events] row for a given ical4android [Event].
+     *
+     * @param recurrence   event to be used as data source; *null*: use this AndroidEvent's main [event] as source
+     * @param builder      data row builder to be used
+     */
     @CallSuper
     protected open fun buildEvent(recurrence: Event?, builder: CpoBuilder) {
         val event = recurrence ?: requireNotNull(event)

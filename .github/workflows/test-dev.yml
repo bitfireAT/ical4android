@@ -15,10 +15,8 @@ jobs:
           cache: 'gradle'
       - uses: gradle/wrapper-validation-action@v1
 
-      - name: Run lint
-        run: ./gradlew lintDebug
-      - name: Run unit tests
-        run: ./gradlew testDebugUnitTest
+      - name: Check
+        run: ./gradlew check
       - name: Archive results
         uses: actions/upload-artifact@v2
         with:
@@ -59,7 +57,7 @@ jobs:
           wget -q -O org.tasks.apk https://f-droid.org/archive/org.tasks_110701.apk && adb install org.tasks.apk
           cd ..
       - name: Run connected tests
-        run: ./gradlew connectedDebugAndroidTest
+        run: ./gradlew connectedCheck
       - name: Archive results
         uses: actions/upload-artifact@v2
         with:
