@@ -16,7 +16,7 @@ abstract class AbstractTasksTest(
     companion object {
         @Parameterized.Parameters(name="{0}")
         @JvmStatic
-        fun taskProviders() = TaskProvider.ProviderName.values()
+        fun taskProviders() = listOf(TaskProvider.ProviderName.OpenTasks,TaskProvider.ProviderName.TasksOrg)
     }
 
     private val providerOrNull: TaskProvider? by lazy {
