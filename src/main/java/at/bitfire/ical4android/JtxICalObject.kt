@@ -421,7 +421,7 @@ open class JtxICalObject(
                         iCalObject.relatedTo.add(
                             RelatedTo().apply {
                                 this.text = prop.value
-                                this.reltype = prop.getParameter<RelType>(RelType.RELTYPE)?.value
+                                this.reltype = prop.getParameter<RelType>(RelType.RELTYPE)?.value ?: SyncContentProviderContract.JtxRelatedto.Reltype.PARENT.name
 
                                 // remove the known parameter
                                 prop.parameters?.removeAll(RelType.RELTYPE)
@@ -1241,40 +1241,38 @@ duration?.let(props::add)
 
         val values = ContentValues()
         values.put(SyncContentProviderContract.JtxICalObject.ID, id)
-        values.put(SyncContentProviderContract.JtxICalObject.SUMMARY, summary)
-        values.put(SyncContentProviderContract.JtxICalObject.DESCRIPTION, description)
+        summary?.let { values.put(SyncContentProviderContract.JtxICalObject.SUMMARY, it)  }
+        description?.let { values.put(SyncContentProviderContract.JtxICalObject.DESCRIPTION, it) }
         values.put(SyncContentProviderContract.JtxICalObject.COMPONENT, component)
-        if (status?.isNotBlank() == true)
-            values.put(SyncContentProviderContract.JtxICalObject.STATUS, status)
-        if (classification?.isNotBlank() == true)
-            values.put(SyncContentProviderContract.JtxICalObject.CLASSIFICATION, classification)
-        values.put(SyncContentProviderContract.JtxICalObject.PRIORITY, priority)
+        status?.let { values.put(SyncContentProviderContract.JtxICalObject.STATUS, it) }
+        classification?.let { values.put(SyncContentProviderContract.JtxICalObject.CLASSIFICATION, it) }
+        priority?.let { values.put(SyncContentProviderContract.JtxICalObject.PRIORITY, it) }
         values.put(SyncContentProviderContract.JtxICalObject.ICALOBJECT_COLLECTIONID, collectionId)
         values.put(SyncContentProviderContract.JtxICalObject.UID, uid)
-        values.put(SyncContentProviderContract.JtxICalObject.GEO_LAT, geoLat)
-        values.put(SyncContentProviderContract.JtxICalObject.GEO_LONG, geoLong)
-        values.put(SyncContentProviderContract.JtxICalObject.LOCATION, location)
-        values.put(SyncContentProviderContract.JtxICalObject.LOCATION_ALTREP, locationAltrep)
-        values.put(SyncContentProviderContract.JtxICalObject.PERCENT, percent)
+        geoLat?.let { values.put(SyncContentProviderContract.JtxICalObject.GEO_LAT, it) }
+        geoLong?.let { values.put(SyncContentProviderContract.JtxICalObject.GEO_LONG, it) }
+        location?.let { values.put(SyncContentProviderContract.JtxICalObject.LOCATION, it) }
+        locationAltrep?.let { values.put(SyncContentProviderContract.JtxICalObject.LOCATION_ALTREP, it) }
+        percent?.let { values.put(SyncContentProviderContract.JtxICalObject.PERCENT, it) }
         values.put(SyncContentProviderContract.JtxICalObject.DTSTAMP, dtstamp)
-        values.put(SyncContentProviderContract.JtxICalObject.DTSTART, dtstart)
-        values.put(SyncContentProviderContract.JtxICalObject.DTSTART_TIMEZONE, dtstartTimezone)
-        values.put(SyncContentProviderContract.JtxICalObject.DTEND, dtend)
-        values.put(SyncContentProviderContract.JtxICalObject.DTEND_TIMEZONE, dtendTimezone)
-        values.put(SyncContentProviderContract.JtxICalObject.COMPLETED, completed)
-        values.put(SyncContentProviderContract.JtxICalObject.COMPLETED_TIMEZONE, completedTimezone)
-        values.put(SyncContentProviderContract.JtxICalObject.DUE, due)
-        values.put(SyncContentProviderContract.JtxICalObject.DUE_TIMEZONE, dueTimezone)
-        values.put(SyncContentProviderContract.JtxICalObject.DURATION, duration)
+        dtstart?.let { values.put(SyncContentProviderContract.JtxICalObject.DTSTART, it) }
+        dtstartTimezone?.let { values.put(SyncContentProviderContract.JtxICalObject.DTSTART_TIMEZONE, it) }
+        dtend?.let { values.put(SyncContentProviderContract.JtxICalObject.DTEND, it) }
+        dtendTimezone?.let { values.put(SyncContentProviderContract.JtxICalObject.DTEND_TIMEZONE, it) }
+        completed?.let { values.put(SyncContentProviderContract.JtxICalObject.COMPLETED, it) }
+        completedTimezone?.let { values.put(SyncContentProviderContract.JtxICalObject.COMPLETED_TIMEZONE, it) }
+        due?.let { values.put(SyncContentProviderContract.JtxICalObject.DUE, it) }
+        dueTimezone?.let { values.put(SyncContentProviderContract.JtxICalObject.DUE_TIMEZONE, it) }
+        duration?.let { values.put(SyncContentProviderContract.JtxICalObject.DURATION, it) }
 
-        values.put(SyncContentProviderContract.JtxICalObject.RRULE, rrule)
-        values.put(SyncContentProviderContract.JtxICalObject.RDATE, rdate)
-        values.put(SyncContentProviderContract.JtxICalObject.EXDATE, exdate)
-        values.put(SyncContentProviderContract.JtxICalObject.RECURID, recurid)
+        rrule?.let { values.put(SyncContentProviderContract.JtxICalObject.RRULE, it) }
+        rdate?.let { values.put(SyncContentProviderContract.JtxICalObject.RDATE, it) }
+        exdate?.let { values.put(SyncContentProviderContract.JtxICalObject.EXDATE, it) }
+        recurid?.let { values.put(SyncContentProviderContract.JtxICalObject.RECURID, it) }
 
-        values.put(SyncContentProviderContract.JtxICalObject.FILENAME, fileName)
-        values.put(SyncContentProviderContract.JtxICalObject.ETAG, eTag)
-        values.put(SyncContentProviderContract.JtxICalObject.SCHEDULETAG, scheduleTag)
+        fileName?.let { values.put(SyncContentProviderContract.JtxICalObject.FILENAME, it) }
+        eTag?.let { values.put(SyncContentProviderContract.JtxICalObject.ETAG, it) }
+        scheduleTag?.let { values.put(SyncContentProviderContract.JtxICalObject.SCHEDULETAG, it) }
         values.put(SyncContentProviderContract.JtxICalObject.FLAGS, flags)
 
         return values
