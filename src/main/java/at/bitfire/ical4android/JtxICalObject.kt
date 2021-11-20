@@ -596,7 +596,7 @@ open class JtxICalObject(
             this.isUtc = true
         }) }
 
-        summary?.let { props += Summary(it) }
+        summary.let { props += Summary(it) }
         description?.let { props += Description(it) }
 
         location?.let { location ->
@@ -1070,8 +1070,8 @@ duration?.let(props::add)
                 put(SyncContentProviderContract.JtxCategory.ICALOBJECT_ID, id)
                 category.text.let { put(SyncContentProviderContract.JtxCategory.TEXT, it) }
                 category.categoryId.let { put(SyncContentProviderContract.JtxCategory.ID, it) }
-                category.language?.let { put(SyncContentProviderContract.JtxCategory.LANGUAGE, it) }
-                category.other?.let { put(SyncContentProviderContract.JtxCategory.OTHER, it) }
+                category.language.let { put(SyncContentProviderContract.JtxCategory.LANGUAGE, it) }
+                category.other.let { put(SyncContentProviderContract.JtxCategory.OTHER, it) }
             }
             collection.client.insert(
                 SyncContentProviderContract.JtxCategory.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1083,9 +1083,9 @@ duration?.let(props::add)
             val commentContentValues = ContentValues().apply {
                 put(SyncContentProviderContract.JtxComment.ICALOBJECT_ID, id)
                 put(SyncContentProviderContract.JtxComment.ID, comment.commentId)
-                comment.text?.let { put(SyncContentProviderContract.JtxComment.TEXT, comment.text) }
-                comment.language?.let { put(SyncContentProviderContract.JtxComment.LANGUAGE, it) }
-                comment.other?.let { put(SyncContentProviderContract.JtxComment.OTHER, it) }
+                comment.text.let { put(SyncContentProviderContract.JtxComment.TEXT, comment.text) }
+                comment.language.let { put(SyncContentProviderContract.JtxComment.LANGUAGE, it) }
+                comment.other.let { put(SyncContentProviderContract.JtxComment.OTHER, it) }
             }
             collection.client.insert(
                 SyncContentProviderContract.JtxComment.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1098,9 +1098,9 @@ duration?.let(props::add)
             val resourceContentValues = ContentValues().apply {
                 put(SyncContentProviderContract.JtxResource.ICALOBJECT_ID, id)
                 put(SyncContentProviderContract.JtxResource.ID, resource.resourceId)
-                resource.text?.let { put(SyncContentProviderContract.JtxResource.TEXT, it) }
-                resource.language?.let { put(SyncContentProviderContract.JtxResource.LANGUAGE, it) }
-                resource.other?.let { put(SyncContentProviderContract.JtxResource.OTHER, it) }
+                resource.text.let { put(SyncContentProviderContract.JtxResource.TEXT, it) }
+                resource.language.let { put(SyncContentProviderContract.JtxResource.LANGUAGE, it) }
+                resource.other.let { put(SyncContentProviderContract.JtxResource.OTHER, it) }
             }
             collection.client.insert(
                 SyncContentProviderContract.JtxResource.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1112,9 +1112,9 @@ duration?.let(props::add)
         this.relatedTo.forEach { related ->
             val relatedToContentValues = ContentValues().apply {
                 put(SyncContentProviderContract.JtxRelatedto.ICALOBJECT_ID, id)
-                related.text?.let { put(SyncContentProviderContract.JtxRelatedto.TEXT, it) }
-                related.reltype?.let { put(SyncContentProviderContract.JtxRelatedto.RELTYPE, it) }
-                related.other?.let { put(SyncContentProviderContract.JtxRelatedto.OTHER, it) }
+                related.text.let { put(SyncContentProviderContract.JtxRelatedto.TEXT, it) }
+                related.reltype.let { put(SyncContentProviderContract.JtxRelatedto.RELTYPE, it) }
+                related.other.let { put(SyncContentProviderContract.JtxRelatedto.OTHER, it) }
             }
             collection.client.insert(
                 SyncContentProviderContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1127,18 +1127,18 @@ duration?.let(props::add)
                 put(SyncContentProviderContract.JtxAttendee.ICALOBJECT_ID, id)
                 put(SyncContentProviderContract.JtxAttendee.CALADDRESS, attendee.caladdress)
 
-                attendee.cn?.let { put(SyncContentProviderContract.JtxAttendee.CN, it) }
-                attendee.cutype?.let { put(SyncContentProviderContract.JtxAttendee.CUTYPE, it) }
-                attendee.delegatedfrom?.let { put(SyncContentProviderContract.JtxAttendee.DELEGATEDFROM, it) }
-               attendee.delegatedto?.let {put(SyncContentProviderContract.JtxAttendee.DELEGATEDTO, it) }
-                attendee.dir?.let { put(SyncContentProviderContract.JtxAttendee.DIR, it) }
-                attendee.language?.let { put(SyncContentProviderContract.JtxAttendee.LANGUAGE, it) }
-                attendee.member?.let { put(SyncContentProviderContract.JtxAttendee.MEMBER, it) }
-               attendee.partstat?.let {put(SyncContentProviderContract.JtxAttendee.PARTSTAT, it) }
-                attendee.role?.let { put(SyncContentProviderContract.JtxAttendee.ROLE, it) }
-                attendee.rsvp?.let { put(SyncContentProviderContract.JtxAttendee.RSVP, it) }
-                attendee.sentby?.let { put(SyncContentProviderContract.JtxAttendee.SENTBY, it) }
-                attendee.other?.let { put(SyncContentProviderContract.JtxAttendee.OTHER, it) }
+                attendee.cn.let { put(SyncContentProviderContract.JtxAttendee.CN, it) }
+                attendee.cutype.let { put(SyncContentProviderContract.JtxAttendee.CUTYPE, it) }
+                attendee.delegatedfrom.let { put(SyncContentProviderContract.JtxAttendee.DELEGATEDFROM, it) }
+               attendee.delegatedto.let {put(SyncContentProviderContract.JtxAttendee.DELEGATEDTO, it) }
+                attendee.dir.let { put(SyncContentProviderContract.JtxAttendee.DIR, it) }
+                attendee.language.let { put(SyncContentProviderContract.JtxAttendee.LANGUAGE, it) }
+                attendee.member.let { put(SyncContentProviderContract.JtxAttendee.MEMBER, it) }
+               attendee.partstat.let {put(SyncContentProviderContract.JtxAttendee.PARTSTAT, it) }
+                attendee.role.let { put(SyncContentProviderContract.JtxAttendee.ROLE, it) }
+                attendee.rsvp.let { put(SyncContentProviderContract.JtxAttendee.RSVP, it) }
+                attendee.sentby.let { put(SyncContentProviderContract.JtxAttendee.SENTBY, it) }
+                attendee.other.let { put(SyncContentProviderContract.JtxAttendee.OTHER, it) }
             }
             collection.client.insert(
                 SyncContentProviderContract.JtxAttendee.CONTENT_URI.asSyncAdapter(
@@ -1150,10 +1150,10 @@ duration?.let(props::add)
         this.attachments.forEach { attachment ->
             val attachmentContentValues = ContentValues().apply {
                 put(SyncContentProviderContract.JtxAttachment.ICALOBJECT_ID, id)
-                attachment.uri?.let { put(SyncContentProviderContract.JtxAttachment.URI, it) }
-                attachment.binary?.let { put(SyncContentProviderContract.JtxAttachment.BINARY, it) }
-                attachment.fmttype?.let { put(SyncContentProviderContract.JtxAttachment.FMTTYPE, it) }
-                attachment.other?.let { put(SyncContentProviderContract.JtxAttachment.OTHER, it) }
+                attachment.uri.let { put(SyncContentProviderContract.JtxAttachment.URI, it) }
+                attachment.binary.let { put(SyncContentProviderContract.JtxAttachment.BINARY, it) }
+                attachment.fmttype.let { put(SyncContentProviderContract.JtxAttachment.FMTTYPE, it) }
+                attachment.other.let { put(SyncContentProviderContract.JtxAttachment.OTHER, it) }
             }
             collection.client.insert(
                 SyncContentProviderContract.JtxAttachment.CONTENT_URI.asSyncAdapter(
@@ -1165,15 +1165,15 @@ duration?.let(props::add)
         this.alarms.forEach { alarm ->
             val alarmContentValues = ContentValues().apply {
                 put(SyncContentProviderContract.JtxAlarm.ICALOBJECT_ID, id)
-                alarm.action?.let { put(SyncContentProviderContract.JtxAlarm.ALARM_ACTION, it) }
-                alarm.attach?.let { put(SyncContentProviderContract.JtxAlarm.ALARM_ATTACH, it) }
-                alarm.attendee?.let { put(SyncContentProviderContract.JtxAlarm.ALARM_ATTENDEE, it) }
-                alarm.description?.let { put(SyncContentProviderContract.JtxAlarm.ALARM_DESCRIPTION, it) }
-                alarm.duration?.let { put(SyncContentProviderContract.JtxAlarm.ALARM_DURATION, it) }
-                alarm.repeat?.let { put(SyncContentProviderContract.JtxAlarm.ALARM_REPEAT, it) }
-                alarm.summary?.let { put(SyncContentProviderContract.JtxAlarm.ALARM_SUMMARY, it) }
-                alarm.trigger?.let { put(SyncContentProviderContract.JtxAlarm.ALARM_TRIGGER, it) }
-                alarm.other?.let { put(SyncContentProviderContract.JtxAlarm.ALARM_OTHER, it) }
+                alarm.action.let { put(SyncContentProviderContract.JtxAlarm.ALARM_ACTION, it) }
+                alarm.attach.let { put(SyncContentProviderContract.JtxAlarm.ALARM_ATTACH, it) }
+                alarm.attendee.let { put(SyncContentProviderContract.JtxAlarm.ALARM_ATTENDEE, it) }
+                alarm.description.let { put(SyncContentProviderContract.JtxAlarm.ALARM_DESCRIPTION, it) }
+                alarm.duration.let { put(SyncContentProviderContract.JtxAlarm.ALARM_DURATION, it) }
+                alarm.repeat.let { put(SyncContentProviderContract.JtxAlarm.ALARM_REPEAT, it) }
+                alarm.summary.let { put(SyncContentProviderContract.JtxAlarm.ALARM_SUMMARY, it) }
+                alarm.trigger.let { put(SyncContentProviderContract.JtxAlarm.ALARM_TRIGGER, it) }
+                alarm.other.let { put(SyncContentProviderContract.JtxAlarm.ALARM_OTHER, it) }
             }
             collection.client.insert(
                 SyncContentProviderContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1252,38 +1252,38 @@ duration?.let(props::add)
 
         val values = ContentValues()
         values.put(SyncContentProviderContract.JtxICalObject.ID, id)
-        summary?.let { values.put(SyncContentProviderContract.JtxICalObject.SUMMARY, it)  }
-        description?.let { values.put(SyncContentProviderContract.JtxICalObject.DESCRIPTION, it) }
+        summary.let { values.put(SyncContentProviderContract.JtxICalObject.SUMMARY, it)  }
+        description.let { values.put(SyncContentProviderContract.JtxICalObject.DESCRIPTION, it) }
         values.put(SyncContentProviderContract.JtxICalObject.COMPONENT, component)
-        status?.let { values.put(SyncContentProviderContract.JtxICalObject.STATUS, it) }
-        classification?.let { values.put(SyncContentProviderContract.JtxICalObject.CLASSIFICATION, it) }
-        priority?.let { values.put(SyncContentProviderContract.JtxICalObject.PRIORITY, it) }
+        status.let { values.put(SyncContentProviderContract.JtxICalObject.STATUS, it) }
+        classification.let { values.put(SyncContentProviderContract.JtxICalObject.CLASSIFICATION, it) }
+        priority.let { values.put(SyncContentProviderContract.JtxICalObject.PRIORITY, it) }
         values.put(SyncContentProviderContract.JtxICalObject.ICALOBJECT_COLLECTIONID, collectionId)
         values.put(SyncContentProviderContract.JtxICalObject.UID, uid)
-        geoLat?.let { values.put(SyncContentProviderContract.JtxICalObject.GEO_LAT, it) }
-        geoLong?.let { values.put(SyncContentProviderContract.JtxICalObject.GEO_LONG, it) }
-        location?.let { values.put(SyncContentProviderContract.JtxICalObject.LOCATION, it) }
-        locationAltrep?.let { values.put(SyncContentProviderContract.JtxICalObject.LOCATION_ALTREP, it) }
-        percent?.let { values.put(SyncContentProviderContract.JtxICalObject.PERCENT, it) }
+        geoLat.let { values.put(SyncContentProviderContract.JtxICalObject.GEO_LAT, it) }
+        geoLong.let { values.put(SyncContentProviderContract.JtxICalObject.GEO_LONG, it) }
+        location.let { values.put(SyncContentProviderContract.JtxICalObject.LOCATION, it) }
+        locationAltrep.let { values.put(SyncContentProviderContract.JtxICalObject.LOCATION_ALTREP, it) }
+        percent.let { values.put(SyncContentProviderContract.JtxICalObject.PERCENT, it) }
         values.put(SyncContentProviderContract.JtxICalObject.DTSTAMP, dtstamp)
-        dtstart?.let { values.put(SyncContentProviderContract.JtxICalObject.DTSTART, it) }
-        dtstartTimezone?.let { values.put(SyncContentProviderContract.JtxICalObject.DTSTART_TIMEZONE, it) }
-        dtend?.let { values.put(SyncContentProviderContract.JtxICalObject.DTEND, it) }
-        dtendTimezone?.let { values.put(SyncContentProviderContract.JtxICalObject.DTEND_TIMEZONE, it) }
-        completed?.let { values.put(SyncContentProviderContract.JtxICalObject.COMPLETED, it) }
-        completedTimezone?.let { values.put(SyncContentProviderContract.JtxICalObject.COMPLETED_TIMEZONE, it) }
-        due?.let { values.put(SyncContentProviderContract.JtxICalObject.DUE, it) }
-        dueTimezone?.let { values.put(SyncContentProviderContract.JtxICalObject.DUE_TIMEZONE, it) }
-        duration?.let { values.put(SyncContentProviderContract.JtxICalObject.DURATION, it) }
+        dtstart.let { values.put(SyncContentProviderContract.JtxICalObject.DTSTART, it) }
+        dtstartTimezone.let { values.put(SyncContentProviderContract.JtxICalObject.DTSTART_TIMEZONE, it) }
+        dtend.let { values.put(SyncContentProviderContract.JtxICalObject.DTEND, it) }
+        dtendTimezone.let { values.put(SyncContentProviderContract.JtxICalObject.DTEND_TIMEZONE, it) }
+        completed.let { values.put(SyncContentProviderContract.JtxICalObject.COMPLETED, it) }
+        completedTimezone.let { values.put(SyncContentProviderContract.JtxICalObject.COMPLETED_TIMEZONE, it) }
+        due.let { values.put(SyncContentProviderContract.JtxICalObject.DUE, it) }
+        dueTimezone.let { values.put(SyncContentProviderContract.JtxICalObject.DUE_TIMEZONE, it) }
+        duration.let { values.put(SyncContentProviderContract.JtxICalObject.DURATION, it) }
 
-        rrule?.let { values.put(SyncContentProviderContract.JtxICalObject.RRULE, it) }
-        rdate?.let { values.put(SyncContentProviderContract.JtxICalObject.RDATE, it) }
-        exdate?.let { values.put(SyncContentProviderContract.JtxICalObject.EXDATE, it) }
-        recurid?.let { values.put(SyncContentProviderContract.JtxICalObject.RECURID, it) }
+        rrule.let { values.put(SyncContentProviderContract.JtxICalObject.RRULE, it) }
+        rdate.let { values.put(SyncContentProviderContract.JtxICalObject.RDATE, it) }
+        exdate.let { values.put(SyncContentProviderContract.JtxICalObject.EXDATE, it) }
+        recurid.let { values.put(SyncContentProviderContract.JtxICalObject.RECURID, it) }
 
-        fileName?.let { values.put(SyncContentProviderContract.JtxICalObject.FILENAME, it) }
-        eTag?.let { values.put(SyncContentProviderContract.JtxICalObject.ETAG, it) }
-        scheduleTag?.let { values.put(SyncContentProviderContract.JtxICalObject.SCHEDULETAG, it) }
+        fileName.let { values.put(SyncContentProviderContract.JtxICalObject.FILENAME, it) }
+        eTag.let { values.put(SyncContentProviderContract.JtxICalObject.ETAG, it) }
+        scheduleTag.let { values.put(SyncContentProviderContract.JtxICalObject.SCHEDULETAG, it) }
         values.put(SyncContentProviderContract.JtxICalObject.FLAGS, flags)
 
         return values
