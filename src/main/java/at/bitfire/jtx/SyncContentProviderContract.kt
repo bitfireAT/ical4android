@@ -18,7 +18,7 @@ object SyncContentProviderContract {
     /**
      * URI parameter to signal that the caller is a sync adapter.
      */
-    private const val CALLER_IS_SYNCADAPTER = "caller_is_syncadapter"
+    const val CALLER_IS_SYNCADAPTER = "caller_is_syncadapter"
 
     /**
      * URI parameter to submit the account name of the account we operate on.
