@@ -1,12 +1,15 @@
 package at.bitfire.ical4android
 
 import android.accounts.Account
+import android.content.ContentProviderClient
+import android.content.ContentResolver
 import android.content.ContentValues
-import android.test.mock.MockContentProvider
-import android.test.mock.MockContentResolver
+import android.content.Context
 import androidx.test.platform.app.InstrumentationRegistry
 import at.bitfire.ical4android.impl.TestJtxCollection
 import at.bitfire.jtx.SyncContentProviderContract
+import at.bitfire.jtx.SyncContentProviderContract.asSyncAdapter
+import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import org.junit.After
 import org.junit.Before
@@ -14,56 +17,80 @@ import org.junit.Test
 
 class JtxCollectionTest {
 
-    private val testAccount = Account("test", "test")
-    private lateinit var mContentResolver: MockContentResolver
+    private val testAccount = Account("TEST", SyncContentProviderContract.JtxCollection.TEST_ACCOUNT_TYPE)
+    private lateinit var contentResolver: ContentResolver
+    private lateinit var client: ContentProviderClient
+    var collection: TestJtxCollection? = null
+    lateinit var context: Context
+
+    val url = "https://jtx.techbee.at"
+    val displayname = "jtx"
+    val description = "jtx Collection Test"
+    val syncversion = SyncContentProviderContract.CONTRACT_VERSION
+
+    val cv = ContentValues().apply {
+        put(SyncContentProviderContract.JtxCollection.ACCOUNT_TYPE, testAccount.type)
+        put(SyncContentProviderContract.JtxCollection.ACCOUNT_NAME, testAccount.name)
+
+        put(SyncContentProviderContract.JtxCollection.URL, url)
+        put(SyncContentProviderContract.JtxCollection.DISPLAYNAME, displayname)
+        put(SyncContentProviderContract.JtxCollection.SYNC_VERSION, syncversion)
+    }
 
     @Before
     fun setUp() {
-        mContentResolver = MockContentResolver()
-
+        context = InstrumentationRegistry.getInstrumentation().targetContext
+        contentResolver = context.contentResolver
+        client = contentResolver.acquireContentProviderClient(SyncContentProviderContract.AUTHORITY)!!
     }
 
     @After
     fun tearDown() {
+
+        var collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
+        collections.forEach { collection ->
+            collection.delete()
+        }
+        collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
+        assertEquals(0, collections.size)
     }
 
     @Test
-    fun delete() {
+    fun create_populate_find() {
+
+        val collectionUri = JtxCollection.create(testAccount, client, cv)
+        assertNotNull(collectionUri)
+
+        val collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
+        assertEquals(1, collections.size)
+        assertEquals(testAccount.type, collections[0].account.type)
+        assertEquals(testAccount.name, collections[0].account.name)
+
+        assertEquals(url, collections[0].url)
+        assertEquals(displayname, collections[0].displayname)
+        assertEquals(syncversion.toString(), collections[0].syncstate)
     }
 
-    @Test
-    fun populate() {
-    }
+
 
     @Test
     fun queryICalObjects() {
 
+        val collectionUri = JtxCollection.create(testAccount, client, cv)
+        assertNotNull(collectionUri)
 
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        //val provider = context.contentResolver.acquireContentProviderClient(SyncContentProviderContract.AUTHORITY)
+        val collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
+        val items = collections[0].queryICalObjects(null, null)
+        assertEquals(0, items.size)
 
-
-
-        //val mContentResolver = MockContentResolver()
-        val mContentProvider = MockContentProvider(context)
-        mContentResolver.addProvider(SyncContentProviderContract.AUTHORITY, mContentProvider)
-        val provider = mContentResolver.acquireContentProviderClient(SyncContentProviderContract.AUTHORITY)
-
-        //val provider = mContentResolver.acquireContentProviderClient(SyncContentProviderContract.AUTHORITY)
-        assertNotNull(provider)
-
-        val collectionValues = ContentValues().apply {
-            put(SyncContentProviderContract.JtxCollection.ACCOUNT_NAME, testAccount.name)
-            put(SyncContentProviderContract.JtxCollection.ACCOUNT_TYPE, testAccount.type)
-            put(SyncContentProviderContract.JtxCollection.DESCRIPTION, "Test")
-            put(SyncContentProviderContract.JtxCollection.DISPLAYNAME, "Testcollection")
+        val cv = ContentValues().apply {
+            put(SyncContentProviderContract.JtxICalObject.SUMMARY, "summary")
+            put(SyncContentProviderContract.JtxICalObject.COMPONENT, SyncContentProviderContract.JtxICalObject.Component.VJOURNAL.name)
+            put(SyncContentProviderContract.JtxICalObject.ICALOBJECT_COLLECTIONID, collections[0].id)
         }
+        client.insert(SyncContentProviderContract.JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)
+        val icalobjects = collections[0].queryICalObjects(null, null)
 
-        val collection = TestJtxCollection.create(testAccount, provider!!)
-
-        //TODO Continue here
-
-        //collection.queryICalObjects()
+        assertEquals(1, icalobjects.size)
     }
-
 }
