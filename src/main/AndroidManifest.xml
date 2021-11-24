@@ -33,6 +33,7 @@
 
     <queries>
         <!-- task providers -->
+        <package android:name="at.techbee.jtx" />
         <package android:name="org.dmfs.tasks" />
         <package android:name="org.tasks" />
     </queries>
