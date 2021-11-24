@@ -7,8 +7,8 @@ import android.content.ContentValues
 import android.content.Context
 import androidx.test.platform.app.InstrumentationRegistry
 import at.bitfire.ical4android.impl.TestJtxCollection
-import at.bitfire.jtx.SyncContentProviderContract
-import at.bitfire.jtx.SyncContentProviderContract.asSyncAdapter
+import at.bitfire.jtx.JtxContract
+import at.bitfire.jtx.JtxContract.asSyncAdapter
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import org.junit.After
@@ -17,7 +17,7 @@ import org.junit.Test
 
 class JtxCollectionTest {
 
-    private val testAccount = Account("TEST", SyncContentProviderContract.JtxCollection.TEST_ACCOUNT_TYPE)
+    private val testAccount = Account("TEST", JtxContract.JtxCollection.TEST_ACCOUNT_TYPE)
     private lateinit var contentResolver: ContentResolver
     private lateinit var client: ContentProviderClient
     var collection: TestJtxCollection? = null
@@ -26,22 +26,22 @@ class JtxCollectionTest {
     val url = "https://jtx.techbee.at"
     val displayname = "jtx"
     val description = "jtx Collection Test"
-    val syncversion = SyncContentProviderContract.CONTRACT_VERSION
+    val syncversion = JtxContract.CONTRACT_VERSION
 
     val cv = ContentValues().apply {
-        put(SyncContentProviderContract.JtxCollection.ACCOUNT_TYPE, testAccount.type)
-        put(SyncContentProviderContract.JtxCollection.ACCOUNT_NAME, testAccount.name)
+        put(JtxContract.JtxCollection.ACCOUNT_TYPE, testAccount.type)
+        put(JtxContract.JtxCollection.ACCOUNT_NAME, testAccount.name)
 
-        put(SyncContentProviderContract.JtxCollection.URL, url)
-        put(SyncContentProviderContract.JtxCollection.DISPLAYNAME, displayname)
-        put(SyncContentProviderContract.JtxCollection.SYNC_VERSION, syncversion)
+        put(JtxContract.JtxCollection.URL, url)
+        put(JtxContract.JtxCollection.DISPLAYNAME, displayname)
+        put(JtxContract.JtxCollection.SYNC_VERSION, syncversion)
     }
 
     @Before
     fun setUp() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         contentResolver = context.contentResolver
-        client = contentResolver.acquireContentProviderClient(SyncContentProviderContract.AUTHORITY)!!
+        client = contentResolver.acquireContentProviderClient(JtxContract.AUTHORITY)!!
     }
 
     @After
@@ -84,11 +84,11 @@ class JtxCollectionTest {
         assertEquals(0, items.size)
 
         val cv = ContentValues().apply {
-            put(SyncContentProviderContract.JtxICalObject.SUMMARY, "summary")
-            put(SyncContentProviderContract.JtxICalObject.COMPONENT, SyncContentProviderContract.JtxICalObject.Component.VJOURNAL.name)
-            put(SyncContentProviderContract.JtxICalObject.ICALOBJECT_COLLECTIONID, collections[0].id)
+            put(JtxContract.JtxICalObject.SUMMARY, "summary")
+            put(JtxContract.JtxICalObject.COMPONENT, JtxContract.JtxICalObject.Component.VJOURNAL.name)
+            put(JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID, collections[0].id)
         }
-        client.insert(SyncContentProviderContract.JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)
+        client.insert(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)
         val icalobjects = collections[0].queryICalObjects(null, null)
 
         assertEquals(1, icalobjects.size)

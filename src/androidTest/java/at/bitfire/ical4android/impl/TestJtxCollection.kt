@@ -13,8 +13,8 @@ import android.content.ContentProviderClient
 import android.content.ContentUris
 import at.bitfire.ical4android.*
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
-import at.bitfire.jtx.SyncContentProviderContract
-import at.bitfire.jtx.SyncContentProviderContract.asSyncAdapter
+import at.bitfire.jtx.JtxContract
+import at.bitfire.jtx.JtxContract.asSyncAdapter
 import java.util.*
 
 class TestJtxCollection(
@@ -27,7 +27,7 @@ class TestJtxCollection(
 
         fun createMock(account: Account, provider: ContentProviderClient): TestJtxCollection {
 
-            var uri = SyncContentProviderContract.JtxCollection.CONTENT_URI.asSyncAdapter(account)
+            var uri = JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account)
             uri = uri.buildUpon().appendPath("1").build()
 
             return TestJtxCollection(account, provider, ContentUris.parseId(uri))
@@ -37,14 +37,14 @@ class TestJtxCollection(
 
 
     /**
-     * Queries [SyncContentProviderContract.JtxICalObject] from this collection. Adds a WHERE clause that restricts the
-     * query to [SyncContentProviderContract.JtxCollection.ID] = [id].
+     * Queries [JtxContract.JtxICalObject] from this collection. Adds a WHERE clause that restricts the
+     * query to [JtxContract.JtxCollection.ID] = [id].
      * @param _where selection
      * @param _whereArgs arguments for selection
      * @return events from this calendar which match the selection
      */
     fun queryICalObjects(_where: String? = null, _whereArgs: Array<String>? = null): List<JtxICalObject> {
-        val where = "(${_where ?: "1"}) AND " + SyncContentProviderContract.JtxICalObject.ICALOBJECT_COLLECTIONID + "= ?"
+        val where = "(${_where ?: "1"}) AND " + JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID + "= ?"
         val whereArgs = (_whereArgs ?: arrayOf()) + id.toString()
 
         val iCalObjects = LinkedList<JtxICalObject>()

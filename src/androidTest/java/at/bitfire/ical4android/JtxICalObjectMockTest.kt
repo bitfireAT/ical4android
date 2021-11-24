@@ -6,7 +6,7 @@ import android.test.mock.MockContentProvider
 import android.test.mock.MockContentResolver
 import androidx.test.platform.app.InstrumentationRegistry
 import at.bitfire.ical4android.impl.TestJtxCollection
-import at.bitfire.jtx.SyncContentProviderContract
+import at.bitfire.jtx.JtxContract
 import junit.framework.TestCase.assertEquals
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Property
@@ -31,8 +31,8 @@ class JtxICalObjectMockTest {
         context = InstrumentationRegistry.getInstrumentation().targetContext
 
         val mContentProvider = MockContentProvider(context)
-        mContentResolver.addProvider(SyncContentProviderContract.AUTHORITY, mContentProvider)
-        val provider = mContentResolver.acquireContentProviderClient(SyncContentProviderContract.AUTHORITY)
+        mContentResolver.addProvider(JtxContract.AUTHORITY, mContentProvider)
+        val provider = mContentResolver.acquireContentProviderClient(JtxContract.AUTHORITY)
         collection = TestJtxCollection.createMock(testAccount, provider!!)
     }
 

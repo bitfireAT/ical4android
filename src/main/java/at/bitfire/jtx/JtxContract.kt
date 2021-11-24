@@ -13,7 +13,7 @@ import android.net.Uri
 import android.provider.BaseColumns
 
 @Suppress("unused")
-object SyncContentProviderContract {
+object JtxContract {
 
     /**
      * URI parameter to signal that the caller is a sync adapter.

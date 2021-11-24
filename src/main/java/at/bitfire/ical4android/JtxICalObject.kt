@@ -7,9 +7,9 @@ import android.net.Uri
 import android.util.Base64
 import android.util.Log
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
-import at.bitfire.jtx.SyncContentProviderContract
-import at.bitfire.jtx.SyncContentProviderContract.JtxICalObject.TZ_ALLDAY
-import at.bitfire.jtx.SyncContentProviderContract.asSyncAdapter
+import at.bitfire.jtx.JtxContract
+import at.bitfire.jtx.JtxContract.JtxICalObject.TZ_ALLDAY
+import at.bitfire.jtx.JtxContract.asSyncAdapter
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
@@ -147,9 +147,9 @@ open class JtxICalObject(
         var attendeeId: Long = 0L,
         //var icalObjectId: Long = 0L,
         var caladdress: String = "",
-        var cutype: String? = SyncContentProviderContract.JtxAttendee.Cutype.INDIVIDUAL.name,
+        var cutype: String? = JtxContract.JtxAttendee.Cutype.INDIVIDUAL.name,
         var member: String? = null,
-        var role: String? = SyncContentProviderContract.JtxAttendee.Role.`REQ-PARTICIPANT`.name,
+        var role: String? = JtxContract.JtxAttendee.Role.`REQ-PARTICIPANT`.name,
         var partstat: String? = null,
         var rsvp: Boolean? = null,
         var delegatedto: String? = null,
@@ -220,7 +220,7 @@ open class JtxICalObject(
             // extract vToDos if available
             vToDos.forEach {
                 val t = JtxICalObject(collection)
-                t.component = SyncContentProviderContract.JtxICalObject.Component.VTODO.name
+                t.component = JtxContract.JtxICalObject.Component.VTODO.name
 
                 if (it.uid != null)
                     t.uid = it.uid.value
@@ -250,7 +250,7 @@ open class JtxICalObject(
             // extract vJournals if available
             vJournals.forEach {
                 val j = JtxICalObject(collection)
-                j.component = SyncContentProviderContract.JtxICalObject.Component.VJOURNAL.name
+                j.component = JtxContract.JtxICalObject.Component.VJOURNAL.name
 
                 if (it.uid != null)
                     j.uid = it.uid.value
@@ -311,14 +311,14 @@ open class JtxICalObject(
                     is Status -> iCalObject.status = prop.value
                     is DtEnd -> Ical4Android.log.warning("The property DtEnd must not be used for VTODO and VJOURNAL, this value is rejected.")
                     is Completed -> {
-                        if (iCalObject.component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name) {
+                        if (iCalObject.component == JtxContract.JtxICalObject.Component.VTODO.name) {
                             iCalObject.completed = prop.date.time
                         } else
                             Ical4Android.log.warning("The property Completed is only supported for VTODO, this value is rejected.")
                     }
 
                     is Due -> {
-                        if (iCalObject.component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name) {
+                        if (iCalObject.component == JtxContract.JtxICalObject.Component.VTODO.name) {
                             iCalObject.due = prop.date.time
                             when {
                                 prop.date is DateTime && prop.timeZone != null -> iCalObject.dueTimezone = prop.timeZone.id
@@ -346,7 +346,7 @@ open class JtxICalObject(
                     }
 
                     is PercentComplete -> {
-                        if (iCalObject.component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name)
+                        if (iCalObject.component == JtxContract.JtxICalObject.Component.VTODO.name)
                             iCalObject.percent = prop.percentage
                         else
                             Ical4Android.log.warning("The property PercentComplete is only supported for VTODO, this value is rejected.")
@@ -424,7 +424,7 @@ open class JtxICalObject(
                         iCalObject.relatedTo.add(
                             RelatedTo().apply {
                                 this.text = prop.value
-                                this.reltype = prop.getParameter<RelType>(RelType.RELTYPE)?.value ?: SyncContentProviderContract.JtxRelatedto.Reltype.PARENT.name
+                                this.reltype = prop.getParameter<RelType>(RelType.RELTYPE)?.value ?: JtxContract.JtxRelatedto.Reltype.PARENT.name
 
                                 // remove the known parameter
                                 prop.parameters?.removeAll(RelType.RELTYPE)
@@ -553,12 +553,12 @@ open class JtxICalObject(
         ical.properties += Version.VERSION_2_0
         ical.properties += ICalendar.prodId
 
-        if (component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name) {
+        if (component == JtxContract.JtxICalObject.Component.VTODO.name) {
             val vTodo = VToDo(true /* generates DTSTAMP */)
             ical.components += vTodo
             val props = vTodo.properties
             addProperties(props, context)
-        } else if (component == SyncContentProviderContract.JtxICalObject.Component.VJOURNAL.name) {
+        } else if (component == JtxContract.JtxICalObject.Component.VJOURNAL.name) {
             val vJournal = VJournal(true /* generates DTSTAMP */)
             ical.components += vJournal
             val props = vJournal.properties
@@ -884,7 +884,7 @@ duration?.let(props::add)
         }
          */
 
-        if(component == SyncContentProviderContract.JtxICalObject.Component.VTODO.name) {
+        if(component == JtxContract.JtxICalObject.Component.VTODO.name) {
             completed?.let {
                 //Completed is defines as always DateTime! And is always UTC!?
 
@@ -949,25 +949,25 @@ duration?.let(props::add)
 
     fun clearDirty(fileName: String?, eTag: String?, scheduleTag: String?) {
 
-        var updateUri = SyncContentProviderContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account)
+        var updateUri = JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account)
         updateUri = Uri.withAppendedPath(updateUri, this.id.toString())
 
         val values = ContentValues()
-        fileName?.let { values.put(SyncContentProviderContract.JtxICalObject.FILENAME, fileName) }
-        eTag?.let { values.put(SyncContentProviderContract.JtxICalObject.ETAG, eTag) }
-        scheduleTag?.let { values.put(SyncContentProviderContract.JtxICalObject.SCHEDULETAG, scheduleTag) }
-        values.put(SyncContentProviderContract.JtxICalObject.DIRTY, false)
+        fileName?.let { values.put(JtxContract.JtxICalObject.FILENAME, fileName) }
+        eTag?.let { values.put(JtxContract.JtxICalObject.ETAG, eTag) }
+        scheduleTag?.let { values.put(JtxContract.JtxICalObject.SCHEDULETAG, scheduleTag) }
+        values.put(JtxContract.JtxICalObject.DIRTY, false)
 
         collection.client.update(updateUri, values, null, null)
     }
 
     fun updateFlags(flags: Int) {
 
-        var updateUri = SyncContentProviderContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account)
+        var updateUri = JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account)
         updateUri = Uri.withAppendedPath(updateUri, this.id.toString())
 
         val values = ContentValues()
-        values.put(SyncContentProviderContract.JtxICalObject.FLAGS, flags)
+        values.put(JtxContract.JtxICalObject.FLAGS, flags)
 
         collection.client.update(updateUri, values, null, null)
     }
@@ -978,7 +978,7 @@ duration?.let(props::add)
 
         Log.d("Calling add", "Lets see what happens")
         val newUri = collection.client.insert(
-            SyncContentProviderContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account),
+            JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account),
             values
         ) ?: return Uri.EMPTY
         this.id = newUri.lastPathSegment?.toLong() ?: return Uri.EMPTY
@@ -994,12 +994,12 @@ duration?.let(props::add)
         this.applyNewData(data)
         val values = this.toContentValues()
 
-        var updateUri = SyncContentProviderContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account)
+        var updateUri = JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account)
         updateUri = Uri.withAppendedPath(updateUri, this.id.toString())
         collection.client.update(
             updateUri,
             values,
-            "${SyncContentProviderContract.JtxICalObject.ID} = ?",
+            "${JtxContract.JtxICalObject.ID} = ?",
             arrayOf(this.id.toString())
         )
 
@@ -1018,78 +1018,78 @@ duration?.let(props::add)
         // delete the categories, attendees, ... and insert them again after. Only relevant for Update, for an insert there will be no entries
         if (isUpdate) {
             collection.client.delete(
-                SyncContentProviderContract.JtxCategory.CONTENT_URI.asSyncAdapter(collection.account),
-                "${SyncContentProviderContract.JtxCategory.ICALOBJECT_ID} = ?",
+                JtxContract.JtxCategory.CONTENT_URI.asSyncAdapter(collection.account),
+                "${JtxContract.JtxCategory.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
 
             collection.client.delete(
-                SyncContentProviderContract.JtxComment.CONTENT_URI.asSyncAdapter(collection.account),
-                "${SyncContentProviderContract.JtxComment.ICALOBJECT_ID} = ?",
+                JtxContract.JtxComment.CONTENT_URI.asSyncAdapter(collection.account),
+                "${JtxContract.JtxComment.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
 
             collection.client.delete(
-                SyncContentProviderContract.JtxResource.CONTENT_URI.asSyncAdapter(collection.account),
-                "${SyncContentProviderContract.JtxResource.ICALOBJECT_ID} = ?",
+                JtxContract.JtxResource.CONTENT_URI.asSyncAdapter(collection.account),
+                "${JtxContract.JtxResource.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
 
             collection.client.delete(
-                SyncContentProviderContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(collection.account),
-                "${SyncContentProviderContract.JtxRelatedto.ICALOBJECT_ID} = ?",
+                JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(collection.account),
+                "${JtxContract.JtxRelatedto.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
 
             collection.client.delete(
-                SyncContentProviderContract.JtxAttendee.CONTENT_URI.asSyncAdapter(collection.account),
-                "${SyncContentProviderContract.JtxAttendee.ICALOBJECT_ID} = ?",
+                JtxContract.JtxAttendee.CONTENT_URI.asSyncAdapter(collection.account),
+                "${JtxContract.JtxAttendee.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
 
             collection.client.delete(
-                SyncContentProviderContract.JtxAttachment.CONTENT_URI.asSyncAdapter(collection.account),
-                "${SyncContentProviderContract.JtxAttachment.ICALOBJECT_ID} = ?",
+                JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(collection.account),
+                "${JtxContract.JtxAttachment.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
 
             collection.client.delete(
-                SyncContentProviderContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account),
-                "${SyncContentProviderContract.JtxAlarm.ICALOBJECT_ID} = ?",
+                JtxContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account),
+                "${JtxContract.JtxAlarm.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
 
             collection.client.delete(
-                SyncContentProviderContract.JtxUnknown.CONTENT_URI.asSyncAdapter(collection.account),
-                "${SyncContentProviderContract.JtxUnknown.ICALOBJECT_ID} = ?",
+                JtxContract.JtxUnknown.CONTENT_URI.asSyncAdapter(collection.account),
+                "${JtxContract.JtxUnknown.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
             )
         }
 
         this.categories.forEach { category ->
             val categoryContentValues = ContentValues().apply {
-                put(SyncContentProviderContract.JtxCategory.ICALOBJECT_ID, id)
-                category.text.let { put(SyncContentProviderContract.JtxCategory.TEXT, it) }
-                category.categoryId.let { put(SyncContentProviderContract.JtxCategory.ID, it) }
-                category.language.let { put(SyncContentProviderContract.JtxCategory.LANGUAGE, it) }
-                category.other.let { put(SyncContentProviderContract.JtxCategory.OTHER, it) }
+                put(JtxContract.JtxCategory.ICALOBJECT_ID, id)
+                category.text.let { put(JtxContract.JtxCategory.TEXT, it) }
+                category.categoryId.let { put(JtxContract.JtxCategory.ID, it) }
+                category.language.let { put(JtxContract.JtxCategory.LANGUAGE, it) }
+                category.other.let { put(JtxContract.JtxCategory.OTHER, it) }
             }
             collection.client.insert(
-                SyncContentProviderContract.JtxCategory.CONTENT_URI.asSyncAdapter(collection.account),
+                JtxContract.JtxCategory.CONTENT_URI.asSyncAdapter(collection.account),
                 categoryContentValues
             )
         }
 
         this.comments.forEach { comment ->
             val commentContentValues = ContentValues().apply {
-                put(SyncContentProviderContract.JtxComment.ICALOBJECT_ID, id)
-                put(SyncContentProviderContract.JtxComment.ID, comment.commentId)
-                comment.text.let { put(SyncContentProviderContract.JtxComment.TEXT, comment.text) }
-                comment.language.let { put(SyncContentProviderContract.JtxComment.LANGUAGE, it) }
-                comment.other.let { put(SyncContentProviderContract.JtxComment.OTHER, it) }
+                put(JtxContract.JtxComment.ICALOBJECT_ID, id)
+                put(JtxContract.JtxComment.ID, comment.commentId)
+                comment.text.let { put(JtxContract.JtxComment.TEXT, comment.text) }
+                comment.language.let { put(JtxContract.JtxComment.LANGUAGE, it) }
+                comment.other.let { put(JtxContract.JtxComment.OTHER, it) }
             }
             collection.client.insert(
-                SyncContentProviderContract.JtxComment.CONTENT_URI.asSyncAdapter(collection.account),
+                JtxContract.JtxComment.CONTENT_URI.asSyncAdapter(collection.account),
                 commentContentValues
             )
         }
@@ -1097,14 +1097,14 @@ duration?.let(props::add)
 
         this.resources.forEach { resource ->
             val resourceContentValues = ContentValues().apply {
-                put(SyncContentProviderContract.JtxResource.ICALOBJECT_ID, id)
-                put(SyncContentProviderContract.JtxResource.ID, resource.resourceId)
-                resource.text.let { put(SyncContentProviderContract.JtxResource.TEXT, it) }
-                resource.language.let { put(SyncContentProviderContract.JtxResource.LANGUAGE, it) }
-                resource.other.let { put(SyncContentProviderContract.JtxResource.OTHER, it) }
+                put(JtxContract.JtxResource.ICALOBJECT_ID, id)
+                put(JtxContract.JtxResource.ID, resource.resourceId)
+                resource.text.let { put(JtxContract.JtxResource.TEXT, it) }
+                resource.language.let { put(JtxContract.JtxResource.LANGUAGE, it) }
+                resource.other.let { put(JtxContract.JtxResource.OTHER, it) }
             }
             collection.client.insert(
-                SyncContentProviderContract.JtxResource.CONTENT_URI.asSyncAdapter(collection.account),
+                JtxContract.JtxResource.CONTENT_URI.asSyncAdapter(collection.account),
                 resourceContentValues
             )
         }
@@ -1112,37 +1112,37 @@ duration?.let(props::add)
 
         this.relatedTo.forEach { related ->
             val relatedToContentValues = ContentValues().apply {
-                put(SyncContentProviderContract.JtxRelatedto.ICALOBJECT_ID, id)
-                related.text.let { put(SyncContentProviderContract.JtxRelatedto.TEXT, it) }
-                related.reltype.let { put(SyncContentProviderContract.JtxRelatedto.RELTYPE, it) }
-                related.other.let { put(SyncContentProviderContract.JtxRelatedto.OTHER, it) }
+                put(JtxContract.JtxRelatedto.ICALOBJECT_ID, id)
+                related.text.let { put(JtxContract.JtxRelatedto.TEXT, it) }
+                related.reltype.let { put(JtxContract.JtxRelatedto.RELTYPE, it) }
+                related.other.let { put(JtxContract.JtxRelatedto.OTHER, it) }
             }
             collection.client.insert(
-                SyncContentProviderContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(collection.account),
+                JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(collection.account),
                 relatedToContentValues
             )
         }
 
         this.attendees.forEach { attendee ->
             val attendeeContentValues = ContentValues().apply {
-                put(SyncContentProviderContract.JtxAttendee.ICALOBJECT_ID, id)
-                put(SyncContentProviderContract.JtxAttendee.CALADDRESS, attendee.caladdress)
+                put(JtxContract.JtxAttendee.ICALOBJECT_ID, id)
+                put(JtxContract.JtxAttendee.CALADDRESS, attendee.caladdress)
 
-                attendee.cn.let { put(SyncContentProviderContract.JtxAttendee.CN, it) }
-                attendee.cutype.let { put(SyncContentProviderContract.JtxAttendee.CUTYPE, it) }
-                attendee.delegatedfrom.let { put(SyncContentProviderContract.JtxAttendee.DELEGATEDFROM, it) }
-               attendee.delegatedto.let {put(SyncContentProviderContract.JtxAttendee.DELEGATEDTO, it) }
-                attendee.dir.let { put(SyncContentProviderContract.JtxAttendee.DIR, it) }
-                attendee.language.let { put(SyncContentProviderContract.JtxAttendee.LANGUAGE, it) }
-                attendee.member.let { put(SyncContentProviderContract.JtxAttendee.MEMBER, it) }
-               attendee.partstat.let {put(SyncContentProviderContract.JtxAttendee.PARTSTAT, it) }
-                attendee.role.let { put(SyncContentProviderContract.JtxAttendee.ROLE, it) }
-                attendee.rsvp.let { put(SyncContentProviderContract.JtxAttendee.RSVP, it) }
-                attendee.sentby.let { put(SyncContentProviderContract.JtxAttendee.SENTBY, it) }
-                attendee.other.let { put(SyncContentProviderContract.JtxAttendee.OTHER, it) }
+                attendee.cn.let { put(JtxContract.JtxAttendee.CN, it) }
+                attendee.cutype.let { put(JtxContract.JtxAttendee.CUTYPE, it) }
+                attendee.delegatedfrom.let { put(JtxContract.JtxAttendee.DELEGATEDFROM, it) }
+               attendee.delegatedto.let {put(JtxContract.JtxAttendee.DELEGATEDTO, it) }
+                attendee.dir.let { put(JtxContract.JtxAttendee.DIR, it) }
+                attendee.language.let { put(JtxContract.JtxAttendee.LANGUAGE, it) }
+                attendee.member.let { put(JtxContract.JtxAttendee.MEMBER, it) }
+               attendee.partstat.let {put(JtxContract.JtxAttendee.PARTSTAT, it) }
+                attendee.role.let { put(JtxContract.JtxAttendee.ROLE, it) }
+                attendee.rsvp.let { put(JtxContract.JtxAttendee.RSVP, it) }
+                attendee.sentby.let { put(JtxContract.JtxAttendee.SENTBY, it) }
+                attendee.other.let { put(JtxContract.JtxAttendee.OTHER, it) }
             }
             collection.client.insert(
-                SyncContentProviderContract.JtxAttendee.CONTENT_URI.asSyncAdapter(
+                JtxContract.JtxAttendee.CONTENT_URI.asSyncAdapter(
                     collection.account
                 ), attendeeContentValues
             )
@@ -1150,14 +1150,14 @@ duration?.let(props::add)
 
         this.attachments.forEach { attachment ->
             val attachmentContentValues = ContentValues().apply {
-                put(SyncContentProviderContract.JtxAttachment.ICALOBJECT_ID, id)
-                attachment.uri.let { put(SyncContentProviderContract.JtxAttachment.URI, it) }
-                attachment.binary.let { put(SyncContentProviderContract.JtxAttachment.BINARY, it) }
-                attachment.fmttype.let { put(SyncContentProviderContract.JtxAttachment.FMTTYPE, it) }
-                attachment.other.let { put(SyncContentProviderContract.JtxAttachment.OTHER, it) }
+                put(JtxContract.JtxAttachment.ICALOBJECT_ID, id)
+                attachment.uri.let { put(JtxContract.JtxAttachment.URI, it) }
+                attachment.binary.let { put(JtxContract.JtxAttachment.BINARY, it) }
+                attachment.fmttype.let { put(JtxContract.JtxAttachment.FMTTYPE, it) }
+                attachment.other.let { put(JtxContract.JtxAttachment.OTHER, it) }
             }
             collection.client.insert(
-                SyncContentProviderContract.JtxAttachment.CONTENT_URI.asSyncAdapter(
+                JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(
                     collection.account
                 ), attachmentContentValues
             )
@@ -1165,30 +1165,30 @@ duration?.let(props::add)
 
         this.alarms.forEach { alarm ->
             val alarmContentValues = ContentValues().apply {
-                put(SyncContentProviderContract.JtxAlarm.ICALOBJECT_ID, id)
-                alarm.action.let { put(SyncContentProviderContract.JtxAlarm.ALARM_ACTION, it) }
-                alarm.attach.let { put(SyncContentProviderContract.JtxAlarm.ALARM_ATTACH, it) }
-                alarm.attendee.let { put(SyncContentProviderContract.JtxAlarm.ALARM_ATTENDEE, it) }
-                alarm.description.let { put(SyncContentProviderContract.JtxAlarm.ALARM_DESCRIPTION, it) }
-                alarm.duration.let { put(SyncContentProviderContract.JtxAlarm.ALARM_DURATION, it) }
-                alarm.repeat.let { put(SyncContentProviderContract.JtxAlarm.ALARM_REPEAT, it) }
-                alarm.summary.let { put(SyncContentProviderContract.JtxAlarm.ALARM_SUMMARY, it) }
-                alarm.trigger.let { put(SyncContentProviderContract.JtxAlarm.ALARM_TRIGGER, it) }
-                alarm.other.let { put(SyncContentProviderContract.JtxAlarm.ALARM_OTHER, it) }
+                put(JtxContract.JtxAlarm.ICALOBJECT_ID, id)
+                alarm.action.let { put(JtxContract.JtxAlarm.ALARM_ACTION, it) }
+                alarm.attach.let { put(JtxContract.JtxAlarm.ALARM_ATTACH, it) }
+                alarm.attendee.let { put(JtxContract.JtxAlarm.ALARM_ATTENDEE, it) }
+                alarm.description.let { put(JtxContract.JtxAlarm.ALARM_DESCRIPTION, it) }
+                alarm.duration.let { put(JtxContract.JtxAlarm.ALARM_DURATION, it) }
+                alarm.repeat.let { put(JtxContract.JtxAlarm.ALARM_REPEAT, it) }
+                alarm.summary.let { put(JtxContract.JtxAlarm.ALARM_SUMMARY, it) }
+                alarm.trigger.let { put(JtxContract.JtxAlarm.ALARM_TRIGGER, it) }
+                alarm.other.let { put(JtxContract.JtxAlarm.ALARM_OTHER, it) }
             }
             collection.client.insert(
-                SyncContentProviderContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account),
+                JtxContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account),
                 alarmContentValues
             )
         }
 
         this.unknown.forEach { unknown ->
             val unknownContentValues = ContentValues().apply {
-                put(SyncContentProviderContract.JtxUnknown.ICALOBJECT_ID, id)
-                unknown.value.let { put(SyncContentProviderContract.JtxUnknown.UNKNOWN_VALUE, it) }
+                put(JtxContract.JtxUnknown.ICALOBJECT_ID, id)
+                unknown.value.let { put(JtxContract.JtxUnknown.UNKNOWN_VALUE, it) }
             }
             collection.client.insert(
-                SyncContentProviderContract.JtxUnknown.CONTENT_URI.asSyncAdapter(collection.account),
+                JtxContract.JtxUnknown.CONTENT_URI.asSyncAdapter(collection.account),
                 unknownContentValues
             )
         }
@@ -1197,7 +1197,7 @@ duration?.let(props::add)
 
     fun delete(): Int {
         val uri = Uri.withAppendedPath(
-            SyncContentProviderContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account),
+            JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account),
             id.toString()
         )
         return collection.client.delete(uri, null, null)
@@ -1252,40 +1252,40 @@ duration?.let(props::add)
     private fun toContentValues(): ContentValues {
 
         val values = ContentValues()
-        values.put(SyncContentProviderContract.JtxICalObject.ID, id)
-        summary.let { values.put(SyncContentProviderContract.JtxICalObject.SUMMARY, it)  }
-        description.let { values.put(SyncContentProviderContract.JtxICalObject.DESCRIPTION, it) }
-        values.put(SyncContentProviderContract.JtxICalObject.COMPONENT, component)
-        status.let { values.put(SyncContentProviderContract.JtxICalObject.STATUS, it) }
-        classification.let { values.put(SyncContentProviderContract.JtxICalObject.CLASSIFICATION, it) }
-        priority.let { values.put(SyncContentProviderContract.JtxICalObject.PRIORITY, it) }
-        values.put(SyncContentProviderContract.JtxICalObject.ICALOBJECT_COLLECTIONID, collectionId)
-        values.put(SyncContentProviderContract.JtxICalObject.UID, uid)
-        geoLat.let { values.put(SyncContentProviderContract.JtxICalObject.GEO_LAT, it) }
-        geoLong.let { values.put(SyncContentProviderContract.JtxICalObject.GEO_LONG, it) }
-        location.let { values.put(SyncContentProviderContract.JtxICalObject.LOCATION, it) }
-        locationAltrep.let { values.put(SyncContentProviderContract.JtxICalObject.LOCATION_ALTREP, it) }
-        percent.let { values.put(SyncContentProviderContract.JtxICalObject.PERCENT, it) }
-        values.put(SyncContentProviderContract.JtxICalObject.DTSTAMP, dtstamp)
-        dtstart.let { values.put(SyncContentProviderContract.JtxICalObject.DTSTART, it) }
-        dtstartTimezone.let { values.put(SyncContentProviderContract.JtxICalObject.DTSTART_TIMEZONE, it) }
-        dtend.let { values.put(SyncContentProviderContract.JtxICalObject.DTEND, it) }
-        dtendTimezone.let { values.put(SyncContentProviderContract.JtxICalObject.DTEND_TIMEZONE, it) }
-        completed.let { values.put(SyncContentProviderContract.JtxICalObject.COMPLETED, it) }
-        completedTimezone.let { values.put(SyncContentProviderContract.JtxICalObject.COMPLETED_TIMEZONE, it) }
-        due.let { values.put(SyncContentProviderContract.JtxICalObject.DUE, it) }
-        dueTimezone.let { values.put(SyncContentProviderContract.JtxICalObject.DUE_TIMEZONE, it) }
-        duration.let { values.put(SyncContentProviderContract.JtxICalObject.DURATION, it) }
+        values.put(JtxContract.JtxICalObject.ID, id)
+        summary.let { values.put(JtxContract.JtxICalObject.SUMMARY, it)  }
+        description.let { values.put(JtxContract.JtxICalObject.DESCRIPTION, it) }
+        values.put(JtxContract.JtxICalObject.COMPONENT, component)
+        status.let { values.put(JtxContract.JtxICalObject.STATUS, it) }
+        classification.let { values.put(JtxContract.JtxICalObject.CLASSIFICATION, it) }
+        priority.let { values.put(JtxContract.JtxICalObject.PRIORITY, it) }
+        values.put(JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID, collectionId)
+        values.put(JtxContract.JtxICalObject.UID, uid)
+        geoLat.let { values.put(JtxContract.JtxICalObject.GEO_LAT, it) }
+        geoLong.let { values.put(JtxContract.JtxICalObject.GEO_LONG, it) }
+        location.let { values.put(JtxContract.JtxICalObject.LOCATION, it) }
+        locationAltrep.let { values.put(JtxContract.JtxICalObject.LOCATION_ALTREP, it) }
+        percent.let { values.put(JtxContract.JtxICalObject.PERCENT, it) }
+        values.put(JtxContract.JtxICalObject.DTSTAMP, dtstamp)
+        dtstart.let { values.put(JtxContract.JtxICalObject.DTSTART, it) }
+        dtstartTimezone.let { values.put(JtxContract.JtxICalObject.DTSTART_TIMEZONE, it) }
+        dtend.let { values.put(JtxContract.JtxICalObject.DTEND, it) }
+        dtendTimezone.let { values.put(JtxContract.JtxICalObject.DTEND_TIMEZONE, it) }
+        completed.let { values.put(JtxContract.JtxICalObject.COMPLETED, it) }
+        completedTimezone.let { values.put(JtxContract.JtxICalObject.COMPLETED_TIMEZONE, it) }
+        due.let { values.put(JtxContract.JtxICalObject.DUE, it) }
+        dueTimezone.let { values.put(JtxContract.JtxICalObject.DUE_TIMEZONE, it) }
+        duration.let { values.put(JtxContract.JtxICalObject.DURATION, it) }
 
-        rrule.let { values.put(SyncContentProviderContract.JtxICalObject.RRULE, it) }
-        rdate.let { values.put(SyncContentProviderContract.JtxICalObject.RDATE, it) }
-        exdate.let { values.put(SyncContentProviderContract.JtxICalObject.EXDATE, it) }
-        recurid.let { values.put(SyncContentProviderContract.JtxICalObject.RECURID, it) }
+        rrule.let { values.put(JtxContract.JtxICalObject.RRULE, it) }
+        rdate.let { values.put(JtxContract.JtxICalObject.RDATE, it) }
+        exdate.let { values.put(JtxContract.JtxICalObject.EXDATE, it) }
+        recurid.let { values.put(JtxContract.JtxICalObject.RECURID, it) }
 
-        fileName.let { values.put(SyncContentProviderContract.JtxICalObject.FILENAME, it) }
-        eTag.let { values.put(SyncContentProviderContract.JtxICalObject.ETAG, it) }
-        scheduleTag.let { values.put(SyncContentProviderContract.JtxICalObject.SCHEDULETAG, it) }
-        values.put(SyncContentProviderContract.JtxICalObject.FLAGS, flags)
+        fileName.let { values.put(JtxContract.JtxICalObject.FILENAME, it) }
+        eTag.let { values.put(JtxContract.JtxICalObject.ETAG, it) }
+        scheduleTag.let { values.put(JtxContract.JtxICalObject.SCHEDULETAG, it) }
+        values.put(JtxContract.JtxICalObject.FLAGS, flags)
 
         return values
     }
@@ -1293,12 +1293,12 @@ duration?.let(props::add)
 
     fun getCategoryContentValues(): List<ContentValues> {
 
-        val categoryUrl = SyncContentProviderContract.JtxCategory.CONTENT_URI.asSyncAdapter(collection.account)
+        val categoryUrl = JtxContract.JtxCategory.CONTENT_URI.asSyncAdapter(collection.account)
         val categoryValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             categoryUrl,
             null,
-            "${SyncContentProviderContract.JtxCategory.ICALOBJECT_ID} = ?",
+            "${JtxContract.JtxCategory.ICALOBJECT_ID} = ?",
             arrayOf(this.id.toString()),
             null
         )?.use { cursor ->
@@ -1312,12 +1312,12 @@ duration?.let(props::add)
 
     fun getCommentContentValues(): List<ContentValues> {
 
-        val commentUrl = SyncContentProviderContract.JtxComment.CONTENT_URI.asSyncAdapter(collection.account)
+        val commentUrl = JtxContract.JtxComment.CONTENT_URI.asSyncAdapter(collection.account)
         val commentValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             commentUrl,
             null,
-            "${SyncContentProviderContract.JtxComment.ICALOBJECT_ID} = ?",
+            "${JtxContract.JtxComment.ICALOBJECT_ID} = ?",
             arrayOf(this.id.toString()),
             null
         )?.use { cursor ->
@@ -1332,12 +1332,12 @@ duration?.let(props::add)
 
     fun getResourceContentValues(): List<ContentValues> {
 
-        val resourceUrl = SyncContentProviderContract.JtxResource.CONTENT_URI.asSyncAdapter(collection.account)
+        val resourceUrl = JtxContract.JtxResource.CONTENT_URI.asSyncAdapter(collection.account)
         val resourceValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             resourceUrl,
             null,
-            "${SyncContentProviderContract.JtxResource.ICALOBJECT_ID} = ?",
+            "${JtxContract.JtxResource.ICALOBJECT_ID} = ?",
             arrayOf(this.id.toString()),
             null
         )?.use { cursor ->
@@ -1351,12 +1351,12 @@ duration?.let(props::add)
 
     fun getRelatedToContentValues(): List<ContentValues> {
 
-        val relatedToUrl = SyncContentProviderContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(collection.account)
+        val relatedToUrl = JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(collection.account)
         val relatedToValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             relatedToUrl,
             null,
-            "${SyncContentProviderContract.JtxRelatedto.ICALOBJECT_ID} = ?",
+            "${JtxContract.JtxRelatedto.ICALOBJECT_ID} = ?",
             arrayOf(this.id.toString()),
             null
         )?.use { cursor ->
@@ -1370,12 +1370,12 @@ duration?.let(props::add)
 
     fun getAttendeesContentValues(): List<ContentValues> {
 
-        val attendeesUrl = SyncContentProviderContract.JtxAttendee.CONTENT_URI.asSyncAdapter(collection.account)
+        val attendeesUrl = JtxContract.JtxAttendee.CONTENT_URI.asSyncAdapter(collection.account)
         val attendeesValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             attendeesUrl,
             null,
-            "${SyncContentProviderContract.JtxAttendee.ICALOBJECT_ID} = ?",
+            "${JtxContract.JtxAttendee.ICALOBJECT_ID} = ?",
             arrayOf(this.id.toString()),
             null
         )?.use { cursor ->
@@ -1390,12 +1390,12 @@ duration?.let(props::add)
     fun getAttachmentsContentValues(): List<ContentValues> {
 
         val attachmentsUrl =
-            SyncContentProviderContract.JtxAttachment.CONTENT_URI.asSyncAdapter(collection.account)
+            JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(collection.account)
         val attachmentsValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             attachmentsUrl,
             null,
-            "${SyncContentProviderContract.JtxAttachment.ICALOBJECT_ID} = ?",
+            "${JtxContract.JtxAttachment.ICALOBJECT_ID} = ?",
             arrayOf(this.id.toString()),
             null
         )?.use { cursor ->
@@ -1410,12 +1410,12 @@ duration?.let(props::add)
     fun getAlarmsContentValues(): List<ContentValues> {
 
         val alarmsUrl =
-            SyncContentProviderContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account)
+            JtxContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account)
         val alarmValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             alarmsUrl,
             null,
-            "${SyncContentProviderContract.JtxAlarm.ICALOBJECT_ID} = ?",
+            "${JtxContract.JtxAlarm.ICALOBJECT_ID} = ?",
             arrayOf(this.id.toString()),
             null
         )?.use { cursor ->
@@ -1430,12 +1430,12 @@ duration?.let(props::add)
     fun getUnknownContentValues(): List<ContentValues> {
 
         val unknownUrl =
-            SyncContentProviderContract.JtxUnknown.CONTENT_URI.asSyncAdapter(collection.account)
+            JtxContract.JtxUnknown.CONTENT_URI.asSyncAdapter(collection.account)
         val unknownValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             unknownUrl,
             null,
-            "${SyncContentProviderContract.JtxUnknown.ICALOBJECT_ID} = ?",
+            "${JtxContract.JtxUnknown.ICALOBJECT_ID} = ?",
             arrayOf(this.id.toString()),
             null
         )?.use { cursor ->

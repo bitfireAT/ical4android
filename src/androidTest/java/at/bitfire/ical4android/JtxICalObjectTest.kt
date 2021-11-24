@@ -8,10 +8,10 @@ import android.content.Context
 import android.database.DatabaseUtils
 import androidx.test.platform.app.InstrumentationRegistry
 import at.bitfire.ical4android.impl.TestJtxCollection
-import at.bitfire.jtx.SyncContentProviderContract
-import at.bitfire.jtx.SyncContentProviderContract.JtxICalObject.Component
-import at.bitfire.jtx.SyncContentProviderContract.JtxICalObject
-import at.bitfire.jtx.SyncContentProviderContract.asSyncAdapter
+import at.bitfire.jtx.JtxContract
+import at.bitfire.jtx.JtxContract.JtxICalObject.Component
+import at.bitfire.jtx.JtxContract.JtxICalObject
+import at.bitfire.jtx.JtxContract.asSyncAdapter
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import org.junit.After
@@ -21,7 +21,7 @@ import org.junit.Test
 
 class JtxICalObjectTest {
 
-    private val testAccount = Account("TEST", SyncContentProviderContract.JtxCollection.TEST_ACCOUNT_TYPE)
+    private val testAccount = Account("TEST", JtxContract.JtxCollection.TEST_ACCOUNT_TYPE)
     private lateinit var contentResolver: ContentResolver
     private lateinit var client: ContentProviderClient
     var collection: TestJtxCollection? = null
@@ -30,21 +30,21 @@ class JtxICalObjectTest {
 
     private val url = "https://jtx.techbee.at"
     private val displayname = "jtxTest"
-    private val syncversion = SyncContentProviderContract.CONTRACT_VERSION
+    private val syncversion = JtxContract.CONTRACT_VERSION
 
     private val cvCollection = ContentValues().apply {
-        put(SyncContentProviderContract.JtxCollection.ACCOUNT_TYPE, testAccount.type)
-        put(SyncContentProviderContract.JtxCollection.ACCOUNT_NAME, testAccount.name)
-        put(SyncContentProviderContract.JtxCollection.URL, url)
-        put(SyncContentProviderContract.JtxCollection.DISPLAYNAME, displayname)
-        put(SyncContentProviderContract.JtxCollection.SYNC_VERSION, syncversion)
+        put(JtxContract.JtxCollection.ACCOUNT_TYPE, testAccount.type)
+        put(JtxContract.JtxCollection.ACCOUNT_NAME, testAccount.name)
+        put(JtxContract.JtxCollection.URL, url)
+        put(JtxContract.JtxCollection.DISPLAYNAME, displayname)
+        put(JtxContract.JtxCollection.SYNC_VERSION, syncversion)
     }
 
     @Before
     fun setUp() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         contentResolver = context.contentResolver
-        client = contentResolver.acquireContentProviderClient(SyncContentProviderContract.AUTHORITY)!!
+        client = contentResolver.acquireContentProviderClient(JtxContract.AUTHORITY)!!
 
         val collectionUri = JtxCollection.create(testAccount, client, cvCollection)
         assertNotNull(collectionUri)
@@ -251,22 +251,22 @@ class JtxICalObjectTest {
         )
 
         val commentCV = ContentValues().apply {
-            put(SyncContentProviderContract.JtxComment.TEXT, comment.text)
-            put(SyncContentProviderContract.JtxComment.ALTREP, comment.altrep)
-            put(SyncContentProviderContract.JtxComment.LANGUAGE, comment.language)
-            put(SyncContentProviderContract.JtxComment.OTHER, comment.other)
-            put(SyncContentProviderContract.JtxComment.ICALOBJECT_ID, id)
+            put(JtxContract.JtxComment.TEXT, comment.text)
+            put(JtxContract.JtxComment.ALTREP, comment.altrep)
+            put(JtxContract.JtxComment.LANGUAGE, comment.language)
+            put(JtxContract.JtxComment.OTHER, comment.other)
+            put(JtxContract.JtxComment.ICALOBJECT_ID, id)
         }
 
-        val commentUri = client.insert(SyncContentProviderContract.JtxComment.CONTENT_URI.asSyncAdapter(testAccount), commentCV)!!
+        val commentUri = client.insert(JtxContract.JtxComment.CONTENT_URI.asSyncAdapter(testAccount), commentCV)!!
         client.query(commentUri, null, null, null, null)?.use {
             val retrievedCommentCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, retrievedCommentCV)
-            assertEquals(comment.text, retrievedCommentCV.getAsString(SyncContentProviderContract.JtxComment.TEXT))
-            assertEquals(comment.altrep, retrievedCommentCV.getAsString(SyncContentProviderContract.JtxComment.ALTREP))
-            assertEquals(comment.language, retrievedCommentCV.getAsString(SyncContentProviderContract.JtxComment.LANGUAGE))
-            assertEquals(comment.other, retrievedCommentCV.getAsString(SyncContentProviderContract.JtxComment.OTHER))
+            assertEquals(comment.text, retrievedCommentCV.getAsString(JtxContract.JtxComment.TEXT))
+            assertEquals(comment.altrep, retrievedCommentCV.getAsString(JtxContract.JtxComment.ALTREP))
+            assertEquals(comment.language, retrievedCommentCV.getAsString(JtxContract.JtxComment.LANGUAGE))
+            assertEquals(comment.other, retrievedCommentCV.getAsString(JtxContract.JtxComment.OTHER))
         }
     }
 
@@ -291,20 +291,20 @@ class JtxICalObjectTest {
         )
 
         val resourceCV = ContentValues().apply {
-            put(SyncContentProviderContract.JtxResource.TEXT, resource.text)
-            put(SyncContentProviderContract.JtxResource.LANGUAGE, resource.language)
-            put(SyncContentProviderContract.JtxResource.OTHER, resource.other)
-            put(SyncContentProviderContract.JtxResource.ICALOBJECT_ID, id)
+            put(JtxContract.JtxResource.TEXT, resource.text)
+            put(JtxContract.JtxResource.LANGUAGE, resource.language)
+            put(JtxContract.JtxResource.OTHER, resource.other)
+            put(JtxContract.JtxResource.ICALOBJECT_ID, id)
         }
 
-        val resourceUri = client.insert(SyncContentProviderContract.JtxResource.CONTENT_URI.asSyncAdapter(testAccount), resourceCV)!!
+        val resourceUri = client.insert(JtxContract.JtxResource.CONTENT_URI.asSyncAdapter(testAccount), resourceCV)!!
         client.query(resourceUri, null, null, null, null)?.use {
             val retrievedResourceCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, retrievedResourceCV)
-            assertEquals(resource.text, retrievedResourceCV.getAsString(SyncContentProviderContract.JtxResource.TEXT))
-            assertEquals(resource.language, retrievedResourceCV.getAsString(SyncContentProviderContract.JtxResource.LANGUAGE))
-            assertEquals(resource.other, retrievedResourceCV.getAsString(SyncContentProviderContract.JtxResource.OTHER))
+            assertEquals(resource.text, retrievedResourceCV.getAsString(JtxContract.JtxResource.TEXT))
+            assertEquals(resource.language, retrievedResourceCV.getAsString(JtxContract.JtxResource.LANGUAGE))
+            assertEquals(resource.other, retrievedResourceCV.getAsString(JtxContract.JtxResource.OTHER))
         }
     }
 }

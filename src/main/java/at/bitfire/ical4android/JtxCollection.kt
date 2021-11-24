@@ -6,8 +6,8 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
-import at.bitfire.jtx.SyncContentProviderContract
-import at.bitfire.jtx.SyncContentProviderContract.asSyncAdapter
+import at.bitfire.jtx.JtxContract
+import at.bitfire.jtx.JtxContract.asSyncAdapter
 import java.util.*
 
 open class JtxCollection<out T: JtxICalObject>(val account: Account,
@@ -18,15 +18,15 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
     companion object {
 
         fun create(account: Account, client: ContentProviderClient, values: ContentValues): Uri =
-            client.insert(SyncContentProviderContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), values)?: throw CalendarStorageException("Couldn't create JTX Collection")
+            client.insert(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), values)?: throw CalendarStorageException("Couldn't create JTX Collection")
 
 
         fun<T: JtxCollection<JtxICalObject>> find(account: Account, client: ContentProviderClient, factory: JtxCollectionFactory<T>, where: String?, whereArgs: Array<String>?): List<T> {
             val collections = LinkedList<T>()
-            client.query(SyncContentProviderContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), null, where, whereArgs, null)?.use { cursor ->
+            client.query(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), null, where, whereArgs, null)?.use { cursor ->
                 while (cursor.moveToNext()) {
                     val values = cursor.toValues()
-                    val collection = factory.newInstance(account, client, values.getAsLong(SyncContentProviderContract.JtxCollection.ID))
+                    val collection = factory.newInstance(account, client, values.getAsLong(JtxContract.JtxCollection.ID))
                     collection.populate(values)
                     collections += collection
                 }
@@ -42,13 +42,13 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
 
 
     fun delete() {
-        client.delete(ContentUris.withAppendedId(SyncContentProviderContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), id), null, null)
+        client.delete(ContentUris.withAppendedId(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), id), null, null)
     }
 
     protected fun populate(values: ContentValues) {
-        url = values.getAsString(SyncContentProviderContract.JtxCollection.URL)
-        displayname = values.getAsString(SyncContentProviderContract.JtxCollection.DISPLAYNAME)
-        syncstate = values.getAsString(SyncContentProviderContract.JtxCollection.SYNC_VERSION)
+        url = values.getAsString(JtxContract.JtxCollection.URL)
+        displayname = values.getAsString(JtxContract.JtxCollection.DISPLAYNAME)
+        syncstate = values.getAsString(JtxContract.JtxCollection.SYNC_VERSION)
     }
 
 
@@ -57,9 +57,9 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
      * @return the Uri for the JtxICalObject Sync in the content provider of jtx Board
      */
     fun jtxSyncURI(): Uri =
-        SyncContentProviderContract.JtxICalObject.CONTENT_URI.buildUpon()
-            .appendQueryParameter(SyncContentProviderContract.ACCOUNT_NAME, account.name)
-            .appendQueryParameter(SyncContentProviderContract.ACCOUNT_TYPE, account.type)
-            .appendQueryParameter(SyncContentProviderContract.CALLER_IS_SYNCADAPTER, "true")
+        JtxContract.JtxICalObject.CONTENT_URI.buildUpon()
+            .appendQueryParameter(JtxContract.ACCOUNT_NAME, account.name)
+            .appendQueryParameter(JtxContract.ACCOUNT_TYPE, account.type)
+            .appendQueryParameter(JtxContract.CALLER_IS_SYNCADAPTER, "true")
             .build()
 }
