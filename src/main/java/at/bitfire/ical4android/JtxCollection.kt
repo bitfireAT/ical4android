@@ -5,7 +5,6 @@ import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
-import at.bitfire.ical4android.AndroidCalendar.Companion.syncAdapterURI
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import at.bitfire.jtx.SyncContentProviderContract
 import at.bitfire.jtx.SyncContentProviderContract.asSyncAdapter
@@ -15,7 +14,6 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
                                                val client: ContentProviderClient,
                                                private val iCalObjectFactory: JtxICalObjectFactory<JtxICalObject>,
                                                val id: Long) {
-
 
     companion object {
 
@@ -55,25 +53,13 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
 
 
     /**
-     * Queries [SyncContentProviderContract.JtxICalObject] from this collection. Adds a WHERE clause that restricts the
-     * query to [SyncContentProviderContract.JtxCollection.ID] = [id].
-     * @param _where selection
-     * @param _whereArgs arguments for selection
-     * @return events from this calendar which match the selection
+     * Builds the JtxICalObject content uri with appended parameters for account and syncadapter
+     * @return the Uri for the JtxICalObject Sync in the content provider of jtx Board
      */
-    fun queryICalObjects(_where: String? = null, _whereArgs: Array<String>? = null): List<JtxICalObject> {
-        val where = "(${_where ?: "1"}) AND " + SyncContentProviderContract.JtxCollection.ID + "=?"
-        val whereArgs = (_whereArgs ?: arrayOf()) + id.toString()
-
-        val iCalObjects = LinkedList<JtxICalObject>()
-        client.query(eventsSyncURI(), null, where, whereArgs, null)?.use { cursor ->
-            while (cursor.moveToNext())
-                iCalObjects += iCalObjectFactory.fromProvider(this, cursor.toValues())
-        }
-        return iCalObjects
-    }
-
-
-    private fun eventsSyncURI() = syncAdapterURI(SyncContentProviderContract.JtxICalObject.CONTENT_URI, account)
-
+    fun jtxSyncURI(): Uri =
+        SyncContentProviderContract.JtxICalObject.CONTENT_URI.buildUpon()
+            .appendQueryParameter(SyncContentProviderContract.ACCOUNT_NAME, account.name)
+            .appendQueryParameter(SyncContentProviderContract.ACCOUNT_TYPE, account.type)
+            .appendQueryParameter(SyncContentProviderContract.CALLER_IS_SYNCADAPTER, "true")
+            .build()
 }
