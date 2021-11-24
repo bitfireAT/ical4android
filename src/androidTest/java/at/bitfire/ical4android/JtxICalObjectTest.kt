@@ -41,9 +41,10 @@ class JtxICalObjectTest {
 
     @Before
     fun setUp() {
-        context = InstrumentationRegistry.getInstrumentation().targetContext
+        context = InstrumentationRegistry.getInstrumentation().context
         contentResolver = context.contentResolver
         client = contentResolver?.acquireContentProviderClient(JtxContract.AUTHORITY)!!
+
 
         val collectionUri = JtxCollection.create(testAccount, client!!, cvCollection)
         assertNotNull(collectionUri)
