@@ -986,7 +986,6 @@ duration?.let(props::add)
         insertOrUpdateListProperties(false)
 
         return newUri
-        //TODO("Not yet implemented")
 
     }
 
@@ -1007,11 +1006,13 @@ duration?.let(props::add)
         insertOrUpdateListProperties(true)
 
         return updateUri
-
-        //TODO("Not yet implemented")
     }
 
 
+    /**
+     * This function takes care of all list properties and inserts them in the DB through the provider
+     * @param isUpdate if true then the list properties are deleted through the provider before they are inserted
+     */
     private fun insertOrUpdateListProperties(isUpdate: Boolean) {
 
         // delete the categories, attendees, ... and insert them again after. Only relevant for Update, for an insert there will be no entries
