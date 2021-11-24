@@ -12,8 +12,7 @@ import at.bitfire.jtx.JtxContract
 import at.bitfire.jtx.JtxContract.JtxICalObject.Component
 import at.bitfire.jtx.JtxContract.JtxICalObject
 import at.bitfire.jtx.JtxContract.asSyncAdapter
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertNotNull
+import junit.framework.TestCase.*
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -307,4 +306,295 @@ class JtxICalObjectTest {
             assertEquals(resource.other, retrievedResourceCV.getAsString(JtxContract.JtxResource.OTHER))
         }
     }
+
+    @Test
+    fun assertAttendee() {
+
+        val cv = ContentValues().apply {
+            put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
+            put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
+        }
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val id = uri.lastPathSegment
+
+        val attendee = at.bitfire.ical4android.JtxICalObject.Attendee(
+            caladdress = "jtx@techbee.at",
+            cutype = JtxContract.JtxAttendee.Cutype.INDIVIDUAL.name,
+            member = "group",
+            partstat = "0",
+            role = JtxContract.JtxAttendee.Role.`REQ-PARTICIPANT`.name,
+            rsvp = false,
+            delegatedfrom = "jtx@techbee.at",
+            delegatedto = "jtx@techbee.at",
+            sentby = "jtx@techbee.at",
+            cn = "jtx Board",
+            dir = "dir",
+            language = "de",
+            other = "X-OTHER:Test"
+        )
+
+        val attendeeCV = ContentValues().apply {
+            put(JtxContract.JtxAttendee.CALADDRESS, attendee.caladdress)
+            put(JtxContract.JtxAttendee.CUTYPE, attendee.cutype)
+            put(JtxContract.JtxAttendee.MEMBER, attendee.member)
+            put(JtxContract.JtxAttendee.PARTSTAT, attendee.partstat)
+            put(JtxContract.JtxAttendee.ROLE, attendee.role)
+            put(JtxContract.JtxAttendee.RSVP, attendee.rsvp)
+            put(JtxContract.JtxAttendee.DELEGATEDFROM, attendee.delegatedfrom)
+            put(JtxContract.JtxAttendee.DELEGATEDTO, attendee.delegatedto)
+            put(JtxContract.JtxAttendee.SENTBY, attendee.sentby)
+            put(JtxContract.JtxAttendee.CN, attendee.cn)
+            put(JtxContract.JtxAttendee.DIR, attendee.dir)
+            put(JtxContract.JtxAttendee.LANGUAGE, attendee.language)
+            put(JtxContract.JtxAttendee.OTHER, attendee.other)
+            put(JtxContract.JtxAttendee.ICALOBJECT_ID, id)
+        }
+
+        val attendeeUri = client.insert(JtxContract.JtxAttendee.CONTENT_URI.asSyncAdapter(testAccount), attendeeCV)!!
+        client.query(attendeeUri, null, null, null, null)?.use {
+            val retrievedAttendeeCV = ContentValues()
+            it.moveToFirst()
+            DatabaseUtils.cursorRowToContentValues(it, retrievedAttendeeCV)
+            assertEquals(attendee.caladdress, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.CALADDRESS))
+            assertEquals(attendee.cutype, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.CUTYPE))
+            assertEquals(attendee.member, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.MEMBER))
+            assertEquals(attendee.partstat, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.PARTSTAT))
+            assertEquals(attendee.role, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.ROLE))
+            assertEquals(attendee.rsvp, retrievedAttendeeCV.getAsBoolean(JtxContract.JtxAttendee.RSVP))
+            assertEquals(attendee.delegatedfrom, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.DELEGATEDFROM))
+            assertEquals(attendee.delegatedto, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.DELEGATEDTO))
+            assertEquals(attendee.sentby, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.SENTBY))
+            assertEquals(attendee.cn, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.CN))
+            assertEquals(attendee.dir, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.DIR))
+            assertEquals(attendee.language, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.LANGUAGE))
+            assertEquals(attendee.other, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.OTHER))
+        }
+    }
+
+
+    @Test
+    fun assertCategory() {
+
+        val cv = ContentValues().apply {
+            put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
+            put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
+        }
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val id = uri.lastPathSegment
+
+        val category = at.bitfire.ical4android.JtxICalObject.Category(
+            text = "projector",
+        )
+
+        val categoryCV = ContentValues().apply {
+            put(JtxContract.JtxCategory.TEXT, category.text)
+            put(JtxContract.JtxCategory.ICALOBJECT_ID, id)
+        }
+
+        val categoryUri = client.insert(JtxContract.JtxCategory.CONTENT_URI.asSyncAdapter(testAccount), categoryCV)!!
+        client.query(categoryUri, null, null, null, null)?.use {
+            val retrievedCategoryCV = ContentValues()
+            it.moveToFirst()
+            DatabaseUtils.cursorRowToContentValues(it, retrievedCategoryCV)
+            assertEquals(category.text, retrievedCategoryCV.getAsString(JtxContract.JtxCategory.TEXT))
+        }
+    }
+
+
+    @Test
+    fun assertAttachment_without_binary() {
+
+        val cv = ContentValues().apply {
+            put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
+            put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
+        }
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val id = uri.lastPathSegment
+
+        val attachment = at.bitfire.ical4android.JtxICalObject.Attachment(
+            uri = "https://jtx.techbee.at/sample.pdf",
+            binary = "anR4IEJvYXJk",
+            fmttype = "application/pdf",
+            other = "X-OTHER:other",
+        )
+
+        val attachmentCV = ContentValues().apply {
+            put(JtxContract.JtxAttachment.URI, attachment.uri)
+            //put(JtxContract.JtxAttachment.BINARY, attachment.binary)
+            put(JtxContract.JtxAttachment.FMTTYPE, attachment.fmttype)
+            put(JtxContract.JtxAttachment.OTHER, attachment.other)
+            put(JtxContract.JtxAttachment.ICALOBJECT_ID, id)
+        }
+
+        val attachmentUri = client.insert(JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(testAccount), attachmentCV)!!
+        client.query(attachmentUri, null, null, null, null)?.use {
+            val retrievedAttachmentCV = ContentValues()
+            it.moveToFirst()
+            DatabaseUtils.cursorRowToContentValues(it, retrievedAttachmentCV)
+            assertEquals(attachment.uri, retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.URI))
+            //assertEquals(attachment.binary, retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.BINARY))
+            assertEquals(attachment.fmttype, retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.FMTTYPE))
+            assertEquals(attachment.other, retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.OTHER))
+        }
+    }
+
+
+    @Test
+    fun assertAttachment_with_binary() {
+
+        val cv = ContentValues().apply {
+            put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
+            put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
+        }
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val id = uri.lastPathSegment
+
+        val attachment = at.bitfire.ical4android.JtxICalObject.Attachment(
+            //uri = "https://jtx.techbee.at/sample.pdf",
+            binary = "anR4IEJvYXJk",
+            fmttype = "application/pdf",
+            other = "X-OTHER:other",
+        )
+
+        val attachmentCV = ContentValues().apply {
+            //put(JtxContract.JtxAttachment.URI, attachment.uri)
+            put(JtxContract.JtxAttachment.BINARY, attachment.binary)
+            put(JtxContract.JtxAttachment.FMTTYPE, attachment.fmttype)
+            put(JtxContract.JtxAttachment.OTHER, attachment.other)
+            put(JtxContract.JtxAttachment.ICALOBJECT_ID, id)
+        }
+
+        val attachmentUri = client.insert(JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(testAccount), attachmentCV)!!
+        client.query(attachmentUri, null, null, null, null)?.use {
+            val retrievedAttachmentCV = ContentValues()
+            it.moveToFirst()
+            DatabaseUtils.cursorRowToContentValues(it, retrievedAttachmentCV)
+            assertTrue(retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.URI).startsWith("content://"))   // binary was replaced by content uri
+            assertNull(retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.BINARY))
+            assertEquals(attachment.fmttype, retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.FMTTYPE))
+            assertEquals(attachment.other, retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.OTHER))
+        }
+    }
+
+
+    @Test
+    fun assertRelatedto() {
+
+        val cv = ContentValues().apply {
+            put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
+            put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
+        }
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val id = uri.lastPathSegment
+
+        val relatedto = at.bitfire.ical4android.JtxICalObject.RelatedTo(
+            text = "1635164243187-3fd0f89e-d017-471e-a046-71ff1844d58e@at.techbee.jtx",
+            reltype = JtxContract.JtxRelatedto.Reltype.CHILD.name,
+            other = "X-OTHER: other"
+        )
+
+        val relatedtoCV = ContentValues().apply {
+            put(JtxContract.JtxRelatedto.TEXT, relatedto.text)
+            put(JtxContract.JtxRelatedto.RELTYPE, relatedto.reltype)
+            put(JtxContract.JtxRelatedto.OTHER, relatedto.other)
+            put(JtxContract.JtxRelatedto.ICALOBJECT_ID, id)
+        }
+
+        val relatedtoUri = client.insert(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(testAccount), relatedtoCV)!!
+        client.query(relatedtoUri, null, null, null, null)?.use {
+            val retrievedRelatedtoCV = ContentValues()
+            it.moveToFirst()
+            DatabaseUtils.cursorRowToContentValues(it, retrievedRelatedtoCV)
+            assertEquals(relatedto.text, retrievedRelatedtoCV.getAsString(JtxContract.JtxRelatedto.TEXT))
+            assertEquals(relatedto.reltype, retrievedRelatedtoCV.getAsString(JtxContract.JtxRelatedto.RELTYPE))
+            assertEquals(relatedto.other, retrievedRelatedtoCV.getAsString(JtxContract.JtxRelatedto.OTHER))
+        }
+    }
+
+
+
+
+
+    @Test
+    fun assertAlarm() {
+
+        val cv = ContentValues().apply {
+            put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
+            put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
+        }
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val id = uri.lastPathSegment
+
+        val alarm = at.bitfire.ical4android.JtxICalObject.Alarm(
+            action = "AUDIO",
+            description = "desc",
+            summary = "summary",
+            trigger = "DATE-TIME:19970317T133000Z",
+            attendee = "jtx@techbee.at",
+            duration = "PT15M",
+            repeat = "4",
+            attach = "FMTTYPE=audio/basic:ftp://example.com/pub/sounds/bell-01.aud",
+            other = "X-OTHER: other"
+        )
+
+        val alarmCV = ContentValues().apply {
+            put(JtxContract.JtxAlarm.ALARM_ACTION, alarm.action)
+            put(JtxContract.JtxAlarm.ALARM_DESCRIPTION, alarm.description)
+            put(JtxContract.JtxAlarm.ALARM_SUMMARY, alarm.summary)
+            put(JtxContract.JtxAlarm.ALARM_TRIGGER, alarm.trigger)
+            put(JtxContract.JtxAlarm.ALARM_ATTENDEE, alarm.attendee)
+            put(JtxContract.JtxAlarm.ALARM_DURATION, alarm.duration)
+            put(JtxContract.JtxAlarm.ALARM_REPEAT, alarm.repeat)
+            put(JtxContract.JtxAlarm.ALARM_ATTACH, alarm.attach)
+            put(JtxContract.JtxAlarm.ALARM_OTHER, alarm.other)
+            put(JtxContract.JtxAlarm.ICALOBJECT_ID, id)
+        }
+
+        val alarmUri = client.insert(JtxContract.JtxAlarm.CONTENT_URI.asSyncAdapter(testAccount), alarmCV)!!
+        client.query(alarmUri, null, null, null, null)?.use {
+            val retrievedAlarmCV = ContentValues()
+            it.moveToFirst()
+            DatabaseUtils.cursorRowToContentValues(it, retrievedAlarmCV)
+            assertEquals(alarm.action, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_ACTION))
+            assertEquals(alarm.description, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_DESCRIPTION))
+            assertEquals(alarm.summary, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_SUMMARY))
+            assertEquals(alarm.trigger, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_TRIGGER))
+            assertEquals(alarm.attendee, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_ATTENDEE))
+            assertEquals(alarm.duration, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_DURATION))
+            assertEquals(alarm.repeat, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_REPEAT))
+            assertEquals(alarm.attach, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_ATTACH))
+            assertEquals(alarm.other, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_OTHER))
+        }
+    }
+
+
+
+    @Test
+    fun assertUnknown() {
+
+        val cv = ContentValues().apply {
+            put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
+            put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
+        }
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val id = uri.lastPathSegment
+
+        val unknown = at.bitfire.ical4android.JtxICalObject.Unknown(
+            value = "X-PROP:my value"
+        )
+
+        val unknownCV = ContentValues().apply {
+            put(JtxContract.JtxUnknown.UNKNOWN_VALUE, unknown.value)
+            put(JtxContract.JtxUnknown.ICALOBJECT_ID, id)
+        }
+
+        val unknownUri = client.insert(JtxContract.JtxUnknown.CONTENT_URI.asSyncAdapter(testAccount), unknownCV)!!
+        client.query(unknownUri, null, null, null, null)?.use {
+            val retrievedUnknownCV = ContentValues()
+            it.moveToFirst()
+            DatabaseUtils.cursorRowToContentValues(it, retrievedUnknownCV)
+            assertEquals(unknown.value, retrievedUnknownCV.getAsString(JtxContract.JtxUnknown.UNKNOWN_VALUE))
+        }
+    }
+
 }
