@@ -21,8 +21,8 @@ import org.junit.Test
 class JtxICalObjectTest {
 
     private val testAccount = Account("TEST", JtxContract.JtxCollection.TEST_ACCOUNT_TYPE)
-    private var contentResolver: ContentResolver? = null
-    private var client: ContentProviderClient? = null
+    private lateinit var contentResolver: ContentResolver
+    private lateinit var client: ContentProviderClient
     var collection: TestJtxCollection? = null
     var sample: at.bitfire.ical4android.JtxICalObject? = null
     lateinit var context: Context
@@ -41,14 +41,16 @@ class JtxICalObjectTest {
 
     @Before
     fun setUp() {
-        context = InstrumentationRegistry.getInstrumentation().context
+        context = InstrumentationRegistry.getInstrumentation().targetContext
         contentResolver = context.contentResolver
-        client = contentResolver?.acquireContentProviderClient(JtxContract.AUTHORITY)!!
 
+        TestUtils.requestPermissions(TaskProvider.ProviderName.JtxBoard.permissions)
 
-        val collectionUri = JtxCollection.create(testAccount, client!!, cvCollection)
+        client = contentResolver.acquireContentProviderClient(JtxContract.AUTHORITY)!!
+
+        val collectionUri = JtxCollection.create(testAccount, client, cvCollection)
         assertNotNull(collectionUri)
-        collection = JtxCollection.find(testAccount, client!!, TestJtxCollection.Factory, null, null)[0]
+        collection = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)[0]
         assertNotNull(collection)
 
         sample = JtxICalObject(collection!!).apply {
@@ -97,7 +99,7 @@ class JtxICalObjectTest {
     fun tearDown() {
 
         collection?.delete()
-        val collections = JtxCollection.find(testAccount, client!!, TestJtxCollection.Factory, null, null)
+        val collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
         assertEquals(0, collections.size)
     }
 
@@ -150,8 +152,8 @@ class JtxICalObjectTest {
             put(JtxICalObject.COMPONENT, component)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
         }
-        val uri = client!!.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
-        client!!.query(uri, null, null, null, null)?.use {
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        client.query(uri, null, null, null, null)?.use {
             val itemCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, itemCV)
@@ -168,8 +170,8 @@ class JtxICalObjectTest {
             put(JtxICalObject.COMPONENT, component)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
         }
-        val uri = client!!.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
-        client!!.query(uri, null, null, null, null)?.use {
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        client.query(uri, null, null, null, null)?.use {
             val itemCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, itemCV)
@@ -186,8 +188,8 @@ class JtxICalObjectTest {
             put(JtxICalObject.COMPONENT, component)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
         }
-        val uri = client!!.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
-        client!!.query(uri, null, null, null, null)?.use {
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        client.query(uri, null, null, null, null)?.use {
             val itemCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, itemCV)
@@ -204,8 +206,8 @@ class JtxICalObjectTest {
             put(JtxICalObject.COMPONENT, component)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
         }
-        val uri = client!!.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
-        client!!.query(uri, null, null, null, null)?.use {
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        client.query(uri, null, null, null, null)?.use {
             val itemCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, itemCV)
@@ -222,8 +224,8 @@ class JtxICalObjectTest {
             put(JtxICalObject.COMPONENT, component)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
         }
-        val uri = client!!.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
-        client!!.query(uri, null, null, null, null)?.use {
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        client.query(uri, null, null, null, null)?.use {
             val itemCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, itemCV)
@@ -240,7 +242,7 @@ class JtxICalObjectTest {
             put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
         }
-        val uri = client!!.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
         val id = uri.lastPathSegment
 
         val comment = at.bitfire.ical4android.JtxICalObject.Comment(
@@ -258,8 +260,8 @@ class JtxICalObjectTest {
             put(JtxContract.JtxComment.ICALOBJECT_ID, id)
         }
 
-        val commentUri = client!!.insert(JtxContract.JtxComment.CONTENT_URI.asSyncAdapter(testAccount), commentCV)!!
-        client!!.query(commentUri, null, null, null, null)?.use {
+        val commentUri = client.insert(JtxContract.JtxComment.CONTENT_URI.asSyncAdapter(testAccount), commentCV)!!
+        client.query(commentUri, null, null, null, null)?.use {
             val retrievedCommentCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, retrievedCommentCV)
@@ -280,7 +282,7 @@ class JtxICalObjectTest {
             put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
         }
-        val uri = client!!.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
         val id = uri.lastPathSegment
 
         val resource = at.bitfire.ical4android.JtxICalObject.Resource(
@@ -297,8 +299,8 @@ class JtxICalObjectTest {
             put(JtxContract.JtxResource.ICALOBJECT_ID, id)
         }
 
-        val resourceUri = client!!.insert(JtxContract.JtxResource.CONTENT_URI.asSyncAdapter(testAccount), resourceCV)!!
-        client!!.query(resourceUri, null, null, null, null)?.use {
+        val resourceUri = client.insert(JtxContract.JtxResource.CONTENT_URI.asSyncAdapter(testAccount), resourceCV)!!
+        client.query(resourceUri, null, null, null, null)?.use {
             val retrievedResourceCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, retrievedResourceCV)
@@ -315,7 +317,7 @@ class JtxICalObjectTest {
             put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
         }
-        val uri = client!!.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
         val id = uri.lastPathSegment
 
         val attendee = at.bitfire.ical4android.JtxICalObject.Attendee(
@@ -351,8 +353,8 @@ class JtxICalObjectTest {
             put(JtxContract.JtxAttendee.ICALOBJECT_ID, id)
         }
 
-        val attendeeUri = client!!.insert(JtxContract.JtxAttendee.CONTENT_URI.asSyncAdapter(testAccount), attendeeCV)!!
-        client!!.query(attendeeUri, null, null, null, null)?.use {
+        val attendeeUri = client.insert(JtxContract.JtxAttendee.CONTENT_URI.asSyncAdapter(testAccount), attendeeCV)!!
+        client.query(attendeeUri, null, null, null, null)?.use {
             val retrievedAttendeeCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, retrievedAttendeeCV)
@@ -380,7 +382,7 @@ class JtxICalObjectTest {
             put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
         }
-        val uri = client!!.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
         val id = uri.lastPathSegment
 
         val category = at.bitfire.ical4android.JtxICalObject.Category(
@@ -392,8 +394,8 @@ class JtxICalObjectTest {
             put(JtxContract.JtxCategory.ICALOBJECT_ID, id)
         }
 
-        val categoryUri = client!!.insert(JtxContract.JtxCategory.CONTENT_URI.asSyncAdapter(testAccount), categoryCV)!!
-        client!!.query(categoryUri, null, null, null, null)?.use {
+        val categoryUri = client.insert(JtxContract.JtxCategory.CONTENT_URI.asSyncAdapter(testAccount), categoryCV)!!
+        client.query(categoryUri, null, null, null, null)?.use {
             val retrievedCategoryCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, retrievedCategoryCV)
@@ -409,7 +411,7 @@ class JtxICalObjectTest {
             put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
         }
-        val uri = client!!.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
         val id = uri.lastPathSegment
 
         val attachment = at.bitfire.ical4android.JtxICalObject.Attachment(
@@ -427,8 +429,8 @@ class JtxICalObjectTest {
             put(JtxContract.JtxAttachment.ICALOBJECT_ID, id)
         }
 
-        val attachmentUri = client!!.insert(JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(testAccount), attachmentCV)!!
-        client!!.query(attachmentUri, null, null, null, null)?.use {
+        val attachmentUri = client.insert(JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(testAccount), attachmentCV)!!
+        client.query(attachmentUri, null, null, null, null)?.use {
             val retrievedAttachmentCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, retrievedAttachmentCV)
@@ -447,7 +449,7 @@ class JtxICalObjectTest {
             put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
         }
-        val uri = client!!.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
         val id = uri.lastPathSegment
 
         val attachment = at.bitfire.ical4android.JtxICalObject.Attachment(
@@ -465,8 +467,8 @@ class JtxICalObjectTest {
             put(JtxContract.JtxAttachment.ICALOBJECT_ID, id)
         }
 
-        val attachmentUri = client!!.insert(JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(testAccount), attachmentCV)!!
-        client!!.query(attachmentUri, null, null, null, null)?.use {
+        val attachmentUri = client.insert(JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(testAccount), attachmentCV)!!
+        client.query(attachmentUri, null, null, null, null)?.use {
             val retrievedAttachmentCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, retrievedAttachmentCV)
@@ -485,7 +487,7 @@ class JtxICalObjectTest {
             put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
         }
-        val uri = client!!.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
         val id = uri.lastPathSegment
 
         val relatedto = at.bitfire.ical4android.JtxICalObject.RelatedTo(
@@ -501,8 +503,8 @@ class JtxICalObjectTest {
             put(JtxContract.JtxRelatedto.ICALOBJECT_ID, id)
         }
 
-        val relatedtoUri = client!!.insert(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(testAccount), relatedtoCV)!!
-        client!!.query(relatedtoUri, null, null, null, null)?.use {
+        val relatedtoUri = client.insert(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(testAccount), relatedtoCV)!!
+        client.query(relatedtoUri, null, null, null, null)?.use {
             val retrievedRelatedtoCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, retrievedRelatedtoCV)
@@ -523,7 +525,7 @@ class JtxICalObjectTest {
             put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
         }
-        val uri = client!!.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
         val id = uri.lastPathSegment
 
         val alarm = at.bitfire.ical4android.JtxICalObject.Alarm(
@@ -551,8 +553,8 @@ class JtxICalObjectTest {
             put(JtxContract.JtxAlarm.ICALOBJECT_ID, id)
         }
 
-        val alarmUri = client!!.insert(JtxContract.JtxAlarm.CONTENT_URI.asSyncAdapter(testAccount), alarmCV)!!
-        client!!.query(alarmUri, null, null, null, null)?.use {
+        val alarmUri = client.insert(JtxContract.JtxAlarm.CONTENT_URI.asSyncAdapter(testAccount), alarmCV)!!
+        client.query(alarmUri, null, null, null, null)?.use {
             val retrievedAlarmCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, retrievedAlarmCV)
@@ -577,7 +579,7 @@ class JtxICalObjectTest {
             put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
         }
-        val uri = client!!.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
         val id = uri.lastPathSegment
 
         val unknown = at.bitfire.ical4android.JtxICalObject.Unknown(
@@ -589,8 +591,8 @@ class JtxICalObjectTest {
             put(JtxContract.JtxUnknown.ICALOBJECT_ID, id)
         }
 
-        val unknownUri = client!!.insert(JtxContract.JtxUnknown.CONTENT_URI.asSyncAdapter(testAccount), unknownCV)!!
-        client!!.query(unknownUri, null, null, null, null)?.use {
+        val unknownUri = client.insert(JtxContract.JtxUnknown.CONTENT_URI.asSyncAdapter(testAccount), unknownCV)!!
+        client.query(unknownUri, null, null, null, null)?.use {
             val retrievedUnknownCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, retrievedUnknownCV)
