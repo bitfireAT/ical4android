@@ -41,6 +41,7 @@ class JtxCollectionTest {
     fun setUp() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         contentResolver = context.contentResolver
+        TestUtils.requestPermissions(TaskProvider.ProviderName.JtxBoard.permissions)
         client = contentResolver.acquireContentProviderClient(JtxContract.AUTHORITY)!!
     }
 

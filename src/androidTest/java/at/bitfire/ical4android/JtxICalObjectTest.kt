@@ -43,9 +43,7 @@ class JtxICalObjectTest {
     fun setUp() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         contentResolver = context.contentResolver
-
         TestUtils.requestPermissions(TaskProvider.ProviderName.JtxBoard.permissions)
-
         client = contentResolver.acquireContentProviderClient(JtxContract.AUTHORITY)!!
 
         val collectionUri = JtxCollection.create(testAccount, client, cvCollection)
