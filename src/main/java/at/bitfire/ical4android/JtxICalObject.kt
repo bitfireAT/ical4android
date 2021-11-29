@@ -3,6 +3,7 @@ package at.bitfire.ical4android
 
 import android.content.ContentValues
 import android.content.Context
+import android.net.ParseException
 import android.net.Uri
 import android.util.Base64
 import android.util.Log
@@ -213,76 +214,61 @@ open class JtxICalObject(
             collection: JtxCollection<JtxICalObject>
         ): List<JtxICalObject> {
             val ical = ICalendar.fromReader(reader)
-            val vToDos = ical.getComponents<VToDo>(Component.VTODO)
-            val vJournals = ical.getComponents<VJournal>(Component.VJOURNAL)
-            val vAlarms = ical.getComponents<VAlarm>(Component.VALARM)
 
             val iCalObjectList = mutableListOf<JtxICalObject>()
 
-            // extract vToDos if available
-            vToDos.forEach {
-                val t = JtxICalObject(collection)
-                t.component = JtxContract.JtxICalObject.Component.VTODO.name
+            ical.components.forEach { component ->
 
-                if (it.uid != null)
-                    t.uid = it.uid.value
-                else {
-                    Ical4Android.log.warning("Received VTODO without UID, generating new one")
-                    t.uid = UUID.randomUUID().toString()
-                }
+                val iCalObject = JtxICalObject(collection)
 
-                extractProperties(t, it.properties)
-
-                // VALARMS auf andere Ebene
-                vAlarms.forEach { vAlarm ->
-                    val jtxAlarm = Alarm().apply {
-                        vAlarm.action?.let { vAlarmAction -> this.action = vAlarmAction.toString() }
-                        vAlarm.attachment?.let { vAlarmAttach -> this.attach = vAlarmAttach.toString() }
-                        vAlarm.description?.let { vAlarmDesc -> this.description = vAlarmDesc.toString() }
-                        vAlarm.duration?.let { vAlarmDur -> this.duration = vAlarmDur.toString() }
-                        vAlarm.repeat?.let { vAlarmRep -> this.repeat = vAlarmRep.toString() }
-                        vAlarm.summary?.let { vAlarmSummary -> this.summary = vAlarmSummary.toString() }
-                        vAlarm.trigger?.let { vAlarmTrigger -> this.trigger = vAlarmTrigger.toString() }
-                        vAlarm.properties?.let { vAlarmProps -> this.other = vAlarmProps.toString() }
+                when(component) {
+                    is VToDo -> {
+                        iCalObject.component = JtxContract.JtxICalObject.Component.VTODO.name
+                        if (component.uid != null)
+                            iCalObject.uid = component.uid.value                         // generated UID is overwritten here (if present)
+                        extractProperties(iCalObject, component.properties)
+                        extractVAlarms(iCalObject, component.components)                 // accessing the components needs an explicit type
                     }
-                    t.alarms.add(jtxAlarm)
-                }
-                iCalObjectList.add(t)
-            }
-
-            // extract vJournals if available
-            vJournals.forEach {
-                val j = JtxICalObject(collection)
-                j.component = JtxContract.JtxICalObject.Component.VJOURNAL.name
-
-                if (it.uid != null)
-                    j.uid = it.uid.value
-                else {
-                    Ical4Android.log.warning("Received VJOURNAL without UID, generating new one")
-                    j.uid = UUID.randomUUID().toString()
-                }
-
-                extractProperties(j, it.properties)
-
-                vAlarms.forEach { vAlarm ->
-                    val jtxAlarm = Alarm().apply {
-                        vAlarm.action?.let { vAlarmAction -> this.action = vAlarmAction.toString() }
-                        vAlarm.attachment?.let { vAlarmAttach -> this.attach = vAlarmAttach.toString() }
-                        vAlarm.description?.let { vAlarmDesc -> this.description = vAlarmDesc.toString() }
-                        vAlarm.duration?.let { vAlarmDur -> this.duration = vAlarmDur.toString() }
-                        vAlarm.repeat?.let { vAlarmRep -> this.repeat = vAlarmRep.toString() }
-                        vAlarm.summary?.let { vAlarmSummary -> this.summary = vAlarmSummary.toString() }
-                        vAlarm.trigger?.let { vAlarmTrigger -> this.trigger = vAlarmTrigger.toString() }
-                        vAlarm.properties?.let { vAlarmProps -> this.other = getJsonStringFromXProperties(vAlarmProps) }
+                    is VJournal -> {
+                        iCalObject.component = JtxContract.JtxICalObject.Component.VJOURNAL.name
+                        if (component.uid != null)
+                            iCalObject.uid = component.uid.value
+                        extractProperties(iCalObject, component.properties)
+                        extractVAlarms(iCalObject, component.components)                  // accessing the components needs an explicit type
                     }
-                    j.alarms.add(jtxAlarm)
                 }
-                iCalObjectList.add(j)
+                iCalObjectList.add(iCalObject)
             }
-
             return iCalObjectList
         }
 
+        private fun extractVAlarms(iCalObject: JtxICalObject, calComponents: ComponentList<*>) {
+
+            calComponents.forEach { component ->
+                if(component is VAlarm) {
+                    val jtxAlarm = Alarm().apply {
+                        component.action?.value?.let { vAlarmAction -> this.action = vAlarmAction }
+                        component.attachment?.value?.let { vAlarmAttach -> this.attach = vAlarmAttach }
+                        component.description?.value?.let { vAlarmDesc -> this.description = vAlarmDesc }
+                        component.duration?.value?.let { vAlarmDur -> this.duration = vAlarmDur }
+                        component.repeat?.value?.let { vAlarmRep -> this.repeat = vAlarmRep }
+                        component.summary?.value?.let { vAlarmSummary -> this.summary = vAlarmSummary }
+                        component.trigger?.value?.let { vAlarmTrigger -> this.trigger = vAlarmTrigger }
+
+                        // remove properties to add the rest to other
+                        component.properties.remove(component.action)
+                        component.properties.remove(component.attachment)
+                        component.properties.remove(component.description)
+                        component.properties.remove(component.duration)
+                        component.properties.remove(component.repeat)
+                        component.properties.remove(component.summary)
+                        component.properties.remove(component.trigger)
+                        component.properties?.let { vAlarmProps -> this.other = getJsonStringFromXProperties(vAlarmProps) }
+                    }
+                    iCalObject.alarms.add(jtxAlarm)
+                }
+            }
+        }
 
         private fun extractProperties(iCalObject: JtxICalObject, properties: PropertyList<*>) {
 
@@ -556,32 +542,36 @@ open class JtxICalObject(
         ical.properties += Version.VERSION_2_0
         ical.properties += ICalendar.prodId
 
-        // TODO besser verallgemeinern
-        if (component == JtxContract.JtxICalObject.Component.VTODO.name) {
-            val vTodo = VToDo(true /* generates DTSTAMP */)
-            ical.components += vTodo
-            val props = vTodo.properties
-            addProperties(props, context)
-        } else if (component == JtxContract.JtxICalObject.Component.VJOURNAL.name) {
-            val vJournal = VJournal(true /* generates DTSTAMP */)
-            ical.components += vJournal
-            val props = vJournal.properties
-            addProperties(props, context)
+        val calComponent = when (component) {
+            JtxContract.JtxICalObject.Component.VTODO.name -> VToDo(true /* generates DTSTAMP */)
+            JtxContract.JtxICalObject.Component.VJOURNAL.name -> VJournal(true /* generates DTSTAMP */)
+            else -> return
         }
+        ical.components += calComponent
+        addProperties(calComponent.properties, context)
 
-        // TODO alarms sollten im VJOURNAL bzw. VTODO sein!
         alarms.forEach { alarm ->
-            val vAlarm = VAlarm().apply {
-                alarm.action?.let { this.action.value = it }
-                alarm.trigger?.let { this.trigger.value = it }
-                alarm.summary?.let {this.summary.value = it }
-                alarm.repeat?.let { this.repeat.value = it }
-                alarm.duration?.let { this.duration.value = it }
-                alarm.description?.let { this.description.value = it }
-                alarm.attach?.let { this.attachment.value = it }
-                alarm.other?.let { this.properties.addAll(getXPropertyListFromJson(it)) }
+
+
+
+            val vAlarm = VAlarm()
+            vAlarm.properties.apply {
+                alarm.action?.let { add(Action().apply { value = it }) }
+                alarm.trigger?.let { add(Trigger().apply {
+                    try {
+                        dateTime = DateTime(it)
+                    } catch (e: ParseException) {
+                        Log.i("Trigger", "Trigger is not DateTime, using as Duration (the value directly)")
+                        value = it
+                    }}) }
+                alarm.summary?.let { add(Summary(it)) }
+                alarm.repeat?.let { add(Repeat().apply { value = it }) }
+                alarm.duration?.let { add(Duration().apply { value = it }) }
+                alarm.description?.let { add(Description(it)) }
+                alarm.attach?.let { add(Attach().apply { value = it }) }
+                alarm.other?.let { addAll(getXPropertyListFromJson(it)) }
             }
-            ical.components += vAlarm
+            calComponent.components.add(vAlarm)
         }
 
         ICalendar.softValidate(ical)
@@ -1494,16 +1484,24 @@ duration?.let(props::add)
 
     private fun getXPropertyListFromJson(string: String): PropertyList<Property> {
 
-        val jsonObject = JSONObject(string)
         val propertyList = PropertyList<Property>()
-        for (i in 0 until jsonObject.length()) {
-            val names = jsonObject.names() ?: break
-            val propertyName = names[i]?.toString() ?: break
-            val propertyValue = jsonObject.getString(propertyName).toString()
-            if(propertyName.isNotBlank() && propertyValue.isNotBlank()) {
-                val prop = XProperty(propertyName, propertyValue)
-                propertyList.add(prop)
+
+        if(string.isBlank())
+            return propertyList
+
+        try {
+            val jsonObject = JSONObject(string)
+            for (i in 0 until jsonObject.length()) {
+                val names = jsonObject.names() ?: break
+                val propertyName = names[i]?.toString() ?: break
+                val propertyValue = jsonObject.getString(propertyName).toString()
+                if (propertyName.isNotBlank() && propertyValue.isNotBlank()) {
+                    val prop = XProperty(propertyName, propertyValue)
+                    propertyList.add(prop)
+                }
             }
+        } catch (e: NullPointerException) {
+            Log.w("XPropertyList", "Error parsing x-property-list $string\n$e")
         }
         return propertyList
     }
