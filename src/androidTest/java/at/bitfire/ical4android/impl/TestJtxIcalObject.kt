@@ -11,10 +11,8 @@ package at.bitfire.ical4android.impl
 import android.content.ContentValues
 import at.bitfire.ical4android.*
 
-class TestJtxIcalObject: JtxICalObject {
-
-    constructor(testCollection: JtxCollection<JtxICalObject>, values: ContentValues)
-        : super(testCollection)
+class TestJtxIcalObject(testCollection: JtxCollection<JtxICalObject>) :
+    JtxICalObject(testCollection) {
 
 
     object Factory: JtxICalObjectFactory<JtxICalObject> {
@@ -22,7 +20,6 @@ class TestJtxIcalObject: JtxICalObject {
         override fun fromProvider(
             collection: JtxCollection<JtxICalObject>,
             values: ContentValues
-        ): JtxICalObject = TestJtxIcalObject(collection, values)
+        ): JtxICalObject = TestJtxIcalObject(collection)
     }
-
 }

@@ -34,7 +34,6 @@ import java.util.TimeZone
 
 open class JtxICalObject(
     val collection: JtxCollection<JtxICalObject>
-    //component: X5ICalObject.Component
 ) {
 
     var id: Long = 0L
@@ -65,17 +64,12 @@ open class JtxICalObject(
     var location: String? = null
     var locationAltrep: String? = null
 
-    var uid: String =
-        "${System.currentTimeMillis()}-${UUID.randomUUID()}@at.techbee.jtx"                              //unique identifier, see https://tools.ietf.org/html/rfc5545#section-3.8.4.7
+    var uid: String = "${System.currentTimeMillis()}-${UUID.randomUUID()}@at.techbee.jtx"
 
-    var created: Long =
-        System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.1
-    var dtstamp: Long =
-        System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.2
-    var lastModified: Long =
-        System.currentTimeMillis()   // see https://tools.ietf.org/html/rfc5545#section-3.8.7.3
-    var sequence: Long =
-        0           // increase on every change (+1), see https://tools.ietf.org/html/rfc5545#section-3.8.7.4
+    var created: Long = System.currentTimeMillis()
+    var dtstamp: Long = System.currentTimeMillis()
+    var lastModified: Long = System.currentTimeMillis()
+    var sequence: Long = 0
 
     var color: Int? = null
 
@@ -88,12 +82,9 @@ open class JtxICalObject(
 
     var collectionId: Long = collection.id
 
-    //var categories: MutableList<String> = mutableListOf()
-
     var dirty: Boolean = true
     var deleted: Boolean = false
 
-    //@ricki, ist das ok hier?
     var fileName: String? = null
     var eTag: String? = null
     var scheduleTag: String? = null
@@ -139,8 +130,6 @@ open class JtxICalObject(
 
     data class RelatedTo(
         var relatedtoId: Long = 0L,
-        //var icalObjectId: Long = 0L,
-        //var linkedICalObjectId: Long = 0L,
         var text: String? = null,
         var reltype: String? = null,
         var other: String? = null
@@ -148,7 +137,6 @@ open class JtxICalObject(
 
     data class Attendee(
         var attendeeId: Long = 0L,
-        //var icalObjectId: Long = 0L,
         var caladdress: String = "",
         var cutype: String? = JtxContract.JtxAttendee.Cutype.INDIVIDUAL.name,
         var member: String? = null,
@@ -242,6 +230,12 @@ open class JtxICalObject(
             return iCalObjectList
         }
 
+        /**
+         * Extracts VAlarms from the given Component (VJOURNAL or VTODO). The VAlarm is supposed to be a component within the VJOURNAL or VTODO component.
+         * Other components than VAlarms should not occur.
+         * @param [iCalObject] where the VAlarms should be inserted
+         * @param [calComponents] from which the VAlarms should be extracted
+         */
         private fun extractVAlarms(iCalObject: JtxICalObject, calComponents: ComponentList<*>) {
 
             calComponents.forEach { component ->
@@ -270,6 +264,11 @@ open class JtxICalObject(
             }
         }
 
+        /**
+         * Extracts properties from a given Property list and maps it to a JtxICalObject
+         * @param [iCalObject] where the properties should be mapped to
+         * @param [properties] from which the properties can be extracted
+         */
         private fun extractProperties(iCalObject: JtxICalObject, properties: PropertyList<*>) {
 
             // sequence must only be null for locally created, not-yet-synchronized events
@@ -328,9 +327,6 @@ open class JtxICalObject(
                             prop.date is DateTime && !prop.isUtc && prop.timeZone == null -> iCalObject.dtstartTimezone = null                   // this comparison is kept on purpose as "prop.date is Date" did not work as expected.
                             else -> iCalObject.dtstartTimezone = TZ_ALLDAY     // prop.date is Date (and not DateTime), therefore it must be Allday
                         }
-                        /* if(!prop.isUtc)
-                            t.dtstartTimezone = prop.timeZone.displayName
-                         */
                     }
 
                     is PercentComplete -> {
@@ -498,6 +494,12 @@ open class JtxICalObject(
         }
 
 
+        /**
+         * Takes a Parameter List and returns a Json String to be saved in a DB field.
+         * This is the counterpart to getXParameterFromJson(...)
+         * @param [parameters] The ParameterList that should be transformed into a Json String
+         * @return The generated Json object as a [String]
+         */
         private fun getJsonStringFromXParameters(parameters: ParameterList?): String? {
 
             if(parameters == null)
@@ -513,6 +515,12 @@ open class JtxICalObject(
                 jsonObject.toString()
         }
 
+        /**
+         * Takes a Property List and returns a Json String to be saved in a DB field.
+         * This is the counterpart to getXPropertyListFromJson(...)
+         * @param [propertyList] The PropertyList that should be transformed into a Json String
+         * @return The generated Json object as a [String]
+         */
         private fun getJsonStringFromXProperties(propertyList: PropertyList<*>?): String? {
 
             if(propertyList == null)
@@ -529,7 +537,11 @@ open class JtxICalObject(
         }
     }
 
-
+    /**
+     * Takes the current JtxICalObject, transforms it to an iCalendar and writes it in an OutputStream
+     * @param [os] OutputStream where iCalendar should be written to
+     * @param [context]. This is necessary to resolve the File Provider of jtx
+     */
     @UsesThreadContextClassLoader
     fun write(os: OutputStream, context: Context) {
         Ical4Android.checkThreadContextClassLoader()
@@ -574,7 +586,11 @@ open class JtxICalObject(
         CalendarOutputter(false).output(ical, os)
     }
 
-
+    /**
+     * This function maps the current JtxICalObject to a iCalendar property list
+     * @param [props] The PropertyList where the properties should be added
+     * @param [context] The current context needed to use the File Content Provider of jtx
+     */
     private fun addProperties(props: PropertyList<Property>, context: Context) {
 
         uid.let { props += Uid(it) }
@@ -867,34 +883,15 @@ open class JtxICalObject(
             val dur = Duration()
             dur.value = it
             props += dur
-        }    // TODO: Check how to deal with duration
+        }
 
 
         /*
-props.addAll(unknownProperties)
-
 // remember used time zones
 val usedTimeZones = HashSet<TimeZone>()
 duration?.let(props::add)
 */
 
-
-
-        /* Currently not in use
-        dtend?.let {
-            when {
-                dtendTimezone == TZ_ALLDAY -> props += DtEnd(Date(it))
-                dtendTimezone.isNullOrEmpty() -> props += DtEnd(DateTime(it))
-                else -> {
-                    val timezone = TimeZoneRegistryFactory.getInstance().createRegistry()
-                        .getTimeZone(dtendTimezone)
-                    val withTimezone = DtEnd(DateTime(it))
-                    withTimezone.timeZone = timezone
-                    props += withTimezone
-                }
-            }
-        }
-         */
 
         if(component == JtxContract.JtxICalObject.Component.VTODO.name) {
             completed?.let {
@@ -939,8 +936,6 @@ duration?.let(props::add)
         }
 
         /*
-    if (alarms.isNotEmpty())
-        vTodo.alarms.addAll(alarms)
 
     // determine earliest referenced date
     val earliest = arrayOf(
@@ -959,6 +954,9 @@ duration?.let(props::add)
         return "${this.uid}.ics"
     }
 
+    /**
+     * Updates the fileName, eTag and scheduleTag of the current JtxICalObject
+     */
     fun clearDirty(fileName: String?, eTag: String?, scheduleTag: String?) {
 
         var updateUri = JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account)
@@ -973,6 +971,10 @@ duration?.let(props::add)
         collection.client.update(updateUri, values, null, null)
     }
 
+    /**
+     * Updates the flags of the current JtxICalObject
+     * @param [flags] to be set as [Int]
+     */
     fun updateFlags(flags: Int) {
 
         var updateUri = JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account)
@@ -984,6 +986,10 @@ duration?.let(props::add)
         collection.client.update(updateUri, values, null, null)
     }
 
+    /**
+     * adds the current JtxICalObject in the jtx DB through the provider
+     * @return the Content [Uri] of the inserted object
+     */
     fun add(): Uri {
 
         val values = this.toContentValues()
@@ -1001,6 +1007,11 @@ duration?.let(props::add)
 
     }
 
+    /**
+     * Updates the current JtxICalObject with the given data
+     * @param [data] The JtxICalObject with the information that should be applied to this object and updated in the provider
+     * @return [Uri] of the updated entry
+     */
     fun update(data: JtxICalObject): Uri {
 
         this.applyNewData(data)
@@ -1081,10 +1092,10 @@ duration?.let(props::add)
         this.categories.forEach { category ->
             val categoryContentValues = ContentValues().apply {
                 put(JtxContract.JtxCategory.ICALOBJECT_ID, id)
-                category.text.let { put(JtxContract.JtxCategory.TEXT, it) }
-                category.categoryId.let { put(JtxContract.JtxCategory.ID, it) }
-                category.language.let { put(JtxContract.JtxCategory.LANGUAGE, it) }
-                category.other.let { put(JtxContract.JtxCategory.OTHER, it) }
+                put(JtxContract.JtxCategory.TEXT, category.text)
+                put(JtxContract.JtxCategory.ID, category.categoryId)
+                put(JtxContract.JtxCategory.LANGUAGE, category.language)
+                put(JtxContract.JtxCategory.OTHER, category.other)
             }
             collection.client.insert(
                 JtxContract.JtxCategory.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1096,9 +1107,9 @@ duration?.let(props::add)
             val commentContentValues = ContentValues().apply {
                 put(JtxContract.JtxComment.ICALOBJECT_ID, id)
                 put(JtxContract.JtxComment.ID, comment.commentId)
-                comment.text.let { put(JtxContract.JtxComment.TEXT, comment.text) }
-                comment.language.let { put(JtxContract.JtxComment.LANGUAGE, it) }
-                comment.other.let { put(JtxContract.JtxComment.OTHER, it) }
+                put(JtxContract.JtxComment.TEXT, comment.text)
+                put(JtxContract.JtxComment.LANGUAGE, comment.language)
+                put(JtxContract.JtxComment.OTHER, comment.other)
             }
             collection.client.insert(
                 JtxContract.JtxComment.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1111,9 +1122,9 @@ duration?.let(props::add)
             val resourceContentValues = ContentValues().apply {
                 put(JtxContract.JtxResource.ICALOBJECT_ID, id)
                 put(JtxContract.JtxResource.ID, resource.resourceId)
-                resource.text.let { put(JtxContract.JtxResource.TEXT, it) }
-                resource.language.let { put(JtxContract.JtxResource.LANGUAGE, it) }
-                resource.other.let { put(JtxContract.JtxResource.OTHER, it) }
+                put(JtxContract.JtxResource.TEXT, resource.text)
+                put(JtxContract.JtxResource.LANGUAGE, resource.language)
+                put(JtxContract.JtxResource.OTHER, resource.other)
             }
             collection.client.insert(
                 JtxContract.JtxResource.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1125,9 +1136,9 @@ duration?.let(props::add)
         this.relatedTo.forEach { related ->
             val relatedToContentValues = ContentValues().apply {
                 put(JtxContract.JtxRelatedto.ICALOBJECT_ID, id)
-                related.text.let { put(JtxContract.JtxRelatedto.TEXT, it) }
-                related.reltype.let { put(JtxContract.JtxRelatedto.RELTYPE, it) }
-                related.other.let { put(JtxContract.JtxRelatedto.OTHER, it) }
+                put(JtxContract.JtxRelatedto.TEXT, related.text)
+                put(JtxContract.JtxRelatedto.RELTYPE, related.reltype)
+                put(JtxContract.JtxRelatedto.OTHER, related.other)
             }
             collection.client.insert(
                 JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1140,18 +1151,18 @@ duration?.let(props::add)
                 put(JtxContract.JtxAttendee.ICALOBJECT_ID, id)
                 put(JtxContract.JtxAttendee.CALADDRESS, attendee.caladdress)
 
-                attendee.cn.let { put(JtxContract.JtxAttendee.CN, it) }
-                attendee.cutype.let { put(JtxContract.JtxAttendee.CUTYPE, it) }
-                attendee.delegatedfrom.let { put(JtxContract.JtxAttendee.DELEGATEDFROM, it) }
-               attendee.delegatedto.let {put(JtxContract.JtxAttendee.DELEGATEDTO, it) }
-                attendee.dir.let { put(JtxContract.JtxAttendee.DIR, it) }
-                attendee.language.let { put(JtxContract.JtxAttendee.LANGUAGE, it) }
-                attendee.member.let { put(JtxContract.JtxAttendee.MEMBER, it) }
-               attendee.partstat.let {put(JtxContract.JtxAttendee.PARTSTAT, it) }
-                attendee.role.let { put(JtxContract.JtxAttendee.ROLE, it) }
-                attendee.rsvp.let { put(JtxContract.JtxAttendee.RSVP, it) }
-                attendee.sentby.let { put(JtxContract.JtxAttendee.SENTBY, it) }
-                attendee.other.let { put(JtxContract.JtxAttendee.OTHER, it) }
+                put(JtxContract.JtxAttendee.CN, attendee.cn)
+                put(JtxContract.JtxAttendee.CUTYPE, attendee.cutype)
+                put(JtxContract.JtxAttendee.DELEGATEDFROM, attendee.delegatedfrom)
+                put(JtxContract.JtxAttendee.DELEGATEDTO, attendee.delegatedto)
+                put(JtxContract.JtxAttendee.DIR, attendee.dir)
+                put(JtxContract.JtxAttendee.LANGUAGE, attendee.language)
+                put(JtxContract.JtxAttendee.MEMBER, attendee.member)
+                put(JtxContract.JtxAttendee.PARTSTAT, attendee.partstat)
+                put(JtxContract.JtxAttendee.ROLE, attendee.role)
+                put(JtxContract.JtxAttendee.RSVP, attendee.rsvp)
+                put(JtxContract.JtxAttendee.SENTBY, attendee.sentby)
+                put(JtxContract.JtxAttendee.OTHER, attendee.other)
             }
             collection.client.insert(
                 JtxContract.JtxAttendee.CONTENT_URI.asSyncAdapter(
@@ -1163,10 +1174,10 @@ duration?.let(props::add)
         this.attachments.forEach { attachment ->
             val attachmentContentValues = ContentValues().apply {
                 put(JtxContract.JtxAttachment.ICALOBJECT_ID, id)
-                attachment.uri.let { put(JtxContract.JtxAttachment.URI, it) }
-                attachment.binary.let { put(JtxContract.JtxAttachment.BINARY, it) }
-                attachment.fmttype.let { put(JtxContract.JtxAttachment.FMTTYPE, it) }
-                attachment.other.let { put(JtxContract.JtxAttachment.OTHER, it) }
+                put(JtxContract.JtxAttachment.URI, attachment.uri)
+                put(JtxContract.JtxAttachment.BINARY, attachment.binary)
+                put(JtxContract.JtxAttachment.FMTTYPE, attachment.fmttype)
+                put(JtxContract.JtxAttachment.OTHER, attachment.other)
             }
             collection.client.insert(
                 JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(
@@ -1178,15 +1189,15 @@ duration?.let(props::add)
         this.alarms.forEach { alarm ->
             val alarmContentValues = ContentValues().apply {
                 put(JtxContract.JtxAlarm.ICALOBJECT_ID, id)
-                alarm.action.let { put(JtxContract.JtxAlarm.ALARM_ACTION, it) }
-                alarm.attach.let { put(JtxContract.JtxAlarm.ALARM_ATTACH, it) }
-                alarm.attendee.let { put(JtxContract.JtxAlarm.ALARM_ATTENDEE, it) }
-                alarm.description.let { put(JtxContract.JtxAlarm.ALARM_DESCRIPTION, it) }
-                alarm.duration.let { put(JtxContract.JtxAlarm.ALARM_DURATION, it) }
-                alarm.repeat.let { put(JtxContract.JtxAlarm.ALARM_REPEAT, it) }
-                alarm.summary.let { put(JtxContract.JtxAlarm.ALARM_SUMMARY, it) }
-                alarm.trigger.let { put(JtxContract.JtxAlarm.ALARM_TRIGGER, it) }
-                alarm.other.let { put(JtxContract.JtxAlarm.ALARM_OTHER, it) }
+                put(JtxContract.JtxAlarm.ALARM_ACTION, alarm.action)
+                put(JtxContract.JtxAlarm.ALARM_ATTACH, alarm.attach)
+                put(JtxContract.JtxAlarm.ALARM_ATTENDEE, alarm.attendee)
+                put(JtxContract.JtxAlarm.ALARM_DESCRIPTION, alarm.description)
+                put(JtxContract.JtxAlarm.ALARM_DURATION, alarm.duration)
+                put(JtxContract.JtxAlarm.ALARM_REPEAT, alarm.repeat)
+                put(JtxContract.JtxAlarm.ALARM_SUMMARY, alarm.summary)
+                put(JtxContract.JtxAlarm.ALARM_TRIGGER, alarm.trigger)
+                put(JtxContract.JtxAlarm.ALARM_OTHER, alarm.other)
             }
             collection.client.insert(
                 JtxContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1197,7 +1208,7 @@ duration?.let(props::add)
         this.unknown.forEach { unknown ->
             val unknownContentValues = ContentValues().apply {
                 put(JtxContract.JtxUnknown.ICALOBJECT_ID, id)
-                unknown.value.let { put(JtxContract.JtxUnknown.UNKNOWN_VALUE, it) }
+                put(JtxContract.JtxUnknown.UNKNOWN_VALUE, unknown.value)
             }
             collection.client.insert(
                 JtxContract.JtxUnknown.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1206,7 +1217,10 @@ duration?.let(props::add)
         }
     }
 
-
+    /**
+     * Deletes the current JtxICalObject
+     * @return The number of deleted records (should always be 1)
+     */
     fun delete(): Int {
         val uri = Uri.withAppendedPath(
             JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1216,6 +1230,10 @@ duration?.let(props::add)
     }
 
 
+    /**
+     * This function is used for empty JtxICalObjects that need new data applied, usually a LocalJtxICalObject.
+     * @param [newData], the (local) JtxICalObject that should be mapped onto the given JtxICalObject
+     */
     fun applyNewData(newData: JtxICalObject) {
 
         this.component = newData.component
@@ -1261,6 +1279,10 @@ duration?.let(props::add)
         this.unknown = newData.unknown
     }
 
+    /**
+     * Puts the current JtxICalObjects attributes into Content Values
+     * @return The JtxICalObject attributes as [ContentValues] (exluding list properties)
+     */
     private fun toContentValues(): ContentValues {
 
         val values = ContentValues()
@@ -1303,6 +1325,9 @@ duration?.let(props::add)
     }
 
 
+    /**
+     * @return The categories of the given JtxICalObject as a list of ContentValues
+     */
     fun getCategoryContentValues(): List<ContentValues> {
 
         val categoryUrl = JtxContract.JtxCategory.CONTENT_URI.asSyncAdapter(collection.account)
@@ -1322,6 +1347,10 @@ duration?.let(props::add)
         return categoryValues
     }
 
+
+    /**
+     * @return The comments of the given JtxICalObject as a list of ContentValues
+     */
     fun getCommentContentValues(): List<ContentValues> {
 
         val commentUrl = JtxContract.JtxComment.CONTENT_URI.asSyncAdapter(collection.account)
@@ -1337,11 +1366,12 @@ duration?.let(props::add)
                 commentValues.add(cursor.toValues())
             }
         }
-
         return commentValues
     }
 
-
+    /**
+     * @return The resources of the given JtxICalObject as a list of ContentValues
+     */
     fun getResourceContentValues(): List<ContentValues> {
 
         val resourceUrl = JtxContract.JtxResource.CONTENT_URI.asSyncAdapter(collection.account)
@@ -1360,7 +1390,9 @@ duration?.let(props::add)
         return resourceValues
     }
 
-
+    /**
+     * @return The RelatedTo of the given JtxICalObject as a list of ContentValues
+     */
     fun getRelatedToContentValues(): List<ContentValues> {
 
         val relatedToUrl = JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(collection.account)
@@ -1380,6 +1412,9 @@ duration?.let(props::add)
         return relatedToValues
     }
 
+    /**
+     * @return The attendees of the given JtxICalObject as a list of ContentValues
+     */
     fun getAttendeesContentValues(): List<ContentValues> {
 
         val attendeesUrl = JtxContract.JtxAttendee.CONTENT_URI.asSyncAdapter(collection.account)
@@ -1399,6 +1434,9 @@ duration?.let(props::add)
         return attendeesValues
     }
 
+    /**
+     * @return The attachments of the given JtxICalObject as a list of ContentValues
+     */
     fun getAttachmentsContentValues(): List<ContentValues> {
 
         val attachmentsUrl =
@@ -1419,6 +1457,9 @@ duration?.let(props::add)
         return attachmentsValues
     }
 
+    /**
+     * @return The alarms of the given JtxICalObject as a list of ContentValues
+     */
     fun getAlarmsContentValues(): List<ContentValues> {
 
         val alarmsUrl =
@@ -1439,6 +1480,9 @@ duration?.let(props::add)
         return alarmValues
     }
 
+    /**
+     * @return The unknown properties of the given JtxICalObject as a list of ContentValues
+     */
     fun getUnknownContentValues(): List<ContentValues> {
 
         val unknownUrl =
@@ -1460,8 +1504,12 @@ duration?.let(props::add)
     }
 
 
-
-
+    /**
+     * This function takes a string and tries to parse it to a list of XParameters.
+     * This is the counterpart of getJsonStringFromXParameters(...)
+     * @param [string] that should be parsed
+     * @return The list of XParameter parsed from the string
+     */
     private fun getXParametersFromJson(string: String): List<XParameter> {
 
         val jsonObject = JSONObject(string)
@@ -1478,6 +1526,12 @@ duration?.let(props::add)
         return xparamList
     }
 
+    /**
+     * This function takes a string and tries to parse it to a list of XProperty.
+     * This is the counterpart of getJsonStringFromXProperties(...)
+     * @param [string] that should be parsed
+     * @return The list of XProperty parsed from the string
+     */
     private fun getXPropertyListFromJson(string: String): PropertyList<Property> {
 
         val propertyList = PropertyList<Property>()
@@ -1502,6 +1556,15 @@ duration?.let(props::add)
         return propertyList
     }
 
+
+    /**
+     * Some date fields in jtx Board are saved as a list of Long values separated by commas.
+     * This applies for example to the exdate for recurring events.
+     * This function takes a string and tries to parse it to a list of long values (timestamps)
+     * @param [string] that should be parsed
+     * @return a [MutableList<Long>] with the timestamps parsed from the string
+     *
+     */
     private fun getLongListFromString(string: String): MutableList<Long> {
 
         val stringList = string.split(",")
@@ -1519,30 +1582,3 @@ duration?.let(props::add)
     }
 
 }
-
-/*
-
-class Notesx5Todo(account: Account, client: ContentProviderClient, collectionId: Long) :
-    NotesSyncContentProviderContract.JtxICalObject(account, client, collectionId, SyncContentProviderContract.JtxICalObject.Component.TODO) {
-
-    var status: SyncContentProviderContract.JtxICalObject.StatusTodo? = null
-
-    var percent: Int? = null    // VTODO only!
-    var priority: Int? = null   // VTODO and VEVENT
-    var due: Long? = null      // VTODO only!
-    var dueTimezone: String? = null //VTODO only!
-    var completed: Long? = null // VTODO only!
-    var completedTimezone: String? = null //VTODO only!
-    var duration: String? = null //VTODO only!
-
-}
-
-class Notesx5Journal(account: Account, client: ContentProviderClient, collectionId: Long) :
-    Notesx5ICalObject(account, client, collectionId, X5ICalObject.Component.JOURNAL) {
-
-    var status: SyncContentProviderContract.JtxICalObject.StatusJournal? = null
-
-
-}
-
- */

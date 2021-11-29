@@ -20,18 +20,16 @@ class JtxCollectionTest {
     private val testAccount = Account("TEST", JtxContract.JtxCollection.TEST_ACCOUNT_TYPE)
     private lateinit var contentResolver: ContentResolver
     private lateinit var client: ContentProviderClient
-    var collection: TestJtxCollection? = null
+    var collection: JtxCollection<JtxICalObject>? = null
     lateinit var context: Context
 
-    val url = "https://jtx.techbee.at"
-    val displayname = "jtx"
-    val description = "jtx Collection Test"
-    val syncversion = JtxContract.CONTRACT_VERSION
+    private val url = "https://jtx.techbee.at"
+    private val displayname = "jtx"
+    private val syncversion = JtxContract.CONTRACT_VERSION
 
-    val cv = ContentValues().apply {
+    private val cv = ContentValues().apply {
         put(JtxContract.JtxCollection.ACCOUNT_TYPE, testAccount.type)
         put(JtxContract.JtxCollection.ACCOUNT_NAME, testAccount.name)
-
         put(JtxContract.JtxCollection.URL, url)
         put(JtxContract.JtxCollection.DISPLAYNAME, displayname)
         put(JtxContract.JtxCollection.SYNC_VERSION, syncversion)
@@ -71,7 +69,6 @@ class JtxCollectionTest {
         assertEquals(displayname, collections[0].displayname)
         assertEquals(syncversion.toString(), collections[0].syncstate)
     }
-
 
 
     @Test

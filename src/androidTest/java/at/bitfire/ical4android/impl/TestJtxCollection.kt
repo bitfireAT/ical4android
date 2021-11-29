@@ -10,11 +10,9 @@ package at.bitfire.ical4android.impl
 
 import android.accounts.Account
 import android.content.ContentProviderClient
-import android.content.ContentUris
 import at.bitfire.ical4android.*
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import at.bitfire.jtx.JtxContract
-import at.bitfire.jtx.JtxContract.asSyncAdapter
 import java.util.*
 
 class TestJtxCollection(
@@ -22,18 +20,6 @@ class TestJtxCollection(
         provider: ContentProviderClient,
         id: Long
 ): JtxCollection<JtxICalObject>(account, provider, TestJtxIcalObject.Factory, id) {
-
-    companion object {
-
-        fun createMock(account: Account, provider: ContentProviderClient): TestJtxCollection {
-
-            var uri = JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account)
-            uri = uri.buildUpon().appendPath("1").build()
-
-            return TestJtxCollection(account, provider, ContentUris.parseId(uri))
-        }
-
-    }
 
 
     /**
