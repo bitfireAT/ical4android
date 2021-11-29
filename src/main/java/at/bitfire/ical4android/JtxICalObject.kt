@@ -289,7 +289,6 @@ open class JtxICalObject(
                     is Geo -> {
                         iCalObject.geoLat = prop.latitude.toDouble()
                         iCalObject.geoLong = prop.longitude.toDouble()
-                        // TODO: name and attributes might get lost here!! Doublecheck what could be a good solution!
                     }
                     is Description -> iCalObject.description = prop.value
                     is Color -> iCalObject.color = Css3Color.fromString(prop.value)?.argb
@@ -468,8 +467,6 @@ open class JtxICalObject(
                         else
                             iCalObject.unknown.add(Unknown(value = UnknownProperty.toJsonString(prop)))               // save the whole property for unknown properties
                     }
-
-                    // TODO: How to deal with alarms?
                 }
             }
 
@@ -500,7 +497,6 @@ open class JtxICalObject(
             }
         }
 
-            //t.alarms.addAll(todo.alarms)
 
         private fun getJsonStringFromXParameters(parameters: ParameterList?): String? {
 
