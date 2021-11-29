@@ -23,6 +23,8 @@ import net.fortuna.ical4j.model.property.*
 import org.apache.commons.io.IOUtils
 import org.json.JSONObject
 import java.io.*
+import java.lang.IllegalArgumentException
+import java.lang.NullPointerException
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
@@ -231,6 +233,7 @@ open class JtxICalObject(
 
                 extractProperties(t, it.properties)
 
+                // VALARMS auf andere Ebene
                 vAlarms.forEach { vAlarm ->
                     val jtxAlarm = Alarm().apply {
                         vAlarm.action?.let { vAlarmAction -> this.action = vAlarmAction.toString() }
@@ -553,6 +556,7 @@ open class JtxICalObject(
         ical.properties += Version.VERSION_2_0
         ical.properties += ICalendar.prodId
 
+        // TODO besser verallgemeinern
         if (component == JtxContract.JtxICalObject.Component.VTODO.name) {
             val vTodo = VToDo(true /* generates DTSTAMP */)
             ical.components += vTodo
@@ -565,6 +569,7 @@ open class JtxICalObject(
             addProperties(props, context)
         }
 
+        // TODO alarms sollten im VJOURNAL bzw. VTODO sein!
         alarms.forEach { alarm ->
             val vAlarm = VAlarm().apply {
                 alarm.action?.let { this.action.value = it }
@@ -707,18 +712,39 @@ open class JtxICalObject(
                 }
             }
             props += attendeeProp
-            //todo: take care of other attributes for attendees
         }
 
         attachments.forEach { attachment ->
-            if (attachment.uri?.isNotEmpty() == true)
-                context.contentResolver.openInputStream(Uri.parse(URI(attachment.uri).toString()))
-                    .use { file ->
-                        val att = Attach(IOUtils.toByteArray(file)).apply {
+
+            try {
+                if (attachment.uri?.startsWith("content://") == true)
+                /**   //collection.client.openAssetFile(Uri.parse(URI(attachment.uri).toString()), "r")?.createInputStream()
+                 * This method cannot be used here. The files are stored in the jtx fileprovider that has a different authority than the content provider
+                 * The sync would fail with "The authority at.techbee.jtx.fileprovider does not match the one of the contentProvider: at.techbee.jtx.provider.
+                 * No way was found to avoid this problem to not use another contentResolver */
+
+                    context.contentResolver.openInputStream(Uri.parse(URI(attachment.uri).toString()))
+                        .use { file ->
+                                val att = Attach(IOUtils.toByteArray(file)).apply {
+                                    attachment.fmttype?.let { this.parameters.add(FmtType(it)) }
+                                }
+                                props += att
+                            }
+                else {
+                    attachment.uri?.let { uri ->
+                        val att = Attach(URI(uri)).apply {
                             attachment.fmttype?.let { this.parameters.add(FmtType(it)) }
                         }
                         props += att
                     }
+                }
+            } catch (e: FileNotFoundException) {
+                Log.w("Attachment", "File not found at the given Uri: ${attachment.uri}")
+            } catch (e: NullPointerException) {
+                Log.w("Attachment", "Provided Uri was empty: ${attachment.uri}")
+            } catch (e: IllegalArgumentException) {
+                Log.w("Attachment", "Uri could not be parsed: ${attachment.uri}")
+            }
         }
 
         unknown.forEach {
