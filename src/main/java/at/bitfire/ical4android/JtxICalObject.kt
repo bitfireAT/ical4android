@@ -1280,6 +1280,174 @@ duration?.let(props::add)
     }
 
     /**
+     * Takes Content Values, applies them on the current JtxICalObject and retrieves all further list properties from the content provier and adds them.
+     * @param [values] The Content Values with the information about the JtxICalObject
+     */
+    fun populateFromContentValues(values: ContentValues) {
+
+            values.getAsLong(JtxContract.JtxICalObject.ID)?.let { id -> this.id = id }
+
+            values.getAsString(JtxContract.JtxICalObject.COMPONENT)?.let { component -> this.component = component }
+            values.getAsString(JtxContract.JtxICalObject.SUMMARY)?.let { summary -> this.summary = summary }
+            values.getAsString(JtxContract.JtxICalObject.DESCRIPTION)?.let { description -> this.description = description }
+            values.getAsLong(JtxContract.JtxICalObject.DTSTART)?.let { dtstart -> this.dtstart = dtstart }
+            values.getAsString(JtxContract.JtxICalObject.DTSTART_TIMEZONE)?.let { dtstartTimezone -> this.dtstartTimezone = dtstartTimezone }
+            values.getAsLong(JtxContract.JtxICalObject.DTEND)?.let { dtend -> this.dtend = dtend }
+            values.getAsString(JtxContract.JtxICalObject.DTEND_TIMEZONE)?.let { dtendTimezone -> this.dtendTimezone = dtendTimezone }
+            values.getAsString(JtxContract.JtxICalObject.STATUS)?.let { status -> this.status = status }
+            values.getAsString(JtxContract.JtxICalObject.CLASSIFICATION)?.let { classification -> this.classification = classification }
+            values.getAsString(JtxContract.JtxICalObject.URL)?.let { url -> this.url = url }
+            values.getAsDouble(JtxContract.JtxICalObject.GEO_LAT)?.let { geoLat -> this.geoLat = geoLat }
+            values.getAsDouble(JtxContract.JtxICalObject.GEO_LONG)?.let { geoLong -> this.geoLong = geoLong }
+            values.getAsString(JtxContract.JtxICalObject.LOCATION)?.let { location -> this.location = location }
+            values.getAsString(JtxContract.JtxICalObject.LOCATION_ALTREP)?.let { locationAltrep -> this.locationAltrep = locationAltrep }
+            values.getAsInteger(JtxContract.JtxICalObject.PERCENT)?.let { percent -> this.percent = percent }
+            values.getAsInteger(JtxContract.JtxICalObject.PRIORITY)?.let { priority -> this.priority = priority }
+            values.getAsLong(JtxContract.JtxICalObject.DUE)?.let { due -> this.due = due }
+            values.getAsString(JtxContract.JtxICalObject.DUE_TIMEZONE)?.let { dueTimezone -> this.dueTimezone = dueTimezone }
+            values.getAsLong(JtxContract.JtxICalObject.COMPLETED)?.let { completed -> this.completed = completed }
+            values.getAsString(JtxContract.JtxICalObject.COMPLETED_TIMEZONE)?.let { completedTimezone -> this.completedTimezone = completedTimezone }
+            values.getAsString(JtxContract.JtxICalObject.DURATION)?.let { duration -> this.duration = duration }
+            values.getAsString(JtxContract.JtxICalObject.UID)?.let { uid -> this.uid = uid }
+            values.getAsLong(JtxContract.JtxICalObject.CREATED)?.let { created -> this.created = created }
+            values.getAsLong(JtxContract.JtxICalObject.DTSTAMP)?.let { dtstamp -> this.dtstamp = dtstamp }
+            values.getAsLong(JtxContract.JtxICalObject.LAST_MODIFIED)?.let { lastModified -> this.lastModified = lastModified }
+            values.getAsLong(JtxContract.JtxICalObject.SEQUENCE)?.let { sequence -> this.sequence = sequence }
+            values.getAsInteger(JtxContract.JtxICalObject.COLOR)?.let { color -> this.color = color }
+
+            values.getAsString(JtxContract.JtxICalObject.RRULE)?.let { rrule -> this.rrule = rrule }
+            values.getAsString(JtxContract.JtxICalObject.EXDATE)?.let { exdate -> this.exdate = exdate }
+            values.getAsString(JtxContract.JtxICalObject.RDATE)?.let { rdate -> this.rdate = rdate }
+            values.getAsString(JtxContract.JtxICalObject.RECURID)?.let { recurid -> this.recurid = recurid }
+
+            this.collectionId = collection.id
+            values.getAsBoolean(JtxContract.JtxICalObject.DIRTY)?.let { dirty -> this.dirty = dirty }
+            values.getAsBoolean(JtxContract.JtxICalObject.DELETED)?.let { deleted -> this.deleted = deleted }
+
+            values.getAsString(JtxContract.JtxICalObject.FILENAME)?.let { fileName -> this.fileName = fileName }
+            values.getAsString(JtxContract.JtxICalObject.ETAG)?.let { eTag -> this.eTag = eTag }
+            values.getAsString(JtxContract.JtxICalObject.SCHEDULETAG)?.let { scheduleTag -> this.scheduleTag = scheduleTag }
+            values.getAsInteger(JtxContract.JtxICalObject.FLAGS)?.let { flags -> this.flags = flags }
+
+
+        // Take care of categories
+        val categoriesContentValues = getCategoryContentValues()
+        categoriesContentValues.forEach { catValues ->
+            val category = Category().apply {
+                catValues.getAsLong(JtxContract.JtxCategory.ID)?.let { id -> this.categoryId = id }
+                catValues.getAsString(JtxContract.JtxCategory.TEXT)?.let { text -> this.text = text }
+                catValues.getAsString(JtxContract.JtxCategory.LANGUAGE)?.let { language -> this.language = language }
+                catValues.getAsString(JtxContract.JtxCategory.OTHER)?.let { other -> this.other = other }
+            }
+            categories.add(category)
+        }
+
+        // Take care of comments
+        val commentsContentValues = getCommentContentValues()
+        commentsContentValues.forEach { commentValues ->
+            val comment = Comment().apply {
+                commentValues.getAsLong(JtxContract.JtxComment.ID)?.let { id -> this.commentId = id }
+                commentValues.getAsString(JtxContract.JtxComment.TEXT)?.let { text -> this.text = text }
+                commentValues.getAsString(JtxContract.JtxComment.LANGUAGE)?.let { language -> this.language = language }
+                commentValues.getAsString(JtxContract.JtxComment.OTHER)?.let { other -> this.other = other }
+            }
+            comments.add(comment)
+        }
+
+        // Take care of resources
+        val resourceContentValues = getResourceContentValues()
+        resourceContentValues.forEach { resourceValues ->
+            val resource = Resource().apply {
+                resourceValues.getAsLong(JtxContract.JtxResource.ID)?.let { id -> this.resourceId = id }
+                resourceValues.getAsString(JtxContract.JtxResource.TEXT)?.let { text -> this.text = text }
+                resourceValues.getAsString(JtxContract.JtxResource.LANGUAGE)?.let { language -> this.language = language }
+                resourceValues.getAsString(JtxContract.JtxResource.OTHER)?.let { other -> this.other = other }
+            }
+            resources.add(resource)
+        }
+
+
+        // Take care of related-to
+        val relatedToContentValues = getRelatedToContentValues()
+        relatedToContentValues.forEach { relatedToValues ->
+            val relTo = RelatedTo().apply {
+                relatedToValues.getAsLong(JtxContract.JtxRelatedto.ID)?.let { id -> this.relatedtoId = id }
+                relatedToValues.getAsString(JtxContract.JtxRelatedto.TEXT)?.let { text -> this.text = text }
+                relatedToValues.getAsString(JtxContract.JtxRelatedto.RELTYPE)?.let { reltype -> this.reltype = reltype }
+                relatedToValues.getAsString(JtxContract.JtxRelatedto.OTHER)?.let { other -> this.other = other }
+
+            }
+            relatedTo.add(relTo)
+        }
+
+
+        // Take care of attendees
+        val attendeeContentValues = getAttendeesContentValues()
+        attendeeContentValues.forEach { attendeeValues ->
+            val attendee = Attendee().apply {
+                attendeeValues.getAsLong(JtxContract.JtxAttendee.ID)?.let { id -> this.attendeeId = id }
+                attendeeValues.getAsString(JtxContract.JtxAttendee.CALADDRESS)?.let { caladdress -> this.caladdress = caladdress }
+                attendeeValues.getAsString(JtxContract.JtxAttendee.CUTYPE)?.let { cutype -> this.cutype = cutype }
+                attendeeValues.getAsString(JtxContract.JtxAttendee.MEMBER)?.let { member -> this.member = member }
+                attendeeValues.getAsString(JtxContract.JtxAttendee.ROLE)?.let { role -> this.role = role }
+                attendeeValues.getAsString(JtxContract.JtxAttendee.PARTSTAT)?.let { partstat -> this.partstat = partstat }
+                attendeeValues.getAsBoolean(JtxContract.JtxAttendee.RSVP)?.let { rsvp -> this.rsvp = rsvp }
+                attendeeValues.getAsString(JtxContract.JtxAttendee.DELEGATEDTO)?.let { delto -> this.delegatedto = delto }
+                attendeeValues.getAsString(JtxContract.JtxAttendee.DELEGATEDFROM)?.let { delfrom -> this.delegatedfrom = delfrom }
+                attendeeValues.getAsString(JtxContract.JtxAttendee.SENTBY)?.let { sentby -> this.sentby = sentby }
+                attendeeValues.getAsString(JtxContract.JtxAttendee.CN)?.let { cn -> this.cn = cn }
+                attendeeValues.getAsString(JtxContract.JtxAttendee.DIR)?.let { dir -> this.dir = dir }
+                attendeeValues.getAsString(JtxContract.JtxAttendee.LANGUAGE)?.let { lang -> this.language = lang }
+                attendeeValues.getAsString(JtxContract.JtxAttendee.OTHER)?.let { other -> this.other = other }
+
+            }
+            attendees.add(attendee)
+        }
+
+        // Take care of attachments
+        val attachmentContentValues = getAttachmentsContentValues()
+        attachmentContentValues.forEach { attachmentValues ->
+            val attachment = Attachment().apply {
+                attachmentValues.getAsLong(JtxContract.JtxAttachment.ID)?.let { id -> this.attachmentId = id }
+                attachmentValues.getAsString(JtxContract.JtxAttachment.URI)?.let { uri -> this.uri = uri }
+                attachmentValues.getAsString(JtxContract.JtxAttachment.BINARY)?.let { value -> this.binary = value }
+                attachmentValues.getAsString(JtxContract.JtxAttachment.FMTTYPE)?.let { fmttype -> this.fmttype = fmttype }
+                attachmentValues.getAsString(JtxContract.JtxAttachment.OTHER)?.let { other -> this.other = other }
+
+            }
+            attachments.add(attachment)
+        }
+
+        // Take care of alarms
+        val alarmContentValues = getAlarmsContentValues()
+        alarmContentValues.forEach { alarmValues ->
+            val alarm = Alarm().apply {
+                alarmValues.getAsLong(JtxContract.JtxAlarm.ID)?.let { id -> this.alarmId = id }
+                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_ACTION)?.let { action -> this.action = action }
+                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_DESCRIPTION)?.let { desc -> this.description = desc }
+                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_TRIGGER)?.let { trigger -> this.trigger = trigger }
+                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_SUMMARY)?.let { summary -> this.summary = summary }
+                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_ATTENDEE)?.let { attendee -> this.attendee = attendee }
+                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_DURATION)?.let { dur -> this.duration = dur }
+                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_REPEAT)?.let { repeat -> this.repeat = repeat }
+                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_ATTACH)?.let { attach -> this.attach = attach }
+                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_OTHER)?.let { other -> this.other = other }
+            }
+            alarms.add(alarm)
+        }
+
+        // Take care of uknown properties
+        val unknownContentValues = getUnknownContentValues()
+        unknownContentValues.forEach { unknownValues ->
+            val unknwn = Unknown().apply {
+                unknownValues.getAsLong(JtxContract.JtxUnknown.ID)?.let { id -> this.unknownId = id }
+                unknownValues.getAsString(JtxContract.JtxUnknown.UNKNOWN_VALUE)?.let { value -> this.value = value }
+            }
+            unknown.add(unknwn)
+        }
+    }
+
+    /**
      * Puts the current JtxICalObjects attributes into Content Values
      * @return The JtxICalObject attributes as [ContentValues] (exluding list properties)
      */
@@ -1328,7 +1496,7 @@ duration?.let(props::add)
     /**
      * @return The categories of the given JtxICalObject as a list of ContentValues
      */
-    fun getCategoryContentValues(): List<ContentValues> {
+    private fun getCategoryContentValues(): List<ContentValues> {
 
         val categoryUrl = JtxContract.JtxCategory.CONTENT_URI.asSyncAdapter(collection.account)
         val categoryValues: MutableList<ContentValues> = mutableListOf()
@@ -1351,7 +1519,7 @@ duration?.let(props::add)
     /**
      * @return The comments of the given JtxICalObject as a list of ContentValues
      */
-    fun getCommentContentValues(): List<ContentValues> {
+    private fun getCommentContentValues(): List<ContentValues> {
 
         val commentUrl = JtxContract.JtxComment.CONTENT_URI.asSyncAdapter(collection.account)
         val commentValues: MutableList<ContentValues> = mutableListOf()
@@ -1372,7 +1540,7 @@ duration?.let(props::add)
     /**
      * @return The resources of the given JtxICalObject as a list of ContentValues
      */
-    fun getResourceContentValues(): List<ContentValues> {
+    private fun getResourceContentValues(): List<ContentValues> {
 
         val resourceUrl = JtxContract.JtxResource.CONTENT_URI.asSyncAdapter(collection.account)
         val resourceValues: MutableList<ContentValues> = mutableListOf()
@@ -1393,7 +1561,7 @@ duration?.let(props::add)
     /**
      * @return The RelatedTo of the given JtxICalObject as a list of ContentValues
      */
-    fun getRelatedToContentValues(): List<ContentValues> {
+    private fun getRelatedToContentValues(): List<ContentValues> {
 
         val relatedToUrl = JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(collection.account)
         val relatedToValues: MutableList<ContentValues> = mutableListOf()
@@ -1415,7 +1583,7 @@ duration?.let(props::add)
     /**
      * @return The attendees of the given JtxICalObject as a list of ContentValues
      */
-    fun getAttendeesContentValues(): List<ContentValues> {
+    private fun getAttendeesContentValues(): List<ContentValues> {
 
         val attendeesUrl = JtxContract.JtxAttendee.CONTENT_URI.asSyncAdapter(collection.account)
         val attendeesValues: MutableList<ContentValues> = mutableListOf()
@@ -1437,7 +1605,7 @@ duration?.let(props::add)
     /**
      * @return The attachments of the given JtxICalObject as a list of ContentValues
      */
-    fun getAttachmentsContentValues(): List<ContentValues> {
+    private fun getAttachmentsContentValues(): List<ContentValues> {
 
         val attachmentsUrl =
             JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(collection.account)
@@ -1460,7 +1628,7 @@ duration?.let(props::add)
     /**
      * @return The alarms of the given JtxICalObject as a list of ContentValues
      */
-    fun getAlarmsContentValues(): List<ContentValues> {
+    private fun getAlarmsContentValues(): List<ContentValues> {
 
         val alarmsUrl =
             JtxContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account)
@@ -1483,7 +1651,7 @@ duration?.let(props::add)
     /**
      * @return The unknown properties of the given JtxICalObject as a list of ContentValues
      */
-    fun getUnknownContentValues(): List<ContentValues> {
+    private fun getUnknownContentValues(): List<ContentValues> {
 
         val unknownUrl =
             JtxContract.JtxUnknown.CONTENT_URI.asSyncAdapter(collection.account)
