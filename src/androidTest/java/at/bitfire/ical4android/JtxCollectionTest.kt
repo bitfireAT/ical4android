@@ -52,30 +52,26 @@ class JtxCollectionTest {
         }
         collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
         assertEquals(0, collections.size)
-
         client.closeCompat()
     }
 
+
     @Test
     fun create_populate_find() {
-
         val collectionUri = JtxCollection.create(testAccount, client, cv)
         assertNotNull(collectionUri)
-
         val collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
+
         assertEquals(1, collections.size)
         assertEquals(testAccount.type, collections[0].account.type)
         assertEquals(testAccount.name, collections[0].account.name)
-
         assertEquals(url, collections[0].url)
         assertEquals(displayname, collections[0].displayname)
         assertEquals(syncversion.toString(), collections[0].syncstate)
     }
 
-
     @Test
     fun queryICalObjects() {
-
         val collectionUri = JtxCollection.create(testAccount, client, cv)
         assertNotNull(collectionUri)
 
