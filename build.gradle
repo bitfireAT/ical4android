@@ -76,10 +76,6 @@ android {
         }
         jdkVersion = 8
     }*/
-
-    //useLibrary 'android.test.base' // for AndroidTestCase  // taken from stackoverflow, might be deleted later
-    //useLibrary 'android.test.runner' // for ProviderTestCase2   // taken from stackoverflow, might be deleted later
-    useLibrary 'android.test.mock' // for MockContentProvider
 }
 
 dependencies {
