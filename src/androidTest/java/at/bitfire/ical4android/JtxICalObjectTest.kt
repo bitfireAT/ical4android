@@ -33,7 +33,7 @@ class JtxICalObjectTest {
 
     private val url = "https://jtx.techbee.at"
     private val displayname = "jtxTest"
-    private val syncversion = JtxContract.CONTRACT_VERSION
+    private val syncversion = JtxContract.VERSION
 
     private val cvCollection = ContentValues().apply {
         put(JtxContract.JtxCollection.ACCOUNT_TYPE, testAccount.type)

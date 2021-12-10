@@ -34,7 +34,7 @@ object JtxContract {
     const val AUTHORITY = "at.techbee.jtx.provider"
 
     /** The version of this SyncContentProviderContract */
-    const val CONTRACT_VERSION = 1
+    const val VERSION = 1
 
 
     fun Uri.asSyncAdapter(account: Account): Uri =
