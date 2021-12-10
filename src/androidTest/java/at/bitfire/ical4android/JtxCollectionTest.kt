@@ -45,7 +45,6 @@ class JtxCollectionTest {
 
     @After
     fun tearDown() {
-
         var collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
         collections.forEach { collection ->
             collection.delete()
@@ -56,7 +55,6 @@ class JtxCollectionTest {
 
     @Test
     fun create_populate_find() {
-
         val collectionUri = JtxCollection.create(testAccount, client, cv)
         assertNotNull(collectionUri)
 
@@ -73,7 +71,6 @@ class JtxCollectionTest {
 
     @Test
     fun queryICalObjects() {
-
         val collectionUri = JtxCollection.create(testAccount, client, cv)
         assertNotNull(collectionUri)
 
