@@ -30,7 +30,7 @@ class TestJtxCollection(
      * @return events from this calendar which match the selection
      */
     fun queryICalObjects(_where: String? = null, _whereArgs: Array<String>? = null): List<JtxICalObject> {
-        val where = "(${_where ?: "1"}) AND " + JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID + "= ?"
+        val where = "(${_where ?: "1"}) AND ${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ?"
         val whereArgs = (_whereArgs ?: arrayOf()) + id.toString()
 
         val iCalObjects = LinkedList<JtxICalObject>()
