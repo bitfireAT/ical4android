@@ -11,9 +11,7 @@ package at.bitfire.ical4android.impl
 import android.content.ContentValues
 import at.bitfire.ical4android.*
 
-class TestJtxIcalObject(testCollection: JtxCollection<JtxICalObject>) :
-    JtxICalObject(testCollection) {
-
+class TestJtxIcalObject(testCollection: JtxCollection<JtxICalObject>): JtxICalObject(testCollection) {
 
     object Factory: JtxICalObjectFactory<JtxICalObject> {
 
