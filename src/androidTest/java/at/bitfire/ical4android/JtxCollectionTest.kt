@@ -6,6 +6,7 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import androidx.test.platform.app.InstrumentationRegistry
+import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
 import at.bitfire.ical4android.impl.TestJtxCollection
 import at.bitfire.jtx.JtxContract
 import at.bitfire.jtx.JtxContract.asSyncAdapter
@@ -45,13 +46,14 @@ class JtxCollectionTest {
 
     @After
     fun tearDown() {
-
         var collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
         collections.forEach { collection ->
             collection.delete()
         }
         collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
         assertEquals(0, collections.size)
+
+        client.closeCompat()
     }
 
     @Test
