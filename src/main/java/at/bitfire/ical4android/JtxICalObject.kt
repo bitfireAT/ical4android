@@ -93,17 +93,18 @@ open class JtxICalObject(
     var attachments: MutableList<Attachment> = mutableListOf()
     var attendees: MutableList<Attendee> = mutableListOf()
     var comments: MutableList<Comment> = mutableListOf()
+    var organizer: Organizer? = null
     var resources: MutableList<Resource> = mutableListOf()
+    var relatedTo: MutableList<RelatedTo> = mutableListOf()
     var alarms: MutableList<Alarm> = mutableListOf()
     var unknown: MutableList<Unknown> = mutableListOf()
 
 
-    var relatedTo: MutableList<RelatedTo> = mutableListOf()
 
 
     data class Category(
         var categoryId: Long = 0L,
-        var text: String = "",
+        var text: String? = null,
         var language: String? = null,
         var other: String? = null
     )
@@ -136,7 +137,7 @@ open class JtxICalObject(
 
     data class Attendee(
         var attendeeId: Long = 0L,
-        var caladdress: String = "",
+        var caladdress: String? = null,
         var cutype: String? = JtxContract.JtxAttendee.Cutype.INDIVIDUAL.name,
         var member: String? = null,
         var role: String? = JtxContract.JtxAttendee.Role.`REQ-PARTICIPANT`.name,
@@ -153,8 +154,18 @@ open class JtxICalObject(
 
     data class Resource(
         var resourceId: Long = 0L,
-        var text: String? = "",
+        var text: String? = null,
         var altrep: String? = null,
+        var language: String? = null,
+        var other: String? = null
+    )
+
+    data class Organizer(
+        var organizerId: Long = 0L,
+        var caladdress: String? = null,
+        var cn: String? = null,
+        var dir: String? = null,
+        var sentby: String? = null,
         var language: String? = null,
         var other: String? = null
     )
@@ -291,7 +302,6 @@ open class JtxICalObject(
                     is Description -> iCalObject.description = prop.value
                     is Color -> iCalObject.color = Css3Color.fromString(prop.value)?.argb
                     is Url -> iCalObject.url = prop.value
-                    //is Organizer -> t.organizer = prop
                     is Priority -> iCalObject.priority = prop.level
                     is Clazz -> iCalObject.classification = prop.value
                     is Status -> iCalObject.status = prop.value
@@ -451,6 +461,24 @@ open class JtxICalObject(
                             }
                         )
                     }
+                    is net.fortuna.ical4j.model.property.Organizer -> {
+                    iCalObject.organizer = Organizer().apply {
+                        this.caladdress = prop.calAddress.toString()
+                        this.cn = prop.parameters?.getParameter<Cn>(Parameter.CN)?.value
+                        this.dir = prop.parameters?.getParameter<Dir>(Parameter.DIR)?.value
+                        this.language = prop.parameters?.getParameter<Language>(Parameter.LANGUAGE)?.value
+                        this.sentby = prop.parameters?.getParameter<SentBy>(Parameter.SENT_BY)?.value
+
+                        // remove all known parameters so that only unknown parameters remain
+                        prop.parameters?.removeAll(Parameter.CN)
+                        prop.parameters?.removeAll(Parameter.DIR)
+                        prop.parameters?.removeAll(Parameter.LANGUAGE)
+                        prop.parameters?.removeAll(Parameter.SENT_BY)
+
+                        // save unknown parameters in the other field
+                        this.other = JtxContract.getJsonStringFromXParameters(prop.parameters)
+                    }
+                }
 
                     is Uid -> iCalObject.uid = prop.value
                     //is Uid,
@@ -670,6 +698,33 @@ open class JtxICalObject(
                 }
             }
             props += attendeeProp
+        }
+
+        organizer?.let { organizer ->
+            val organizerProp = net.fortuna.ical4j.model.property.Organizer().apply {
+                if(organizer.caladdress?.isNotEmpty() == true)
+                    this.calAddress = URI(organizer.caladdress)
+
+                organizer.cn?.let {
+                    this.parameters.add(Cn(it))
+                }
+                organizer.dir?.let {
+                    this.parameters.add(Dir(it))
+                }
+                organizer.language?.let {
+                    this.parameters.add(Language(it))
+                }
+                organizer.sentby?.let {
+                    this.parameters.add(SentBy(it))
+                }
+                organizer.other?.let {
+                    val params = JtxContract.getXParametersFromJson(it)
+                    params.forEach { xparam ->
+                        this.parameters.add(xparam)
+                    }
+                }
+            }
+            props += organizerProp
         }
 
         attachments.forEach { attachment ->
@@ -1027,6 +1082,12 @@ duration?.let(props::add)
             )
 
             collection.client.delete(
+                JtxContract.JtxOrganizer.CONTENT_URI.asSyncAdapter(collection.account),
+                "${JtxContract.JtxOrganizer.ICALOBJECT_ID} = ?",
+                arrayOf(this.id.toString())
+            )
+
+            collection.client.delete(
                 JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(collection.account),
                 "${JtxContract.JtxAttachment.ICALOBJECT_ID} = ?",
                 arrayOf(this.id.toString())
@@ -1124,6 +1185,24 @@ duration?.let(props::add)
                 JtxContract.JtxAttendee.CONTENT_URI.asSyncAdapter(
                     collection.account
                 ), attendeeContentValues
+            )
+        }
+
+        this.organizer.let { organizer ->
+            val organizerContentValues = ContentValues().apply {
+                put(JtxContract.JtxOrganizer.ICALOBJECT_ID, id)
+                put(JtxContract.JtxOrganizer.CALADDRESS, organizer?.caladdress)
+
+                put(JtxContract.JtxOrganizer.CN, organizer?.cn)
+                put(JtxContract.JtxOrganizer.DIR, organizer?.dir)
+                put(JtxContract.JtxOrganizer.LANGUAGE, organizer?.language)
+                put(JtxContract.JtxOrganizer.SENTBY, organizer?.sentby)
+                put(JtxContract.JtxOrganizer.OTHER, organizer?.other)
+            }
+            collection.client.insert(
+                JtxContract.JtxOrganizer.CONTENT_URI.asSyncAdapter(
+                    collection.account
+                ), organizerContentValues
             )
         }
 
@@ -1230,6 +1309,7 @@ duration?.let(props::add)
         this.resources = newData.resources
         this.relatedTo = newData.relatedTo
         this.attendees = newData.attendees
+        this.organizer = newData.organizer
         this.attachments = newData.attachments
         this.alarms = newData.alarms
         this.unknown = newData.unknown
@@ -1360,6 +1440,19 @@ duration?.let(props::add)
             attendees.add(attendee)
         }
 
+        // Take care of organizer
+        val organizerContentValues = getOrganizerContentValues()
+        val orgnzr = Organizer().apply {
+            organizerId = organizerContentValues?.getAsLong(JtxContract.JtxOrganizer.ID) ?: 0L
+            caladdress = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.CALADDRESS)
+            sentby = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.SENTBY)
+            cn = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.CN)
+            dir = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.DIR)
+            language = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.LANGUAGE)
+            other = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.OTHER)
+        }
+        organizer = orgnzr
+
         // Take care of attachments
         val attachmentContentValues = getAttachmentsContentValues()
         attachmentContentValues.forEach { attachmentValues ->
@@ -1467,7 +1560,6 @@ duration?.let(props::add)
                 categoryValues.add(cursor.toValues())
             }
         }
-
         return categoryValues
     }
 
@@ -1532,7 +1624,6 @@ duration?.let(props::add)
                 relatedToValues.add(cursor.toValues())
             }
         }
-
         return relatedToValues
     }
 
@@ -1554,8 +1645,28 @@ duration?.let(props::add)
                 attendeesValues.add(cursor.toValues())
             }
         }
-
         return attendeesValues
+    }
+
+    /**
+     * @return The organizer of the given JtxICalObject as ContentValues
+     */
+    private fun getOrganizerContentValues(): ContentValues? {
+
+        val organizerUrl = JtxContract.JtxOrganizer.CONTENT_URI.asSyncAdapter(collection.account)
+        val organizerValues: MutableList<ContentValues> = mutableListOf()
+        collection.client.query(
+            organizerUrl,
+            null,
+            "${JtxContract.JtxOrganizer.ICALOBJECT_ID} = ?",
+            arrayOf(this.id.toString()),
+            null
+        )?.use { cursor ->
+            if(cursor.moveToFirst()) {
+                return cursor.toValues()
+            }
+        }
+        return null
     }
 
     /**
@@ -1577,7 +1688,6 @@ duration?.let(props::add)
                 attachmentsValues.add(cursor.toValues())
             }
         }
-
         return attachmentsValues
     }
 
@@ -1600,7 +1710,6 @@ duration?.let(props::add)
                 alarmValues.add(cursor.toValues())
             }
         }
-
         return alarmValues
     }
 
@@ -1623,7 +1732,6 @@ duration?.let(props::add)
                 unknownValues.add(cursor.toValues())
             }
         }
-
         return unknownValues
     }
 }
