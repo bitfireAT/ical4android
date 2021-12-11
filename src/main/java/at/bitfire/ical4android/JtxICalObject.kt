@@ -1654,7 +1654,6 @@ duration?.let(props::add)
     private fun getOrganizerContentValues(): ContentValues? {
 
         val organizerUrl = JtxContract.JtxOrganizer.CONTENT_URI.asSyncAdapter(collection.account)
-        val organizerValues: MutableList<ContentValues> = mutableListOf()
         collection.client.query(
             organizerUrl,
             null,
