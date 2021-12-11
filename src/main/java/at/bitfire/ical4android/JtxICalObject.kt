@@ -22,7 +22,6 @@ import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
 import org.apache.commons.io.IOUtils
-import org.json.JSONObject
 import java.io.*
 import java.lang.IllegalArgumentException
 import java.lang.NullPointerException
@@ -257,7 +256,7 @@ open class JtxICalObject(
                         component.properties.remove(component.repeat)
                         component.properties.remove(component.summary)
                         component.properties.remove(component.trigger)
-                        component.properties?.let { vAlarmProps -> this.other = getJsonStringFromXProperties(vAlarmProps) }
+                        component.properties?.let { vAlarmProps -> this.other = JtxContract.getJsonStringFromXProperties(vAlarmProps) }
                     }
                     iCalObject.alarms.add(jtxAlarm)
                 }
@@ -341,7 +340,7 @@ open class JtxICalObject(
                         val rdateList = if(iCalObject.rdate.isNullOrEmpty())
                             mutableListOf()
                         else
-                            iCalObject.getLongListFromString(iCalObject.rdate!!)
+                            JtxContract.getLongListFromString(iCalObject.rdate!!)
                         prop.dates.forEach {
                             rdateList.add(it.time)
                         }
@@ -351,7 +350,7 @@ open class JtxICalObject(
                         val exdateList = if(iCalObject.exdate.isNullOrEmpty())
                             mutableListOf()
                         else
-                            iCalObject.getLongListFromString(iCalObject.exdate!!)
+                            JtxContract.getLongListFromString(iCalObject.exdate!!)
                         prop.dates.forEach {
                             exdateList.add(it.time)
                         }
@@ -377,7 +376,7 @@ open class JtxICalObject(
                                 prop.parameters?.removeAll(Parameter.ALTREP)
 
                                 // save unknown parameters in the other field
-                                this.other = getJsonStringFromXParameters(prop.parameters)
+                                this.other = JtxContract.getJsonStringFromXParameters(prop.parameters)
                             })
 
                     }
@@ -397,7 +396,7 @@ open class JtxICalObject(
                             prop.parameters?.remove(it)
                         }
 
-                        attachment.other = getJsonStringFromXParameters(prop.parameters)
+                        attachment.other = JtxContract.getJsonStringFromXParameters(prop.parameters)
 
                         if (attachment.uri?.isNotEmpty() == true || attachment.binary?.isNotEmpty() == true)   // either uri or value must be present!
                             iCalObject.attachments.add(attachment)
@@ -414,7 +413,7 @@ open class JtxICalObject(
                                 prop.parameters?.removeAll(RelType.RELTYPE)
 
                                 // save unknown parameters in the other field
-                                this.other = getJsonStringFromXParameters(prop.parameters)
+                                this.other = JtxContract.getJsonStringFromXParameters(prop.parameters)
                             })
                     }
 
@@ -448,7 +447,7 @@ open class JtxICalObject(
                                 prop.parameters?.removeAll(Parameter.SENT_BY)
 
                                 // save unknown parameters in the other field
-                                this.other = getJsonStringFromXParameters(prop.parameters)
+                                this.other = JtxContract.getJsonStringFromXParameters(prop.parameters)
                             }
                         )
                     }
@@ -492,49 +491,6 @@ open class JtxICalObject(
                 iCalObject.duration = null
             }
         }
-
-
-        /**
-         * Takes a Parameter List and returns a Json String to be saved in a DB field.
-         * This is the counterpart to getXParameterFromJson(...)
-         * @param [parameters] The ParameterList that should be transformed into a Json String
-         * @return The generated Json object as a [String]
-         */
-        private fun getJsonStringFromXParameters(parameters: ParameterList?): String? {
-
-            if(parameters == null)
-                return null
-
-            val jsonObject = JSONObject()
-            parameters.forEach { parameter ->
-                jsonObject.put(parameter.name, parameter.value)
-            }
-            return if(jsonObject.length() == 0)
-                null
-            else
-                jsonObject.toString()
-        }
-
-        /**
-         * Takes a Property List and returns a Json String to be saved in a DB field.
-         * This is the counterpart to getXPropertyListFromJson(...)
-         * @param [propertyList] The PropertyList that should be transformed into a Json String
-         * @return The generated Json object as a [String]
-         */
-        private fun getJsonStringFromXProperties(propertyList: PropertyList<*>?): String? {
-
-            if(propertyList == null)
-                return null
-
-            val jsonObject = JSONObject()
-            propertyList.forEach { property ->
-                jsonObject.put(property.name, property.value)
-            }
-            return if(jsonObject.length() == 0)
-                null
-            else
-                jsonObject.toString()
-        }
     }
 
     /**
@@ -577,7 +533,7 @@ open class JtxICalObject(
                 alarm.duration?.let { add(Duration().apply { value = it }) }
                 alarm.description?.let { add(Description(it)) }
                 alarm.attach?.let { add(Attach().apply { value = it }) }
-                alarm.other?.let { addAll(getXPropertyListFromJson(it)) }
+                alarm.other?.let { addAll(JtxContract.getXPropertyListFromJson(it)) }
             }
             calComponent.components.add(vAlarm)
         }
@@ -652,7 +608,7 @@ open class JtxICalObject(
                 comment.altrep?.let { this.parameters.add(AltRep(it)) }
                 comment.language?.let { this.parameters.add(Language(it)) }
                 comment.other?.let {
-                    val xparams = getXParametersFromJson(it)
+                    val xparams = JtxContract.getXParametersFromJson(it)
                     xparams.forEach { xparam ->
                         this.parameters.add(xparam)
                     }
@@ -707,7 +663,7 @@ open class JtxICalObject(
                     this.parameters.add(SentBy(it))
                 }
                 attendee.other?.let {
-                    val params = getXParametersFromJson(it)
+                    val params = JtxContract.getXParametersFromJson(it)
                     params.forEach { xparam ->
                         this.parameters.add(xparam)
                     }
@@ -800,7 +756,7 @@ open class JtxICalObject(
             when {
                 dtstartTimezone == TZ_ALLDAY -> {
                     val dateListDate = DateList(Value.DATE)
-                    getLongListFromString(rdateString).forEach {
+                    JtxContract.getLongListFromString(rdateString).forEach {
                         dateListDate.add(Date(it))
                     }
                     props += RDate(dateListDate)
@@ -808,7 +764,7 @@ open class JtxICalObject(
                 }
                 dtstartTimezone == TimeZone.getTimeZone("UTC").id -> {
                     val dateListDateTime = DateList(Value.DATE_TIME)
-                    getLongListFromString(rdateString).forEach {
+                    JtxContract.getLongListFromString(rdateString).forEach {
                         dateListDateTime.add(DateTime(it).apply {
                             this.isUtc = true
                         })
@@ -817,7 +773,7 @@ open class JtxICalObject(
                 }
                 dtstartTimezone.isNullOrEmpty() -> {
                     val dateListDateTime = DateList(Value.DATE_TIME)
-                    getLongListFromString(rdateString).forEach {
+                    JtxContract.getLongListFromString(rdateString).forEach {
                         dateListDateTime.add(DateTime(it).apply {
                             this.isUtc = false
                         })
@@ -827,7 +783,7 @@ open class JtxICalObject(
                 else -> {
                     val dateListDateTime = DateList(Value.DATE_TIME)
                     val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dtstartTimezone)
-                    getLongListFromString(rdateString).forEach {
+                    JtxContract.getLongListFromString(rdateString).forEach {
                         val withTimezone = DateTime(it)
                         withTimezone.timeZone = timezone
                         dateListDateTime.add(DateTime(withTimezone))
@@ -842,7 +798,7 @@ open class JtxICalObject(
             when {
                 dtstartTimezone == TZ_ALLDAY -> {
                     val dateListDate = DateList(Value.DATE)
-                    getLongListFromString(exdateString).forEach {
+                    JtxContract.getLongListFromString(exdateString).forEach {
                         dateListDate.add(Date(it))
                     }
                     props += ExDate(dateListDate)
@@ -850,7 +806,7 @@ open class JtxICalObject(
                 }
                 dtstartTimezone == TimeZone.getTimeZone("UTC").id -> {
                     val dateListDateTime = DateList(Value.DATE_TIME)
-                    getLongListFromString(exdateString).forEach {
+                    JtxContract.getLongListFromString(exdateString).forEach {
                         dateListDateTime.add(DateTime(it).apply {
                             this.isUtc = true
                         })
@@ -859,7 +815,7 @@ open class JtxICalObject(
                 }
                 dtstartTimezone.isNullOrEmpty() -> {
                     val dateListDateTime = DateList(Value.DATE_TIME)
-                    getLongListFromString(exdateString).forEach {
+                    JtxContract.getLongListFromString(exdateString).forEach {
                         dateListDateTime.add(DateTime(it).apply {
                             this.isUtc = false
                         })
@@ -869,7 +825,7 @@ open class JtxICalObject(
                 else -> {
                     val dateListDateTime = DateList(Value.DATE_TIME)
                     val timezone = TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(dtstartTimezone)
-                    getLongListFromString(exdateString).forEach {
+                    JtxContract.getLongListFromString(exdateString).forEach {
                         val withTimezone = DateTime(it)
                         withTimezone.timeZone = timezone
                         dateListDateTime.add(DateTime(withTimezone))
@@ -1670,83 +1626,4 @@ duration?.let(props::add)
 
         return unknownValues
     }
-
-
-    /**
-     * This function takes a string and tries to parse it to a list of XParameters.
-     * This is the counterpart of getJsonStringFromXParameters(...)
-     * @param [string] that should be parsed
-     * @return The list of XParameter parsed from the string
-     */
-    private fun getXParametersFromJson(string: String): List<XParameter> {
-
-        val jsonObject = JSONObject(string)
-        val xparamList = mutableListOf<XParameter>()
-        for (i in 0 until jsonObject.length()) {
-            val names = jsonObject.names() ?: break
-            val xparamName = names[i]?.toString() ?: break
-            val xparamValue = jsonObject.getString(xparamName).toString()
-            if(xparamName.isNotBlank() && xparamValue.isNotBlank()) {
-                val xparam = XParameter(xparamName, xparamValue)
-                xparamList.add(xparam)
-            }
-        }
-        return xparamList
-    }
-
-    /**
-     * This function takes a string and tries to parse it to a list of XProperty.
-     * This is the counterpart of getJsonStringFromXProperties(...)
-     * @param [string] that should be parsed
-     * @return The list of XProperty parsed from the string
-     */
-    private fun getXPropertyListFromJson(string: String): PropertyList<Property> {
-
-        val propertyList = PropertyList<Property>()
-
-        if(string.isBlank())
-            return propertyList
-
-        try {
-            val jsonObject = JSONObject(string)
-            for (i in 0 until jsonObject.length()) {
-                val names = jsonObject.names() ?: break
-                val propertyName = names[i]?.toString() ?: break
-                val propertyValue = jsonObject.getString(propertyName).toString()
-                if (propertyName.isNotBlank() && propertyValue.isNotBlank()) {
-                    val prop = XProperty(propertyName, propertyValue)
-                    propertyList.add(prop)
-                }
-            }
-        } catch (e: NullPointerException) {
-            Log.w("XPropertyList", "Error parsing x-property-list $string\n$e")
-        }
-        return propertyList
-    }
-
-
-    /**
-     * Some date fields in jtx Board are saved as a list of Long values separated by commas.
-     * This applies for example to the exdate for recurring events.
-     * This function takes a string and tries to parse it to a list of long values (timestamps)
-     * @param [string] that should be parsed
-     * @return a [MutableList<Long>] with the timestamps parsed from the string
-     *
-     */
-    private fun getLongListFromString(string: String): MutableList<Long> {
-
-        val stringList = string.split(",")
-        val longList = mutableListOf<Long>()
-
-        stringList.forEach {
-            try {
-                longList.add(it.toLong())
-            } catch (e: NumberFormatException) {
-                Log.w("getLongListFromString", "String could not be cast to Long ($it)")
-                return@forEach
-            }
-        }
-        return longList
-    }
-
 }
