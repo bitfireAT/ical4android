@@ -52,7 +52,7 @@ class JtxICalObjectTest {
 
         val collectionUri = JtxCollection.create(testAccount, client, cvCollection)
         assertNotNull(collectionUri)
-        collection = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)[0]
+        collection = JtxCollection.find(testAccount, client, context, TestJtxCollection.Factory, null, null)[0]
         assertNotNull(collection)
 
         sample = JtxICalObject(collection!!).apply {
@@ -101,7 +101,7 @@ class JtxICalObjectTest {
     fun tearDown() {
 
         collection?.delete()
-        val collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
+        val collections = JtxCollection.find(testAccount, client, context, TestJtxCollection.Factory, null, null)
         assertEquals(0, collections.size)
     }
 
@@ -235,8 +235,6 @@ class JtxICalObjectTest {
         }
     }
 
-
-
     @Test
     fun assertComment() {
 
@@ -273,9 +271,6 @@ class JtxICalObjectTest {
             assertEquals(comment.other, retrievedCommentCV.getAsString(JtxContract.JtxComment.OTHER))
         }
     }
-
-
-
 
     @Test
     fun assertResource() {
@@ -376,7 +371,6 @@ class JtxICalObjectTest {
         }
     }
 
-
     @Test
     fun assertCategory() {
 
@@ -405,7 +399,6 @@ class JtxICalObjectTest {
         }
     }
 
-
     @Test
     fun assertAttachment_without_binary() {
 
@@ -418,14 +411,12 @@ class JtxICalObjectTest {
 
         val attachment = at.bitfire.ical4android.JtxICalObject.Attachment(
             uri = "https://jtx.techbee.at/sample.pdf",
-            binary = "anR4IEJvYXJk",
             fmttype = "application/pdf",
             other = "X-OTHER:other",
         )
 
         val attachmentCV = ContentValues().apply {
             put(JtxContract.JtxAttachment.URI, attachment.uri)
-            //put(JtxContract.JtxAttachment.BINARY, attachment.binary)
             put(JtxContract.JtxAttachment.FMTTYPE, attachment.fmttype)
             put(JtxContract.JtxAttachment.OTHER, attachment.other)
             put(JtxContract.JtxAttachment.ICALOBJECT_ID, id)
@@ -437,12 +428,40 @@ class JtxICalObjectTest {
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, retrievedAttachmentCV)
             assertEquals(attachment.uri, retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.URI))
-            //assertEquals(attachment.binary, retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.BINARY))
             assertEquals(attachment.fmttype, retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.FMTTYPE))
             assertEquals(attachment.other, retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.OTHER))
         }
     }
 
+
+    @Test
+    fun assertAttachment_without_binary_and_uri() {
+
+        val cv = ContentValues().apply {
+            put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
+            put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
+        }
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val id = uri.lastPathSegment
+
+        val attachment = at.bitfire.ical4android.JtxICalObject.Attachment(
+            fmttype = "application/pdf"
+        )
+
+        val attachmentCV = ContentValues().apply {
+            put(JtxContract.JtxAttachment.FMTTYPE, attachment.fmttype)
+            put(JtxContract.JtxAttachment.ICALOBJECT_ID, id)
+        }
+
+        val attachmentUri = client.insert(JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(testAccount), attachmentCV)!!
+        client.query(attachmentUri, null, null, null, null)?.use {
+            val retrievedAttachmentCV = ContentValues()
+            it.moveToFirst()
+            DatabaseUtils.cursorRowToContentValues(it, retrievedAttachmentCV)
+            assertEquals(attachment.fmttype, retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.FMTTYPE))
+            assertNotNull(retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.URI))
+        }
+    }
 
     @Test
     fun assertAttachment_with_binary() {
@@ -481,7 +500,6 @@ class JtxICalObjectTest {
         }
     }
 
-
     @Test
     fun assertRelatedto() {
 
@@ -515,10 +533,6 @@ class JtxICalObjectTest {
             assertEquals(relatedto.other, retrievedRelatedtoCV.getAsString(JtxContract.JtxRelatedto.OTHER))
         }
     }
-
-
-
-
 
     @Test
     fun assertAlarm() {
@@ -571,8 +585,6 @@ class JtxICalObjectTest {
             assertEquals(alarm.other, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_OTHER))
         }
     }
-
-
 
     @Test
     fun assertUnknown() {
@@ -628,8 +640,6 @@ class JtxICalObjectTest {
     @Test fun check_input_equals_output_vjournal_journalonthatday() = compare_properties("jtx/vjournal/journal-on-that-day.ics", null)
     //@Test fun check_input_equals_output_vjournal_dst_only_vtimezone() = compare_properties("jtx/vjournal/dst-only-vtimezone.ics", null)    // includes custom timezones, ignored for now
     @Test fun check_input_equals_output_vjournal_all_day() = compare_properties("jtx/vjournal/all-day.ics", null)
-
-
 
     /**
      * This function takes a file asserts if the ICalendar is the same before and after processing with getIncomingIcal and getOutgoingIcal
@@ -689,7 +699,7 @@ class JtxICalObjectTest {
 
         val os = ByteArrayOutputStream()
 
-        iCalObject[0].write(os, context)
+        iCalObject[0].write(os)
 
         val iCalOut = ICalendar.fromReader(os.toByteArray().inputStream().reader())
 
@@ -698,5 +708,4 @@ class JtxICalObjectTest {
 
         return iCalOut
     }
-
 }

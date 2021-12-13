@@ -46,11 +46,11 @@ class JtxCollectionTest {
 
     @After
     fun tearDown() {
-        var collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
+        var collections = JtxCollection.find(testAccount, client, context, TestJtxCollection.Factory, null, null)
         collections.forEach { collection ->
             collection.delete()
         }
-        collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
+        collections = JtxCollection.find(testAccount, client, context, TestJtxCollection.Factory, null, null)
         assertEquals(0, collections.size)
         client.closeCompat()
     }
@@ -60,7 +60,7 @@ class JtxCollectionTest {
     fun create_populate_find() {
         val collectionUri = JtxCollection.create(testAccount, client, cv)
         assertNotNull(collectionUri)
-        val collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
+        val collections = JtxCollection.find(testAccount, client, context, TestJtxCollection.Factory, null, null)
 
         assertEquals(1, collections.size)
         assertEquals(testAccount.type, collections[0].account.type)
@@ -75,7 +75,7 @@ class JtxCollectionTest {
         val collectionUri = JtxCollection.create(testAccount, client, cv)
         assertNotNull(collectionUri)
 
-        val collections = JtxCollection.find(testAccount, client, TestJtxCollection.Factory, null, null)
+        val collections = JtxCollection.find(testAccount, client, context, TestJtxCollection.Factory, null, null)
         val items = collections[0].queryICalObjects(null, null)
         assertEquals(0, items.size)
 
