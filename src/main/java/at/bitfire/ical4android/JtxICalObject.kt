@@ -2,7 +2,6 @@ package at.bitfire.ical4android
 
 
 import android.content.ContentValues
-import android.content.Context
 import android.net.ParseException
 import android.net.Uri
 import android.util.Base64
@@ -524,10 +523,9 @@ open class JtxICalObject(
     /**
      * Takes the current JtxICalObject, transforms it to an iCalendar and writes it in an OutputStream
      * @param [os] OutputStream where iCalendar should be written to
-     * @param [context]. This is necessary to resolve the File Provider of jtx
      */
     @UsesThreadContextClassLoader
-    fun write(os: OutputStream, context: Context) {
+    fun write(os: OutputStream) {
         Ical4Android.checkThreadContextClassLoader()
 
         val ical = Calendar()
@@ -540,7 +538,7 @@ open class JtxICalObject(
             else -> return
         }
         ical.components += calComponent
-        addProperties(calComponent.properties, context)
+        addProperties(calComponent.properties)
 
         alarms.forEach { alarm ->
 
@@ -573,9 +571,8 @@ open class JtxICalObject(
     /**
      * This function maps the current JtxICalObject to a iCalendar property list
      * @param [props] The PropertyList where the properties should be added
-     * @param [context] The current context needed to use the File Content Provider of jtx
      */
-    private fun addProperties(props: PropertyList<Property>, context: Context) {
+    private fun addProperties(props: PropertyList<Property>) {
 
         uid.let { props += Uid(it) }
         sequence.let { props += Sequence(it.toInt()) }
@@ -736,7 +733,7 @@ open class JtxICalObject(
                  * The sync would fail with "The authority at.techbee.jtx.fileprovider does not match the one of the contentProvider: at.techbee.jtx.provider.
                  * No way was found to avoid this problem to not use another contentResolver */
 
-                    context.contentResolver.openInputStream(Uri.parse(URI(attachment.uri).toString()))
+                    collection.context?.contentResolver?.openInputStream(Uri.parse(URI(attachment.uri).toString()))
                         .use { file ->
                                 val att = Attach(IOUtils.toByteArray(file)).apply {
                                     attachment.fmttype?.let { this.parameters.add(FmtType(it)) }
@@ -778,7 +775,6 @@ open class JtxICalObject(
             parameterList.add(param)
             props += RelatedTo(parameterList, it.text)
         }
-
 
         dtstart?.let {
             when {
@@ -1167,7 +1163,6 @@ duration?.let(props::add)
             val attendeeContentValues = ContentValues().apply {
                 put(JtxContract.JtxAttendee.ICALOBJECT_ID, id)
                 put(JtxContract.JtxAttendee.CALADDRESS, attendee.caladdress)
-
                 put(JtxContract.JtxAttendee.CN, attendee.cn)
                 put(JtxContract.JtxAttendee.CUTYPE, attendee.cutype)
                 put(JtxContract.JtxAttendee.DELEGATEDFROM, attendee.delegatedfrom)
@@ -1210,15 +1205,25 @@ duration?.let(props::add)
             val attachmentContentValues = ContentValues().apply {
                 put(JtxContract.JtxAttachment.ICALOBJECT_ID, id)
                 put(JtxContract.JtxAttachment.URI, attachment.uri)
-                put(JtxContract.JtxAttachment.BINARY, attachment.binary)
+                //put(JtxContract.JtxAttachment.BINARY, attachment.binary)
                 put(JtxContract.JtxAttachment.FMTTYPE, attachment.fmttype)
                 put(JtxContract.JtxAttachment.OTHER, attachment.other)
             }
-            collection.client.insert(
+            val newAttachment = collection.client.insert(
                 JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(
                     collection.account
                 ), attachmentContentValues
             )
+            if(attachment.uri.isNullOrEmpty() && newAttachment != null) {
+                collection.client.query(newAttachment, arrayOf(JtxContract.JtxAttachment.URI), null, null, null)?.use { cursor ->
+                    if(cursor.moveToFirst()) {
+                        val newFileUri = Uri.parse(cursor.getString(0))
+                        collection.context?.contentResolver?.openOutputStream(newFileUri)?.use { os ->
+                            os.write(Base64.decode(attachment.binary, Base64.DEFAULT))
+                        }
+                    }
+                }
+            }
         }
 
         this.alarms.forEach { alarm ->
