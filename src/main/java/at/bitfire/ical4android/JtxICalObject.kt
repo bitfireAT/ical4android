@@ -1,9 +1,11 @@
 package at.bitfire.ical4android
 
 
+import android.content.ContentUris
 import android.content.ContentValues
 import android.net.ParseException
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.util.Base64
 import android.util.Log
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
@@ -20,7 +22,6 @@ import net.fortuna.ical4j.model.component.VJournal
 import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
-import org.apache.commons.io.IOUtils
 import java.io.*
 import java.lang.IllegalArgumentException
 import java.lang.NullPointerException
@@ -727,20 +728,17 @@ open class JtxICalObject(
         attachments.forEach { attachment ->
 
             try {
-                if (attachment.uri?.startsWith("content://") == true)
-                /**   //collection.client.openAssetFile(Uri.parse(URI(attachment.uri).toString()), "r")?.createInputStream()
-                 * This method cannot be used here. The files are stored in the jtx fileprovider that has a different authority than the content provider
-                 * The sync would fail with "The authority at.techbee.jtx.fileprovider does not match the one of the contentProvider: at.techbee.jtx.provider.
-                 * No way was found to avoid this problem to not use another contentResolver */
+                if (attachment.uri?.startsWith("content://") == true) {
 
-                    collection.context?.contentResolver?.openInputStream(Uri.parse(URI(attachment.uri).toString()))
-                        .use { file ->
-                                val att = Attach(IOUtils.toByteArray(file)).apply {
-                                    attachment.fmttype?.let { this.parameters.add(FmtType(it)) }
-                                }
-                                props += att
-                            }
-                else {
+                    val attachmentUri = ContentUris.withAppendedId(JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(collection.account), attachment.attachmentId)
+                    val attachmentFile = collection.client.openFile(attachmentUri, "r")
+                    val attachmentBytes = ParcelFileDescriptor.AutoCloseInputStream(attachmentFile).readBytes()
+                    val att = Attach(attachmentBytes).apply {
+                        attachment.fmttype?.let { this.parameters.add(FmtType(it)) }
+                    }
+                    props += att
+
+                } else {
                     attachment.uri?.let { uri ->
                         val att = Attach(URI(uri)).apply {
                             attachment.fmttype?.let { this.parameters.add(FmtType(it)) }
@@ -1205,7 +1203,6 @@ duration?.let(props::add)
             val attachmentContentValues = ContentValues().apply {
                 put(JtxContract.JtxAttachment.ICALOBJECT_ID, id)
                 put(JtxContract.JtxAttachment.URI, attachment.uri)
-                //put(JtxContract.JtxAttachment.BINARY, attachment.binary)
                 put(JtxContract.JtxAttachment.FMTTYPE, attachment.fmttype)
                 put(JtxContract.JtxAttachment.OTHER, attachment.other)
             }
@@ -1215,14 +1212,8 @@ duration?.let(props::add)
                 ), attachmentContentValues
             )
             if(attachment.uri.isNullOrEmpty() && newAttachment != null) {
-                collection.client.query(newAttachment, arrayOf(JtxContract.JtxAttachment.URI), null, null, null)?.use { cursor ->
-                    if(cursor.moveToFirst()) {
-                        val newFileUri = Uri.parse(cursor.getString(0))
-                        collection.context?.contentResolver?.openOutputStream(newFileUri)?.use { os ->
-                            os.write(Base64.decode(attachment.binary, Base64.DEFAULT))
-                        }
-                    }
-                }
+                val attachmentPFD = collection.client.openFile(newAttachment, "w")
+                ParcelFileDescriptor.AutoCloseOutputStream(attachmentPFD).write(Base64.decode(attachment.binary, Base64.DEFAULT))
             }
         }
 
