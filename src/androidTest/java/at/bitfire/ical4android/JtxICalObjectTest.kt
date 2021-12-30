@@ -6,6 +6,7 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.database.DatabaseUtils
+import android.os.ParcelFileDescriptor
 import androidx.test.platform.app.InstrumentationRegistry
 import at.bitfire.ical4android.impl.TestJtxCollection
 import at.bitfire.jtx.JtxContract
@@ -16,6 +17,7 @@ import junit.framework.TestCase.*
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Property
 import org.junit.After
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.io.ByteArrayOutputStream
@@ -461,6 +463,16 @@ class JtxICalObjectTest {
             assertEquals(attachment.fmttype, retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.FMTTYPE))
             assertNotNull(retrievedAttachmentCV.getAsString(JtxContract.JtxAttachment.URI))
         }
+
+        val textIn = "jtx Board rulz"
+        val pfd = client.openFile(attachmentUri, "w", null)
+        ParcelFileDescriptor.AutoCloseOutputStream(pfd).write(textIn.toByteArray())
+
+        val pfd2 = client.openFile(attachmentUri, "r", null)
+        val textCompare = String(ParcelFileDescriptor.AutoCloseInputStream(pfd2).readBytes())
+
+        Assert.assertEquals(textIn, textCompare)
+
     }
 
     @Test
