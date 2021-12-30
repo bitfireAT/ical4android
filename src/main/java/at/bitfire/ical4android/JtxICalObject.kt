@@ -193,6 +193,7 @@ open class JtxICalObject(
 
         const val X_PROP_COMPLETEDTIMEZONE = "X-COMPLETEDTIMEZONE"
 
+        const val MAX_ATTACHMENT_SYNC_SIZE = 102400 // = 100KB
 
         /**
          * Parses an iCalendar resource, applies [ICalPreprocessor] to increase compatibility
@@ -733,10 +734,12 @@ open class JtxICalObject(
                     val attachmentUri = ContentUris.withAppendedId(JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(collection.account), attachment.attachmentId)
                     val attachmentFile = collection.client.openFile(attachmentUri, "r")
                     val attachmentBytes = ParcelFileDescriptor.AutoCloseInputStream(attachmentFile).readBytes()
-                    val att = Attach(attachmentBytes).apply {
-                        attachment.fmttype?.let { this.parameters.add(FmtType(it)) }
+                    if(attachmentBytes.size <= MAX_ATTACHMENT_SYNC_SIZE) {     // Sync only small attachments that are smaller than 100 KB, larger ones are ignored
+                        val att = Attach(attachmentBytes).apply {
+                            attachment.fmttype?.let { this.parameters.add(FmtType(it)) }
+                        }
+                        props += att
                     }
-                    props += att
 
                 } else {
                     attachment.uri?.let { uri ->
