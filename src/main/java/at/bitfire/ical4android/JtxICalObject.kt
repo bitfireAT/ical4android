@@ -27,6 +27,7 @@ import java.lang.IllegalArgumentException
 import java.lang.NullPointerException
 import java.net.URI
 import java.net.URISyntaxException
+import java.time.format.DateTimeParseException
 import java.util.*
 import java.util.TimeZone
 
@@ -174,13 +175,16 @@ open class JtxICalObject(
         var alarmId: Long = 0L,
         var action: String? = null,
         var description: String? = null,
-        var trigger: String? = null,
         var summary: String? = null,
         var attendee: String? = null,
         var duration: String? = null,
         var repeat: String? = null,
         var attach: String? = null,
         var other: String? = null,
+        var triggerTime: Long? = null,
+        var triggerTimezone: String? = null,
+        var triggerRelativeTo: String? = null,
+        var triggerRelativeDuration: String? = null
     )
 
     data class Unknown(
@@ -253,20 +257,28 @@ open class JtxICalObject(
                 if(component is VAlarm) {
                     val jtxAlarm = Alarm().apply {
                         component.action?.value?.let { vAlarmAction -> this.action = vAlarmAction }
-                        component.attachment?.value?.let { vAlarmAttach -> this.attach = vAlarmAttach }
+                        component.summary?.value?.let { vAlarmSummary -> this.summary = vAlarmSummary }
                         component.description?.value?.let { vAlarmDesc -> this.description = vAlarmDesc }
                         component.duration?.value?.let { vAlarmDur -> this.duration = vAlarmDur }
+                        component.attachment?.uri?.let { uri -> this.attach = uri.toString() }
                         component.repeat?.value?.let { vAlarmRep -> this.repeat = vAlarmRep }
-                        component.summary?.value?.let { vAlarmSummary -> this.summary = vAlarmSummary }
-                        component.trigger?.value?.let { vAlarmTrigger -> this.trigger = vAlarmTrigger }
+
+                        // alarms can have a duration or an absolute dateTime, but not both!
+                        if(component.trigger.duration != null) {
+                            component.trigger?.duration?.let { duration -> this.triggerRelativeDuration = duration.toString() }
+                            component.trigger?.getParameter<Related>(Parameter.RELATED)?.let { related -> this.triggerRelativeTo = related.value }
+                        } else if(component.trigger.dateTime != null) {
+                            component.trigger?.dateTime?.let { dateTime -> this.triggerTime = dateTime.time  }
+                            component.trigger?.dateTime?.timeZone?.let { timezone -> this.triggerTimezone = timezone.id }
+                        }
 
                         // remove properties to add the rest to other
                         component.properties.remove(component.action)
-                        component.properties.remove(component.attachment)
+                        component.properties.remove(component.summary)
                         component.properties.remove(component.description)
                         component.properties.remove(component.duration)
+                        component.properties.remove(component.attachment)
                         component.properties.remove(component.repeat)
-                        component.properties.remove(component.summary)
                         component.properties.remove(component.trigger)
                         component.properties?.let { vAlarmProps -> this.other = JtxContract.getJsonStringFromXProperties(vAlarmProps) }
                     }
@@ -544,24 +556,70 @@ open class JtxICalObject(
 
         alarms.forEach { alarm ->
 
-
-
             val vAlarm = VAlarm()
             vAlarm.properties.apply {
-                alarm.action?.let { add(Action().apply { value = it }) }
-                alarm.trigger?.let { add(Trigger().apply {
-                    try {
-                        dateTime = DateTime(it)
-                    } catch (e: ParseException) {
-                        Log.i("Trigger", "Trigger is not DateTime, using as Duration (the value directly)")
-                        value = it
-                    }}) }
+                alarm.action?.let {
+                    when (it) {
+                        JtxContract.JtxAlarm.AlarmAction.DISPLAY.name -> add(Action.DISPLAY)
+                        JtxContract.JtxAlarm.AlarmAction.AUDIO.name -> add(Action.AUDIO)
+                        JtxContract.JtxAlarm.AlarmAction.EMAIL.name -> add(Action.EMAIL)
+                        else -> return@let
+                    }
+                }
+                if(alarm.triggerRelativeDuration != null) {
+                    add(Trigger().apply {
+                        try {
+                            val dur = java.time.Duration.parse(alarm.triggerRelativeDuration)
+                            this.duration = dur
+
+                            // Add the RELATED parameter if present
+                            alarm.triggerRelativeTo?.let {
+                                if(it == JtxContract.JtxAlarm.AlarmRelativeTo.START.name)
+                                    this.parameters.add(Related.START)
+                                if(it == JtxContract.JtxAlarm.AlarmRelativeTo.END.name)
+                                    this.parameters.add(Related.END)
+                            }
+                        } catch (e: DateTimeParseException) {
+                            Log.w("TriggerDuration", "Could not parse Trigger duration as Duration. \n$e")
+                        }
+                    })
+
+                } else if (alarm.triggerTime != null) {
+                    add(Trigger().apply {
+                        try {
+                            when {
+                                alarm.triggerTimezone == TimeZone.getTimeZone("UTC").id -> this.dateTime = DateTime(alarm.triggerTime!!).apply {
+                                    this.isUtc = true
+                                }
+                                alarm.triggerTimezone.isNullOrEmpty() -> this.dateTime = DateTime(alarm.triggerTime!!).apply {
+                                    this.isUtc = true
+                                }
+                                else -> {
+                                    val timezone = TimeZoneRegistryFactory.getInstance().createRegistry()
+                                        .getTimeZone(alarm.triggerTimezone)
+                                    this.dateTime = DateTime(alarm.triggerTime!!).apply{
+                                        this.timeZone = timezone
+                                    }
+                                }
+                            }
+                        } catch (e: ParseException) {
+                            Log.i("AlarmDateTime", "TriggerTime could not be parsed. \n$e")
+                        }})
+                }
                 alarm.summary?.let { add(Summary(it)) }
                 alarm.repeat?.let { add(Repeat().apply { value = it }) }
-                alarm.duration?.let { add(Duration().apply { value = it }) }
+                alarm.duration?.let { add(Duration().apply {
+                    try {
+                        val dur = java.time.Duration.parse(it)
+                        this.duration = dur
+                    } catch (e: DateTimeParseException) {
+                        Log.w("AlarmDuration", "Could not parse duration as Duration. \n$e")
+                    }
+                }) }
                 alarm.description?.let { add(Description(it)) }
                 alarm.attach?.let { add(Attach().apply { value = it }) }
                 alarm.other?.let { addAll(JtxContract.getXPropertyListFromJson(it)) }
+
             }
             calComponent.components.add(vAlarm)
         }
@@ -1223,15 +1281,18 @@ duration?.let(props::add)
         this.alarms.forEach { alarm ->
             val alarmContentValues = ContentValues().apply {
                 put(JtxContract.JtxAlarm.ICALOBJECT_ID, id)
-                put(JtxContract.JtxAlarm.ALARM_ACTION, alarm.action)
-                put(JtxContract.JtxAlarm.ALARM_ATTACH, alarm.attach)
-                put(JtxContract.JtxAlarm.ALARM_ATTENDEE, alarm.attendee)
-                put(JtxContract.JtxAlarm.ALARM_DESCRIPTION, alarm.description)
-                put(JtxContract.JtxAlarm.ALARM_DURATION, alarm.duration)
-                put(JtxContract.JtxAlarm.ALARM_REPEAT, alarm.repeat)
-                put(JtxContract.JtxAlarm.ALARM_SUMMARY, alarm.summary)
-                put(JtxContract.JtxAlarm.ALARM_TRIGGER, alarm.trigger)
-                put(JtxContract.JtxAlarm.ALARM_OTHER, alarm.other)
+                put(JtxContract.JtxAlarm.ACTION, alarm.action)
+                put(JtxContract.JtxAlarm.ATTACH, alarm.attach)
+                //put(JtxContract.JtxAlarm.ATTENDEE, alarm.attendee)
+                put(JtxContract.JtxAlarm.DESCRIPTION, alarm.description)
+                put(JtxContract.JtxAlarm.DURATION, alarm.duration)
+                put(JtxContract.JtxAlarm.REPEAT, alarm.repeat)
+                put(JtxContract.JtxAlarm.SUMMARY, alarm.summary)
+                put(JtxContract.JtxAlarm.TRIGGER_RELATIVE_TO, alarm.triggerRelativeTo)
+                put(JtxContract.JtxAlarm.TRIGGER_RELATIVE_DURATION, alarm.triggerRelativeDuration)
+                put(JtxContract.JtxAlarm.TRIGGER_TIME, alarm.triggerTime)
+                put(JtxContract.JtxAlarm.TRIGGER_TIMEZONE, alarm.triggerTimezone)
+                put(JtxContract.JtxAlarm.OTHER, alarm.other)
             }
             collection.client.insert(
                 JtxContract.JtxAlarm.CONTENT_URI.asSyncAdapter(collection.account),
@@ -1471,15 +1532,17 @@ duration?.let(props::add)
         alarmContentValues.forEach { alarmValues ->
             val alarm = Alarm().apply {
                 alarmValues.getAsLong(JtxContract.JtxAlarm.ID)?.let { id -> this.alarmId = id }
-                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_ACTION)?.let { action -> this.action = action }
-                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_DESCRIPTION)?.let { desc -> this.description = desc }
-                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_TRIGGER)?.let { trigger -> this.trigger = trigger }
-                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_SUMMARY)?.let { summary -> this.summary = summary }
-                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_ATTENDEE)?.let { attendee -> this.attendee = attendee }
-                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_DURATION)?.let { dur -> this.duration = dur }
-                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_REPEAT)?.let { repeat -> this.repeat = repeat }
-                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_ATTACH)?.let { attach -> this.attach = attach }
-                alarmValues.getAsString(JtxContract.JtxAlarm.ALARM_OTHER)?.let { other -> this.other = other }
+                alarmValues.getAsString(JtxContract.JtxAlarm.ACTION)?.let { action -> this.action = action }
+                alarmValues.getAsString(JtxContract.JtxAlarm.DESCRIPTION)?.let { desc -> this.description = desc }
+                alarmValues.getAsLong(JtxContract.JtxAlarm.TRIGGER_TIME)?.let { time -> this.triggerTime = time }
+                alarmValues.getAsString(JtxContract.JtxAlarm.TRIGGER_TIMEZONE)?.let { tz -> this.triggerTimezone = tz }
+                alarmValues.getAsString(JtxContract.JtxAlarm.TRIGGER_RELATIVE_TO)?.let { relative -> this.triggerRelativeTo = relative }
+                alarmValues.getAsString(JtxContract.JtxAlarm.TRIGGER_RELATIVE_DURATION)?.let { duration -> this.triggerRelativeDuration = duration }
+                alarmValues.getAsString(JtxContract.JtxAlarm.SUMMARY)?.let { summary -> this.summary = summary }
+                alarmValues.getAsString(JtxContract.JtxAlarm.DURATION)?.let { dur -> this.duration = dur }
+                alarmValues.getAsString(JtxContract.JtxAlarm.REPEAT)?.let { repeat -> this.repeat = repeat }
+                alarmValues.getAsString(JtxContract.JtxAlarm.ATTACH)?.let { attach -> this.attach = attach }
+                alarmValues.getAsString(JtxContract.JtxAlarm.OTHER)?.let { other -> this.other = other }
             }
             alarms.add(alarm)
         }

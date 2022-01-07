@@ -547,7 +547,7 @@ class JtxICalObjectTest {
     }
 
     @Test
-    fun assertAlarm() {
+    fun assertAlarm_basic() {
 
         val cv = ContentValues().apply {
             put(JtxICalObject.COMPONENT, Component.VJOURNAL.name)
@@ -557,27 +557,23 @@ class JtxICalObjectTest {
         val id = uri.lastPathSegment
 
         val alarm = at.bitfire.ical4android.JtxICalObject.Alarm(
-            action = "AUDIO",
+            action = JtxContract.JtxAlarm.AlarmAction.AUDIO.name,
             description = "desc",
             summary = "summary",
-            trigger = "DATE-TIME:19970317T133000Z",
-            attendee = "jtx@techbee.at",
             duration = "PT15M",
             repeat = "4",
-            attach = "FMTTYPE=audio/basic:ftp://example.com/pub/sounds/bell-01.aud",
-            other = "X-OTHER: other"
-        )
+            attach = "ftp://example.com/pub/sounds/bell-01.aud",
+            other = "X-OTHER: other",
+            )
 
         val alarmCV = ContentValues().apply {
-            put(JtxContract.JtxAlarm.ALARM_ACTION, alarm.action)
-            put(JtxContract.JtxAlarm.ALARM_DESCRIPTION, alarm.description)
-            put(JtxContract.JtxAlarm.ALARM_SUMMARY, alarm.summary)
-            put(JtxContract.JtxAlarm.ALARM_TRIGGER, alarm.trigger)
-            put(JtxContract.JtxAlarm.ALARM_ATTENDEE, alarm.attendee)
-            put(JtxContract.JtxAlarm.ALARM_DURATION, alarm.duration)
-            put(JtxContract.JtxAlarm.ALARM_REPEAT, alarm.repeat)
-            put(JtxContract.JtxAlarm.ALARM_ATTACH, alarm.attach)
-            put(JtxContract.JtxAlarm.ALARM_OTHER, alarm.other)
+            put(JtxContract.JtxAlarm.ACTION, alarm.action)
+            put(JtxContract.JtxAlarm.DESCRIPTION, alarm.description)
+            put(JtxContract.JtxAlarm.SUMMARY, alarm.summary)
+            put(JtxContract.JtxAlarm.DURATION, alarm.duration)
+            put(JtxContract.JtxAlarm.REPEAT, alarm.repeat)
+            put(JtxContract.JtxAlarm.ATTACH, alarm.attach)
+            put(JtxContract.JtxAlarm.OTHER, alarm.other)
             put(JtxContract.JtxAlarm.ICALOBJECT_ID, id)
         }
 
@@ -586,17 +582,163 @@ class JtxICalObjectTest {
             val retrievedAlarmCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, retrievedAlarmCV)
-            assertEquals(alarm.action, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_ACTION))
-            assertEquals(alarm.description, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_DESCRIPTION))
-            assertEquals(alarm.summary, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_SUMMARY))
-            assertEquals(alarm.trigger, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_TRIGGER))
-            assertEquals(alarm.attendee, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_ATTENDEE))
-            assertEquals(alarm.duration, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_DURATION))
-            assertEquals(alarm.repeat, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_REPEAT))
-            assertEquals(alarm.attach, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_ATTACH))
-            assertEquals(alarm.other, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ALARM_OTHER))
+            assertEquals(alarm.action, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ACTION))
+            assertEquals(alarm.description, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.DESCRIPTION))
+            assertEquals(alarm.summary, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.SUMMARY))
+            assertEquals(alarm.duration, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.DURATION))
+            assertEquals(alarm.repeat, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.REPEAT))
+            assertEquals(alarm.attach, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ATTACH))
+            assertEquals(alarm.other, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.OTHER))
         }
     }
+
+
+    @Test
+    fun assertAlarm_trigger_duration() {
+
+        val cv = ContentValues().apply {
+            put(JtxICalObject.COMPONENT, Component.VTODO.name)
+            put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
+        }
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val id = uri.lastPathSegment
+
+        val alarm = at.bitfire.ical4android.JtxICalObject.Alarm(
+            action = JtxContract.JtxAlarm.AlarmAction.DISPLAY.name,
+            description = "desc",
+            triggerRelativeDuration = "-PT5M",
+            triggerRelativeTo = JtxContract.JtxAlarm.AlarmRelativeTo.START.name
+        )
+
+        val alarmCV = ContentValues().apply {
+            put(JtxContract.JtxAlarm.ACTION, alarm.action)
+            put(JtxContract.JtxAlarm.DESCRIPTION, alarm.description)
+            put(JtxContract.JtxAlarm.TRIGGER_RELATIVE_DURATION, alarm.triggerRelativeDuration)
+            put(JtxContract.JtxAlarm.TRIGGER_RELATIVE_TO, alarm.triggerRelativeTo)
+            put(JtxContract.JtxAlarm.ICALOBJECT_ID, id)
+        }
+
+        val alarmUri = client.insert(JtxContract.JtxAlarm.CONTENT_URI.asSyncAdapter(testAccount), alarmCV)!!
+        client.query(alarmUri, null, null, null, null)?.use {
+            val retrievedAlarmCV = ContentValues()
+            it.moveToFirst()
+            DatabaseUtils.cursorRowToContentValues(it, retrievedAlarmCV)
+            assertEquals(alarm.action, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ACTION))
+            assertEquals(alarm.description, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.DESCRIPTION))
+            assertEquals(alarm.triggerRelativeTo, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.TRIGGER_RELATIVE_TO))
+            assertEquals(alarm.triggerRelativeDuration, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.TRIGGER_RELATIVE_DURATION))
+        }
+    }
+
+    @Test
+    fun assertAlarm_trigger_time_withoutTZ() {
+
+        val cv = ContentValues().apply {
+            put(JtxICalObject.COMPONENT, Component.VTODO.name)
+            put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
+        }
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val id = uri.lastPathSegment
+
+        val alarm = at.bitfire.ical4android.JtxICalObject.Alarm(
+            action = JtxContract.JtxAlarm.AlarmAction.DISPLAY.name,
+            description = "desc",
+            triggerTime = 1641557428506L
+        )
+
+        val alarmCV = ContentValues().apply {
+            put(JtxContract.JtxAlarm.ACTION, alarm.action)
+            put(JtxContract.JtxAlarm.DESCRIPTION, alarm.description)
+            put(JtxContract.JtxAlarm.TRIGGER_TIME, alarm.triggerTime)
+            put(JtxContract.JtxAlarm.ICALOBJECT_ID, id)
+        }
+
+        val alarmUri = client.insert(JtxContract.JtxAlarm.CONTENT_URI.asSyncAdapter(testAccount), alarmCV)!!
+        client.query(alarmUri, null, null, null, null)?.use {
+            val retrievedAlarmCV = ContentValues()
+            it.moveToFirst()
+            DatabaseUtils.cursorRowToContentValues(it, retrievedAlarmCV)
+            assertEquals(alarm.action, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ACTION))
+            assertEquals(alarm.description, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.DESCRIPTION))
+            assertEquals(alarm.triggerTime, retrievedAlarmCV.getAsLong(JtxContract.JtxAlarm.TRIGGER_TIME))
+        }
+    }
+
+    @Test
+    fun assertAlarm_trigger_time_UTC() {
+
+        val cv = ContentValues().apply {
+            put(JtxICalObject.COMPONENT, Component.VTODO.name)
+            put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
+        }
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val id = uri.lastPathSegment
+
+        val alarm = at.bitfire.ical4android.JtxICalObject.Alarm(
+            action = JtxContract.JtxAlarm.AlarmAction.DISPLAY.name,
+            description = "desc",
+            triggerTime = 1641557428506L,
+            triggerTimezone = "UTC"
+        )
+
+        val alarmCV = ContentValues().apply {
+            put(JtxContract.JtxAlarm.ACTION, alarm.action)
+            put(JtxContract.JtxAlarm.DESCRIPTION, alarm.description)
+            put(JtxContract.JtxAlarm.TRIGGER_TIME, alarm.triggerTime)
+            put(JtxContract.JtxAlarm.TRIGGER_TIMEZONE, alarm.triggerTimezone)
+            put(JtxContract.JtxAlarm.ICALOBJECT_ID, id)
+        }
+
+        val alarmUri = client.insert(JtxContract.JtxAlarm.CONTENT_URI.asSyncAdapter(testAccount), alarmCV)!!
+        client.query(alarmUri, null, null, null, null)?.use {
+            val retrievedAlarmCV = ContentValues()
+            it.moveToFirst()
+            DatabaseUtils.cursorRowToContentValues(it, retrievedAlarmCV)
+            assertEquals(alarm.action, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ACTION))
+            assertEquals(alarm.description, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.DESCRIPTION))
+            assertEquals(alarm.triggerTime, retrievedAlarmCV.getAsLong(JtxContract.JtxAlarm.TRIGGER_TIME))
+            assertEquals(alarm.triggerTimezone, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.TRIGGER_TIMEZONE))
+        }
+    }
+
+
+    @Test
+    fun assertAlarm_trigger_time_Vienna() {
+
+        val cv = ContentValues().apply {
+            put(JtxICalObject.COMPONENT, Component.VTODO.name)
+            put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
+        }
+        val uri = client.insert(JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)!!
+        val id = uri.lastPathSegment
+
+        val alarm = at.bitfire.ical4android.JtxICalObject.Alarm(
+            action = "DISPLAY",
+            description = "desc",
+            triggerTime = 1641557428506L,
+            triggerTimezone = "Europe/Vienna"
+        )
+
+        val alarmCV = ContentValues().apply {
+            put(JtxContract.JtxAlarm.ACTION, alarm.action)
+            put(JtxContract.JtxAlarm.DESCRIPTION, alarm.description)
+            put(JtxContract.JtxAlarm.TRIGGER_TIME, alarm.triggerTime)
+            put(JtxContract.JtxAlarm.TRIGGER_TIMEZONE, alarm.triggerTimezone)
+            put(JtxContract.JtxAlarm.ICALOBJECT_ID, id)
+        }
+
+        val alarmUri = client.insert(JtxContract.JtxAlarm.CONTENT_URI.asSyncAdapter(testAccount), alarmCV)!!
+        client.query(alarmUri, null, null, null, null)?.use {
+            val retrievedAlarmCV = ContentValues()
+            it.moveToFirst()
+            DatabaseUtils.cursorRowToContentValues(it, retrievedAlarmCV)
+            assertEquals(alarm.action, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.ACTION))
+            assertEquals(alarm.description, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.DESCRIPTION))
+            assertEquals(alarm.triggerTime, retrievedAlarmCV.getAsLong(JtxContract.JtxAlarm.TRIGGER_TIME))
+            assertEquals(alarm.triggerTimezone, retrievedAlarmCV.getAsString(JtxContract.JtxAlarm.TRIGGER_TIMEZONE))
+        }
+    }
+
 
     @Test
     fun assertUnknown() {
