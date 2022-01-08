@@ -561,6 +561,7 @@ class JtxICalObjectTest {
             description = "desc",
             summary = "summary",
             duration = "PT15M",
+            triggerTime = 1641557428506L,
             repeat = "4",
             attach = "ftp://example.com/pub/sounds/bell-01.aud",
             other = "X-OTHER: other",
@@ -571,6 +572,7 @@ class JtxICalObjectTest {
             put(JtxContract.JtxAlarm.DESCRIPTION, alarm.description)
             put(JtxContract.JtxAlarm.SUMMARY, alarm.summary)
             put(JtxContract.JtxAlarm.DURATION, alarm.duration)
+            put(JtxContract.JtxAlarm.TRIGGER_TIME, alarm.triggerTime)
             put(JtxContract.JtxAlarm.REPEAT, alarm.repeat)
             put(JtxContract.JtxAlarm.ATTACH, alarm.attach)
             put(JtxContract.JtxAlarm.OTHER, alarm.other)
