@@ -2,20 +2,20 @@
  * Copyright © All Contributors. See LICENSE and AUTHORS in the root directory for details.
  **************************************************************************************************/
 
-package at.bitfire.jtx
+package at.techbee.jtx
 
 import android.accounts.Account
 import android.net.Uri
 import android.provider.BaseColumns
 import android.util.Log
+import at.bitfire.ical4android.Ical4Android
 import net.fortuna.ical4j.model.ParameterList
 import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.PropertyList
 import net.fortuna.ical4j.model.parameter.XParameter
 import net.fortuna.ical4j.model.property.XProperty
 import org.json.JSONObject
-import java.lang.NullPointerException
-
+import java.util.logging.Level
 
 @Suppress("unused")
 object JtxContract {
@@ -59,14 +59,13 @@ object JtxContract {
      * @return The list of XParameter parsed from the string
      */
     fun getXParametersFromJson(string: String): List<XParameter> {
-
         val jsonObject = JSONObject(string)
         val xparamList = mutableListOf<XParameter>()
         for (i in 0 until jsonObject.length()) {
             val names = jsonObject.names() ?: break
             val xparamName = names[i]?.toString() ?: break
             val xparamValue = jsonObject.getString(xparamName).toString()
-            if(xparamName.isNotBlank() && xparamValue.isNotBlank()) {
+            if (xparamName.isNotBlank() && xparamValue.isNotBlank()) {
                 val xparam = XParameter(xparamName, xparamValue)
                 xparamList.add(xparam)
             }
@@ -81,10 +80,9 @@ object JtxContract {
      * @return The list of XProperty parsed from the string
      */
     fun getXPropertyListFromJson(string: String): PropertyList<Property> {
-
         val propertyList = PropertyList<Property>()
 
-        if(string.isBlank())
+        if (string.isBlank())
             return propertyList
 
         try {
@@ -99,7 +97,7 @@ object JtxContract {
                 }
             }
         } catch (e: NullPointerException) {
-            Log.w("XPropertyList", "Error parsing x-property-list $string\n$e")
+            Ical4Android.log.log(Level.WARNING, "Error parsing x-property-list $string", e)
         }
         return propertyList
     }
@@ -112,15 +110,14 @@ object JtxContract {
      * @return The generated Json object as a [String]
      */
     fun getJsonStringFromXParameters(parameters: ParameterList?): String? {
-
-        if(parameters == null)
+        if (parameters == null)
             return null
 
         val jsonObject = JSONObject()
         parameters.forEach { parameter ->
             jsonObject.put(parameter.name, parameter.value)
         }
-        return if(jsonObject.length() == 0)
+        return if (jsonObject.length() == 0)
             null
         else
             jsonObject.toString()
@@ -133,15 +130,14 @@ object JtxContract {
      * @return The generated Json object as a [String]
      */
     fun getJsonStringFromXProperties(propertyList: PropertyList<*>?): String? {
-
-        if(propertyList == null)
+        if (propertyList == null)
             return null
 
         val jsonObject = JSONObject()
         propertyList.forEach { property ->
             jsonObject.put(property.name, property.value)
         }
-        return if(jsonObject.length() == 0)
+        return if (jsonObject.length() == 0)
             null
         else
             jsonObject.toString()
@@ -157,7 +153,6 @@ object JtxContract {
      *
      */
     fun getLongListFromString(string: String): MutableList<Long> {
-
         val stringList = string.split(",")
         val longList = mutableListOf<Long>()
 
@@ -165,7 +160,7 @@ object JtxContract {
             try {
                 longList.add(it.toLong())
             } catch (e: NumberFormatException) {
-                Log.w("getLongListFromString", "String could not be cast to Long ($it)")
+                Ical4Android.log.log(Level.WARNING, "String could not be cast to Long ($it)")
                 return@forEach
             }
         }
@@ -175,8 +170,6 @@ object JtxContract {
 
     @Suppress("unused")
     object JtxICalObject {
-
-
 
         /** The name of the the content URI for IcalObjects.
          * This is a general purpose table containing general columns
@@ -555,8 +548,6 @@ object JtxContract {
         const val OTHER = "other"
 
 
-
-
         /**
          * This enum class defines the possible values for the attribute status of an [JtxICalObject] for Journals/Notes
          *  Use its name when the string representation is required, e.g. StatusJournal.DRAFT.name.
@@ -748,6 +739,7 @@ object JtxContract {
         enum class Cutype {
             INDIVIDUAL, GROUP, RESOURCE, ROOM, UNKNOWN
         }
+
         /**
          * This enum class defines the possible values for the attribute Role of an [JtxAttendee]
          * Use its name when the string representation is required, e.g. Role.`REQ-PARTICIPANT`.name.
@@ -755,14 +747,16 @@ object JtxContract {
         enum class Role {
             CHAIR, `REQ-PARTICIPANT`, `OPT-PARTICIPANT`, `NON-PARTICIPANT`
         }
+
         /** This enum class defines the possible values for the attribute [JtxAttendee] for the Component VJOURNAL  */
         @Suppress("unused")
-        enum class PartstatJournal  {
+        enum class PartstatJournal {
             `NEEDS-ACTION`, ACCEPTED, DECLINED
         }
+
         /** This enum class defines the possible values for the attribute [JtxAttendee] for the Component VTODO  */
         @Suppress("unused")
-        enum class PartstatTodo  {
+        enum class PartstatTodo {
             `NEEDS-ACTION`, ACCEPTED, DECLINED, TENTATIVE, DELEGATED, COMPLETED, `IN-PROCESS`
         }
     }
@@ -1372,13 +1366,13 @@ object JtxContract {
 
         /** This enum class defines the possible values for the attribute [TRIGGER_RELATIVE_TO] for the Component VALARM  */
         @Suppress("unused")
-        enum class AlarmRelativeTo  {
+        enum class AlarmRelativeTo {
             START, END
         }
 
         /** This enum class defines the possible values for the attribute [ACTION] for the Component VALARM  */
         @Suppress("unused")
-        enum class AlarmAction  {
+        enum class AlarmAction {
             AUDIO, DISPLAY, EMAIL
         }
     }
@@ -1411,4 +1405,5 @@ object JtxContract {
          */
         const val UNKNOWN_VALUE = "value"
     }
+
 }

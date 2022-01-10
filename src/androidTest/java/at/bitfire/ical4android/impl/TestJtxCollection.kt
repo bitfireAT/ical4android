@@ -6,9 +6,11 @@ package at.bitfire.ical4android.impl
 
 import android.accounts.Account
 import android.content.ContentProviderClient
-import at.bitfire.ical4android.*
+import at.bitfire.ical4android.JtxCollection
+import at.bitfire.ical4android.JtxCollectionFactory
+import at.bitfire.ical4android.JtxICalObject
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
-import at.bitfire.jtx.JtxContract
+import at.techbee.jtx.JtxContract
 import java.util.*
 
 class TestJtxCollection(
@@ -16,7 +18,6 @@ class TestJtxCollection(
         provider: ContentProviderClient,
         id: Long
 ): JtxCollection<JtxICalObject>(account, provider, TestJtxIcalObject.Factory, id) {
-
 
     /**
      * Queries [JtxContract.JtxICalObject] from this collection. Adds a WHERE clause that restricts the

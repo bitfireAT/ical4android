@@ -13,10 +13,10 @@ import android.database.DatabaseUtils
 import android.os.ParcelFileDescriptor
 import androidx.test.platform.app.InstrumentationRegistry
 import at.bitfire.ical4android.impl.TestJtxCollection
-import at.bitfire.jtx.JtxContract
-import at.bitfire.jtx.JtxContract.JtxICalObject.Component
-import at.bitfire.jtx.JtxContract.JtxICalObject
-import at.bitfire.jtx.JtxContract.asSyncAdapter
+import at.techbee.jtx.JtxContract
+import at.techbee.jtx.JtxContract.JtxICalObject
+import at.techbee.jtx.JtxContract.JtxICalObject.Component
+import at.techbee.jtx.JtxContract.asSyncAdapter
 import junit.framework.TestCase.*
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Property
@@ -26,7 +26,6 @@ import org.junit.Before
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.InputStreamReader
-
 
 class JtxICalObjectTest {
 
@@ -601,7 +600,6 @@ class JtxICalObjectTest {
 
     @Test
     fun assertAlarm_trigger_duration() {
-
         val cv = ContentValues().apply {
             put(JtxICalObject.COMPONENT, Component.VTODO.name)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
@@ -638,7 +636,6 @@ class JtxICalObjectTest {
 
     @Test
     fun assertAlarm_trigger_time_withoutTZ() {
-
         val cv = ContentValues().apply {
             put(JtxICalObject.COMPONENT, Component.VTODO.name)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
@@ -672,7 +669,6 @@ class JtxICalObjectTest {
 
     @Test
     fun assertAlarm_trigger_time_UTC() {
-
         val cv = ContentValues().apply {
             put(JtxICalObject.COMPONENT, Component.VTODO.name)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)
@@ -710,7 +706,6 @@ class JtxICalObjectTest {
 
     @Test
     fun assertAlarm_trigger_time_Vienna() {
-
         val cv = ContentValues().apply {
             put(JtxICalObject.COMPONENT, Component.VTODO.name)
             put(JtxICalObject.ICALOBJECT_COLLECTIONID, collection?.id)

@@ -4,7 +4,6 @@
 
 package at.bitfire.ical4android
 
-
 import android.content.ContentUris
 import android.content.ContentValues
 import android.net.ParseException
@@ -13,9 +12,9 @@ import android.os.ParcelFileDescriptor
 import android.util.Base64
 import android.util.Log
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
-import at.bitfire.jtx.JtxContract
-import at.bitfire.jtx.JtxContract.JtxICalObject.TZ_ALLDAY
-import at.bitfire.jtx.JtxContract.asSyncAdapter
+import at.techbee.jtx.JtxContract
+import at.techbee.jtx.JtxContract.JtxICalObject.TZ_ALLDAY
+import at.techbee.jtx.JtxContract.asSyncAdapter
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
@@ -27,14 +26,12 @@ import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
 import java.io.*
-import java.lang.IllegalArgumentException
-import java.lang.NullPointerException
 import java.net.URI
 import java.net.URISyntaxException
 import java.time.format.DateTimeParseException
 import java.util.*
 import java.util.TimeZone
-
+import java.util.logging.Level
 
 open class JtxICalObject(
     val collection: JtxCollection<JtxICalObject>
@@ -584,7 +581,7 @@ open class JtxICalObject(
                                     this.parameters.add(Related.END)
                             }
                         } catch (e: DateTimeParseException) {
-                            Log.w("TriggerDuration", "Could not parse Trigger duration as Duration. \n$e")
+                            Ical4Android.log.log(Level.WARNING, "Could not parse Trigger duration as Duration.", e)
                         }
                     })
 
@@ -607,7 +604,7 @@ open class JtxICalObject(
                                 }
                             }
                         } catch (e: ParseException) {
-                            Log.i("AlarmDateTime", "TriggerTime could not be parsed. \n$e")
+                            Ical4Android.log.log(Level.WARNING, "TriggerTime could not be parsed.", e)
                         }})
                 }
                 alarm.summary?.let { add(Summary(it)) }
@@ -617,7 +614,7 @@ open class JtxICalObject(
                         val dur = java.time.Duration.parse(it)
                         this.duration = dur
                     } catch (e: DateTimeParseException) {
-                        Log.w("AlarmDuration", "Could not parse duration as Duration. \n$e")
+                        Ical4Android.log.log(Level.WARNING, "Could not parse duration as Duration.", e)
                     }
                 }) }
                 alarm.description?.let { add(Description(it)) }
@@ -666,7 +663,7 @@ open class JtxICalObject(
             try {
                 props += Url(URI(it))
             } catch (e: URISyntaxException) {
-                Log.w("ical4j processing", "Ignoring invalid task URL: $url", e)
+                Ical4Android.log.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
             }
         }
         //organizer?.let { props += it }
@@ -812,11 +809,11 @@ open class JtxICalObject(
                     }
                 }
             } catch (e: FileNotFoundException) {
-                Log.w("Attachment", "File not found at the given Uri: ${attachment.uri}")
+                Ical4Android.log.log(Level.WARNING, "File not found at the given Uri: ${attachment.uri}", e)
             } catch (e: NullPointerException) {
-                Log.w("Attachment", "Provided Uri was empty: ${attachment.uri}")
+                Ical4Android.log.log(Level.WARNING, "Provided Uri was empty: ${attachment.uri}", e)
             } catch (e: IllegalArgumentException) {
-                Log.w("Attachment", "Uri could not be parsed: ${attachment.uri}")
+                Ical4Android.log.log(Level.WARNING, "Uri could not be parsed: ${attachment.uri}", e)
             }
         }
 
@@ -1061,10 +1058,8 @@ duration?.let(props::add)
      * @return the Content [Uri] of the inserted object
      */
     fun add(): Uri {
-
         val values = this.toContentValues()
 
-        Log.d("Calling add", "Lets see what happens")
         val newUri = collection.client.insert(
             JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account),
             values
@@ -1074,7 +1069,6 @@ duration?.let(props::add)
         insertOrUpdateListProperties(false)
 
         return newUri
-
     }
 
     /**

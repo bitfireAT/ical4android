@@ -12,8 +12,8 @@ import android.content.Context
 import androidx.test.platform.app.InstrumentationRegistry
 import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
 import at.bitfire.ical4android.impl.TestJtxCollection
-import at.bitfire.jtx.JtxContract
-import at.bitfire.jtx.JtxContract.asSyncAdapter
+import at.techbee.jtx.JtxContract
+import at.techbee.jtx.JtxContract.asSyncAdapter
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import org.junit.After

@@ -10,10 +10,9 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
-import at.bitfire.jtx.JtxContract
-import at.bitfire.jtx.JtxContract.asSyncAdapter
+import at.techbee.jtx.JtxContract
+import at.techbee.jtx.JtxContract.asSyncAdapter
 import java.util.*
 
 open class JtxCollection<out T: JtxICalObject>(val account: Account,
@@ -82,10 +81,9 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
      * @return a list of content values of the deleted jtxICalObjects
      */
     fun queryDeletedICalObjects(): List<ContentValues> {
-
         val values = mutableListOf<ContentValues>()
         client.query(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), null, "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ? AND ${JtxContract.JtxICalObject.DELETED} = ?", arrayOf(id.toString(), "1"), null).use { cursor ->
-            Log.d("findDeleted", "Found ${cursor?.count} deleted records in ${account.name}")
+            Ical4Android.log.fine("findDeleted: found ${cursor?.count} deleted records in ${account.name}")
             while (cursor?.moveToNext() == true) {
                 values.add(cursor.toValues())
             }
@@ -98,10 +96,9 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
      * @return a list of content values of the dirty jtxICalObjects
      */
     fun queryDirtyICalObjects(): List<ContentValues> {
-
         val values = mutableListOf<ContentValues>()
         client.query(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), null, "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ? AND ${JtxContract.JtxICalObject.DIRTY} = ?", arrayOf(id.toString(), "1"), null).use { cursor ->
-            Log.d("findDirty", "Found ${cursor?.count} dirty records in ${account.name}")
+            Ical4Android.log.fine("findDirty: found ${cursor?.count} dirty records in ${account.name}")
             while (cursor?.moveToNext() == true) {
                 values.add(cursor.toValues())
             }
@@ -114,10 +111,9 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
      * @return Content Values of the found item with the given filename or null if the result was empty or more than 1
      */
     fun queryByFilename(filename: String): ContentValues? {
-
         client.query(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), null, "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ? AND ${JtxContract.JtxICalObject.FILENAME} = ?", arrayOf(id.toString(), filename), null).use { cursor ->
-            Log.d("queryByFilename", "Found ${cursor?.count} records in ${account.name}")
-            if(cursor?.count != 1)
+            Ical4Android.log.fine("queryByFilename: found ${cursor?.count} records in ${account.name}")
+            if (cursor?.count != 1)
                 return null
             cursor.moveToFirst()
             return cursor.toValues()
@@ -130,7 +126,6 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
      * @return the number of records that were updated
      */
     fun updateSetFlags(flags: Int): Int {
-
         val values = ContentValues(1)
         values.put(JtxContract.JtxICalObject.FLAGS, flags)
         return client.update(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), values, "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ? AND ${JtxContract.JtxICalObject.DIRTY} = ?", arrayOf(id.toString(), "0"))
@@ -141,9 +136,8 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
      * @param [flags] of the entries that should be deleted
      * @return the number of deleted records
      */
-    fun deleteByFlags(flags: Int): Int {
-        return client.delete(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), "${JtxContract.JtxICalObject.DIRTY} = ? AND ${JtxContract.JtxICalObject.FLAGS} = ? ", arrayOf("0", flags.toString()))
-    }
+    fun deleteByFlags(flags: Int) =
+        client.delete(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), "${JtxContract.JtxICalObject.DIRTY} = ? AND ${JtxContract.JtxICalObject.FLAGS} = ? ", arrayOf("0", flags.toString()))
 
     /**
      * Updates the eTag value of all entries within a collection to the given eTag
@@ -167,14 +161,12 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
      *         present in both directions.
      */
     fun updateRelatedTo() {
-
         // STEP 1: first find entries to update (all entries with 0 in related-to)
         client.query(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxRelatedto.TEXT), "${JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID} = ?", arrayOf("0"), null).use {
             while(it?.moveToNext() == true) {
                 val uid2upddate = it.getString(0)
 
                 client.query(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxICalObject.ID), "${JtxContract.JtxICalObject.UID} = ?", arrayOf(uid2upddate), null).use { idOfthisUidCursor ->
-
                     if (idOfthisUidCursor?.moveToFirst() == true) {
                         val idOfthisUid = idOfthisUidCursor.getLong(0)
 
@@ -202,13 +194,10 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
         client.query(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxRelatedto.ICALOBJECT_ID, JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID, JtxContract.JtxRelatedto.RELTYPE), "${JtxContract.JtxRelatedto.RELTYPE} = ?", arrayOf(JtxContract.JtxRelatedto.Reltype.PARENT.name), null).use {
                 cursorAllLinkedParents ->
             while (cursorAllLinkedParents?.moveToNext() == true) {
-
                 val icalObjectId = cursorAllLinkedParents.getString(0)
                 val linkedIcalObjectId = cursorAllLinkedParents.getString(1)
 
-                client.query(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxRelatedto.ICALOBJECT_ID, JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID, JtxContract.JtxRelatedto.RELTYPE), "${JtxContract.JtxRelatedto.ICALOBJECT_ID} = ? AND ${JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID} = ? AND ${JtxContract.JtxRelatedto.RELTYPE} = ?", arrayOf(linkedIcalObjectId.toString(), icalObjectId.toString(), JtxContract.JtxRelatedto.Reltype.CHILD.name), null).use {
-                        cursor ->
-
+                client.query(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxRelatedto.ICALOBJECT_ID, JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID, JtxContract.JtxRelatedto.RELTYPE), "${JtxContract.JtxRelatedto.ICALOBJECT_ID} = ? AND ${JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID} = ? AND ${JtxContract.JtxRelatedto.RELTYPE} = ?", arrayOf(linkedIcalObjectId.toString(), icalObjectId.toString(), JtxContract.JtxRelatedto.Reltype.CHILD.name), null).use {  cursor ->
                     // if the query does not bring any result, then we insert the opposite relationship
                     if (cursor?.moveToFirst() == false) {
 
@@ -216,8 +205,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
                         client.query(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxICalObject.UID), "${JtxContract.JtxICalObject.ID} = ?", arrayOf(linkedIcalObjectId.toString()), null).use {
                                 foundIcalObjectCursor ->
 
-                            if(foundIcalObjectCursor?.moveToFirst() == true) {
-
+                            if (foundIcalObjectCursor?.moveToFirst() == true) {
                                 val uid = foundIcalObjectCursor.getString(0)
 
                                 val cv = ContentValues().apply {
@@ -273,6 +261,5 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
             }
         }
     }
-
 
 }
