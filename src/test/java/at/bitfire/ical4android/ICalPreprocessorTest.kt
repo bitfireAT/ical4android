@@ -1,3 +1,7 @@
+/***************************************************************************************************
+ * Copyright © All Contributors. See LICENSE and AUTHORS in the root directory for details.
+ **************************************************************************************************/
+
 package at.bitfire.ical4android
 
 import net.fortuna.ical4j.data.CalendarBuilder
