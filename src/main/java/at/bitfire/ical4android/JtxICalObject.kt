@@ -10,7 +10,6 @@ import android.net.ParseException
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.util.Base64
-import android.util.Log
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
 import at.techbee.jtx.JtxContract
 import at.techbee.jtx.JtxContract.JtxICalObject.TZ_ALLDAY
@@ -536,11 +535,11 @@ open class JtxICalObject(
     }
 
     /**
-     * Takes the current JtxICalObject, transforms it to an iCalendar and writes it in an OutputStream
-     * @param [os] OutputStream where iCalendar should be written to
+     * Takes the current JtxICalObject and transforms it to a Calendar (ical4j)
+     * @return The current JtxICalObject transformed into a ical4j Calendar
      */
     @UsesThreadContextClassLoader
-    fun write(os: OutputStream) {
+    fun getICalendarFormat(): Calendar? {
         Ical4Android.checkThreadContextClassLoader()
 
         val ical = Calendar()
@@ -550,7 +549,7 @@ open class JtxICalObject(
         val calComponent = when (component) {
             JtxContract.JtxICalObject.Component.VTODO.name -> VToDo(true /* generates DTSTAMP */)
             JtxContract.JtxICalObject.Component.VJOURNAL.name -> VJournal(true /* generates DTSTAMP */)
-            else -> return
+            else -> return null
         }
         ical.components += calComponent
         addProperties(calComponent.properties)
@@ -626,7 +625,17 @@ open class JtxICalObject(
         }
 
         ICalendar.softValidate(ical)
-        CalendarOutputter(false).output(ical, os)
+        return ical
+    }
+
+    /**
+     * Takes the current JtxICalObject, transforms it to an iCalendar and writes it in an OutputStream
+     * @param [os] OutputStream where iCalendar should be written to
+     */
+    @UsesThreadContextClassLoader
+    fun write(os: OutputStream) {
+        Ical4Android.checkThreadContextClassLoader()
+        CalendarOutputter(false).output(this.getICalendarFormat(), os)
     }
 
     /**
