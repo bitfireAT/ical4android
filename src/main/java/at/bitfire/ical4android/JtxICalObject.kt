@@ -223,7 +223,6 @@ open class JtxICalObject(
             ical.components.forEach { component ->
 
                 val iCalObject = JtxICalObject(collection)
-
                 when(component) {
                     is VToDo -> {
                         iCalObject.component = JtxContract.JtxICalObject.Component.VTODO.name
@@ -231,6 +230,7 @@ open class JtxICalObject(
                             iCalObject.uid = component.uid.value                         // generated UID is overwritten here (if present)
                         extractProperties(iCalObject, component.properties)
                         extractVAlarms(iCalObject, component.components)                 // accessing the components needs an explicit type
+                        iCalObjectList.add(iCalObject)
                     }
                     is VJournal -> {
                         iCalObject.component = JtxContract.JtxICalObject.Component.VJOURNAL.name
@@ -238,9 +238,9 @@ open class JtxICalObject(
                             iCalObject.uid = component.uid.value
                         extractProperties(iCalObject, component.properties)
                         extractVAlarms(iCalObject, component.components)                  // accessing the components needs an explicit type
+                        iCalObjectList.add(iCalObject)
                     }
                 }
-                iCalObjectList.add(iCalObject)
             }
             return iCalObjectList
         }
