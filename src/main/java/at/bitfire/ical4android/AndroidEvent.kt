@@ -1020,7 +1020,6 @@ abstract class AndroidEvent(
     }
 
 
-    @Deprecated("Use Uri.asSyncAdapter() instead")
     protected fun eventSyncURI(): Uri {
         val id = requireNotNull(id)
         return ContentUris.withAppendedId(Events.CONTENT_URI, id).asSyncAdapter(calendar.account)
