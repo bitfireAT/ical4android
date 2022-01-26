@@ -15,6 +15,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.rule.GrantPermissionRule
 import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
+import at.bitfire.ical4android.MiscUtils.UriHelper.asSyncAdapter
 import at.bitfire.ical4android.impl.TestCalendar
 import at.bitfire.ical4android.impl.TestEvent
 import at.bitfire.ical4android.util.AndroidTimeUtils
@@ -118,7 +119,7 @@ class AndroidEventTest {
 
     private fun firstExtendedProperty(values: ContentValues, mimeType: String): String? {
         val id = values.getAsInteger(Events._ID)
-        provider.query(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI), arrayOf(ExtendedProperties.VALUE),
+        provider.query(ExtendedProperties.CONTENT_URI.asSyncAdapter(testAccount), arrayOf(ExtendedProperties.VALUE),
                 "${ExtendedProperties.EVENT_ID}=?", arrayOf(id.toString()), null)?.use {
             if (it.moveToNext())
                 return it.getString(0)
@@ -697,7 +698,7 @@ class AndroidEventTest {
 
     private fun firstReminder(row: ContentValues): ContentValues? {
         val id = row.getAsInteger(Events._ID)
-        provider.query(calendar.syncAdapterURI(Reminders.CONTENT_URI), null,
+        provider.query(Reminders.CONTENT_URI.asSyncAdapter(testAccount), null,
                 "${Reminders.EVENT_ID}=?", arrayOf(id.toString()), null)?.use { cursor ->
             if (cursor.moveToNext()) {
                 val subRow = ContentValues(cursor.count)
@@ -883,7 +884,7 @@ class AndroidEventTest {
 
     private fun firstAttendee(row: ContentValues): ContentValues? {
         val id = row.getAsInteger(Events._ID)
-        provider.query(calendar.syncAdapterURI(Attendees.CONTENT_URI), null,
+        provider.query(Attendees.CONTENT_URI.asSyncAdapter(testAccount), null,
                 "${Attendees.EVENT_ID}=?", arrayOf(id.toString()), null)?.use { cursor ->
             if (cursor.moveToNext()) {
                 val subRow = ContentValues(cursor.count)
@@ -1262,7 +1263,7 @@ class AndroidEventTest {
 
     private fun firstException(values: ContentValues): ContentValues? {
         val id = values.getAsInteger(Events._ID)
-        provider.query(calendar.syncAdapterURI(Events.CONTENT_URI), null,
+        provider.query(Events.CONTENT_URI.asSyncAdapter(testAccount), null,
                 "${Events.ORIGINAL_ID}=?", arrayOf(id.toString()), null)?.use { cursor ->
             if (cursor.moveToNext()) {
                 val result = ContentValues(cursor.count)
@@ -1394,7 +1395,10 @@ class AndroidEventTest {
         valuesBuilder(values)
         Ical4Android.log.info("Inserting test event: $values")
         val uri = provider.insert(
-                if (asSyncAdapter) destinationCalendar.syncAdapterURI(Events.CONTENT_URI) else Events.CONTENT_URI,
+                if (asSyncAdapter)
+                    Events.CONTENT_URI.asSyncAdapter(testAccount)
+                else
+                    Events.CONTENT_URI,
                 values)!!
         val id = ContentUris.parseId(uri)
 
@@ -1566,7 +1570,7 @@ class AndroidEventTest {
             urlValues.put(ExtendedProperties.EVENT_ID, id)
             urlValues.put(ExtendedProperties.NAME, AndroidEvent.MIMETYPE_URL)
             urlValues.put(ExtendedProperties.VALUE, "https://example.com")
-            provider.insert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI), urlValues)
+            provider.insert(ExtendedProperties.CONTENT_URI.asSyncAdapter(testAccount), urlValues)
         }, valuesBuilder = {}).let { result ->
             assertEquals(URI("https://example.com"), result.url)
         }
@@ -1675,7 +1679,7 @@ class AndroidEventTest {
         populateEvent(true, valuesBuilder = {
             put(Events.ORGANIZER, "organizer@example.com")
         }, insertCallback = { id ->
-            provider.insert(calendar.syncAdapterURI(Attendees.CONTENT_URI), ContentValues().apply {
+            provider.insert(Attendees.CONTENT_URI.asSyncAdapter(testAccount), ContentValues().apply {
                 put(Attendees.EVENT_ID, id)
                 put(Attendees.ATTENDEE_EMAIL, "organizer@example.com")
                 put(Attendees.ATTENDEE_TYPE, Attendees.RELATIONSHIP_ORGANIZER)
@@ -1717,7 +1721,7 @@ class AndroidEventTest {
         populateEvent(true, valuesBuilder = {
             put(Events.ACCESS_LEVEL, Events.ACCESS_DEFAULT)
         }, insertCallback = { id ->
-            provider.insert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI), ContentValues().apply {
+            provider.insert(ExtendedProperties.CONTENT_URI.asSyncAdapter(testAccount), ContentValues().apply {
                 put(ExtendedProperties.EVENT_ID, id)
                 put(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
                 put(ExtendedProperties.VALUE, UnknownProperty.toJsonString(Clazz.CONFIDENTIAL))
@@ -1741,7 +1745,7 @@ class AndroidEventTest {
         populateEvent(true, valuesBuilder = {
             put(Events.ACCESS_LEVEL, Events.ACCESS_DEFAULT)
         }, insertCallback = { id ->
-            provider.insert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI), ContentValues().apply {
+            provider.insert(ExtendedProperties.CONTENT_URI.asSyncAdapter(testAccount), ContentValues().apply {
                 put(ExtendedProperties.EVENT_ID, id)
                 put(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
                 put(ExtendedProperties.VALUE, UnknownProperty.toJsonString(Clazz("TOP-SECRET")))
@@ -1766,7 +1770,7 @@ class AndroidEventTest {
             reminderValues.put(Reminders.EVENT_ID, id)
             builder(reminderValues)
             Ical4Android.log.info("Inserting test reminder: $reminderValues")
-            provider.insert(destinationCalendar.syncAdapterURI(Reminders.CONTENT_URI), reminderValues)
+            provider.insert(Reminders.CONTENT_URI.asSyncAdapter(testAccount), reminderValues)
         }).let { result ->
             return result.alarms.firstOrNull()
         }
@@ -1843,7 +1847,7 @@ class AndroidEventTest {
             attendeeValues.put(Attendees.EVENT_ID, id)
             builder(attendeeValues)
             Ical4Android.log.info("Inserting test attendee: $attendeeValues")
-            provider.insert(calendar.syncAdapterURI(Attendees.CONTENT_URI), attendeeValues)
+            provider.insert(Attendees.CONTENT_URI.asSyncAdapter(testAccount), attendeeValues)
         }).let { result ->
             return result.attendees.firstOrNull()
         }
@@ -2082,7 +2086,7 @@ class AndroidEventTest {
             values.put(ExtendedProperties.EVENT_ID, id)
             values.put(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
             values.put(ExtendedProperties.VALUE, UnknownProperty.toJsonString(unknownProperty))
-            provider.insert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI), values)
+            provider.insert(ExtendedProperties.CONTENT_URI.asSyncAdapter(testAccount), values)
         }).unknownProperties.first
         assertEquals("X-NAME", result.name)
         assertEquals("en", result.getParameter<Language>(Parameter.LANGUAGE).value)
@@ -2095,7 +2099,7 @@ class AndroidEventTest {
                 val exceptionValues = ContentValues()
                 exceptionValues.put(Events.CALENDAR_ID, calendar.id)
                 exceptionBuilder(exceptionValues)
-                provider.insert(calendar.syncAdapterURI(Events.CONTENT_URI), exceptionValues)
+                provider.insert(Events.CONTENT_URI.asSyncAdapter(testAccount), exceptionValues)
             })
 
     @Test

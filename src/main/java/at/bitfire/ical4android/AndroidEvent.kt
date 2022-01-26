@@ -15,6 +15,7 @@ import android.util.Patterns
 import androidx.annotation.CallSuper
 import at.bitfire.ical4android.BatchOperation.CpoBuilder
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
+import at.bitfire.ical4android.MiscUtils.UriHelper.asSyncAdapter
 import at.bitfire.ical4android.util.AndroidTimeUtils
 import at.bitfire.ical4android.util.TimeApiExtensions
 import at.bitfire.ical4android.util.TimeApiExtensions.requireZoneId
@@ -113,7 +114,7 @@ abstract class AndroidEvent(
             try {
                 iterEvents = EventsEntity.newEntityIterator(
                         calendar.provider.query(
-                                calendar.syncAdapterURI(ContentUris.withAppendedId(EventsEntity.CONTENT_URI, id)),
+                                ContentUris.withAppendedId(EventsEntity.CONTENT_URI, id).asSyncAdapter(calendar.account),
                                 null, null, null, null),
                         calendar.provider
                 )
@@ -448,7 +449,7 @@ abstract class AndroidEvent(
         requireNotNull(id)
         val event = requireNotNull(event)
 
-        calendar.provider.query(calendar.syncAdapterURI(Events.CONTENT_URI),
+        calendar.provider.query(Events.CONTENT_URI.asSyncAdapter(calendar.account),
                 null,
                 Events.ORIGINAL_ID + "=?", arrayOf(id.toString()), null)?.use { c ->
             while (c.moveToNext()) {
@@ -529,7 +530,7 @@ abstract class AndroidEvent(
         val event = requireNotNull(event)
         val builder =
                 if (id == null)
-                    CpoBuilder.newInsert(calendar.syncAdapterURI(eventsSyncURI()))
+                    CpoBuilder.newInsert(Events.CONTENT_URI.asSyncAdapter(calendar.account))
                 else
                     CpoBuilder.newUpdate(eventSyncURI())
 
@@ -585,7 +586,7 @@ abstract class AndroidEvent(
             }
 
             val exBuilder = CpoBuilder
-                    .newInsert(calendar.syncAdapterURI(eventsSyncURI()))
+                    .newInsert(Events.CONTENT_URI.asSyncAdapter(calendar.account))
                     .withEventId(Events.ORIGINAL_ID, idxEvent)
 
             buildEvent(exception, exBuilder)
@@ -655,13 +656,13 @@ abstract class AndroidEvent(
             val batch = BatchOperation(calendar.provider)
             deleteExceptions(batch)
             batch   .enqueue(CpoBuilder
-                            .newDelete(calendar.remindersSyncUri())
+                            .newDelete(Reminders.CONTENT_URI.asSyncAdapter(calendar.account))
                             .withSelection("${Reminders.EVENT_ID}=?", arrayOf(existingId.toString())))
                     .enqueue(CpoBuilder
-                            .newDelete(calendar.attendeesSyncUri())
+                            .newDelete(Attendees.CONTENT_URI.asSyncAdapter(calendar.account))
                             .withSelection("${Attendees.EVENT_ID}=?", arrayOf(existingId.toString())))
                     .enqueue(CpoBuilder
-                            .newDelete(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
+                            .newDelete(ExtendedProperties.CONTENT_URI.asSyncAdapter(calendar.account))
                             .withSelection(
                                     "${ExtendedProperties.EVENT_ID}=? AND ${ExtendedProperties.NAME} IN (?,?,?)",
                                     arrayOf(existingId.toString(), MIMETYPE_CATEGORIES, MIMETYPE_URL, UnknownProperty.CONTENT_ITEM_TYPE)
@@ -697,7 +698,7 @@ abstract class AndroidEvent(
     protected fun deleteExceptions(batch: BatchOperation) {
         val existingId = requireNotNull(id)
         batch.enqueue(CpoBuilder
-                .newDelete(eventsSyncURI())
+                .newDelete(Events.CONTENT_URI.asSyncAdapter(calendar.account))
                 .withSelection("${Events.ORIGINAL_ID}=?", arrayOf(existingId.toString())))
     }
 
@@ -857,7 +858,7 @@ abstract class AndroidEvent(
         builder.withValue(Events.EVENT_COLOR_KEY, event.color?.let { color ->
             val colorName = color.name
             // set event color (if it's available for this account)
-            calendar.provider.query(calendar.syncAdapterURI(Colors.CONTENT_URI), arrayOf(Colors.COLOR_KEY),
+            calendar.provider.query(Colors.CONTENT_URI.asSyncAdapter(calendar.account), arrayOf(Colors.COLOR_KEY),
                     "${Colors.COLOR_KEY}=? AND ${Colors.COLOR_TYPE}=${Colors.TYPE_EVENT}", arrayOf(colorName), null)?.use { cursor ->
                 if (cursor.moveToNext())
                     return@let colorName
@@ -907,7 +908,7 @@ abstract class AndroidEvent(
 
     protected open fun insertReminder(batch: BatchOperation, idxEvent: Int?, alarm: VAlarm) {
         val builder = CpoBuilder
-                .newInsert(calendar.remindersSyncUri())
+                .newInsert(Reminders.CONTENT_URI.asSyncAdapter(calendar.account))
                 .withEventId(Reminders.EVENT_ID, idxEvent)
 
         val method = when (alarm.action?.value?.uppercase(Locale.ROOT)) {
@@ -929,7 +930,7 @@ abstract class AndroidEvent(
 
     protected open fun insertAttendee(batch: BatchOperation, idxEvent: Int?, attendee: Attendee, organizer: String) {
         val builder = CpoBuilder
-                .newInsert(calendar.syncAdapterURI(Attendees.CONTENT_URI))
+                .newInsert(Attendees.CONTENT_URI.asSyncAdapter(calendar.account))
                 .withEventId(Attendees.EVENT_ID, idxEvent)
 
         val member = attendee.calAddress
@@ -966,7 +967,7 @@ abstract class AndroidEvent(
 
     protected open fun insertExtendedProperty(batch: BatchOperation, idxEvent: Int?, mimeType: String, value: String) {
         val builder = CpoBuilder
-                .newInsert(calendar.syncAdapterURI(ExtendedProperties.CONTENT_URI))
+                .newInsert(ExtendedProperties.CONTENT_URI.asSyncAdapter(calendar.account))
                 .withEventId(ExtendedProperties.EVENT_ID, idxEvent)
                 .withValue(ExtendedProperties.NAME, mimeType)
                 .withValue(ExtendedProperties.VALUE, value)
@@ -1019,11 +1020,10 @@ abstract class AndroidEvent(
     }
 
 
-    protected fun eventsSyncURI() = calendar.syncAdapterURI(Events.CONTENT_URI)
-
+    @Deprecated("Use Uri.asSyncAdapter() instead")
     protected fun eventSyncURI(): Uri {
         val id = requireNotNull(id)
-        return calendar.syncAdapterURI(ContentUris.withAppendedId(Events.CONTENT_URI, id))
+        return ContentUris.withAppendedId(Events.CONTENT_URI, id).asSyncAdapter(calendar.account)
     }
 
     override fun toString() = MiscUtils.reflectionToString(this)

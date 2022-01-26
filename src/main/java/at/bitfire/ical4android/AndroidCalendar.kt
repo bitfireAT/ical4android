@@ -11,6 +11,7 @@ import android.content.ContentValues
 import android.net.Uri
 import android.provider.CalendarContract.*
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
+import at.bitfire.ical4android.MiscUtils.UriHelper.asSyncAdapter
 import java.io.FileNotFoundException
 import java.util.*
 import java.util.logging.Level
@@ -58,12 +59,12 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             info.putAll(calendarBaseValues)
 
             Ical4Android.log.info("Creating local calendar: $info")
-            return provider.insert(syncAdapterURI(Calendars.CONTENT_URI, account), info) ?:
+            return provider.insert(Calendars.CONTENT_URI.asSyncAdapter(account), info) ?:
                     throw Exception("Couldn't create calendar: provider returned null")
         }
 
         fun insertColors(provider: ContentProviderClient, account: Account) {
-            provider.query(syncAdapterURI(Colors.CONTENT_URI, account), arrayOf(Colors.COLOR_KEY), null, null, null)?.use { cursor ->
+            provider.query(Colors.CONTENT_URI.asSyncAdapter(account), arrayOf(Colors.COLOR_KEY), null, null, null)?.use { cursor ->
                 if (cursor.count == Css3Color.values().size)
                     // colors already inserted and up to date
                     return
@@ -78,7 +79,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
                 values.put(Colors.COLOR_KEY, color.name)
                 values.put(Colors.COLOR, color.argb)
                 try {
-                    provider.insert(syncAdapterURI(Colors.CONTENT_URI, account), values)
+                    provider.insert(Colors.CONTENT_URI.asSyncAdapter(account), values)
                 } catch(e: Exception) {
                     Ical4Android.log.log(Level.WARNING, "Couldn't insert event color: ${color.name}", e)
                 }
@@ -94,23 +95,23 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
                2) account_type and account_name can't be specified in selection (causes SQLiteException)
                WORKAROUND: unassign event colors for each calendar
             */
-            provider.query(syncAdapterURI(Calendars.CONTENT_URI, account), arrayOf(Calendars._ID), null, null, null)?.use { cursor ->
+            provider.query(Calendars.CONTENT_URI.asSyncAdapter(account), arrayOf(Calendars._ID), null, null, null)?.use { cursor ->
                 while (cursor.moveToNext()) {
                     val calId = cursor.getLong(0)
                     val values = ContentValues(1)
                     values.putNull(Events.EVENT_COLOR_KEY)
-                    provider.update(syncAdapterURI(Events.CONTENT_URI, account), values,
+                    provider.update(Events.CONTENT_URI.asSyncAdapter(account), values,
                             "${Events.EVENT_COLOR_KEY} IS NOT NULL AND ${Events.CALENDAR_ID}=?", arrayOf(calId.toString()))
                 }
             }
 
             // remove color entries
-            provider.delete(syncAdapterURI(Colors.CONTENT_URI, account), null, null)
+            provider.delete(Colors.CONTENT_URI.asSyncAdapter(account), null, null)
         }
 
         fun<T: AndroidCalendar<AndroidEvent>> findByID(account: Account, provider: ContentProviderClient, factory: AndroidCalendarFactory<T>, id: Long): T {
             val iterCalendars = CalendarEntity.newEntityIterator(
-                    provider.query(syncAdapterURI(ContentUris.withAppendedId(CalendarEntity.CONTENT_URI, id), account), null, null, null, null)
+                    provider.query(ContentUris.withAppendedId(CalendarEntity.CONTENT_URI, id).asSyncAdapter(account), null, null, null, null)
             )
             try {
                 if (iterCalendars.hasNext()) {
@@ -127,7 +128,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 
         fun<T: AndroidCalendar<AndroidEvent>> find(account: Account, provider: ContentProviderClient, factory: AndroidCalendarFactory<T>, where: String?, whereArgs: Array<String>?): List<T> {
             val iterCalendars = CalendarEntity.newEntityIterator(
-                    provider.query(syncAdapterURI(CalendarEntity.CONTENT_URI, account), null, where, whereArgs, null)
+                    provider.query(CalendarEntity.CONTENT_URI.asSyncAdapter(account), null, where, whereArgs, null)
             )
             try {
                 val calendars = LinkedList<T>()
@@ -143,11 +144,6 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             }
         }
 
-        fun syncAdapterURI(uri: Uri, account: Account) = uri.buildUpon()
-                .appendQueryParameter(Calendars.ACCOUNT_NAME, account.name)
-                .appendQueryParameter(Calendars.ACCOUNT_TYPE, account.type)
-                .appendQueryParameter(CALLER_IS_SYNCADAPTER, "true")
-                .build()!!
     }
 
     var name: String? = null
@@ -189,7 +185,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
         val whereArgs = (_whereArgs ?: arrayOf()) + id.toString()
 
         val events = LinkedList<T>()
-        provider.query(eventsSyncURI(), null, where, whereArgs, null)?.use { cursor ->
+        provider.query(Events.CONTENT_URI.asSyncAdapter(account), null, where, whereArgs, null)?.use { cursor ->
             while (cursor.moveToNext())
                 events += eventFactory.fromProvider(this, cursor.toValues())
         }
@@ -200,16 +196,6 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
             ?: throw FileNotFoundException()
 
 
-    fun syncAdapterURI(uri: Uri) = uri.buildUpon()
-            .appendQueryParameter(CALLER_IS_SYNCADAPTER, "true")
-            .appendQueryParameter(Calendars.ACCOUNT_NAME, account.name)
-            .appendQueryParameter(Calendars.ACCOUNT_TYPE, account.type)
-            .build()!!
-
-    fun calendarSyncURI() = syncAdapterURI(ContentUris.withAppendedId(Calendars.CONTENT_URI, id))
-    fun eventsSyncURI() = syncAdapterURI(Events.CONTENT_URI)
-
-    fun attendeesSyncUri() = syncAdapterURI(Attendees.CONTENT_URI)
-    fun remindersSyncUri() = syncAdapterURI(Reminders.CONTENT_URI)
+    fun calendarSyncURI() = ContentUris.withAppendedId(Calendars.CONTENT_URI, id).asSyncAdapter(account)
 
 }

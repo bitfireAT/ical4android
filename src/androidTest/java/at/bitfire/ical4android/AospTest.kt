@@ -40,6 +40,8 @@ class AospTest {
     fun prepare() {
         calendarUri = provider.insert(
             CalendarContract.Calendars.CONTENT_URI.asSyncAdapter(), ContentValues().apply {
+                put(CalendarContract.Calendars.ACCOUNT_NAME, testAccount.name)
+                put(CalendarContract.Calendars.ACCOUNT_TYPE, testAccount.type)
                 put(CalendarContract.Calendars.NAME, "Test Calendar")
             }
         )!!
