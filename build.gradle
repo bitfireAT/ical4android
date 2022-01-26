@@ -5,7 +5,7 @@
 
 buildscript {
     ext.versions = [
-        kotlin: '1.6.0',
+        kotlin: '1.6.10',
         dokka: '1.5.0',
         ical4j: '3.1.2',
         // latest Apache Commons versions that don't require Java 8 (Android 7)
@@ -18,7 +18,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.4'
+        classpath 'com.android.tools.build:gradle:7.1.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:${versions.dokka}"
     }
@@ -57,15 +57,13 @@ android {
         jvmTarget = "1.8"
         useIR = true
     }
-
-    lintOptions {
-        disable 'AllowBackup'
-        disable 'InvalidPackage'
-    }
     packagingOptions {
-        exclude 'META-INF/DEPENDENCIES'
-        exclude 'META-INF/LICENSE'
-        exclude 'META-INF/*.md'
+        resources {
+            excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE', 'META-INF/*.md']
+        }
+    }
+    lint {
+        disable 'AllowBackup', 'InvalidPackage'
     }
 
     sourceSets {
