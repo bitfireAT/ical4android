@@ -675,8 +675,6 @@ open class JtxICalObject(
                 Ical4Android.log.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
             }
         }
-        //organizer?.let { props += it }
-
 
         classification?.let { props += Clazz(it) }
         status?.let { props += Status(it) }
@@ -1518,7 +1516,8 @@ duration?.let(props::add)
             language = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.LANGUAGE)
             other = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.OTHER)
         }
-        organizer = orgnzr
+        if(orgnzr.caladdress?.isNotEmpty() == true)   // we only take the organizer if there was a caladdress (otherwise an empty ORGANIZER is created)
+            organizer = orgnzr
 
         // Take care of attachments
         val attachmentContentValues = getAttachmentsContentValues()
