@@ -4,11 +4,14 @@
 
 package at.bitfire.ical4android
 
+import android.accounts.Account
 import android.content.ContentProviderClient
 import android.content.ContentValues
 import android.database.Cursor
 import android.database.DatabaseUtils
+import android.net.Uri
 import android.os.Build
+import android.provider.CalendarContract
 import org.apache.commons.lang3.StringUtils
 import java.lang.reflect.Modifier
 import java.util.*
@@ -88,6 +91,17 @@ object MiscUtils {
 
             return values
         }
+
+    }
+
+
+    object UriHelper {
+
+        fun Uri.asSyncAdapter(account: Account): Uri = buildUpon()
+            .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_NAME, account.name)
+            .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE, account.type)
+            .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
+            .build()
 
     }
 

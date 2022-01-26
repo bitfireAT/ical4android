@@ -15,6 +15,7 @@ import android.provider.CalendarContract.Colors
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
+import at.bitfire.ical4android.MiscUtils.UriHelper.asSyncAdapter
 import at.bitfire.ical4android.impl.TestCalendar
 import at.bitfire.ical4android.impl.TestEvent
 import net.fortuna.ical4j.model.property.DtEnd
@@ -110,7 +111,7 @@ class AndroidCalendarTest {
     }
 
     private fun countColors(account: Account): Int {
-        val uri = AndroidCalendar.syncAdapterURI(Colors.CONTENT_URI, testAccount)
+        val uri = Colors.CONTENT_URI.asSyncAdapter(testAccount)
         provider.query(uri, null, null, null, null)!!.use { cursor ->
             cursor.moveToNext()
             return cursor.count

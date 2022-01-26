@@ -9,6 +9,7 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
+import at.bitfire.ical4android.MiscUtils.UriHelper.asSyncAdapter
 import org.dmfs.tasks.contract.TaskContract
 import org.dmfs.tasks.contract.TaskContract.Property.Relation
 import org.dmfs.tasks.contract.TaskContract.TaskLists
@@ -22,14 +23,14 @@ import java.util.*
  * Communicates with third-party content providers to store the tasks.
  * Currently, only the OpenTasks tasks provider (org.dmfs.provider.tasks) is supported.
  */
-abstract class AndroidTaskList<out T: AndroidTask>(
-        val account: Account,
-        val provider: TaskProvider,
-        val taskFactory: AndroidTaskFactory<T>,
-        val id: Long
+abstract class AndroidTaskList<out T : AndroidTask>(
+    val account: Account,
+    val provider: TaskProvider,
+    val taskFactory: AndroidTaskFactory<T>,
+    val id: Long
 ) {
 
-	companion object {
+    companion object {
 
         fun create(account: Account, provider: TaskProvider, info: ContentValues): Uri {
             info.put(TaskContract.ACCOUNT_NAME, account.name)
@@ -37,12 +38,23 @@ abstract class AndroidTaskList<out T: AndroidTask>(
             info.put(TaskLists.ACCESS_LEVEL, 0)
 
             Ical4Android.log.info("Creating local task list: $info")
-            return provider.client.insert(TaskProvider.syncAdapterUri(provider.taskListsUri(), account), info) ?:
-                    throw CalendarStorageException("Couldn't create task list (empty result from provider)")
+            return provider.client.insert(provider.taskListsUri().asSyncAdapter(account), info)
+                ?: throw CalendarStorageException("Couldn't create task list (empty result from provider)")
         }
 
-        fun<T: AndroidTaskList<AndroidTask>> findByID(account: Account, provider: TaskProvider, factory: AndroidTaskListFactory<T>, id: Long): T {
-            provider.client.query(TaskProvider.syncAdapterUri(ContentUris.withAppendedId(provider.taskListsUri(), id), account), null, null, null, null)?.use { cursor ->
+        fun <T : AndroidTaskList<AndroidTask>> findByID(
+            account: Account,
+            provider: TaskProvider,
+            factory: AndroidTaskListFactory<T>,
+            id: Long
+        ): T {
+            provider.client.query(
+                ContentUris.withAppendedId(provider.taskListsUri(), id).asSyncAdapter(account),
+                null,
+                null,
+                null,
+                null
+            )?.use { cursor ->
                 if (cursor.moveToNext()) {
                     val taskList = factory.newInstance(account, provider, id)
                     taskList.populate(cursor.toValues())
@@ -52,12 +64,25 @@ abstract class AndroidTaskList<out T: AndroidTask>(
             throw FileNotFoundException()
         }
 
-        fun<T: AndroidTaskList<AndroidTask>> find(account: Account, provider: TaskProvider, factory: AndroidTaskListFactory<T>, where: String?, whereArgs: Array<String>?): List<T> {
+        fun <T : AndroidTaskList<AndroidTask>> find(
+            account: Account,
+            provider: TaskProvider,
+            factory: AndroidTaskListFactory<T>,
+            where: String?,
+            whereArgs: Array<String>?
+        ): List<T> {
             val taskLists = LinkedList<T>()
-            provider.client.query(TaskProvider.syncAdapterUri(provider.taskListsUri(), account), null, where, whereArgs, null)?.use { cursor ->
+            provider.client.query(
+                provider.taskListsUri().asSyncAdapter(account),
+                null,
+                where,
+                whereArgs,
+                null
+            )?.use { cursor ->
                 while (cursor.moveToNext()) {
                     val values = cursor.toValues()
-                    val taskList = factory.newInstance(account, provider, values.getAsLong(TaskLists._ID))
+                    val taskList =
+                        factory.newInstance(account, provider, values.getAsLong(TaskLists._ID))
                     taskList.populate(values)
                     taskLists += taskList
                 }
@@ -104,19 +129,22 @@ abstract class AndroidTaskList<out T: AndroidTask>(
      * so that missing [Tasks.PARENT_ID] fields are updated.
      *
      * @return number of touched [Relation] rows
-    */
+     */
     fun touchRelations(): Int {
         Ical4Android.log.fine("Touching relations to set parent_id")
         val batchOperation = BatchOperation(provider.client)
-        provider.client.query(tasksSyncUri(true), null,
-                "${Tasks.LIST_ID}=? AND ${Tasks.PARENT_ID} IS NULL AND ${Relation.MIMETYPE}=? AND ${Relation.RELATED_ID} IS NOT NULL",
-                arrayOf(id.toString(), Relation.CONTENT_ITEM_TYPE),
-                null, null)?.use { cursor ->
+        provider.client.query(
+            tasksSyncUri(true), null,
+            "${Tasks.LIST_ID}=? AND ${Tasks.PARENT_ID} IS NULL AND ${Relation.MIMETYPE}=? AND ${Relation.RELATED_ID} IS NOT NULL",
+            arrayOf(id.toString(), Relation.CONTENT_ITEM_TYPE),
+            null, null
+        )?.use { cursor ->
             while (cursor.moveToNext()) {
                 val values = cursor.toValues()
                 val id = values.getAsLong(Relation.PROPERTY_ID)
                 val propertyContentUri = ContentUris.withAppendedId(tasksPropertiesSyncUri(), id)
-                batchOperation.enqueue(BatchOperation.CpoBuilder
+                batchOperation.enqueue(
+                    BatchOperation.CpoBuilder
                         .newUpdate(propertyContentUri)
                         .withValue(Relation.RELATED_ID, values.getAsLong(Relation.RELATED_ID))
                 )
@@ -141,9 +169,10 @@ abstract class AndroidTaskList<out T: AndroidTask>(
 
         val tasks = LinkedList<T>()
         provider.client.query(
-                tasksSyncUri(),
-                null,
-                where, whereArgs, null)?.use { cursor ->
+            tasksSyncUri(),
+            null,
+            where, whereArgs, null
+        )?.use { cursor ->
             while (cursor.moveToNext())
                 tasks += taskFactory.fromProvider(this, cursor.toValues())
         }
@@ -151,19 +180,22 @@ abstract class AndroidTaskList<out T: AndroidTask>(
     }
 
     fun findById(id: Long) = queryTasks("${Tasks._ID}=?", arrayOf(id.toString())).firstOrNull()
-            ?: throw FileNotFoundException()
+        ?: throw FileNotFoundException()
 
 
-    fun taskListSyncUri() = TaskProvider.syncAdapterUri(ContentUris.withAppendedId(provider.taskListsUri(), id), account)
+    fun taskListSyncUri() =
+        ContentUris.withAppendedId(provider.taskListsUri(), id).asSyncAdapter(account)
+
     fun tasksSyncUri(loadProperties: Boolean = false): Uri {
-        val uri = TaskProvider.syncAdapterUri(provider.tasksUri(), account)
+        val uri = provider.tasksUri().asSyncAdapter(account)
         return if (loadProperties)
-            uri     .buildUpon()
-                    .appendQueryParameter(TaskContract.LOAD_PROPERTIES, "1")
-                    .build()
+            uri.buildUpon()
+                .appendQueryParameter(TaskContract.LOAD_PROPERTIES, "1")
+                .build()
         else
             uri
     }
-    fun tasksPropertiesSyncUri() = TaskProvider.syncAdapterUri(provider.propertiesUri(), account)
+
+    fun tasksPropertiesSyncUri() = provider.propertiesUri().asSyncAdapter(account)
 
 }

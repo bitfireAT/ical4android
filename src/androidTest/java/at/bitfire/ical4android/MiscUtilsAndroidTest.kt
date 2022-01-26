@@ -4,10 +4,13 @@
 
 package at.bitfire.ical4android
 
+import android.accounts.Account
 import android.content.ContentValues
 import android.database.MatrixCursor
+import android.net.Uri
 import androidx.test.filters.SmallTest
 import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
+import at.bitfire.ical4android.MiscUtils.UriHelper.asSyncAdapter
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -40,6 +43,17 @@ class MiscUtilsAndroidTest {
         Assert.assertEquals("value", values.getAsString("key1"))
         Assert.assertEquals(1L, values.getAsLong("key2").toLong())
         Assert.assertNull(values.get("key3"))
+    }
+
+
+    @Test
+    fun testUriHelper_asSyncAdapter() {
+        val account = Account("testName", "testType")
+        val baseUri = Uri.parse("test://example.com/")
+        assertEquals(
+            Uri.parse("$baseUri?account_name=testName&account_type=testType&caller_is_syncadapter=true"),
+            baseUri.asSyncAdapter(account)
+        )
     }
 
 }

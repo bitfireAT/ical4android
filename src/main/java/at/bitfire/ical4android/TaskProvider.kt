@@ -120,12 +120,6 @@ class TaskProvider private constructor(
             }
         }
 
-        fun syncAdapterUri(uri: Uri, account: Account) = uri.buildUpon()
-                .appendQueryParameter(TaskContract.ACCOUNT_NAME, account.name)
-                .appendQueryParameter(TaskContract.ACCOUNT_TYPE, account.type)
-                .appendQueryParameter(TaskContract.CALLER_IS_SYNCADAPTER, "true")
-                .build()!!
-
     }
 
 
