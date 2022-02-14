@@ -1211,8 +1211,10 @@ duration?.let(props::add)
             )
         }
 
-
         this.relatedTo.forEach { related ->
+            if(related.text == this.uid)                // ignoring entries that are linked to itself (issue with Tasks.org)
+                return@forEach
+
             val relatedToContentValues = ContentValues().apply {
                 put(JtxContract.JtxRelatedto.ICALOBJECT_ID, id)
                 put(JtxContract.JtxRelatedto.TEXT, related.text)
