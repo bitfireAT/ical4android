@@ -230,9 +230,10 @@ class JtxCollectionTest {
             assertEquals("AAA", it?.getString(2))   // TEXT (UID)
             assertEquals(JtxContract.JtxRelatedto.Reltype.PARENT.name, it?.getString(3))
         }
+    }
 
-      @Test
-      fun getICSForCollection_test() {
+    @Test
+    fun getICSForCollection_test() {
         val collectionUri = JtxCollection.create(testAccount, client, cv)
         assertNotNull(collectionUri)
 
