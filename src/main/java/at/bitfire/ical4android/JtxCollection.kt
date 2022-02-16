@@ -175,18 +175,8 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
                         val idOfthisUid = idOfthisUidCursor.getLong(0)
 
                         val updateContentValues = ContentValues()
-                        updateContentValues.put(
-                            JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID,
-                            idOfthisUid
-                        )
-
-                        client.update(
-                            JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(
-                                account
-                            ),
-                            updateContentValues,
-                            "${JtxContract.JtxRelatedto.TEXT} = ? AND ${JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID} = ?",
-                            arrayOf(uid2upddate, "0")
+                        updateContentValues.put(JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID, idOfthisUid)
+                        client.update(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(account), updateContentValues,"${JtxContract.JtxRelatedto.TEXT} = ? AND ${JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID} = ?", arrayOf(uid2upddate, "0")
                         )
                     }
                 }
@@ -198,27 +188,24 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
         client.query(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxRelatedto.ICALOBJECT_ID, JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID, JtxContract.JtxRelatedto.RELTYPE), "${JtxContract.JtxRelatedto.RELTYPE} = ?", arrayOf(JtxContract.JtxRelatedto.Reltype.PARENT.name), null).use {
                 cursorAllLinkedParents ->
             while (cursorAllLinkedParents?.moveToNext() == true) {
-                val icalObjectId = cursorAllLinkedParents.getString(0)
-                val linkedIcalObjectId = cursorAllLinkedParents.getString(1)
+                val childId = cursorAllLinkedParents.getString(0)
+                val parentId = cursorAllLinkedParents.getString(1)
 
-                client.query(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxRelatedto.ICALOBJECT_ID, JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID, JtxContract.JtxRelatedto.RELTYPE), "${JtxContract.JtxRelatedto.ICALOBJECT_ID} = ? AND ${JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID} = ? AND ${JtxContract.JtxRelatedto.RELTYPE} = ?", arrayOf(linkedIcalObjectId.toString(), icalObjectId.toString(), JtxContract.JtxRelatedto.Reltype.CHILD.name), null).use {  cursor ->
+                client.query(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxRelatedto.ICALOBJECT_ID, JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID, JtxContract.JtxRelatedto.RELTYPE), "${JtxContract.JtxRelatedto.ICALOBJECT_ID} = ? AND ${JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID} = ? AND ${JtxContract.JtxRelatedto.RELTYPE} = ?", arrayOf(parentId.toString(), childId.toString(), JtxContract.JtxRelatedto.Reltype.CHILD.name), null).use {  cursor ->
                     // if the query does not bring any result, then we insert the opposite relationship
                     if (cursor?.moveToFirst() == false) {
-
                         //get the UID of the linked entry
-                        client.query(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxICalObject.UID), "${JtxContract.JtxICalObject.ID} = ?", arrayOf(linkedIcalObjectId.toString()), null).use {
+                        client.query(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxICalObject.UID), "${JtxContract.JtxICalObject.ID} = ?", arrayOf(childId.toString()), null).use {
                                 foundIcalObjectCursor ->
 
                             if (foundIcalObjectCursor?.moveToFirst() == true) {
-                                val uid = foundIcalObjectCursor.getString(0)
-
+                                val childUID = foundIcalObjectCursor.getString(0)
                                 val cv = ContentValues().apply {
-                                    put(JtxContract.JtxRelatedto.ICALOBJECT_ID, linkedIcalObjectId)
-                                    put(JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID, icalObjectId)
+                                    put(JtxContract.JtxRelatedto.ICALOBJECT_ID, parentId)
+                                    put(JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID, childId)
                                     put(JtxContract.JtxRelatedto.RELTYPE, JtxContract.JtxRelatedto.Reltype.CHILD.name)
-                                    put(JtxContract.JtxRelatedto.TEXT, uid)
+                                    put(JtxContract.JtxRelatedto.TEXT, childUID)
                                 }
-
                                 client.insert(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(account), cv)
                             }
                         }
@@ -233,30 +220,27 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
                 cursorAllLinkedParents ->
             while (cursorAllLinkedParents?.moveToNext() == true) {
 
-                val icalObjectId = cursorAllLinkedParents.getLong(0)
-                val linkedIcalObjectId = cursorAllLinkedParents.getLong(1)
+                val parentId = cursorAllLinkedParents.getLong(0)
+                val childId = cursorAllLinkedParents.getLong(1)
 
-                client.query(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxRelatedto.ICALOBJECT_ID, JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID, JtxContract.JtxRelatedto.RELTYPE), "${JtxContract.JtxRelatedto.ICALOBJECT_ID} = ? AND ${JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID} = ? AND ${JtxContract.JtxRelatedto.RELTYPE} = ?", arrayOf(linkedIcalObjectId.toString(), icalObjectId.toString(), JtxContract.JtxRelatedto.Reltype.PARENT.name), null).use {
+                client.query(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxRelatedto.ICALOBJECT_ID, JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID, JtxContract.JtxRelatedto.RELTYPE), "${JtxContract.JtxRelatedto.ICALOBJECT_ID} = ? AND ${JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID} = ? AND ${JtxContract.JtxRelatedto.RELTYPE} = ?", arrayOf(childId.toString(), parentId.toString(), JtxContract.JtxRelatedto.Reltype.PARENT.name), null).use {
                         cursor ->
 
                     // if the query does not bring any result, then we insert the opposite relationship
                     if (cursor?.moveToFirst() == false) {
 
                         //get the UID of the linked entry
-                        client.query(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxICalObject.UID), "${JtxContract.JtxICalObject.ID} = ?", arrayOf(linkedIcalObjectId.toString()), null).use {
+                        client.query(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxICalObject.UID), "${JtxContract.JtxICalObject.ID} = ?", arrayOf(parentId.toString()), null).use {
                                 foundIcalObjectCursor ->
 
                             if(foundIcalObjectCursor?.moveToFirst() == true) {
-
-                                val uid = foundIcalObjectCursor.getString(0)
-
+                                val parentUID = foundIcalObjectCursor.getString(0)
                                 val cv = ContentValues().apply {
-                                    put(JtxContract.JtxRelatedto.ICALOBJECT_ID, linkedIcalObjectId)
-                                    put(JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID, icalObjectId)
+                                    put(JtxContract.JtxRelatedto.ICALOBJECT_ID, childId)
+                                    put(JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID, parentId)
                                     put(JtxContract.JtxRelatedto.RELTYPE, JtxContract.JtxRelatedto.Reltype.PARENT.name)
-                                    put(JtxContract.JtxRelatedto.TEXT, uid)
+                                    put(JtxContract.JtxRelatedto.TEXT, parentUID)
                                 }
-
                                 client.insert(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(account), cv)
                             }
                         }
@@ -265,7 +249,6 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
             }
         }
     }
-
 
     /**
      * @return a string with all JtxICalObjects within the collection as iCalendar

@@ -1209,7 +1209,6 @@ duration?.let(props::add)
             )
         }
 
-
         this.relatedTo.forEach { related ->
             val relatedToContentValues = ContentValues().apply {
                 put(JtxContract.JtxRelatedto.ICALOBJECT_ID, id)
