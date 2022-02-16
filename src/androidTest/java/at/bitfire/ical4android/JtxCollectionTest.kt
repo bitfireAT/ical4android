@@ -14,8 +14,7 @@ import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
 import at.bitfire.ical4android.impl.TestJtxCollection
 import at.techbee.jtx.JtxContract
 import at.techbee.jtx.JtxContract.asSyncAdapter
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertNotNull
+import junit.framework.TestCase.*
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -25,7 +24,6 @@ class JtxCollectionTest {
     private val testAccount = Account("TEST", JtxContract.JtxCollection.TEST_ACCOUNT_TYPE)
     private lateinit var contentResolver: ContentResolver
     private lateinit var client: ContentProviderClient
-    var collection: JtxCollection<JtxICalObject>? = null
     lateinit var context: Context
 
     private val url = "https://jtx.techbee.at"
@@ -164,7 +162,6 @@ class JtxCollectionTest {
         }
     }
 
-
     @Test
     fun updateRelatedTo_check_update_of_linkedId_PARENT_TO_CHILD_is_present() {
         JtxCollection.create(testAccount, client, cv)
@@ -233,5 +230,35 @@ class JtxCollectionTest {
             assertEquals("AAA", it?.getString(2))   // TEXT (UID)
             assertEquals(JtxContract.JtxRelatedto.Reltype.PARENT.name, it?.getString(3))
         }
+
+      @Test
+      fun getICSForCollection_test() {
+        val collectionUri = JtxCollection.create(testAccount, client, cv)
+        assertNotNull(collectionUri)
+
+        val collections = JtxCollection.find(testAccount, client, context, TestJtxCollection.Factory, null, null)
+        val items = collections[0].queryICalObjects(null, null)
+        assertEquals(0, items.size)
+
+        val cv1 = ContentValues().apply {
+            put(JtxContract.JtxICalObject.SUMMARY, "summary")
+            put(JtxContract.JtxICalObject.COMPONENT, JtxContract.JtxICalObject.Component.VJOURNAL.name)
+            put(JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID, collections[0].id)
+        }
+        val cv2 = ContentValues().apply {
+            put(JtxContract.JtxICalObject.SUMMARY, "entry2")
+            put(JtxContract.JtxICalObject.COMPONENT, JtxContract.JtxICalObject.Component.VTODO.name)
+            put(JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID, collections[0].id)
+        }
+        client.insert(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv1)
+        client.insert(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv2)
+
+        val ics = collections[0].getICSForCollection()
+        assertTrue(ics.contains(Regex("BEGIN:VCALENDAR(\\n*|\\r*|\\t*|.*)*END:VCALENDAR")))
+        assertTrue(ics.contains("PRODID:+//IDN bitfire.at//ical4android"))
+        assertTrue(ics.contains("SUMMARY:summary"))
+        assertTrue(ics.contains("SUMMARY:entry2"))
+        assertTrue(ics.contains(Regex("BEGIN:VJOURNAL(\\n*|\\r*|\\t*|.*)*END:VJOURNAL")))
+        assertTrue(ics.contains(Regex("BEGIN:VTODO(\\n*|\\r*|\\t*|.*)*END:VTODO")))
     }
 }

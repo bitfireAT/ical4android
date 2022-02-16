@@ -290,7 +290,7 @@ open class ICalendar {
                     else -> throw IllegalArgumentException("reference must be Event or Task")
                 }
                 if (duration != null)
-                    end = Date.from(start.toInstant() + duration)
+                    end = java.util.Date.from(start.toInstant() + duration)
             }
 
             // event/task duration
