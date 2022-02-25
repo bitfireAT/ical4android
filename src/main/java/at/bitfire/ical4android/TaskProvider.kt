@@ -109,7 +109,7 @@ class TaskProvider private constructor(
          * @throws PackageManager.NameNotFoundException if the tasks provider is not installed
          * @throws [ProviderTooOldException] if the tasks provider is installed, but doesn't meet the minimum version requirement
          * */
-        private fun checkVersion(context: Context, name: ProviderName) {
+        fun checkVersion(context: Context, name: ProviderName) {
             // check whether package is available with required minimum version
             val info = context.packageManager.getPackageInfo(name.packageName, 0)
             val installedVersionCode = PackageInfoCompat.getLongVersionCode(info)
