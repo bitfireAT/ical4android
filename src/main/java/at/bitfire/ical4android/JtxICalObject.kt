@@ -969,13 +969,15 @@ duration?.let(props::add)
 
         if(component == JtxContract.JtxICalObject.Component.VTODO.name) {
             completed?.let {
-                //Completed is defines as always DateTime! And is always UTC!?
-
+                //Completed is defines as always DateTime! And is always UTC! But the X_PROP_COMPLETEDTIMEZONE can still define a timezone
                 props += Completed(DateTime(it))
+
+                // only take completedTimezone if there was the completed time set
+                completedTimezone?.let { complTZ ->
+                    props += XProperty(X_PROP_COMPLETEDTIMEZONE, complTZ)
+                }
             }
-            completedTimezone?.let {
-                props += XProperty(X_PROP_COMPLETEDTIMEZONE, it)
-            }
+
             percent?.let {
                 props += PercentComplete(it)
             }
