@@ -1683,8 +1683,8 @@ duration?.let(props::add)
         collection.client.query(
             relatedToUrl,
             null,
-            "${JtxContract.JtxRelatedto.ICALOBJECT_ID} = ?",
-            arrayOf(this.id.toString()),
+            "${JtxContract.JtxRelatedto.ICALOBJECT_ID} = ? AND ${JtxContract.JtxRelatedto.RELTYPE} = ?",
+            arrayOf(this.id.toString(), JtxContract.JtxRelatedto.Reltype.PARENT.name),
             null
         )?.use { cursor ->
             while (cursor.moveToNext()) {
