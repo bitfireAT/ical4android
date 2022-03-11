@@ -44,7 +44,7 @@ open class ICalendar {
 
         // known iCalendar properties
         const val CALENDAR_NAME = "X-WR-CALNAME"
-        const val CALENDAR_COLOR = "COLOR"
+        const val CALENDAR_COLOR = "X-APPLE-CALENDAR-COLOR"
 
         /**
          * Default PRODID used when generating iCalendars. If you want another value, set it
@@ -94,6 +94,10 @@ open class ICalendar {
             properties?.let {
                 calendar.getProperty<Property>(CALENDAR_NAME)?.let { calName ->
                     properties[CALENDAR_NAME] = calName.value
+                }
+
+                calendar.getProperty<Property>(Color.PROPERTY_NAME)?.let { calColor ->
+                    properties[Color.PROPERTY_NAME] = calColor.value
                 }
                 calendar.getProperty<Property>(CALENDAR_COLOR)?.let { calColor ->
                     properties[CALENDAR_COLOR] = calColor.value

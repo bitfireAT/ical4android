@@ -12,6 +12,7 @@ import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.parameter.Related
+import net.fortuna.ical4j.model.property.Color
 import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.Due
@@ -50,17 +51,20 @@ class ICalendarTest {
 	}
 
 	@Test
-	fun testFromReader_calendarColor() {
+	fun testFromReader_calendarProperties() {
 		val calendar = ICalendar.fromReader(
 			StringReader("BEGIN:VCALENDAR\n" +
 				"VERSION:2.0\n" +
 				"METHOD:PUBLISH\n" +
 				"PRODID:something\n" +
-				"COLOR:#000000\n" +
-				"X-WR-CALNAME:Some CALNAME\n" +
+				"X-WR-CALNAME:Some Calendar\n" +
+				"COLOR:darkred\n" +
+				"X-APPLE-CALENDAR-COLOR:#123456\n" +
 				"END:VCALENDAR"
 		))
-		assertEquals(calendar.getProperty<Property?>("COLOR").value, "#000000")
+		assertEquals("Some Calendar", calendar.getProperty<Property>(ICalendar.CALENDAR_NAME).value)
+		assertEquals("darkred", calendar.getProperty<Property>(Color.PROPERTY_NAME).value)
+		assertEquals("#123456", calendar.getProperty<Property>(ICalendar.CALENDAR_COLOR).value)
 	}
 
 	@Test
