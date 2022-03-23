@@ -94,7 +94,6 @@ class Event: ICalendar() {
             Ical4Android.log.fine("Assigning exceptions to main events")
             val mainEvents = mutableMapOf<String /* UID */,VEvent>()
             val exceptions = mutableMapOf<String /* UID */,MutableMap<String /* RECURRENCE-ID */,VEvent>>()
-
             for (vEvent in vEvents) {
                 val uid = vEvent.uid.value
                 val sequence = vEvent.sequence?.sequenceNo ?: 0
@@ -124,17 +123,33 @@ class Event: ICalendar() {
                 }
             }
 
+            /* There may be UIDs which have only RECURRENCE-ID entries and not a main entry (for instance, a recurring
+            event with an exception where the current user has been invited only to this exception. In this case,
+            the UID will not appear in mainEvents but only in exceptions. */
+
             val events = mutableListOf<Event>()
             for ((uid, vEvent) in mainEvents) {
                 val event = fromVEvent(vEvent)
-                exceptions[uid]?.let { eventExceptions ->
-                    event.exceptions.addAll(eventExceptions.map { (_,it) -> fromVEvent(it) })
+
+                // assign exceptions to main event and then remove them from exceptions array
+                exceptions.remove(uid)?.let { eventExceptions ->
+                    event.exceptions.addAll(eventExceptions.values.map { fromVEvent(it) })
                 }
 
                 // make sure that exceptions have at least a SUMMARY
                 event.exceptions.forEach { it.summary = it.summary ?: event.summary }
 
                 events += event
+            }
+
+            for ((uid, onlyExceptions) in exceptions) {
+                Ical4Android.log.info("UID $uid doesn't have a main event but only exceptions: $onlyExceptions")
+
+                // create a fake main event from the first exception
+                val fakeEvent = fromVEvent(onlyExceptions.values.first())
+                fakeEvent.exceptions.addAll(onlyExceptions.values.map { fromVEvent(it) })
+
+                events += fakeEvent
             }
 
             return events

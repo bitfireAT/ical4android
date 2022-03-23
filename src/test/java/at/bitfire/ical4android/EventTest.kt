@@ -158,6 +158,21 @@ class EventTest {
     }
 
     @Test
+    fun testRecurringOnlyException() {
+        val event = parseCalendar("recurring-only-exception.ics").first()
+
+        assertEquals(1, event.exceptions.size)
+        val exception = event.exceptions.first
+        assertEquals("20150503T010203Z", exception.recurrenceId!!.value)
+        assertEquals("This is an exception", exception.summary)
+
+        // fake main event
+        assertEquals(event.summary, exception.summary)
+        assertEquals(event.dtStart, exception.dtStart)
+        assertEquals(event.dtEnd, exception.dtEnd)
+    }
+
+    @Test
     fun testStartEndTimes() {
         // event with start+end date-time
         val eViennaEvolution = parseCalendar("vienna-evolution.ics").first()

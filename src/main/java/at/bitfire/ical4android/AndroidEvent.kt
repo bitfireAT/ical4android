@@ -573,10 +573,10 @@ abstract class AndroidEvent(
                (it checks for RRULE and aborts if no RRULE is found).
                So I have chosen the method of inserting the exception event manually.
 
-               It's also noteworthy that the link between the main event and the exception is not
-               between ID and ORIGINAL_ID (as one could assume), but between _SYNC_ID and ORIGINAL_SYNC_ID.
-               So, if you don't set _SYNC_ID in the master event and ORIGINAL_SYNC_ID in the exception,
-               the exception will appear additionally (and not *instead* of the instance).
+               It's also noteworthy that linking the main event to the exception only works using _SYNC_ID
+               and ORIGINAL_SYNC_ID (and not ID and ORIGINAL_ID, as one could assume). So, if you don't
+               set _SYNC_ID in the main event and ORIGINAL_SYNC_ID in the exception, the exception will
+               appear additionally (and not *instead* of the instance).
              */
 
             val recurrenceId = exception.recurrenceId
