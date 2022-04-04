@@ -1597,6 +1597,10 @@ duration?.let(props::add)
         dueTimezone.let { values.put(JtxContract.JtxICalObject.DUE_TIMEZONE, it) }
         duration.let { values.put(JtxContract.JtxICalObject.DURATION, it) }
 
+        created.let { values.put(JtxContract.JtxICalObject.CREATED, it) }
+        lastModified.let { values.put(JtxContract.JtxICalObject.LAST_MODIFIED, it) }
+        sequence.let { values.put(JtxContract.JtxICalObject.SEQUENCE, it) }
+
         rrule.let { values.put(JtxContract.JtxICalObject.RRULE, it) }
         rdate.let { values.put(JtxContract.JtxICalObject.RDATE, it) }
         exdate.let { values.put(JtxContract.JtxICalObject.EXDATE, it) }
