@@ -55,7 +55,7 @@ jobs:
           mkdir apk && cd apk
           wget -q -O org.dmfs.tasks.apk https://f-droid.org/archive/org.dmfs.tasks_80800.apk && adb install org.dmfs.tasks.apk
           wget -q -O org.tasks.apk https://f-droid.org/archive/org.tasks_110701.apk && adb install org.tasks.apk
-          wget -q -O at.techbee.jtx.apk https://f-droid.org/repo/at.techbee.jtx_100040011.apk && adb install at.techbee.jtx.apk
+          wget -q -O at.techbee.jtx.apk https://f-droid.org/repo/at.techbee.jtx_100090001.apk && adb install at.techbee.jtx.apk
           cd ..
       - name: Run connected tests
         run: ./gradlew connectedCheck

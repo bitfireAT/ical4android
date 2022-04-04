@@ -125,6 +125,20 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
     }
 
     /**
+     * @param [UID] of the entry that should be retrieved as content values
+     * @return Content Values of the found item with the given UID or null if the result was empty or more than 1
+     */
+    fun queryByUID(uid: String): ContentValues? {
+        client.query(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), null, "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ? AND ${JtxContract.JtxICalObject.UID} = ?", arrayOf(id.toString(), uid), null).use { cursor ->
+            Ical4Android.log.fine("queryByUID: found ${cursor?.count} records in ${account.name}")
+            if (cursor?.count != 1)
+                return null
+            cursor.moveToFirst()
+            return cursor.toValues()
+        }
+    }
+
+    /**
      * updates the flags of all entries in the collection with the given flag
      * @param [flags] to be set
      * @return the number of records that were updated
