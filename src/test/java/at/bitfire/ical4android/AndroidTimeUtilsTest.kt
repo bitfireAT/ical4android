@@ -34,7 +34,7 @@ class AndroidTimeUtilsTest {
     val tzCustom by lazy {
         val builder = CalendarBuilder()
         val cal = builder.build(StringReader(""))
-        net.fortuna.ical4j.model.TimeZone(cal.getComponent(VTimeZone.VTIMEZONE) as VTimeZone)
+        TimeZone(cal.getComponent(VTimeZone.VTIMEZONE) as VTimeZone)
     }
 
     val tzIdDefault = java.util.TimeZone.getDefault().id
@@ -265,9 +265,9 @@ class AndroidTimeUtilsTest {
     @Test
     fun testAndroidStringToRecurrenceSets_UtcTimes() {
         // list of UTC times
-        var exDate = AndroidTimeUtils.androidStringToRecurrenceSet("20150101T103010Z,20150702T103020Z", false) { ExDate(it) }
+        val exDate = AndroidTimeUtils.androidStringToRecurrenceSet("20150101T103010Z,20150702T103020Z", false) { ExDate(it) }
         assertNull(exDate.timeZone)
-        var exDates = exDate.dates
+        val exDates = exDate.dates
         assertEquals(Value.DATE_TIME, exDates.type)
         assertTrue(exDates.isUtc)
         assertEquals(2, exDates.size)
