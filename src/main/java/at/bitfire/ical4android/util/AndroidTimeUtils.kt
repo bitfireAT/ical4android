@@ -73,7 +73,7 @@ object AndroidTimeUtils {
      * @param dateList [DateListProperty] to validate. Values which are not DATE-TIME will be ignored.
      */
     fun androidifyTimeZone(dateList: DateListProperty) {
-        val dates = dateList.dates ?: return
+        val dates = dateList.dates
         if (dates.type == Value.DATE_TIME && !dates.isUtc) {
             val tzID = dateList.dates.timeZone?.id
             val bestMatchingTzId = DateUtils.findAndroidTimezoneID(tzID)
@@ -150,7 +150,7 @@ object AndroidTimeUtils {
                     if (dateListProp.periods.isNotEmpty())
                         Ical4Android.log.warning("EXDATE PERIOD not supported, ignoring")
 
-            when (dateListProp.dates?.type) {
+            when (dateListProp.dates.type) {
                 Value.DATE_TIME -> {
                     if (tz == null && !dateListProp.dates.isUtc)
                         dateListProp.setUtc(true)

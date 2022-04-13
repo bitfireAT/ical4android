@@ -19,9 +19,11 @@ import net.fortuna.ical4j.model.property.RDate
 import net.fortuna.ical4j.util.TimeZones
 import org.junit.Assert.*
 import org.junit.Test
+import java.io.InputStreamReader
 import java.io.StringReader
 import java.time.Duration
 import java.time.Period
+import java.time.temporal.TemporalAmount
 import java.util.*
 
 class AndroidTimeUtilsTest {
@@ -31,16 +33,7 @@ class AndroidTimeUtilsTest {
 
     val tzCustom by lazy {
         val builder = CalendarBuilder()
-        val cal = builder.build(StringReader("BEGIN:VCALENDAR\n" +
-                "BEGIN:VTIMEZONE\n" +
-                "TZID:CustomTime\n" +
-                "BEGIN:STANDARD\n" +
-                "TZOFFSETFROM:+0310\n" +
-                "TZOFFSETTO:+0310\n" +
-                "DTSTART:19600101T000000\n" +
-                "END:STANDARD\n" +
-                "END:VTIMEZONE\n" +
-                "END:VCALENDAR"))
+        val cal = builder.build(StringReader(""))
         net.fortuna.ical4j.model.TimeZone(cal.getComponent(VTimeZone.VTIMEZONE) as VTimeZone)
     }
 
@@ -104,6 +97,14 @@ class AndroidTimeUtilsTest {
         assertTrue(dtStart.isUtc)
     }
 
+    @Test
+    fun testAndroidifyTimeZone_DateListProperty_EmptyDates() {
+        // should not crash on empty dates property
+        javaClass.classLoader!!.getResourceAsStream("events/rdate-periods.ics").use { stream ->
+            val rDate = Event.eventsFromReader(InputStreamReader(stream))[0].rDates[0]
+            AndroidTimeUtils.androidifyTimeZone(rDate)
+        }
+    }
 
     @Test
     fun testAndroidifyTimeZone_DateListProperty_Date() {
@@ -119,6 +120,20 @@ class AndroidTimeUtilsTest {
     }
 
     @Test
+    fun testAndroidifyTimeZone_DateListProperty_Period_IgnoreTimeless() {
+        // periods without time should be ignored
+        val rDate = RDate(DateList("20220101/20220102,20220103/20220108", Value.PERIOD))
+        AndroidTimeUtils.androidifyTimeZone(rDate)
+        assertEquals(
+            setOf(Period("20220101T000000/20220102T000000"),
+                Period("20220103T000000/20220108T000000")),
+            rDate.periods)
+        assertNull(rDate.timeZone)
+        assertNull(rDate.periods.timeZone)
+        assertFalse(rDate.periods.isUtc)
+    }
+
+    @Test
     fun testAndroidifyTimeZone_DateListProperty_KnownTimeZone() {
         // times with known time zone should be unchanged
         val rDate = RDate(DateList("20150101T150000,20150102T150000", Value.DATE_TIME, tzToronto))
@@ -128,6 +143,20 @@ class AndroidTimeUtilsTest {
         assertEquals(tzToronto, rDate.timeZone)
         assertEquals(Value.DATE_TIME, rDate.dates.type)
         assertEquals(tzToronto, rDate.dates.timeZone)
+        assertFalse(rDate.dates.isUtc)
+    }
+
+    @Test
+    fun testAndroidifyTimeZone_DateListProperty_Period_KnownTimeZone() {
+        // times with known time zone should be unchanged
+        val rDate = RDate(DateList("20220101/20220102,20220103/20220108", Value.PERIOD, tzToronto))
+        AndroidTimeUtils.androidifyTimeZone(rDate)
+        assertEquals(
+            setOf(Period("20220101T000000/20220102T000000"),
+                Period("20220103T000000/20220108T000000")),
+            rDate.periods)
+        assertEquals(tzToronto, rDate.timeZone)
+        assertEquals(tzToronto, rDate.periods.timeZone)
         assertFalse(rDate.dates.isUtc)
     }
 
@@ -145,6 +174,20 @@ class AndroidTimeUtilsTest {
     }
 
     @Test
+    fun testAndroidifyTimeZone_DateListProperty_Period_UnknownTimeZone() {
+        // time zone that is not available on Android systems should be rewritten to system default
+        val rDate = RDate(DateList("20220101T000000/20220102T000000,20220103T000000/20220108T000000", Value.PERIOD, tzCustom))
+        AndroidTimeUtils.androidifyTimeZone(rDate)
+        assertEquals(
+            setOf(Period(DateTime("20220101T000000", tzCustom), DateTime("20220102T000000", tzCustom)),
+                Period(DateTime("20220103T000000", tzCustom), DateTime("20220108T000000", tzCustom))),
+            rDate.periods)
+        assertEquals(tzIdDefault, rDate.timeZone.id)
+        assertEquals(tzIdDefault, rDate.periods.timeZone.id)
+        assertFalse(rDate.dates.isUtc)
+    }
+
+    @Test
     fun testAndroidifyTimeZone_DateListProperty_FloatingTime() {
         // times with floating time should be treated as system default time zone
         val rDate = RDate(DateList("20150101T031000,20150102T031000", Value.DATE_TIME))
@@ -158,6 +201,20 @@ class AndroidTimeUtilsTest {
     }
 
     @Test
+    fun testAndroidifyTimeZone_DateListProperty_Period_FloatingTime() {
+        // times with floating time should be treated as system default time zone
+        val rDate = RDate(DateList("20220101T020000/20220102T040000,20220103T043000/20220108T060201", Value.PERIOD))
+        AndroidTimeUtils.androidifyTimeZone(rDate)
+        assertEquals(
+            setOf(Period("20220101T020000/20220102T040000"),
+                Period("20220103T043000/20220108T060201")),
+            rDate.periods)
+        assertEquals(tzIdDefault, rDate.timeZone.id)
+        assertEquals(tzIdDefault, rDate.periods.timeZone.id)
+        assertFalse(rDate.periods.isUtc)
+    }
+
+    @Test
     fun testAndroidifyTimeZone_DateListProperty_UTC() {
         // times with UTC should be unchanged
         val rDate = RDate(DateList("20150101T031000Z,20150102T031000Z", Value.DATE_TIME))
@@ -168,6 +225,20 @@ class AndroidTimeUtilsTest {
         assertEquals(Value.DATE_TIME, rDate.dates.type)
         assertNull(rDate.dates.timeZone)
         assertTrue(rDate.dates.isUtc)
+    }
+
+    @Test
+    fun testAndroidifyTimeZone_DateListProperty_Period_UTC() {
+        // times with UTC should be unchanged
+        val rDate = RDate(DateList("20220101T000000Z/20220102T000000Z,20220103T000000Z/20220108T000000Z", Value.PERIOD))
+        AndroidTimeUtils.androidifyTimeZone(rDate)
+        assertEquals(
+            setOf(Period(DateTime("20220101T001100Z", tzCustom), DateTime("20220102T003300Z", tzCustom)),
+                Period(DateTime("20220103T010000Z", tzCustom), DateTime("20220108T020000Z", tzCustom))),
+            rDate.periods)
+        assertNull(rDate.timeZone)
+        assertNull(rDate.periods.timeZone)
+        assertTrue(rDate.periods.isUtc)
     }
 
 
