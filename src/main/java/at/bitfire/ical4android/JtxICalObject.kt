@@ -82,7 +82,7 @@ open class JtxICalObject(
 
     var collectionId: Long = collection.id
 
-    var dirty: Boolean = true
+    var dirty: Boolean = false     // default false to avoid instant sync after insert, can be overwritten
     var deleted: Boolean = false
 
     var fileName: String? = null
@@ -1610,6 +1610,7 @@ duration?.let(props::add)
         eTag.let { values.put(JtxContract.JtxICalObject.ETAG, it) }
         scheduleTag.let { values.put(JtxContract.JtxICalObject.SCHEDULETAG, it) }
         values.put(JtxContract.JtxICalObject.FLAGS, flags)
+        values.put(JtxContract.JtxICalObject.DIRTY, dirty)
 
         return values
     }
