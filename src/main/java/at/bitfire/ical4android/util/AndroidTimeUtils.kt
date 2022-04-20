@@ -61,36 +61,31 @@ object AndroidTimeUtils {
     }
 
     /**
-     * Ensures that a given [DateListProperty] either
+     * Ensures that a given [DateListProperty]'s periods OR dates (of type date-time), each either have
      *
-     * 1. has a time zone with an ID that is available in Android, or
-     * 2. is an UTC property ([DateProperty.isUtc] = *true*).
+     * 1. a time zone with an ID that is available in Android, or
+     * 2. a UTC property isUtc = *true*.
      * *
      * @param dateList [DateListProperty] to validate. Values which are not DATE-TIME will be ignored.
      */
     fun androidifyTimeZone(dateList: DateListProperty) {
 
-        // Handle periods (RDate only)
+        // periods (RDate only)
         val periods = (dateList as? RDate)?.periods
         if (periods != null && periods.size > 0) {
             if (!periods.isUtc) {
                 val tzID = periods.timeZone?.id
                 dateList.timeZone = bestMatchingTzId(tzID)
             }
-            return //  RDate can only have periods OR dates - not both, bail out fast
+            return //  RDate can only contain periods OR dates - not both, bail out fast
         }
 
-        // Handle date-times (RDate and ExDate)
+        // date-times (RDate and ExDate)
         val dates = dateList.dates
         if (dates != null && dates.size > 0) {
-            val dates = dateList.dates
             if (dates.type == Value.DATE_TIME && !dates.isUtc) {
                 val tzID = dates.timeZone?.id
                 dateList.timeZone = bestMatchingTzId(tzID)
-
-//                // keep the time zone of dateList in sync with the actual dates
-//                if (dateList.timeZone != dates.timeZone)
-//                    dateList.timeZone = dates.timeZone
             }
         }
     }
