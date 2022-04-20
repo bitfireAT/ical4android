@@ -1386,7 +1386,6 @@ duration?.let(props::add)
      * @param [values] The Content Values with the information about the JtxICalObject
      */
     fun populateFromContentValues(values: ContentValues) {
-
             values.getAsLong(JtxContract.JtxICalObject.ID)?.let { id -> this.id = id }
 
             values.getAsString(JtxContract.JtxICalObject.COMPONENT)?.let { component -> this.component = component }
@@ -1432,131 +1431,131 @@ duration?.let(props::add)
             values.getAsInteger(JtxContract.JtxICalObject.FLAGS)?.let { flags -> this.flags = flags }
 
 
-        // Take care of categories
-        val categoriesContentValues = getCategoryContentValues()
-        categoriesContentValues.forEach { catValues ->
-            val category = Category().apply {
-                catValues.getAsLong(JtxContract.JtxCategory.ID)?.let { id -> this.categoryId = id }
-                catValues.getAsString(JtxContract.JtxCategory.TEXT)?.let { text -> this.text = text }
-                catValues.getAsString(JtxContract.JtxCategory.LANGUAGE)?.let { language -> this.language = language }
-                catValues.getAsString(JtxContract.JtxCategory.OTHER)?.let { other -> this.other = other }
+            // Take care of categories
+            val categoriesContentValues = getCategoryContentValues()
+            categoriesContentValues.forEach { catValues ->
+                val category = Category().apply {
+                    catValues.getAsLong(JtxContract.JtxCategory.ID)?.let { id -> this.categoryId = id }
+                    catValues.getAsString(JtxContract.JtxCategory.TEXT)?.let { text -> this.text = text }
+                    catValues.getAsString(JtxContract.JtxCategory.LANGUAGE)?.let { language -> this.language = language }
+                    catValues.getAsString(JtxContract.JtxCategory.OTHER)?.let { other -> this.other = other }
+                }
+                categories.add(category)
             }
-            categories.add(category)
-        }
 
-        // Take care of comments
-        val commentsContentValues = getCommentContentValues()
-        commentsContentValues.forEach { commentValues ->
-            val comment = Comment().apply {
-                commentValues.getAsLong(JtxContract.JtxComment.ID)?.let { id -> this.commentId = id }
-                commentValues.getAsString(JtxContract.JtxComment.TEXT)?.let { text -> this.text = text }
-                commentValues.getAsString(JtxContract.JtxComment.LANGUAGE)?.let { language -> this.language = language }
-                commentValues.getAsString(JtxContract.JtxComment.OTHER)?.let { other -> this.other = other }
+            // Take care of comments
+            val commentsContentValues = getCommentContentValues()
+            commentsContentValues.forEach { commentValues ->
+                val comment = Comment().apply {
+                    commentValues.getAsLong(JtxContract.JtxComment.ID)?.let { id -> this.commentId = id }
+                    commentValues.getAsString(JtxContract.JtxComment.TEXT)?.let { text -> this.text = text }
+                    commentValues.getAsString(JtxContract.JtxComment.LANGUAGE)?.let { language -> this.language = language }
+                    commentValues.getAsString(JtxContract.JtxComment.OTHER)?.let { other -> this.other = other }
+                }
+                comments.add(comment)
             }
-            comments.add(comment)
-        }
 
-        // Take care of resources
-        val resourceContentValues = getResourceContentValues()
-        resourceContentValues.forEach { resourceValues ->
-            val resource = Resource().apply {
-                resourceValues.getAsLong(JtxContract.JtxResource.ID)?.let { id -> this.resourceId = id }
-                resourceValues.getAsString(JtxContract.JtxResource.TEXT)?.let { text -> this.text = text }
-                resourceValues.getAsString(JtxContract.JtxResource.LANGUAGE)?.let { language -> this.language = language }
-                resourceValues.getAsString(JtxContract.JtxResource.OTHER)?.let { other -> this.other = other }
+            // Take care of resources
+            val resourceContentValues = getResourceContentValues()
+            resourceContentValues.forEach { resourceValues ->
+                val resource = Resource().apply {
+                    resourceValues.getAsLong(JtxContract.JtxResource.ID)?.let { id -> this.resourceId = id }
+                    resourceValues.getAsString(JtxContract.JtxResource.TEXT)?.let { text -> this.text = text }
+                    resourceValues.getAsString(JtxContract.JtxResource.LANGUAGE)?.let { language -> this.language = language }
+                    resourceValues.getAsString(JtxContract.JtxResource.OTHER)?.let { other -> this.other = other }
+                }
+                resources.add(resource)
             }
-            resources.add(resource)
-        }
 
 
-        // Take care of related-to
-        val relatedToContentValues = getRelatedToContentValues()
-        relatedToContentValues.forEach { relatedToValues ->
-            val relTo = RelatedTo().apply {
-                relatedToValues.getAsLong(JtxContract.JtxRelatedto.ID)?.let { id -> this.relatedtoId = id }
-                relatedToValues.getAsString(JtxContract.JtxRelatedto.TEXT)?.let { text -> this.text = text }
-                relatedToValues.getAsString(JtxContract.JtxRelatedto.RELTYPE)?.let { reltype -> this.reltype = reltype }
-                relatedToValues.getAsString(JtxContract.JtxRelatedto.OTHER)?.let { other -> this.other = other }
+            // Take care of related-to
+            val relatedToContentValues = getRelatedToContentValues()
+            relatedToContentValues.forEach { relatedToValues ->
+                val relTo = RelatedTo().apply {
+                    relatedToValues.getAsLong(JtxContract.JtxRelatedto.ID)?.let { id -> this.relatedtoId = id }
+                    relatedToValues.getAsString(JtxContract.JtxRelatedto.TEXT)?.let { text -> this.text = text }
+                    relatedToValues.getAsString(JtxContract.JtxRelatedto.RELTYPE)?.let { reltype -> this.reltype = reltype }
+                    relatedToValues.getAsString(JtxContract.JtxRelatedto.OTHER)?.let { other -> this.other = other }
 
+                }
+                relatedTo.add(relTo)
             }
-            relatedTo.add(relTo)
-        }
 
 
-        // Take care of attendees
-        val attendeeContentValues = getAttendeesContentValues()
-        attendeeContentValues.forEach { attendeeValues ->
-            val attendee = Attendee().apply {
-                attendeeValues.getAsLong(JtxContract.JtxAttendee.ID)?.let { id -> this.attendeeId = id }
-                attendeeValues.getAsString(JtxContract.JtxAttendee.CALADDRESS)?.let { caladdress -> this.caladdress = caladdress }
-                attendeeValues.getAsString(JtxContract.JtxAttendee.CUTYPE)?.let { cutype -> this.cutype = cutype }
-                attendeeValues.getAsString(JtxContract.JtxAttendee.MEMBER)?.let { member -> this.member = member }
-                attendeeValues.getAsString(JtxContract.JtxAttendee.ROLE)?.let { role -> this.role = role }
-                attendeeValues.getAsString(JtxContract.JtxAttendee.PARTSTAT)?.let { partstat -> this.partstat = partstat }
-                attendeeValues.getAsBoolean(JtxContract.JtxAttendee.RSVP)?.let { rsvp -> this.rsvp = rsvp }
-                attendeeValues.getAsString(JtxContract.JtxAttendee.DELEGATEDTO)?.let { delto -> this.delegatedto = delto }
-                attendeeValues.getAsString(JtxContract.JtxAttendee.DELEGATEDFROM)?.let { delfrom -> this.delegatedfrom = delfrom }
-                attendeeValues.getAsString(JtxContract.JtxAttendee.SENTBY)?.let { sentby -> this.sentby = sentby }
-                attendeeValues.getAsString(JtxContract.JtxAttendee.CN)?.let { cn -> this.cn = cn }
-                attendeeValues.getAsString(JtxContract.JtxAttendee.DIR)?.let { dir -> this.dir = dir }
-                attendeeValues.getAsString(JtxContract.JtxAttendee.LANGUAGE)?.let { lang -> this.language = lang }
-                attendeeValues.getAsString(JtxContract.JtxAttendee.OTHER)?.let { other -> this.other = other }
+            // Take care of attendees
+            val attendeeContentValues = getAttendeesContentValues()
+            attendeeContentValues.forEach { attendeeValues ->
+                val attendee = Attendee().apply {
+                    attendeeValues.getAsLong(JtxContract.JtxAttendee.ID)?.let { id -> this.attendeeId = id }
+                    attendeeValues.getAsString(JtxContract.JtxAttendee.CALADDRESS)?.let { caladdress -> this.caladdress = caladdress }
+                    attendeeValues.getAsString(JtxContract.JtxAttendee.CUTYPE)?.let { cutype -> this.cutype = cutype }
+                    attendeeValues.getAsString(JtxContract.JtxAttendee.MEMBER)?.let { member -> this.member = member }
+                    attendeeValues.getAsString(JtxContract.JtxAttendee.ROLE)?.let { role -> this.role = role }
+                    attendeeValues.getAsString(JtxContract.JtxAttendee.PARTSTAT)?.let { partstat -> this.partstat = partstat }
+                    attendeeValues.getAsBoolean(JtxContract.JtxAttendee.RSVP)?.let { rsvp -> this.rsvp = rsvp }
+                    attendeeValues.getAsString(JtxContract.JtxAttendee.DELEGATEDTO)?.let { delto -> this.delegatedto = delto }
+                    attendeeValues.getAsString(JtxContract.JtxAttendee.DELEGATEDFROM)?.let { delfrom -> this.delegatedfrom = delfrom }
+                    attendeeValues.getAsString(JtxContract.JtxAttendee.SENTBY)?.let { sentby -> this.sentby = sentby }
+                    attendeeValues.getAsString(JtxContract.JtxAttendee.CN)?.let { cn -> this.cn = cn }
+                    attendeeValues.getAsString(JtxContract.JtxAttendee.DIR)?.let { dir -> this.dir = dir }
+                    attendeeValues.getAsString(JtxContract.JtxAttendee.LANGUAGE)?.let { lang -> this.language = lang }
+                    attendeeValues.getAsString(JtxContract.JtxAttendee.OTHER)?.let { other -> this.other = other }
 
+                }
+                attendees.add(attendee)
             }
-            attendees.add(attendee)
-        }
 
-        // Take care of organizer
-        val organizerContentValues = getOrganizerContentValues()
-        val orgnzr = Organizer().apply {
-            organizerId = organizerContentValues?.getAsLong(JtxContract.JtxOrganizer.ID) ?: 0L
-            caladdress = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.CALADDRESS)
-            sentby = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.SENTBY)
-            cn = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.CN)
-            dir = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.DIR)
-            language = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.LANGUAGE)
-            other = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.OTHER)
-        }
-        if(orgnzr.caladdress?.isNotEmpty() == true)   // we only take the organizer if there was a caladdress (otherwise an empty ORGANIZER is created)
-            organizer = orgnzr
-
-        // Take care of attachments
-        val attachmentContentValues = getAttachmentsContentValues()
-        attachmentContentValues.forEach { attachmentValues ->
-            val attachment = Attachment().apply {
-                attachmentValues.getAsLong(JtxContract.JtxAttachment.ID)?.let { id -> this.attachmentId = id }
-                attachmentValues.getAsString(JtxContract.JtxAttachment.URI)?.let { uri -> this.uri = uri }
-                attachmentValues.getAsString(JtxContract.JtxAttachment.BINARY)?.let { value -> this.binary = value }
-                attachmentValues.getAsString(JtxContract.JtxAttachment.FMTTYPE)?.let { fmttype -> this.fmttype = fmttype }
-                attachmentValues.getAsString(JtxContract.JtxAttachment.OTHER)?.let { other -> this.other = other }
-
+            // Take care of organizer
+            val organizerContentValues = getOrganizerContentValues()
+            val orgnzr = Organizer().apply {
+                organizerId = organizerContentValues?.getAsLong(JtxContract.JtxOrganizer.ID) ?: 0L
+                caladdress = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.CALADDRESS)
+                sentby = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.SENTBY)
+                cn = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.CN)
+                dir = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.DIR)
+                language = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.LANGUAGE)
+                other = organizerContentValues?.getAsString(JtxContract.JtxOrganizer.OTHER)
             }
-            attachments.add(attachment)
-        }
+            if(orgnzr.caladdress?.isNotEmpty() == true)   // we only take the organizer if there was a caladdress (otherwise an empty ORGANIZER is created)
+                organizer = orgnzr
 
-        // Take care of alarms
-        val alarmContentValues = getAlarmsContentValues()
-        alarmContentValues.forEach { alarmValues ->
-            val alarm = Alarm().apply {
-                alarmValues.getAsLong(JtxContract.JtxAlarm.ID)?.let { id -> this.alarmId = id }
-                alarmValues.getAsString(JtxContract.JtxAlarm.ACTION)?.let { action -> this.action = action }
-                alarmValues.getAsString(JtxContract.JtxAlarm.DESCRIPTION)?.let { desc -> this.description = desc }
-                alarmValues.getAsLong(JtxContract.JtxAlarm.TRIGGER_TIME)?.let { time -> this.triggerTime = time }
-                alarmValues.getAsString(JtxContract.JtxAlarm.TRIGGER_TIMEZONE)?.let { tz -> this.triggerTimezone = tz }
-                alarmValues.getAsString(JtxContract.JtxAlarm.TRIGGER_RELATIVE_TO)?.let { relative -> this.triggerRelativeTo = relative }
-                alarmValues.getAsString(JtxContract.JtxAlarm.TRIGGER_RELATIVE_DURATION)?.let { duration -> this.triggerRelativeDuration = duration }
-                alarmValues.getAsString(JtxContract.JtxAlarm.SUMMARY)?.let { summary -> this.summary = summary }
-                alarmValues.getAsString(JtxContract.JtxAlarm.DURATION)?.let { dur -> this.duration = dur }
-                alarmValues.getAsString(JtxContract.JtxAlarm.REPEAT)?.let { repeat -> this.repeat = repeat }
-                alarmValues.getAsString(JtxContract.JtxAlarm.ATTACH)?.let { attach -> this.attach = attach }
-                alarmValues.getAsString(JtxContract.JtxAlarm.OTHER)?.let { other -> this.other = other }
+            // Take care of attachments
+            val attachmentContentValues = getAttachmentsContentValues()
+            attachmentContentValues.forEach { attachmentValues ->
+                val attachment = Attachment().apply {
+                    attachmentValues.getAsLong(JtxContract.JtxAttachment.ID)?.let { id -> this.attachmentId = id }
+                    attachmentValues.getAsString(JtxContract.JtxAttachment.URI)?.let { uri -> this.uri = uri }
+                    attachmentValues.getAsString(JtxContract.JtxAttachment.BINARY)?.let { value -> this.binary = value }
+                    attachmentValues.getAsString(JtxContract.JtxAttachment.FMTTYPE)?.let { fmttype -> this.fmttype = fmttype }
+                    attachmentValues.getAsString(JtxContract.JtxAttachment.OTHER)?.let { other -> this.other = other }
+
+                }
+                attachments.add(attachment)
             }
-            alarms.add(alarm)
-        }
 
-        // Take care of uknown properties
-        val unknownContentValues = getUnknownContentValues()
-        unknownContentValues.forEach { unknownValues ->
+            // Take care of alarms
+            val alarmContentValues = getAlarmsContentValues()
+            alarmContentValues.forEach { alarmValues ->
+                val alarm = Alarm().apply {
+                    alarmValues.getAsLong(JtxContract.JtxAlarm.ID)?.let { id -> this.alarmId = id }
+                    alarmValues.getAsString(JtxContract.JtxAlarm.ACTION)?.let { action -> this.action = action }
+                    alarmValues.getAsString(JtxContract.JtxAlarm.DESCRIPTION)?.let { desc -> this.description = desc }
+                    alarmValues.getAsLong(JtxContract.JtxAlarm.TRIGGER_TIME)?.let { time -> this.triggerTime = time }
+                    alarmValues.getAsString(JtxContract.JtxAlarm.TRIGGER_TIMEZONE)?.let { tz -> this.triggerTimezone = tz }
+                    alarmValues.getAsString(JtxContract.JtxAlarm.TRIGGER_RELATIVE_TO)?.let { relative -> this.triggerRelativeTo = relative }
+                    alarmValues.getAsString(JtxContract.JtxAlarm.TRIGGER_RELATIVE_DURATION)?.let { duration -> this.triggerRelativeDuration = duration }
+                    alarmValues.getAsString(JtxContract.JtxAlarm.SUMMARY)?.let { summary -> this.summary = summary }
+                    alarmValues.getAsString(JtxContract.JtxAlarm.DURATION)?.let { dur -> this.duration = dur }
+                    alarmValues.getAsString(JtxContract.JtxAlarm.REPEAT)?.let { repeat -> this.repeat = repeat }
+                    alarmValues.getAsString(JtxContract.JtxAlarm.ATTACH)?.let { attach -> this.attach = attach }
+                    alarmValues.getAsString(JtxContract.JtxAlarm.OTHER)?.let { other -> this.other = other }
+                }
+                alarms.add(alarm)
+            }
+
+            // Take care of uknown properties
+            val unknownContentValues = getUnknownContentValues()
+            unknownContentValues.forEach { unknownValues ->
             val unknwn = Unknown().apply {
                 unknownValues.getAsLong(JtxContract.JtxUnknown.ID)?.let { id -> this.unknownId = id }
                 unknownValues.getAsString(JtxContract.JtxUnknown.UNKNOWN_VALUE)?.let { value -> this.value = value }
