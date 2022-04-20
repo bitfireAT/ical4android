@@ -31,7 +31,16 @@ class AndroidTimeUtilsTest {
 
     val tzCustom by lazy {
         val builder = CalendarBuilder()
-        val cal = builder.build(StringReader(""))
+        val cal = builder.build(StringReader("BEGIN:VCALENDAR\n" +
+                "BEGIN:VTIMEZONE\n" +
+                "TZID:CustomTime\n" +
+                "BEGIN:STANDARD\n" +
+                "TZOFFSETFROM:+0310\n" +
+                "TZOFFSETTO:+0310\n" +
+                "DTSTART:19600101T000000\n" +
+                "END:STANDARD\n" +
+                "END:VTIMEZONE\n" +
+                "END:VCALENDAR"))
         TimeZone(cal.getComponent(VTimeZone.VTIMEZONE) as VTimeZone)
     }
 
