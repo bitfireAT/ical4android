@@ -56,11 +56,7 @@ object AndroidTimeUtils {
     fun androidifyTimeZone(date: DateProperty?) {
         if (DateUtils.isDateTime(date) && date?.isUtc == false) {
             val tzID = date.timeZone?.id
-            val bestMatchingTzId = DateUtils.findAndroidTimezoneID(tzID)
-            if (tzID != bestMatchingTzId) {
-                Ical4Android.log.warning("Android doesn't know time zone ${tzID ?: "(floating)"}, setting default time zone $bestMatchingTzId")
-                date.timeZone = DateUtils.ical4jTimeZone(bestMatchingTzId)
-            }
+            date.timeZone = bestMatchingTzId(tzID)
         }
     }
 
@@ -73,18 +69,43 @@ object AndroidTimeUtils {
      * @param dateList [DateListProperty] to validate. Values which are not DATE-TIME will be ignored.
      */
     fun androidifyTimeZone(dateList: DateListProperty) {
-        val dates = dateList.dates
-        if (dates.type == Value.DATE_TIME && !dates.isUtc) {
-            val tzID = dateList.dates.timeZone?.id
-            val bestMatchingTzId = DateUtils.findAndroidTimezoneID(tzID)
-            if (tzID != bestMatchingTzId) {
-                Ical4Android.log.warning("Android doesn't know time zone ${tzID ?: "(floating)"}, setting default time zone $bestMatchingTzId")
-                dateList.timeZone = DateUtils.ical4jTimeZone(bestMatchingTzId)
-            }
 
-            // keep the time zone of dateList in sync with the actual dates
-            if (dateList.timeZone != dates.timeZone)
-                dateList.timeZone = dates.timeZone
+        // Handle periods (RDate only)
+        val periods = (dateList as? RDate)?.periods
+        if (periods != null && periods.size > 0) {
+            if (!periods.isUtc) {
+                val tzID = periods.timeZone?.id
+                dateList.timeZone = bestMatchingTzId(tzID)
+
+                // keep the time zone of dateList in sync with the actual periods
+                if (dateList.timeZone != periods.timeZone)
+                    dateList.timeZone = periods.timeZone
+            }
+            return //  RDate can only have periods OR dates - not both, bail out fast
+        }
+
+        // Handle date-times (RDate and ExDate)
+        val dates = dateList.dates
+        if (dates != null && dates.size > 0) {
+            val dates = dateList.dates
+            if (dates.type == Value.DATE_TIME && !dates.isUtc) {
+                val tzID = dates.timeZone?.id
+                dateList.timeZone = bestMatchingTzId(tzID)
+
+                // keep the time zone of dateList in sync with the actual dates
+                if (dateList.timeZone != dates.timeZone)
+                    dateList.timeZone = dates.timeZone
+            }
+        }
+    }
+
+    private fun bestMatchingTzId(tzID: String?): TimeZone? {
+        val bestMatchingTzId = DateUtils.findAndroidTimezoneID(tzID)
+        return if (tzID == bestMatchingTzId) {
+            DateUtils.ical4jTimeZone(tzID)
+        } else {
+            Ical4Android.log.warning("Android doesn't know time zone ${tzID ?: "\"null\" (floating)"}, setting default time zone $bestMatchingTzId")
+            DateUtils.ical4jTimeZone(bestMatchingTzId)
         }
     }
 
