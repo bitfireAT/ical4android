@@ -19,13 +19,10 @@ import net.fortuna.ical4j.model.property.RDate
 import net.fortuna.ical4j.util.TimeZones
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.InputStreamReader
 import java.io.StringReader
 import java.time.Duration
 import java.time.Period
-import java.time.temporal.TemporalAmount
 import java.util.*
-import java.util.logging.Logger
 
 class AndroidTimeUtilsTest {
 
@@ -171,26 +168,18 @@ class AndroidTimeUtilsTest {
 
     @Test
     fun testAndroidifyTimeZone_DateListProperty_Period_KnownTimezone() {
-        // times with known time zone should be unchanged
-        val periodList = PeriodList(false, false)
-        periodList.timeZone = tzToronto
+        // periods with known time zone should be unchanged
+        val rDate = RDate(PeriodList("19970101T180000/19970102T070000,19970102T180000/19970108T090000"))
+        rDate.periods.timeZone = tzToronto
 
-        // TODO: Why does adding a periodList does not work?
-//        periodList.add(PeriodList("19970101T180000/19970102T070000,19970102T180000/19970108T090000"))
-        periodList.add(Period("19970101T180000/19970102T070000"))
-        periodList.add(Period("19970102T180000/19970108T090000"))
-
-        val rDate = RDate(periodList)
         AndroidTimeUtils.androidifyTimeZone(rDate)
+        
+        val expectedPeriodList = PeriodList("19970101T180000/19970102T070000,19970102T180000/19970108T090000")
+        expectedPeriodList.timeZone = tzToronto
 
-        // TODO: Why does this assertion fail???
-        assertEquals(
-            setOf(Period(DateTime("19970101T120000"), DateTime("19970102T010000")),
-                Period(DateTime("19970102T120000"), DateTime("19970108T030000"))),
-            rDate.periods)
+        assertEquals(expectedPeriodList, rDate.periods)
         assertEquals(tzToronto, rDate.periods.timeZone)
-        rDate.timeZone = DateUtils.ical4jTimeZone(DateUtils.findAndroidTimezoneID("America/Toronto"))
-        assertEquals(tzToronto, rDate.timeZone)
+        assertNull(rDate.timeZone)
         assertFalse(rDate.dates.isUtc)
     }
 

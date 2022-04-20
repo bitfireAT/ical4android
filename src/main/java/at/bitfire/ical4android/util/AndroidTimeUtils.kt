@@ -76,10 +76,6 @@ object AndroidTimeUtils {
             if (!periods.isUtc) {
                 val tzID = periods.timeZone?.id
                 dateList.timeZone = bestMatchingTzId(tzID)
-
-                // keep the time zone of dateList in sync with the actual periods
-                if (dateList.timeZone != periods.timeZone)
-                    dateList.timeZone = periods.timeZone
             }
             return //  RDate can only have periods OR dates - not both, bail out fast
         }
@@ -92,9 +88,9 @@ object AndroidTimeUtils {
                 val tzID = dates.timeZone?.id
                 dateList.timeZone = bestMatchingTzId(tzID)
 
-                // keep the time zone of dateList in sync with the actual dates
-                if (dateList.timeZone != dates.timeZone)
-                    dateList.timeZone = dates.timeZone
+//                // keep the time zone of dateList in sync with the actual dates
+//                if (dateList.timeZone != dates.timeZone)
+//                    dateList.timeZone = dates.timeZone
             }
         }
     }
