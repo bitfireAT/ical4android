@@ -61,10 +61,10 @@ object AndroidTimeUtils {
     }
 
     /**
-     * Ensures that a given [DateListProperty]'s periods OR dates (of type date-time), each either have
+     * Ensures that a given [DateListProperty] either
      *
-     * 1. a time zone with an ID that is available in Android, or
-     * 2. a UTC property isUtc = *true*.
+     * 1. has a time zone with an ID that is available in Android, or
+     * 2. is an UTC property ([DateProperty.isUtc] = *true*).
      * *
      * @param dateList [DateListProperty] to validate. Values which are not DATE-TIME will be ignored.
      */

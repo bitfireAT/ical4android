@@ -207,7 +207,7 @@ class AndroidTimeUtilsTest {
             mutableSetOf<net.fortuna.ical4j.model.Period>().also { it.addAll(rDate.periods) }
         )
         assertEquals(tzToronto, rDate.periods.timeZone)
-        assertNull((rDate as RDate).timeZone)
+        assertNull(rDate.timeZone)
         assertFalse(rDate.dates.isUtc)
     }
 
