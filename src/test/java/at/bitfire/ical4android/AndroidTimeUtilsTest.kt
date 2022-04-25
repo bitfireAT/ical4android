@@ -19,6 +19,7 @@ import net.fortuna.ical4j.model.property.RDate
 import net.fortuna.ical4j.util.TimeZones
 import org.junit.Assert.*
 import org.junit.Test
+import java.io.InputStreamReader
 import java.io.StringReader
 import java.time.Duration
 import java.time.Period
@@ -273,7 +274,7 @@ class AndroidTimeUtilsTest {
     }
 
 
-    // Method: androidStringToRecurrenceSet
+    // androidStringToRecurrenceSets
 
     @Test
     fun testAndroidStringToRecurrenceSets_UtcTimes() {
@@ -318,6 +319,9 @@ class AndroidTimeUtilsTest {
         val exDate = AndroidTimeUtils.androidStringToRecurrenceSet("${tzToronto.id};20150103T113030",false, 1420302630000L) { ExDate(it) }
         assertEquals(0, exDate.dates.size)
     }
+
+    // recurrenceSetsToAndroidString
+    // date and date-time
 
     @Test
     fun testRecurrenceSetsToAndroidString_UtcTime() {
@@ -372,6 +376,24 @@ class AndroidTimeUtilsTest {
         list.add(RDate(DateList("20150101T000000,20150702T000000Z", Value.DATE_TIME)))
         assertEquals("20150101T000000Z,20150702T000000Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, true))
     }
+
+    // recurrenceSetsToAndroidString
+    // periods
+
+    @Test
+    fun testRecurrenceSetsToAndroidString_Period() {
+        // Real-life use case of periods
+
+        javaClass.classLoader!!.getResourceAsStream("events/npe-test.ics").use { stream ->
+            val rDate = Event.eventsFromReader(InputStreamReader(stream))[0].rDates[0]
+            val list = ArrayList<DateListProperty>(1)
+            list.add(rDate)
+            AndroidTimeUtils.recurrenceSetsToAndroidString(list, true)
+        }
+    }
+
+
+    // recurrenceSetsToOpenTasksString
 
     @Test
     fun testRecurrenceSetsToOpenTasksString_UtcTimes() {
