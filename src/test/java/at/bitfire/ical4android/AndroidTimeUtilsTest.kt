@@ -321,13 +321,30 @@ class AndroidTimeUtilsTest {
     }
 
     // recurrenceSetsToAndroidString
-    // date and date-time
 
     @Test
-    fun testRecurrenceSetsToAndroidString_UtcTime() {
+    fun testRecurrenceSetsToAndroidString_Date() {
+        // DATEs (without time) have to be converted to <date>T000000Z for Android
         val list = ArrayList<DateListProperty>(1)
-        list.add(RDate(DateList("20150101T103010Z,20150102T103020Z", Value.DATE_TIME)))
-        assertEquals("20150101T103010Z,20150102T103020Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, false))
+        list.add(RDate(DateList("20150101,20150702", Value.DATE)))
+        assertEquals("20150101T000000Z,20150702T000000Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, true))
+    }
+
+    @Test
+    fun testRecurrenceSetsToAndroidString_Period() {
+        // PERIODs are not supported yet — should be implemented later
+        val list = listOf(
+            RDate(PeriodList("19960403T020000Z/19960403T040000Z,19960404T010000Z/PT3H"))
+        )
+        assertEquals("", AndroidTimeUtils.recurrenceSetsToAndroidString(list, false))
+    }
+
+    @Test
+    fun testRecurrenceSetsToAndroidString_TimeAlthoughAllDay() {
+        // DATE-TIME (floating time or UTC) recurrences for all-day events have to converted to <date>T000000Z for Android
+        val list = ArrayList<DateListProperty>(1)
+        list.add(RDate(DateList("20150101T000000,20150702T000000Z", Value.DATE_TIME)))
+        assertEquals("20150101T000000Z,20150702T000000Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, true))
     }
 
     @Test
@@ -362,34 +379,10 @@ class AndroidTimeUtilsTest {
     }
 
     @Test
-    fun testRecurrenceSetsToAndroidString_Date() {
-        // DATEs (without time) have to be converted to <date>T000000Z for Android
+    fun testRecurrenceSetsToAndroidString_UtcTime() {
         val list = ArrayList<DateListProperty>(1)
-        list.add(RDate(DateList("20150101,20150702", Value.DATE)))
-        assertEquals("20150101T000000Z,20150702T000000Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, true))
-    }
-
-    @Test
-    fun testRecurrenceSetsToAndroidString_TimeAlthoughAllDay() {
-        // DATE-TIME (floating time or UTC) recurrences for all-day events have to converted to <date>T000000Z for Android
-        val list = ArrayList<DateListProperty>(1)
-        list.add(RDate(DateList("20150101T000000,20150702T000000Z", Value.DATE_TIME)))
-        assertEquals("20150101T000000Z,20150702T000000Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, true))
-    }
-
-    // recurrenceSetsToAndroidString
-    // periods
-
-    @Test
-    fun testRecurrenceSetsToAndroidString_Period() {
-        // Real-life use case of periods
-
-        javaClass.classLoader!!.getResourceAsStream("events/npe-test.ics").use { stream ->
-            val rDate = Event.eventsFromReader(InputStreamReader(stream))[0].rDates[0]
-            val list = ArrayList<DateListProperty>(1)
-            list.add(rDate)
-            AndroidTimeUtils.recurrenceSetsToAndroidString(list, true)
-        }
+        list.add(RDate(DateList("20150101T103010Z,20150102T103020Z", Value.DATE_TIME)))
+        assertEquals("20150101T103010Z,20150102T103020Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, false))
     }
 
 

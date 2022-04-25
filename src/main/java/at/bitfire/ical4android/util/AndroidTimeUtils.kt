@@ -69,14 +69,15 @@ object AndroidTimeUtils {
      * @param dateList [DateListProperty] to validate. Values which are not DATE-TIME will be ignored.
      */
     fun androidifyTimeZone(dateList: DateListProperty) {
-
         // periods (RDate only)
         val periods = (dateList as? RDate)?.periods
-        if (periods != null && periods.size > 0) {
-            if (!periods.isUtc) {
-                val tzID = periods.timeZone?.id
-                dateList.timeZone = bestMatchingTzId(tzID) // TODO: Won't work until resolved in ical4j (issue #...)
-            }
+        if (periods != null && periods.size > 0 && !periods.isUtc) {
+            val tzID = periods.timeZone?.id
+
+            // Won't work until resolved in ical4j (https://github.com/ical4j/ical4j/discussions/568)
+            // DateListProperty.setTimeZone() does not set the timeZone property when the DateList has PERIODs
+            dateList.timeZone = bestMatchingTzId(tzID)
+
             return //  RDate can only contain periods OR dates - not both, bail out fast
         }
 
@@ -134,6 +135,7 @@ object AndroidTimeUtils {
     /**
      * Concatenates, if necessary, multiple RDATE/EXDATE lists and converts them to
      * a formatted string which Android calendar provider can process.
+     *
      * Android expects this format: "[TZID;]date1,date2,date3" where date is "yyyymmddThhmmss" (when
      * TZID is given) or "yyyymmddThhmmssZ". We don't use the TZID format here because then we're limited
      * to one time-zone, while an iCalendar may contain multiple EXDATE/RDATE lines with different time zones.
@@ -152,29 +154,22 @@ object AndroidTimeUtils {
         val strDates = LinkedList<String>()
 
         // use time zone of first entry for the whole set; null for UTC
-        val tzDates = dates.firstOrNull()?.dates?.timeZone
-        val tzPeriods = (dates.firstOrNull() as? RDate)?.periods?.timeZone
+        val tz =
+            (dates.firstOrNull() as? RDate)?.periods?.timeZone ?:   // VALUE=PERIOD (only RDate)
+            dates.firstOrNull()?.dates?.timeZone                    // VALUE=DATE/DATE-TIME
 
         for (dateListProp in dates) {
             if (dateListProp is RDate && dateListProp.periods.isNotEmpty()) {
-
-                if (tzPeriods == null && !dateListProp.periods.isUtc)
-                    dateListProp.setUtc(true)
-                else if (tzPeriods != null && dateListProp.timeZone != tzPeriods)
-                    dateListProp.timeZone = tzPeriods // TODO: Won't work until resolved in ical4j (issue #...)
-
-
-                strDates.add(dateListProp.value) // TODO: can we just use periods like this???
-
-                continue // RDate can only have either periods or dates, bail out fast
+                Ical4Android.log.warning("RDATE PERIOD not supported, ignoring")
+                break
             }
 
             when (dateListProp.dates.type) {
                 Value.DATE_TIME -> {
-                    if (tzDates == null && !dateListProp.dates.isUtc)
+                    if (tz == null && !dateListProp.dates.isUtc)
                         dateListProp.setUtc(true)
-                    else if (tzDates != null && dateListProp.timeZone != tzDates)
-                        dateListProp.timeZone = tzDates
+                    else if (tz != null && dateListProp.timeZone != tz)
+                        dateListProp.timeZone = tz
 
                     if (allDay)
                         dateListProp.dates.mapTo(strDates) { dateFormatUtcMidnight.format(it) }
@@ -191,9 +186,8 @@ object AndroidTimeUtils {
 
         // format: [tzid;]value1,value2,...
         val result = StringBuilder()
-        if (tzDates != null) {
-            result.append(tzDates.id).append(RECURRENCE_LIST_TZID_SEPARATOR)
-        }
+        if (tz != null)
+            result.append(tz.id).append(RECURRENCE_LIST_TZID_SEPARATOR)
         result.append(strDates.joinToString(RECURRENCE_LIST_VALUE_SEPARATOR))
         return result.toString()
     }
@@ -296,7 +290,7 @@ object AndroidTimeUtils {
     }
 
 
-        // duration
+    // duration
 
     /**
      * Checks and fixes [Event.duration] values with incorrect format which can't be
