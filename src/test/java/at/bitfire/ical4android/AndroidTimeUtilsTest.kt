@@ -19,6 +19,7 @@ import net.fortuna.ical4j.model.property.RDate
 import net.fortuna.ical4j.util.TimeZones
 import org.junit.Assert.*
 import org.junit.Test
+import java.io.InputStreamReader
 import java.io.StringReader
 import java.time.Duration
 import java.time.Period
@@ -41,18 +42,22 @@ class AndroidTimeUtilsTest {
                 "END:STANDARD\n" +
                 "END:VTIMEZONE\n" +
                 "END:VCALENDAR"))
-        net.fortuna.ical4j.model.TimeZone(cal.getComponent(VTimeZone.VTIMEZONE) as VTimeZone)
+        TimeZone(cal.getComponent(VTimeZone.VTIMEZONE) as VTimeZone)
     }
 
     val tzIdDefault = java.util.TimeZone.getDefault().id
     val tzDefault = DateUtils.ical4jTimeZone(tzIdDefault)
 
+    // androidifyTimeZone
 
     @Test
-    fun testAndroidifyTimeZone_DateProperty_Null() {
+    fun testAndroidifyTimeZone_Null() {
         // must not throw an exception
         AndroidTimeUtils.androidifyTimeZone(null)
     }
+
+    // androidifyTimeZone
+    // DateProperty
 
     @Test
     fun testAndroidifyTimeZone_DateProperty_Date() {
@@ -104,6 +109,8 @@ class AndroidTimeUtilsTest {
         assertTrue(dtStart.isUtc)
     }
 
+    // androidifyTimeZone
+    // DateListProperty - date
 
     @Test
     fun testAndroidifyTimeZone_DateListProperty_Date() {
@@ -117,6 +124,9 @@ class AndroidTimeUtilsTest {
         assertNull(rDate.dates.timeZone)
         assertFalse(rDate.dates.isUtc)
     }
+
+    // androidifyTimeZone
+    // DateListProperty - date-time
 
     @Test
     fun testAndroidifyTimeZone_DateListProperty_KnownTimeZone() {
@@ -170,6 +180,81 @@ class AndroidTimeUtilsTest {
         assertTrue(rDate.dates.isUtc)
     }
 
+    // androidifyTimeZone
+    // DateListProperty - period-explicit
+
+    @Test
+    fun testAndroidifyTimeZone_DateListProperty_Period_FloatingTime() {
+        // times with floating time should be treated as system default time zone
+        val rDate = RDate(PeriodList("19970101T180000/19970102T070000,20220103T000000/20220108T000000"))
+        AndroidTimeUtils.androidifyTimeZone(rDate)
+        assertEquals(
+            setOf(Period(DateTime("19970101T18000000"), DateTime("19970102T07000000")),
+                Period(DateTime("20220103T000000"), DateTime("20220108T000000"))),
+            rDate.periods)
+        assertNull(rDate.timeZone)
+        assertNull(rDate.periods.timeZone)
+        assertTrue(rDate.periods.isUtc)
+    }
+
+    @Test
+    fun testAndroidifyTimeZone_DateListProperty_Period_KnownTimezone() {
+        // periods with known time zone should be unchanged
+        val rDate = RDate(PeriodList("19970101T180000/19970102T070000,19970102T180000/19970108T090000"))
+        rDate.periods.timeZone = tzToronto
+        AndroidTimeUtils.androidifyTimeZone(rDate)
+        assertEquals(
+            setOf(Period("19970101T180000/19970102T070000"), Period("19970102T180000/19970108T090000")),
+            mutableSetOf<net.fortuna.ical4j.model.Period>().also { it.addAll(rDate.periods) }
+        )
+        assertEquals(tzToronto, rDate.periods.timeZone)
+        assertNull(rDate.timeZone)
+        assertFalse(rDate.dates.isUtc)
+    }
+
+    @Test
+    fun testAndroidifyTimeZone_DateListProperty_Periods_UnknownTimeZone() {
+        // time zone that is not available on Android systems should be rewritten to system default
+        val rDate = RDate(PeriodList("19970101T180000/19970102T070000,19970102T180000/19970108T090000"))
+        rDate.periods.timeZone = tzCustom
+        AndroidTimeUtils.androidifyTimeZone(rDate)
+        assertEquals(
+            setOf(Period("19970101T180000/19970102T070000"), Period("19970102T180000/19970108T090000")),
+            mutableSetOf<net.fortuna.ical4j.model.Period>().also { it.addAll(rDate.periods) }
+        )
+        assertEquals(tzIdDefault, rDate.periods.timeZone.id)
+        assertNull(rDate.timeZone)
+        assertFalse(rDate.dates.isUtc)
+    }
+
+    @Test
+    fun testAndroidifyTimeZone_DateListProperty_Period_UTC() {
+        // times with UTC should be unchanged
+        val rDate = RDate(PeriodList("19970101T180000Z/19970102T070000Z,20220103T0000Z/20220108T0000Z"))
+        AndroidTimeUtils.androidifyTimeZone(rDate)
+        assertEquals(
+            setOf(Period(DateTime("19970101T180000Z"), DateTime("19970102T070000Z")),
+                Period(DateTime("20220103T0000Z"), DateTime("20220108T0000Z"))),
+            rDate.periods)
+        assertTrue(rDate.periods.isUtc)
+    }
+
+    // androidifyTimeZone
+    // DateListProperty - period-start
+
+    @Test
+    fun testAndroidifyTimeZone_DateListProperty_PeriodStart_UTC() {
+        // times with UTC should be unchanged
+        val rDate = RDate(PeriodList("19970101T180000Z/PT5H30M,20220103T0000Z/PT2H30M10S"))
+        AndroidTimeUtils.androidifyTimeZone(rDate)
+        assertEquals(
+            setOf(Period(DateTime("19970101T180000Z"), Duration.parse("PT5H30M")),
+                Period(DateTime("20220103T0000Z"), Duration.parse("PT2H30M10S"))),
+            rDate.periods)
+        assertTrue(rDate.periods.isUtc)
+    }
+
+    // storageTzId
 
     @Test
     fun testStorageTzId_Date() =
@@ -189,14 +274,14 @@ class AndroidTimeUtilsTest {
     }
 
 
-    // recurrence sets
+    // androidStringToRecurrenceSets
 
     @Test
     fun testAndroidStringToRecurrenceSets_UtcTimes() {
         // list of UTC times
-        var exDate = AndroidTimeUtils.androidStringToRecurrenceSet("20150101T103010Z,20150702T103020Z", false) { ExDate(it) }
+        val exDate = AndroidTimeUtils.androidStringToRecurrenceSet("20150101T103010Z,20150702T103020Z", false) { ExDate(it) }
         assertNull(exDate.timeZone)
-        var exDates = exDate.dates
+        val exDates = exDate.dates
         assertEquals(Value.DATE_TIME, exDates.type)
         assertTrue(exDates.isUtc)
         assertEquals(2, exDates.size)
@@ -235,11 +320,31 @@ class AndroidTimeUtilsTest {
         assertEquals(0, exDate.dates.size)
     }
 
+    // recurrenceSetsToAndroidString
+
     @Test
-    fun testRecurrenceSetsToAndroidString_UtcTime() {
+    fun testRecurrenceSetsToAndroidString_Date() {
+        // DATEs (without time) have to be converted to <date>T000000Z for Android
         val list = ArrayList<DateListProperty>(1)
-        list.add(RDate(DateList("20150101T103010Z,20150102T103020Z", Value.DATE_TIME)))
-        assertEquals("20150101T103010Z,20150102T103020Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, false))
+        list.add(RDate(DateList("20150101,20150702", Value.DATE)))
+        assertEquals("20150101T000000Z,20150702T000000Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, true))
+    }
+
+    @Test
+    fun testRecurrenceSetsToAndroidString_Period() {
+        // PERIODs are not supported yet — should be implemented later
+        val list = listOf(
+            RDate(PeriodList("19960403T020000Z/19960403T040000Z,19960404T010000Z/PT3H"))
+        )
+        assertEquals("", AndroidTimeUtils.recurrenceSetsToAndroidString(list, false))
+    }
+
+    @Test
+    fun testRecurrenceSetsToAndroidString_TimeAlthoughAllDay() {
+        // DATE-TIME (floating time or UTC) recurrences for all-day events have to converted to <date>T000000Z for Android
+        val list = ArrayList<DateListProperty>(1)
+        list.add(RDate(DateList("20150101T000000,20150702T000000Z", Value.DATE_TIME)))
+        assertEquals("20150101T000000Z,20150702T000000Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, true))
     }
 
     @Test
@@ -274,20 +379,14 @@ class AndroidTimeUtilsTest {
     }
 
     @Test
-    fun testRecurrenceSetsToAndroidString_Date() {
-        // DATEs (without time) have to be converted to <date>T000000Z for Android
+    fun testRecurrenceSetsToAndroidString_UtcTime() {
         val list = ArrayList<DateListProperty>(1)
-        list.add(RDate(DateList("20150101,20150702", Value.DATE)))
-        assertEquals("20150101T000000Z,20150702T000000Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, true))
+        list.add(RDate(DateList("20150101T103010Z,20150102T103020Z", Value.DATE_TIME)))
+        assertEquals("20150101T103010Z,20150102T103020Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, false))
     }
 
-    @Test
-    fun testRecurrenceSetsToAndroidString_TimeAlthoughAllDay() {
-        // DATE-TIME (floating time or UTC) recurrences for all-day events have to converted to <date>T000000Z for Android
-        val list = ArrayList<DateListProperty>(1)
-        list.add(RDate(DateList("20150101T000000,20150702T000000Z", Value.DATE_TIME)))
-        assertEquals("20150101T000000Z,20150702T000000Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, true))
-    }
+
+    // recurrenceSetsToOpenTasksString
 
     @Test
     fun testRecurrenceSetsToOpenTasksString_UtcTimes() {

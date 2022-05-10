@@ -56,11 +56,7 @@ object AndroidTimeUtils {
     fun androidifyTimeZone(date: DateProperty?) {
         if (DateUtils.isDateTime(date) && date?.isUtc == false) {
             val tzID = date.timeZone?.id
-            val bestMatchingTzId = DateUtils.findAndroidTimezoneID(tzID)
-            if (tzID != bestMatchingTzId) {
-                Ical4Android.log.warning("Android doesn't know time zone ${tzID ?: "(floating)"}, setting default time zone $bestMatchingTzId")
-                date.timeZone = DateUtils.ical4jTimeZone(bestMatchingTzId)
-            }
+            date.timeZone = bestMatchingTzId(tzID)
         }
     }
 
@@ -73,18 +69,35 @@ object AndroidTimeUtils {
      * @param dateList [DateListProperty] to validate. Values which are not DATE-TIME will be ignored.
      */
     fun androidifyTimeZone(dateList: DateListProperty) {
-        val dates = dateList.dates
-        if (dates.type == Value.DATE_TIME && !dates.isUtc) {
-            val tzID = dateList.dates.timeZone?.id
-            val bestMatchingTzId = DateUtils.findAndroidTimezoneID(tzID)
-            if (tzID != bestMatchingTzId) {
-                Ical4Android.log.warning("Android doesn't know time zone ${tzID ?: "(floating)"}, setting default time zone $bestMatchingTzId")
-                dateList.timeZone = DateUtils.ical4jTimeZone(bestMatchingTzId)
-            }
+        // periods (RDate only)
+        val periods = (dateList as? RDate)?.periods
+        if (periods != null && periods.size > 0 && !periods.isUtc) {
+            val tzID = periods.timeZone?.id
 
-            // keep the time zone of dateList in sync with the actual dates
-            if (dateList.timeZone != dates.timeZone)
-                dateList.timeZone = dates.timeZone
+            // Won't work until resolved in ical4j (https://github.com/ical4j/ical4j/discussions/568)
+            // DateListProperty.setTimeZone() does not set the timeZone property when the DateList has PERIODs
+            dateList.timeZone = bestMatchingTzId(tzID)
+
+            return //  RDate can only contain periods OR dates - not both, bail out fast
+        }
+
+        // date-times (RDate and ExDate)
+        val dates = dateList.dates
+        if (dates != null && dates.size > 0) {
+            if (dates.type == Value.DATE_TIME && !dates.isUtc) {
+                val tzID = dates.timeZone?.id
+                dateList.timeZone = bestMatchingTzId(tzID)
+            }
+        }
+    }
+
+    private fun bestMatchingTzId(tzID: String?): TimeZone? {
+        val bestMatchingTzId = DateUtils.findAndroidTimezoneID(tzID)
+        return if (tzID == bestMatchingTzId) {
+            DateUtils.ical4jTimeZone(tzID)
+        } else {
+            Ical4Android.log.warning("Android doesn't know time zone ${tzID ?: "\"null\" (floating)"}, setting default time zone $bestMatchingTzId")
+            DateUtils.ical4jTimeZone(bestMatchingTzId)
         }
     }
 
@@ -122,6 +135,7 @@ object AndroidTimeUtils {
     /**
      * Concatenates, if necessary, multiple RDATE/EXDATE lists and converts them to
      * a formatted string which Android calendar provider can process.
+     *
      * Android expects this format: "[TZID;]date1,date2,date3" where date is "yyyymmddThhmmss" (when
      * TZID is given) or "yyyymmddThhmmssZ". We don't use the TZID format here because then we're limited
      * to one time-zone, while an iCalendar may contain multiple EXDATE/RDATE lines with different time zones.
@@ -140,15 +154,15 @@ object AndroidTimeUtils {
         val strDates = LinkedList<String>()
 
         // use time zone of first entry for the whole set; null for UTC
-        val tz = dates.firstOrNull()?.dates?.timeZone
+        val tz =
+            (dates.firstOrNull() as? RDate)?.periods?.timeZone ?:   // VALUE=PERIOD (only RDate)
+            dates.firstOrNull()?.dates?.timeZone                    // VALUE=DATE/DATE-TIME
 
         for (dateListProp in dates) {
-            if (dateListProp is RDate)
-                if (dateListProp.periods.isNotEmpty())
-                    Ical4Android.log.warning("RDATE PERIOD not supported, ignoring")
-            else if (dateListProp is ExDate)
-                    if (dateListProp.periods.isNotEmpty())
-                        Ical4Android.log.warning("EXDATE PERIOD not supported, ignoring")
+            if (dateListProp is RDate && dateListProp.periods.isNotEmpty()) {
+                Ical4Android.log.warning("RDATE PERIOD not supported, ignoring")
+                break
+            }
 
             when (dateListProp.dates.type) {
                 Value.DATE_TIME -> {
@@ -172,9 +186,8 @@ object AndroidTimeUtils {
 
         // format: [tzid;]value1,value2,...
         val result = StringBuilder()
-        if (tz != null) {
+        if (tz != null)
             result.append(tz.id).append(RECURRENCE_LIST_TZID_SEPARATOR)
-        }
         result.append(strDates.joinToString(RECURRENCE_LIST_VALUE_SEPARATOR))
         return result.toString()
     }
@@ -277,7 +290,7 @@ object AndroidTimeUtils {
     }
 
 
-        // duration
+    // duration
 
     /**
      * Checks and fixes [Event.duration] values with incorrect format which can't be

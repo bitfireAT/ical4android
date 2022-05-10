@@ -48,6 +48,10 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
     var displayname: String? = null
     var syncstate: String? = null
 
+    var supportsVEVENT = true
+    var supportsVTODO = true
+    var supportsVJOURNAL = true
+
     var context: Context? = null
 
 
@@ -56,7 +60,6 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
     }
 
     fun update(values: ContentValues) {
-
         client.update(ContentUris.withAppendedId(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), id), values, null, null)
     }
 
@@ -64,6 +67,10 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
         url = values.getAsString(JtxContract.JtxCollection.URL)
         displayname = values.getAsString(JtxContract.JtxCollection.DISPLAYNAME)
         syncstate = values.getAsString(JtxContract.JtxCollection.SYNC_VERSION)
+
+        supportsVEVENT = values.getAsBoolean(JtxContract.JtxCollection.SUPPORTSVEVENT)
+        supportsVTODO = values.getAsBoolean(JtxContract.JtxCollection.SUPPORTSVTODO)
+        supportsVJOURNAL = values.getAsBoolean(JtxContract.JtxCollection.SUPPORTSVJOURNAL)
 
         this.context = context
     }
