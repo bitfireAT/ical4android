@@ -64,7 +64,7 @@ open class JtxICalObject(
     var location: String? = null
     var locationAltrep: String? = null
 
-    var uid: String = "${System.currentTimeMillis()}-${UUID.randomUUID()}@at.techbee.jtx"
+    var uid: String = UUID.randomUUID().toString()
 
     var created: Long = System.currentTimeMillis()
     var dtstamp: Long = System.currentTimeMillis()
