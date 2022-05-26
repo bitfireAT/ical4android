@@ -185,6 +185,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
      * STEP 2/3: jtx Board saves the relations in both directions, the Parent has an entry for his Child, the Child has an entry for his Parent. Step 2 and Step 3 make sure, that the Child-Parent pair is
      *         present in both directions.
      */
+    @Deprecated("Moved to jtx Board content provider (function updateRelatedTo()). This function here will be deleted in one of the next versions.")
     fun updateRelatedTo() {
         // STEP 1: first find entries to update (all entries with 0 in related-to)
         client.query(JtxContract.JtxRelatedto.CONTENT_URI.asSyncAdapter(account), arrayOf(JtxContract.JtxRelatedto.TEXT), "${JtxContract.JtxRelatedto.LINKEDICALOBJECT_ID} = ?", arrayOf("0"), null).use {
