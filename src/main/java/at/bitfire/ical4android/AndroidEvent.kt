@@ -25,6 +25,7 @@ import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalTime
 import at.bitfire.ical4android.util.TimeApiExtensions.toRfc5545Duration
 import at.bitfire.ical4android.util.TimeApiExtensions.toZonedDateTime
+import at.bitfire.ical4android.validation.RruleUntilAfterStartRule
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.component.VAlarm
@@ -715,10 +716,14 @@ abstract class AndroidEvent(
 
         val dtStart = event.dtStart ?: throw InvalidCalendarException("Events must have DTSTART")
         val allDay = DateUtils.isDate(dtStart)
-        val recurring = event.rRules.isNotEmpty() || event.rDates.isNotEmpty()
 
         // make sure that time zone is supported by Android
         AndroidTimeUtils.androidifyTimeZone(dtStart)
+
+        // drop invalid RRULEs
+        RruleUntilAfterStartRule.removeRRulesWithUntilBeforeDtStart(dtStart, event.rRules)
+
+        val recurring = event.rRules.isNotEmpty() || event.rDates.isNotEmpty()
 
         /* [CalendarContract.Events SDK documentation]
            When inserting a new event the following fields must be included:
@@ -778,6 +783,7 @@ abstract class AndroidEvent(
             builder .withValue(Events.DURATION, duration?.toRfc5545Duration(dtStart.date.toInstant()))
                     .withValue(Events.DTEND, null)
 
+            // add RRULe
             if (event.rRules.isNotEmpty())
                 builder.withValue(Events.RRULE, event.rRules.joinToString(AndroidTimeUtils.RECURRENCE_RULE_SEPARATOR) { it.value })
             else
