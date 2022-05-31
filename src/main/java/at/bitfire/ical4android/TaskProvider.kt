@@ -4,12 +4,10 @@
 
 package at.bitfire.ical4android
 
-import android.accounts.Account
 import android.annotation.SuppressLint
 import android.content.ContentProviderClient
 import android.content.Context
 import android.content.pm.PackageManager
-import android.net.Uri
 import androidx.core.content.pm.PackageInfoCompat
 import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
 import org.dmfs.tasks.contract.TaskContract
@@ -32,7 +30,7 @@ class TaskProvider private constructor(
     ) {
         OpenTasks("org.dmfs.tasks", "org.dmfs.tasks", 103, "1.1.8.2", PERMISSION_OPENTASKS_READ, PERMISSION_OPENTASKS_WRITE),
         TasksOrg("org.tasks.opentasks", "org.tasks", 100000, "10.0", PERMISSION_TASKS_ORG_READ, PERMISSION_TASKS_ORG_WRITE),
-        JtxBoard("at.techbee.jtx.provider", "at.techbee.jtx", 100060002, "1.00.06", PERMISSION_JTX_READ, PERMISSION_JTX_WRITE);
+        JtxBoard("at.techbee.jtx.provider", "at.techbee.jtx", 101010006, "1.01.01", PERMISSION_JTX_READ, PERMISSION_JTX_WRITE);
 
         companion object {
             fun fromAuthority(authority: String): ProviderName {
