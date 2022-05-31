@@ -24,9 +24,9 @@ class RruleUntilAfterStartRuleTest {
 
     @Test
     fun testHasUntilBeforeDtStart_DtStartDate_RRuleUntil_TimeBeforeDtStart() {
-        assertTrue(RruleUntilAfterStartRule.hasUntilBeforeDtStart(DtStart("20220531"), RRule(Recur.Builder()
+        assertTrue(RruleUntilAfterStartRule.hasUntilBeforeDtStart(DtStart("20200912"), RRule(Recur.Builder()
             .frequency(Recur.Frequency.DAILY)
-            .until(DateTime("20220530T235959"))
+            .until(DateTime("20220911T235959Z"))
             .build())))
     }
 
@@ -40,9 +40,9 @@ class RruleUntilAfterStartRuleTest {
 
     @Test
     fun testHasUntilBeforeDtStart_DtStartDate_RRuleUntil_TimeAfterDtStart() {
-        assertFalse(RruleUntilAfterStartRule.hasUntilBeforeDtStart(DtStart("20220531"), RRule(Recur.Builder()
+        assertFalse(RruleUntilAfterStartRule.hasUntilBeforeDtStart(DtStart("20200912"), RRule(Recur.Builder()
             .frequency(Recur.Frequency.DAILY)
-            .until(DateTime("20220531T010204"))
+            .until(DateTime("20220912T000001Z"))
             .build())))
     }
 
