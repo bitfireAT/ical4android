@@ -2290,13 +2290,13 @@ class AndroidEventTest {
         event.summary = "Large event"
         event.dtStart = DtStart("20150502T120000Z")
         event.dtEnd = DtEnd("20150502T130000Z")
-        for (i in 0 until 4000)
+        for (i in 0 until 3000)
             event.attendees += Attendee(URI("mailto:att$i@example.com"))
         val uri = TestEvent(calendar, event).add()
 
         val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
-            assertEquals(4000, testEvent.event!!.attendees.size)
+            assertEquals(3000, testEvent.event!!.attendees.size)
         } finally {
             testEvent.delete()
         }
