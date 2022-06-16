@@ -1353,6 +1353,8 @@ duration?.let(props::add)
         this.classification = newData.classification
         this.status = newData.status
         this.priority = newData.priority
+        this.color = newData.color
+        this.url = newData.url
 
         this.dtstart = newData.dtstart
         this.dtstartTimezone = newData.dtstartTimezone
@@ -1580,6 +1582,8 @@ duration?.let(props::add)
         priority.let { values.put(JtxContract.JtxICalObject.PRIORITY, it) }
         values.put(JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID, collectionId)
         values.put(JtxContract.JtxICalObject.UID, uid)
+        values.put(JtxContract.JtxICalObject.COLOR, color)
+        values.put(JtxContract.JtxICalObject.URL, url)
         geoLat.let { values.put(JtxContract.JtxICalObject.GEO_LAT, it) }
         geoLong.let { values.put(JtxContract.JtxICalObject.GEO_LONG, it) }
         location.let { values.put(JtxContract.JtxICalObject.LOCATION, it) }
