@@ -2282,39 +2282,23 @@ class AndroidEventTest {
 
 
 
-    @LargeTest
     @Test
-    fun testLargeTransactionManyRows() {
+    fun testTransaction() {
         val event = Event()
-        event.uid = "sample1@testLargeTransaction"
-        event.summary = "Large event"
+        event.uid = "sample1@testTransaction"
+        event.summary = "an event"
         event.dtStart = DtStart("20150502T120000Z")
         event.dtEnd = DtEnd("20150502T130000Z")
-        for (i in 0 until 3000)
+        for (i in 0 until 20)
             event.attendees += Attendee(URI("mailto:att$i@example.com"))
         val uri = TestEvent(calendar, event).add()
 
         val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
-            assertEquals(3000, testEvent.event!!.attendees.size)
+            assertEquals(20, testEvent.event!!.attendees.size)
         } finally {
             testEvent.delete()
         }
-    }
-
-    @Test(expected = CalendarStorageException::class)
-    fun testLargeTransactionSingleRow() {
-        val event = Event()
-        event.uid = "sample1@testLargeTransaction"
-        event.dtStart = DtStart("20150502T120000Z")
-        event.dtEnd = DtEnd("20150502T130000Z")
-
-        // 1 MB SUMMARY ... have fun
-        val data = CharArray(1024*1024)
-        Arrays.fill(data, 'x')
-        event.summary = String(data)
-
-        TestEvent(calendar, event).add()
     }
 
 }
