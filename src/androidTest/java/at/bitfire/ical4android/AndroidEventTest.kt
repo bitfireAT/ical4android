@@ -5,6 +5,7 @@ package at.bitfire.ical4android
 
 import android.Manifest
 import android.accounts.Account
+import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.ContentValues
 import android.database.DatabaseUtils
@@ -25,11 +26,8 @@ import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
 import net.fortuna.ical4j.util.TimeZones
-import org.junit.After
+import org.junit.*
 import org.junit.Assert.*
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
 import java.net.URI
 import java.time.Duration
 import java.time.Period
@@ -37,12 +35,30 @@ import java.util.*
 
 class AndroidEventTest {
 
-    @JvmField
-    @Rule
-    val permissionRule = GrantPermissionRule.grant(
+    companion object {
+
+        @JvmField
+        @ClassRule
+        val permissionRule = GrantPermissionRule.grant(
             Manifest.permission.READ_CALENDAR,
             Manifest.permission.WRITE_CALENDAR
-    )!!
+        )
+
+        lateinit var provider: ContentProviderClient
+
+        @BeforeClass
+        @JvmStatic
+        fun connectProvider() {
+            provider = getInstrumentation().targetContext.contentResolver.acquireContentProviderClient(CalendarContract.AUTHORITY)!!
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun closeProvider() {
+            provider.closeCompat()
+        }
+
+    }
 
     private val testAccount = Account("ical4android@example.com", CalendarContract.ACCOUNT_TYPE_LOCAL)
 
@@ -51,11 +67,6 @@ class AndroidEventTest {
 
     private val tzIdDefault = java.util.TimeZone.getDefault().id
     private val tzDefault = DateUtils.ical4jTimeZone(tzIdDefault)
-
-
-    private val provider by lazy {
-        getInstrumentation().targetContext.contentResolver.acquireContentProviderClient(CalendarContract.AUTHORITY)!!
-    }
 
     private lateinit var calendarUri: Uri
     private lateinit var calendar: TestCalendar
@@ -70,7 +81,6 @@ class AndroidEventTest {
     @After
     fun shutdown() {
         calendar.delete()
-        provider.closeCompat()
     }
 
 

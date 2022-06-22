@@ -6,25 +6,47 @@ package at.bitfire.ical4android
 
 import android.accounts.Account
 import android.content.ContentProviderClient
-import android.content.ContentResolver
 import android.content.ContentValues
-import android.content.Context
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.rule.GrantPermissionRule
 import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
 import at.bitfire.ical4android.impl.TestJtxCollection
 import at.techbee.jtx.JtxContract
 import at.techbee.jtx.JtxContract.asSyncAdapter
 import junit.framework.TestCase.*
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.*
 
 class JtxCollectionTest {
 
+    companion object {
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val contentResolver = context.contentResolver
+
+        private lateinit var client: ContentProviderClient
+
+        @JvmField
+        @ClassRule
+        val permissionRule = GrantPermissionRule.grant(*TaskProvider.PERMISSIONS_JTX)
+
+        @BeforeClass
+        @JvmStatic
+        fun openProvider() {
+            val clientOrNull = contentResolver.acquireContentProviderClient(JtxContract.AUTHORITY)
+            Assume.assumeNotNull(clientOrNull)
+
+            client = clientOrNull!!
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun closeProvider() {
+            client.closeCompat()
+        }
+
+    }
+
     private val testAccount = Account("TEST", JtxContract.JtxCollection.TEST_ACCOUNT_TYPE)
-    private lateinit var contentResolver: ContentResolver
-    private lateinit var client: ContentProviderClient
-    lateinit var context: Context
 
     private val url = "https://jtx.techbee.at"
     private val displayname = "jtx"
@@ -38,14 +60,6 @@ class JtxCollectionTest {
         put(JtxContract.JtxCollection.SYNC_VERSION, syncversion)
     }
 
-    @Before
-    fun setUp() {
-        context = InstrumentationRegistry.getInstrumentation().targetContext
-        contentResolver = context.contentResolver
-        TestUtils.requestPermissions(TaskProvider.ProviderName.JtxBoard.permissions)
-        client = contentResolver.acquireContentProviderClient(JtxContract.AUTHORITY)!!
-    }
-
     @After
     fun tearDown() {
         var collections = JtxCollection.find(testAccount, client, context, TestJtxCollection.Factory, null, null)
@@ -54,7 +68,6 @@ class JtxCollectionTest {
         }
         collections = JtxCollection.find(testAccount, client, context, TestJtxCollection.Factory, null, null)
         assertEquals(0, collections.size)
-        client.closeCompat()
     }
 
 

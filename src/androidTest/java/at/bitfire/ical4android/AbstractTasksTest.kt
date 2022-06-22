@@ -5,16 +5,18 @@
 package at.bitfire.ical4android
 
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.rule.GrantPermissionRule
 import org.junit.After
 import org.junit.Assume
 import org.junit.Before
+import org.junit.Rule
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 
 abstract class AbstractTasksTest(
-        val providerName: TaskProvider.ProviderName
+    val providerName: TaskProvider.ProviderName
 ) {
 
     companion object {
@@ -23,20 +25,19 @@ abstract class AbstractTasksTest(
         fun taskProviders() = listOf(TaskProvider.ProviderName.OpenTasks,TaskProvider.ProviderName.TasksOrg)
     }
 
-    private val providerOrNull: TaskProvider? by lazy {
-        TaskProvider.acquire(InstrumentationRegistry.getInstrumentation().context, providerName)
-    }
-    protected val provider: TaskProvider by lazy {
-        Assume.assumeNotNull(providerOrNull)
-        providerOrNull!!
-    }
+    @JvmField
+    @Rule
+    val permissionRule = GrantPermissionRule.grant(*providerName.permissions)
 
-    init {
-        TestUtils.requestPermissions(providerName.permissions)
-    }
+    var providerOrNull: TaskProvider? = null
+    lateinit var provider: TaskProvider
 
     @Before
     open fun prepare() {
+        providerOrNull = TaskProvider.acquire(InstrumentationRegistry.getInstrumentation().context, providerName)
+        Assume.assumeNotNull(providerOrNull)      // will halt here if providerOrNull is null
+
+        provider = providerOrNull!!
         Ical4Android.log.fine("Using task provider: $provider")
     }
 

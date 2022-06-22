@@ -20,38 +20,44 @@ import at.bitfire.ical4android.impl.TestCalendar
 import at.bitfire.ical4android.impl.TestEvent
 import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
-import org.junit.After
+import org.junit.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
 
 class AndroidCalendarTest {
 
-    @JvmField
-    @Rule
-    val permissionRule = GrantPermissionRule.grant(
+    companion object {
+
+        @JvmField
+        @ClassRule
+        val permissionRule = GrantPermissionRule.grant(
             Manifest.permission.READ_CALENDAR,
             Manifest.permission.WRITE_CALENDAR
-    )!!
+        )
+
+        lateinit var provider: ContentProviderClient
+
+        @BeforeClass
+        @JvmStatic
+        fun connectProvider() {
+            provider = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver.acquireContentProviderClient(CalendarContract.AUTHORITY)!!
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun closeProvider() {
+            provider.closeCompat()
+        }
+
+    }
 
     private val testAccount = Account("ical4android.AndroidCalendarTest", CalendarContract.ACCOUNT_TYPE_LOCAL)
 
-    private lateinit var provider: ContentProviderClient
-
     @Before
     fun prepare() {
-        provider = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver.acquireContentProviderClient(CalendarContract.AUTHORITY)!!
-
         // make sure there are no colors for testAccount
         AndroidCalendar.removeColors(provider, testAccount)
         assertEquals(0, countColors(testAccount))
-    }
-
-    @After
-    fun shutdown() {
-        provider.closeCompat()
     }
 
 
