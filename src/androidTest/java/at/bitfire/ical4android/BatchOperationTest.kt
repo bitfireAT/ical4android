@@ -14,7 +14,6 @@ import androidx.test.filters.FlakyTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
-import at.bitfire.ical4android.MiscUtils.UriHelper.asSyncAdapter
 import at.bitfire.ical4android.impl.TestCalendar
 import at.bitfire.ical4android.impl.TestEvent
 import net.fortuna.ical4j.model.property.Attendee
@@ -60,6 +59,7 @@ class BatchOperationTest {
 
     @Before
     fun prepare() {
+        System.gc()
         calendar = TestCalendar.findOrCreate(testAccount, provider)
         assertNotNull(calendar)
         calendarUri = ContentUris.withAppendedId(CalendarContract.Calendars.CONTENT_URI, calendar.id)
@@ -68,6 +68,7 @@ class BatchOperationTest {
     @After
     fun shutdown() {
         calendar.delete()
+        System.gc()
     }
 
     @Test
@@ -77,10 +78,9 @@ class BatchOperationTest {
         event.summary = "Large event"
         event.dtStart = DtStart("20150502T120000Z")
         event.dtEnd = DtEnd("20150502T130000Z")
-        for (i in 0 until 2000) //  2000 are enough for a transaction split to happen, but won't make the test fail in CI server environment
+        for (i in 0 until 2000) //  2000 attendees are enough for a transaction split to happen
             event.attendees += Attendee(URI("mailto:att$i@example.com"))
         val uri = TestEvent(calendar, event).add()
-
         val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
             assertEquals(2000, testEvent.event!!.attendees.size)
@@ -92,19 +92,19 @@ class BatchOperationTest {
     @FlakyTest
     @Test
     fun testLargeTransactionSplitting() {
-        // This test only fails on the CI server emulator (see issue #42)
+        // with 4000 attendees, this test has been observed to fail on the CI server docker emulator.
+        // Too many Binders are sent to SYSTEM (see issue #42). Asking for GC in @Before/@After might help.
         val event = Event()
         event.uid = "sample1@testLargeTransaction"
         event.summary = "Large event"
         event.dtStart = DtStart("20150502T120000Z")
         event.dtEnd = DtEnd("20150502T130000Z")
-        for (i in 0 until 10000) //  2000 are enough for a transaction split to happen, but won't make the test fail in CI server environment
+        for (i in 0 until 4000)
             event.attendees += Attendee(URI("mailto:att$i@example.com"))
         val uri = TestEvent(calendar, event).add()
-
         val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
-            assertEquals(10000, testEvent.event!!.attendees.size)
+            assertEquals(4000, testEvent.event!!.attendees.size)
         } finally {
             testEvent.delete()
         }

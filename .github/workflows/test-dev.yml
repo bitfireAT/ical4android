@@ -58,7 +58,7 @@ jobs:
           wget -q -O at.techbee.jtx.apk https://f-droid.org/archive/at.techbee.jtx_100140002.apk && adb install at.techbee.jtx.apk
           cd ..
       - name: Run connected tests
-        run: ./gradlew connectedCheck
+        run: ./gradlew connectedCheck -Pandroid.testInstrumentationRunnerArguments.notAnnotation=androidx.test.filters.FlakyTest
       - name: Archive results
         uses: actions/upload-artifact@v2
         with:
