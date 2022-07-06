@@ -6,6 +6,7 @@ package at.bitfire.ical4android
 
 import at.bitfire.ical4android.DateUtils.isDateTime
 import at.bitfire.ical4android.ICalendar.Companion.CALENDAR_NAME
+import at.bitfire.ical4android.util.EventRepairer
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
@@ -194,13 +195,8 @@ class Event: ICalendar() {
 
             e.alarms.addAll(event.alarms)
 
-            // validation
-            if (e.dtStart == null)
-                throw InvalidCalendarException("Event without start time")
-            else if (e.dtEnd != null && e.dtStart!!.date > e.dtEnd!!.date) {
-                Ical4Android.log.warning("DTSTART after DTEND; removing DTEND")
-                e.dtEnd = null
-            }
+            // validate and repair
+            EventRepairer.validateAndRepair(e)
 
             return e
         }
