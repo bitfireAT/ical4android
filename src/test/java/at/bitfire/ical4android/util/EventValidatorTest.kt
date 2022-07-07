@@ -15,8 +15,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import java.io.StringReader
 
-class EventRepairerTest {
-
+class EventValidatorTest {
 
     @Test
     fun testShouldRemoveDtEnd() {
@@ -25,7 +24,7 @@ class EventRepairerTest {
             dtEnd = DtEnd(DateTime("20000105T000000"))
         }
         assertTrue(event.dtStart!!.date.time > event.dtEnd!!.date.time)
-        EventRepairer.startAndEndTime(event)
+        EventValidator.startAndEndTime(event)
         assertNull(event.dtEnd)
 
         // will call validateAndRepair() when creating event
@@ -49,7 +48,7 @@ class EventRepairerTest {
         }
         assertEquals("20211115T001100Z", event.dtStart!!.value)
         assertEquals("20251214T001100Z", event.rRules.first.recur.until.toString())
-        EventRepairer.rRuleTime(event)
+        EventValidator.rRuleTime(event)
         assertEquals("20211115T001100Z", event.dtStart!!.value)
         assertEquals("20251214T001100Z", event.rRules.first.recur.until.toString())
 
@@ -85,7 +84,7 @@ class EventRepairerTest {
         }
         assertEquals(1639526399000, event.rRules.first.recur.until.time)
         assertEquals("20211214T235959Z", event.rRules.first.recur.until.toString())
-        EventRepairer.rRuleTime(event)
+        EventValidator.rRuleTime(event)
         assertEquals(1639440000000, event.rRules.first.recur.until.time)
         assertEquals("20211214", event.rRules.first.recur.until.toString())
 
@@ -121,7 +120,7 @@ class EventRepairerTest {
         }
         assertEquals(1639440000000, event.rRules.first.recur.until.time)
         assertEquals("20211214", event.rRules.first.recur.until.toString())
-        EventRepairer.validateAndRepair(event)
+        EventValidator.repair(event)
         assertEquals(1639437060000, event.rRules.first.recur.until.time)
         assertEquals("20211214T001100", event.rRules.first.recur.until.toString())
 
