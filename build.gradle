@@ -5,9 +5,9 @@
 
 buildscript {
     ext.versions = [
-        kotlin: '1.6.21',
+        kotlin: '1.7.0',
         dokka: '1.5.0',
-        ical4j: '3.1.2',
+        ical4j: '3.2.0',    // tests fail with >= 3.2.1: https://github.com/ical4j/ical4j/issues/350#issuecomment-1177290922 – update as soon as this is fixed
         // latest Apache Commons versions that don't require Java 8 (Android 7)
         commonsIO: '2.6'
     ]
@@ -55,7 +55,6 @@ android {
     }
     kotlinOptions {
         jvmTarget = "1.8"
-        useIR = true
     }
     packagingOptions {
         resources {
@@ -82,7 +81,7 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${versions.kotlin}"
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.6'
 
     api("org.mnode.ical4j:ical4j:${versions.ical4j}") {
         exclude module: 'javax.mail'
