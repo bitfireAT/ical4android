@@ -26,19 +26,20 @@ class EventValidatorTest {
 
     @Test
     fun testEnsureCorrectStartAndEndTime_noDtStart() {
-        val event = Event().apply {
-            dtEnd = DtEnd(DateTime("20000105T000000"))                  // DATETIME
-        }
-        assertThrows(InvalidCalendarException("Event without start time").javaClass) {
+        assertThrows(InvalidCalendarException::class.java) {
+            val event = Event().apply {
+                dtEnd = DtEnd(DateTime("20000105T000000"))  // DATETIME
+                // no dtStart
+            }
             EventValidator.correctStartAndEndTime(event)
         }
 
-        assertThrows(InvalidCalendarException("Event without start time").javaClass) {
+        assertThrows(InvalidCalendarException::class.java) {
             Event.eventsFromReader(StringReader(
                 "BEGIN:VCALENDAR\n" +
                 "BEGIN:VEVENT\n" +
                 "UID:51d8529a-5844-4609-918b-2891b855e0e8\n" +
-                "DTEND;VALUE=DATE:20211116\n" +                     // DATE
+                "DTEND;VALUE=DATE:20211116\n" +                   // DATE
                 "END:VEVENT\n" +
                 "END:VCALENDAR")).first()
         }
@@ -122,7 +123,7 @@ class EventValidatorTest {
                "BEGIN:VEVENT\n" +
                "UID:51d8529a-5844-4609-918b-2891b855e0e8\n" +
                "DTSTART;VALUE=DATE:20211115\n" +                             // DATE
-               "RRULE:FREQ=MONTHLY;UNTIL=20211214T235959;BYMONTHDAY=15\n" +   // DATETIME (no timezone)
+               "RRULE:FREQ=MONTHLY;UNTIL=20211214T235959;BYMONTHDAY=15\n" +  // DATETIME (no timezone)
                "END:VEVENT\n" +
                "END:VCALENDAR")).first()
         assertEquals(1639440000000, event1.rRules.first.recur.until.time)
@@ -132,7 +133,7 @@ class EventValidatorTest {
             "BEGIN:VCALENDAR\n" +
                "BEGIN:VEVENT\n" +
                "UID:381fb26b-2da5-4dd2-94d7-2e0874128aa7\n" +
-               "DTSTART;VALUE=DATE:20080215\n" +                           // DATE
+               "DTSTART;VALUE=DATE:20080215\n" +                            // DATE
                "RRULE:FREQ=YEARLY;UNTIL=20230214T000000Z;BYMONTHDAY=15\n" + // DATETIME (with timezone)
                "END:VEVENT\n" +
                "END:VCALENDAR")).first()
@@ -145,9 +146,7 @@ class EventValidatorTest {
 
         val event = Event().apply {
             dtStart = DtStart(DateTime("20110605T001100Z"))         // DATETIME (UTC)
-            rRules.add(
-                RRule("FREQ=MONTHLY;UNTIL=20211214")                // DATE
-            )
+            rRules.add(RRule("FREQ=MONTHLY;UNTIL=20211214"))        // DATE
         }
         assertEquals(Date("20211214"), event.rRules.first.recur.until)
         EventValidator.sameTypeForDtStartAndRruleUntil(event.dtStart!!, event.rRules)
