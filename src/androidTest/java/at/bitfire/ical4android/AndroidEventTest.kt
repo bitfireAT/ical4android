@@ -10,9 +10,7 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.database.DatabaseUtils
 import android.net.Uri
-import android.provider.CalendarContract
 import android.provider.CalendarContract.*
-import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.rule.GrantPermissionRule
 import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
@@ -21,7 +19,6 @@ import at.bitfire.ical4android.impl.TestCalendar
 import at.bitfire.ical4android.impl.TestEvent
 import at.bitfire.ical4android.util.AndroidTimeUtils
 import net.fortuna.ical4j.model.*
-import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
@@ -31,7 +28,6 @@ import org.junit.Assert.*
 import java.net.URI
 import java.time.Duration
 import java.time.Period
-import java.util.*
 
 class AndroidEventTest {
 
@@ -430,7 +426,7 @@ class AndroidEventTest {
         assertEquals("20200601T000000Z,20210601T000000Z,20220601T000000Z", values.get(Events.RDATE))
     }
 
-        @Test
+    @Test
     fun testBuildEvent_AllDay_DtEnd_Duration_NonRecurring() {
         val values = buildEvent(false) {
             dtStart = DtStart(Date("20200601"))

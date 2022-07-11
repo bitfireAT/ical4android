@@ -4,7 +4,6 @@
 
 package at.bitfire.ical4android.validation
 
-import at.bitfire.ical4android.EventValidator
 import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.VEvent
 import net.fortuna.ical4j.model.property.RRule
