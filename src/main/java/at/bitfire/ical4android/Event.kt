@@ -6,7 +6,6 @@ package at.bitfire.ical4android
 
 import at.bitfire.ical4android.DateUtils.isDateTime
 import at.bitfire.ical4android.ICalendar.Companion.CALENDAR_NAME
-import at.bitfire.ical4android.util.EventValidator
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*
