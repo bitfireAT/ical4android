@@ -1,0 +1,23 @@
+/***************************************************************************************************
+ * Copyright © All Contributors. See LICENSE and AUTHORS in the root directory for details.
+ **************************************************************************************************/
+
+package at.bitfire.ical4android.validation
+
+import at.bitfire.ical4android.EventValidator
+import net.fortuna.ical4j.model.Property
+import net.fortuna.ical4j.model.component.VEvent
+import net.fortuna.ical4j.model.property.RRule
+import net.fortuna.ical4j.transform.rfc5545.Rfc5545ComponentRule
+
+class RruleUntilAfterStartRule: Rfc5545ComponentRule<VEvent> {
+
+    override fun applyTo(event: VEvent) {
+        val dtStart = event.startDate ?: return
+        val rRules: MutableList<RRule> = event.getProperties(Property.RRULE)
+        EventValidator.removeRRulesWithUntilBeforeDtStart(dtStart, rRules)
+    }
+
+    override fun getSupportedType() = VEvent::class.java
+
+}

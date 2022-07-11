@@ -715,10 +715,14 @@ abstract class AndroidEvent(
 
         val dtStart = event.dtStart ?: throw InvalidCalendarException("Events must have DTSTART")
         val allDay = DateUtils.isDate(dtStart)
-        val recurring = event.rRules.isNotEmpty() || event.rDates.isNotEmpty()
 
         // make sure that time zone is supported by Android
         AndroidTimeUtils.androidifyTimeZone(dtStart)
+
+        // drop invalid RRULEs
+        EventValidator.removeRRulesWithUntilBeforeDtStart(dtStart, event.rRules)
+
+        val recurring = event.rRules.isNotEmpty() || event.rDates.isNotEmpty()
 
         /* [CalendarContract.Events SDK documentation]
            When inserting a new event the following fields must be included:
@@ -778,6 +782,7 @@ abstract class AndroidEvent(
             builder .withValue(Events.DURATION, duration?.toRfc5545Duration(dtStart.date.toInstant()))
                     .withValue(Events.DTEND, null)
 
+            // add RRULe
             if (event.rRules.isNotEmpty())
                 builder.withValue(Events.RRULE, event.rRules.joinToString(AndroidTimeUtils.RECURRENCE_RULE_SEPARATOR) { it.value })
             else

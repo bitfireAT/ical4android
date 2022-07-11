@@ -8,55 +8,82 @@ import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
+import net.fortuna.ical4j.model.property.DtStart
+import net.fortuna.ical4j.model.property.RRule
 
+/**
+ * Sometimes CalendarStorage or servers respond with invalid event definitions. Here we try to
+ * validate, repair and assume whatever seems appropriate before denying the whole event.
+ */
 class EventValidator {
 
     companion object {
 
         fun repair(e: Event) {
-            startAndEndTime(e)
-            rRuleTime(e)
+            val dtStart = correctStartAndEndTime(e)
+            sameTypeForDtStartAndRruleUntil(dtStart, e.rRules)
+            removeRRulesWithUntilBeforeDtStart(dtStart, e.rRules)
         }
 
         /**
          * Ensure proper start and end time
          */
-        internal fun startAndEndTime(e: Event) {
+        fun correctStartAndEndTime(e: Event): DtStart {
             if (e.dtStart == null)
                 throw InvalidCalendarException("Event without start time")
             else if (e.dtEnd != null && e.dtStart!!.date > e.dtEnd!!.date) {
                 Ical4Android.log.warning("DTSTART after DTEND; removing DTEND")
                 e.dtEnd = null
             }
+            return e.dtStart!!
         }
 
         /**
-         * Recurrence Rule
-         * "The value of the UNTIL rule part MUST have the same value type as the "DTSTART" property."
-         * https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10
+         * Tries to make the value type of UNTIL and DTSTART the same (both DATE or DATETIME).
          */
-        internal fun rRuleTime(e: Event) {
-            val dtStart = e.dtStart ?: return
+        fun sameTypeForDtStartAndRruleUntil(dtStart: DtStart, rRules: MutableList<RRule>) {
             if (DateUtils.isDate(dtStart)) {
-                for (rRule in e.rRules) {
+                for (rRule in rRules) {
                     rRule.recur.until?.let { until ->
                         if (until is DateTime) {
-                            Ical4Android.log.warning("DTSTART has DATE, but UNTIL has DATETIME; removing time from UNTIL")
+                            Ical4Android.log.warning("DTSTART has DATE, but UNTIL has DATETIME; making UNTIL have DATE only")
                             rRule.recur.until = Date(until.toLocalDate().toIcal4jDate())
                         }
                     }
                 }
             } else if (DateUtils.isDateTime(dtStart)) {
-                for (rRule in e.rRules) {
+                for (rRule in rRules) {
                     rRule.recur.until?.let { until ->
                         if (until !is DateTime) {
-                            Ical4Android.log.warning("DTSTART has DATETIME, but UNTIL has DATE; adding time to UNTIL")
+                            Ical4Android.log.warning("DTSTART has DATETIME, but UNTIL has DATE; making UNTIL have DATETIME")
                             rRule.recur.until = DateTime(until)
                         }
                     }
                 }
             } else
                 throw InvalidCalendarException("Event with invalid DTSTART value")
+        }
+
+        /**
+         * Will remove the RRULES of an event where UNTIL lies before DTSTART
+         */
+        fun removeRRulesWithUntilBeforeDtStart(dtStart: DtStart, rRules: MutableList<RRule>) {
+            val iter = rRules.iterator()
+            while (iter.hasNext()) {
+                val rRule = iter.next()
+
+                // drop invalid RRULEs
+                if (hasUntilBeforeDtStart(dtStart, rRule))
+                    iter.remove()
+            }
+        }
+
+        /**
+         * Checks whether UNTIL of an RRULE lies before DTSTART
+         */
+        fun hasUntilBeforeDtStart(dtStart: DtStart, rRule: RRule): Boolean {
+            val until = rRule.recur.until ?: return false
+            return until < dtStart.date
         }
 
     }

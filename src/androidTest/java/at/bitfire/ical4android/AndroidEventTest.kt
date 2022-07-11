@@ -49,7 +49,7 @@ class AndroidEventTest {
         @BeforeClass
         @JvmStatic
         fun connectProvider() {
-            provider = getInstrumentation().targetContext.contentResolver.acquireContentProviderClient(CalendarContract.AUTHORITY)!!
+            provider = getInstrumentation().targetContext.contentResolver.acquireContentProviderClient(AUTHORITY)!!
         }
 
         @AfterClass
@@ -60,7 +60,7 @@ class AndroidEventTest {
 
     }
 
-    private val testAccount = Account("ical4android@example.com", CalendarContract.ACCOUNT_TYPE_LOCAL)
+    private val testAccount = Account("ical4android@example.com", ACCOUNT_TYPE_LOCAL)
 
     private val tzVienna = DateUtils.ical4jTimeZone("Europe/Vienna")!!
     private val tzShanghai = DateUtils.ical4jTimeZone("Asia/Shanghai")!!
@@ -75,7 +75,7 @@ class AndroidEventTest {
     fun prepare() {
         calendar = TestCalendar.findOrCreate(testAccount, provider)
         assertNotNull(calendar)
-        calendarUri = ContentUris.withAppendedId(CalendarContract.Calendars.CONTENT_URI, calendar.id)
+        calendarUri = ContentUris.withAppendedId(Calendars.CONTENT_URI, calendar.id)
     }
 
     @After
@@ -268,6 +268,28 @@ class AndroidEventTest {
     }
 
     @Test
+    fun testBuildEvent_NonAllDay_DtEnd_NoDuration_RecurringRuleWithUntilBeforeDtStart() {
+        val values = buildEvent(false) {
+            dtStart = DtStart("20200601T123000", tzShanghai)
+            dtEnd = DtEnd("20200601T123000", tzShanghai)
+            rRules += RRule(Recur.Builder()
+                .until(DateTime("20200601T122959", tzShanghai))
+                .frequency(Recur.Frequency.MINUTELY)
+                .build())
+        }
+        assertEquals(0, values.getAsInteger(Events.ALL_DAY))
+
+        assertEquals(1590985800000L, values.getAsLong(Events.DTSTART))
+        assertEquals(tzShanghai.id, values.get(Events.EVENT_TIMEZONE))
+
+        assertEquals(1590985800000L, values.getAsLong(Events.DTEND))
+        assertEquals(tzShanghai.id, values.get(Events.EVENT_END_TIMEZONE))
+
+        // RRULE should be dropped
+        assertNull(values.get(Events.RRULE))
+    }
+
+    @Test
     fun testBuildEvent_NonAllDay_DtEnd_Duration_NonRecurring() {
         val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzVienna)
@@ -408,7 +430,7 @@ class AndroidEventTest {
         assertEquals("20200601T000000Z,20210601T000000Z,20220601T000000Z", values.get(Events.RDATE))
     }
 
-    @Test
+        @Test
     fun testBuildEvent_AllDay_DtEnd_Duration_NonRecurring() {
         val values = buildEvent(false) {
             dtStart = DtStart(Date("20200601"))
@@ -1804,7 +1826,7 @@ class AndroidEventTest {
     @Test
     fun testPopulateReminder_TypeEmail_AccountNameNotEmail() {
         // test account name that doesn't look like an email address
-        val nonEmailAccount = Account("ical4android", CalendarContract.ACCOUNT_TYPE_LOCAL)
+        val nonEmailAccount = Account("ical4android", ACCOUNT_TYPE_LOCAL)
         val testCalendar = TestCalendar.findOrCreate(nonEmailAccount, provider)
         try {
             populateReminder(testCalendar) {
