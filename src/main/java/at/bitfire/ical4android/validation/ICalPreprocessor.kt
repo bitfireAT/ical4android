@@ -24,7 +24,6 @@ import java.util.logging.Level
  *   - [CreatedPropertyRule] to make sure CREATED is UTC
  *   - [DatePropertyRule], [DateListPropertyRule] to rename Outlook-specific TZID parameters
  * (like "W. Europe Standard Time" to an Android-friendly name like "Europe/Vienna")
- *   - [RruleUntilAfterStartRule] to remove RRULEs with UNTIL before DTSTART
  *
  */
 object ICalPreprocessor {
@@ -36,8 +35,6 @@ object ICalPreprocessor {
 
         DatePropertyRule(),         // These two rules also replace VTIMEZONEs of the iCalendar ...
         DateListPropertyRule(),     // ... by the ical4j VTIMEZONE with the same TZID!
-
-        RruleUntilAfterStartRule()  // remove RRULEs with UNTIL before DTSTART
     )
 
 
