@@ -720,9 +720,6 @@ abstract class AndroidEvent(
         // make sure that time zone is supported by Android
         AndroidTimeUtils.androidifyTimeZone(dtStart)
 
-        // drop invalid RRULEs
-        EventValidator.removeRRulesWithUntilBeforeDtStart(dtStart, event.rRules)
-
         val recurring = event.rRules.isNotEmpty() || event.rDates.isNotEmpty()
 
         /* [CalendarContract.Events SDK documentation]

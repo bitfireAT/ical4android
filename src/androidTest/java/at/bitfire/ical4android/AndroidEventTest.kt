@@ -264,28 +264,6 @@ class AndroidEventTest {
     }
 
     @Test
-    fun testBuildEvent_NonAllDay_DtEnd_NoDuration_RecurringRuleWithUntilBeforeDtStart() {
-        val values = buildEvent(false) {
-            dtStart = DtStart("20200601T123000", tzShanghai)
-            dtEnd = DtEnd("20200601T123000", tzShanghai)
-            rRules += RRule(Recur.Builder()
-                .until(DateTime("20200601T122959", tzShanghai))
-                .frequency(Recur.Frequency.MINUTELY)
-                .build())
-        }
-        assertEquals(0, values.getAsInteger(Events.ALL_DAY))
-
-        assertEquals(1590985800000L, values.getAsLong(Events.DTSTART))
-        assertEquals(tzShanghai.id, values.get(Events.EVENT_TIMEZONE))
-
-        assertEquals(1590985800000L, values.getAsLong(Events.DTEND))
-        assertEquals(tzShanghai.id, values.get(Events.EVENT_END_TIMEZONE))
-
-        // RRULE should be dropped
-        assertNull(values.get(Events.RRULE))
-    }
-
-    @Test
     fun testBuildEvent_NonAllDay_DtEnd_Duration_NonRecurring() {
         val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzVienna)

@@ -196,7 +196,7 @@ class Event: ICalendar() {
             e.alarms.addAll(event.alarms)
 
             // validate and repair
-            EventValidator.repair(e)
+            EventValidator(e).repair()
 
             return e
         }
@@ -216,6 +216,8 @@ class Event: ICalendar() {
                     ProdId(prodId.value + " (" + userAgents.joinToString(",") + ")")
 
         val dtStart = dtStart ?: throw InvalidCalendarException("Won't generate event without start time")
+
+        EventValidator(this).repair() // validate and repair this event before creating VEVENT
 
         // "main event" (without exceptions)
         val components = ical.components

@@ -21,16 +21,15 @@ import java.util.*
  * Sometimes CalendarStorage or servers respond with invalid event definitions. Here we try to
  * validate, repair and assume whatever seems appropriate before denying the whole event.
  */
-class EventValidator {
+class EventValidator(val e: Event) {
+
+    fun repair() {
+        val dtStart = correctStartAndEndTime(e)
+        sameTypeForDtStartAndRruleUntil(dtStart, e.rRules)
+        removeRRulesWithUntilBeforeDtStart(dtStart, e.rRules)
+    }
 
     companion object {
-
-        fun repair(e: Event) {
-            val dtStart = correctStartAndEndTime(e)
-            sameTypeForDtStartAndRruleUntil(dtStart, e.rRules)
-            removeRRulesWithUntilBeforeDtStart(dtStart, e.rRules)
-        }
-
         /**
          * Ensure proper start and end time
          */
@@ -96,6 +95,5 @@ class EventValidator {
             val until = rRule.recur.until ?: return false
             return until < dtStart.date
         }
-
     }
 }
