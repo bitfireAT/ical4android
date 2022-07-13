@@ -142,7 +142,7 @@ class EventValidatorTest {
 
     @Test
     fun testSameTypeForDtStartAndRruleUntil_DtStartIsDateTimeAndRruleUntilIsDate() {
-        // should add (possibly missing) time in RRULE if DTSTART value is of type DATETIME (not just DATE)
+        // should add (possibly missing) time in UNTIL if DTSTART value is of type DATETIME (not just DATE)
 
         val event = Event().apply {
             dtStart = DtStart(DateTime("20110605T001100Z"))         // DATETIME (UTC)
@@ -150,27 +150,27 @@ class EventValidatorTest {
         }
         assertEquals(Date("20211214"), event.rRules.first.recur.until)
         EventValidator.sameTypeForDtStartAndRruleUntil(event.dtStart!!, event.rRules)
-        assertEquals(DateTime("20211214", tzReg.getTimeZone("UTC")), event.rRules.first.recur.until)
+        assertEquals(DateTime("20211214T001100", tzReg.getTimeZone("UTC")), event.rRules.first.recur.until)
 
         val event1 = Event.eventsFromReader(StringReader(
             "BEGIN:VCALENDAR\n" +
-               "BEGIN:VEVENT\n" +
-               "UID:51d8529a-5844-4609-918b-2891b855e0e8\n" +
-               "DTSTART;TZID=America/New_York:20211115T000000\n" +     // DATETIME (with timezone)
-               "RRULE:FREQ=MONTHLY;UNTIL=20211214;BYMONTHDAY=15\n" +   // DATE
-               "END:VEVENT\n" +
-               "END:VCALENDAR")).first()
-        assertEquals(DateTime("20211214"), event1.rRules.first.recur.until)
+                "BEGIN:VEVENT\n" +
+                "UID:51d8529a-5844-4609-918b-2891b855e0e8\n" +
+                "DTSTART;TZID=America/New_York:20211111T053000\n" +     // DATETIME (with timezone)
+                "RRULE:FREQ=MONTHLY;UNTIL=20211214;BYMONTHDAY=15\n" +   // DATE
+                "END:VEVENT\n" +
+                "END:VCALENDAR")).first()
+        assertEquals(DateTime("20211214T053000", tzReg.getTimeZone("America/New_York")), event1.rRules.first.recur.until)
 
         val event2 = Event.eventsFromReader(StringReader(
             "BEGIN:VCALENDAR\n" +
-               "BEGIN:VEVENT\n" +
-               "UID:381fb26b-2da5-4dd2-94d7-2e0874128aa7\n" +
-               "DTSTART;VALUE=DATETIME:20080215T001100\n" +            // DATETIME (no timezone)
-               "RRULE:FREQ=YEARLY;UNTIL=20230214;BYMONTHDAY=15\n" +    // DATE
-               "END:VEVENT\n" +
-               "END:VCALENDAR")).first()
-        assertEquals(DateTime("20230214"), event2.rRules.first.recur.until)
+                "BEGIN:VEVENT\n" +
+                "UID:381fb26b-2da5-4dd2-94d7-2e0874128aa7\n" +
+                "DTSTART;VALUE=DATETIME:20080214T001100\n" +            // DATETIME (no timezone)
+                "RRULE:FREQ=YEARLY;UNTIL=20110214;BYMONTHDAY=15\n" +    // DATE
+                "END:VEVENT\n" +
+                "END:VCALENDAR")).first()
+        assertEquals(DateTime("20110214T001100"), event2.rRules.first.recur.until)
     }
 
 
@@ -190,9 +190,8 @@ class EventValidatorTest {
         assertTrue(
             EventValidator.hasUntilBeforeDtStart(DtStart("20220912"), RRule(Recur.Builder()
                 .frequency(Recur.Frequency.DAILY)
-                .until(DateTime("20220911T235959Z"))
-                .build()))
-        )
+                .until(DateTime("20220911T235959"))
+                .build())))
     }
 
     @Test
@@ -200,9 +199,8 @@ class EventValidatorTest {
         assertTrue(
             EventValidator.hasUntilBeforeDtStart(DtStart("20220531"), RRule(Recur.Builder()
                 .frequency(Recur.Frequency.DAILY)
-                .until(DateTime("20220530"))
-                .build()))
-        )
+                .until(DateTime("20220530T000000"))
+                .build())))
     }
 
     @Test
