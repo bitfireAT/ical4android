@@ -34,7 +34,7 @@ class EventValidator {
         /**
          * Ensure proper start and end time
          */
-        fun correctStartAndEndTime(e: Event): DtStart {
+        internal fun correctStartAndEndTime(e: Event): DtStart {
             if (e.dtStart == null)
                 throw InvalidCalendarException("Event without start time")
             else if (e.dtEnd != null && e.dtStart!!.date > e.dtEnd!!.date) {
@@ -47,7 +47,7 @@ class EventValidator {
         /**
          * Tries to make the value type of UNTIL and DTSTART the same (both DATE or DATETIME).
          */
-        fun sameTypeForDtStartAndRruleUntil(dtStart: DtStart, rRules: MutableList<RRule>) {
+        internal fun sameTypeForDtStartAndRruleUntil(dtStart: DtStart, rRules: MutableList<RRule>) {
             if (DateUtils.isDate(dtStart)) {
                 for (rRule in rRules) {
                     rRule.recur.until?.let { until ->
@@ -62,10 +62,10 @@ class EventValidator {
                     rRule.recur.until?.let { until ->
                         if (until !is DateTime) {
                             Ical4Android.log.warning("DTSTART has DATETIME, but UNTIL has DATE; copying time from DTSTART to UNTIL")
-                            val sdf = SimpleDateFormat("HHmmss").apply {
+                            val sdf = SimpleDateFormat("HHmmss", Locale.US).apply {
                                 if (dtStart.isUtc) timeZone = TimeZone.getTimeZone("UTC")
                             }
-                            val untilDate = SimpleDateFormat("yyyyMMdd").format(until)
+                            val untilDate = SimpleDateFormat("yyyyMMdd", Locale.US).format(until)
                             val dtStartTime = sdf.format(dtStart.date)
                             rRule.recur.until = DateTime(untilDate +"T"+ dtStartTime + "Z".takeIf { dtStart.isUtc })
                         }
@@ -78,7 +78,7 @@ class EventValidator {
         /**
          * Will remove the RRULES of an event where UNTIL lies before DTSTART
          */
-        fun removeRRulesWithUntilBeforeDtStart(dtStart: DtStart, rRules: MutableList<RRule>) {
+        internal fun removeRRulesWithUntilBeforeDtStart(dtStart: DtStart, rRules: MutableList<RRule>) {
             val iter = rRules.iterator()
             while (iter.hasNext()) {
                 val rRule = iter.next()
@@ -92,7 +92,7 @@ class EventValidator {
         /**
          * Checks whether UNTIL of an RRULE lies before DTSTART
          */
-        fun hasUntilBeforeDtStart(dtStart: DtStart, rRule: RRule): Boolean {
+        internal fun hasUntilBeforeDtStart(dtStart: DtStart, rRule: RRule): Boolean {
             val until = rRule.recur.until ?: return false
             return until < dtStart.date
         }
