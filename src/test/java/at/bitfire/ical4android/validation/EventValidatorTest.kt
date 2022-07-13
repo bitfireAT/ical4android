@@ -150,7 +150,7 @@ class EventValidatorTest {
         }
         assertEquals(Date("20211214"), event.rRules.first.recur.until)
         EventValidator.sameTypeForDtStartAndRruleUntil(event.dtStart!!, event.rRules)
-        assertEquals(DateTime("20211214T001100", tzReg.getTimeZone("UTC")), event.rRules.first.recur.until)
+        assertEquals(DateTime("20211214T001100Z"), event.rRules.first.recur.until)
 
         val event1 = Event.eventsFromReader(StringReader(
             "BEGIN:VCALENDAR\n" +
