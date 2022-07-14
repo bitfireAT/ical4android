@@ -84,6 +84,7 @@ dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.6'
 
     api("org.mnode.ical4j:ical4j:${versions.ical4j}") {
+        exclude group: 'commons-logging'
         exclude group: 'org.codehaus.groovy', module: 'groovy'
         exclude group: 'org.codehaus.groovy', module: 'groovy-dateutil'
     }
