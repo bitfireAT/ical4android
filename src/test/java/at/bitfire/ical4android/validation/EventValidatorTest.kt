@@ -186,11 +186,29 @@ class EventValidatorTest {
 
 
     @Test
-    fun testHasUntilBeforeDtStart_DtStartDate_RRuleUntil_TimeBeforeDtStart() {
+    fun testHasUntilBeforeDtStart_DtStartDate_RRuleUntil_TimeBeforeDtStart_UTC() {
+        assertTrue(
+            EventValidator.hasUntilBeforeDtStart(DtStart("20220912", tzReg.getTimeZone("UTC")), RRule(Recur.Builder()
+                .frequency(Recur.Frequency.DAILY)
+                .until(DateTime("20220911T235959Z"))
+                .build())))
+    }
+
+    @Test
+    fun testHasUntilBeforeDtStart_DtStartDate_RRuleUntil_TimeBeforeDtStart_noTimezone() {
         assertTrue(
             EventValidator.hasUntilBeforeDtStart(DtStart("20220912"), RRule(Recur.Builder()
                 .frequency(Recur.Frequency.DAILY)
                 .until(DateTime("20220911T235959"))
+                .build())))
+    }
+
+    @Test
+    fun testHasUntilBeforeDtStart_DtStartDate_RRuleUntil_TimeBeforeDtStart_withTimezone() {
+        assertTrue(
+            EventValidator.hasUntilBeforeDtStart(DtStart("20220912", tzReg.getTimeZone("America/New_York")), RRule(Recur.Builder()
+                .frequency(Recur.Frequency.DAILY)
+                .until(DateTime("20220911T235959", tzReg.getTimeZone("America/New_York")))
                 .build())))
     }
 
