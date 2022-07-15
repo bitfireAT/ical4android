@@ -1,0 +1,176 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>Instances</title>
+<link href="../../../../../../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../../";</script><script type="text/javascript" src="../../../../scripts/sourceset_dependencies.js" async="async"></script><link href="../../../../styles/style.css" rel="Stylesheet"><link href="../../../../styles/logo-styles.css" rel="Stylesheet"><link href="../../../../styles/jetbrains-mono.css" rel="Stylesheet"><link href="../../../../styles/main.css" rel="Stylesheet"><script type="text/javascript" src="../../../../scripts/clipboard.js" async="async"></script><script type="text/javascript" src="../../../../scripts/navigation-loader.js" async="async"></script><script type="text/javascript" src="../../../../scripts/platform-content-handler.js" async="async"></script><script type="text/javascript" src="../../../../scripts/main.js" async="async"></script>  </head>
+  <body>
+    <div id="container">
+      <div id="leftColumn"><a href="../../../../index.html">
+          <div id="logo"></div>
+        </a>
+        <div id="paneSearch"></div>
+        <div id="sideMenu"></div>
+      </div>
+      <div id="main">
+        <div id="leftToggler"><span class="icon-toggler"></span></div>
+<script type="text/javascript" src="../../../../scripts/main.js"></script>        <div class="main-content" id="content" pageIds="ical4android::org.dmfs.tasks.contract/TaskContract.Instances///PointingToDeclaration//579055962">
+          <div class="navigation-wrapper" id="navigation-wrapper">
+            <div class="breadcrumbs"><a href="../../../../index.html">ical4android</a>/<a href="../../index.html">org.dmfs.tasks.contract</a>/<a href="../index.html">TaskContract</a>/<a href="index.html">Instances</a></div>
+            <div class="pull-right d-flex">
+              <div id="searchBar"></div>
+            </div>
+          </div>
+          <div class="cover ">
+            <h1 class="cover"><span>Instances</span></h1>
+            <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><div class="symbol monospace">class <a href="index.html">Instances</a> : <a href="../-task-columns/index.html">TaskContract.TaskColumns</a>, <a href="../-instance-columns/index.html">TaskContract.InstanceColumns</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><p class="paragraph">A table containing one entry per task instance. This table is writable in order to allow modification of single instances of a task. Write operations to this table will be converted into operations on overrides and forwarded to the task table. </p><p class="paragraph"> Note: The <a href="../-task-columns/-d-t-s-t-a-r-t.html">DTSTART</a>, <a href="../-task-columns/-d-u-e.html">DUE</a> values of instances of recurring tasks represent the actual instance values, i.e. they are different for each instance (<a href="../-task-columns/-d-u-r-a-t-i-o-n.html">DURATION</a> is always <code>{@code null}</code>). </p><p class="paragraph"> Also, none of the instances are recurring themselves, so <a href="../-task-columns/-r-r-u-l-e.html">RRULE</a>, <a href="../-task-columns/-r-d-a-t-e.html">RDATE</a> and <a href="../-task-columns/-e-x-d-a-t-e.html">EXDATE</a> are always <code>{@code null}</code>. </p><p class="paragraph"> TODO: Insert all instances of recurring tasks. </p><p class="paragraph"> The following operations are supported: </p>Insert<p class="paragraph"> Note, the data of an insert must not contain the fields <a href="../-task-columns/-r-r-u-l-e.html">RRULE</a>, <a href="../-task-columns/-r-d-a-t-e.html">RDATE</a> or <a href="../-task-columns/-e-x-d-a-t-e.html">EXDATE</a>. If the new instance belongs to an existing task the data must contain the fields <a href="../-task-columns/-o-r-i-g-i-n-a-l_-i-n-s-t-a-n-c-e_-i-d.html">ORIGINAL_INSTANCE_ID</a> and <a href="../-task-columns/-o-r-i-g-i-n-a-l_-i-n-s-t-a-n-c-e_-t-i-m-e.html">ORIGINAL_INSTANCE_TIME</a>. Also note, this table supports writing <a href="../-task-columns/-d-u-r-a-t-i-o-n.html"></a> (if the instance has a <a href="../-task-columns/-d-t-s-t-a-r-t.html">DTSTART</a>), but reading it back will always return a <code>{@code null}</code><a href="../-task-columns/-d-u-r-a-t-i-o-n.html">DURATION</a> and a non-<code>{@code null}</code><a href="../-task-columns/-d-u-e.html">DUE</a> date. Reading the task in the tasks table will, however, return the original <a href="../-task-columns/-d-u-r-a-t-i-o-n.html">DURATION</a>. </p><p class="paragraph"> If there already is an instance (with or without override) for the given <a href="../-task-columns/-o-r-i-g-i-n-a-l_-i-n-s-t-a-n-c-e_-i-d.html">ORIGINAL_INSTANCE_ID</a> and <a href="../-task-columns/-o-r-i-g-i-n-a-l_-i-n-s-t-a-n-c-e_-t-i-m-e.html">ORIGINAL_INSTANCE_TIME</a> an exception is thrown. </p><table><thead></thead><tbody><tr><td></td><td></td></tr><tr><td>absent or empty</td><td>A new non-recurring task is created with the given values.</td></tr><tr><td>a valid <a href="../-tasks/index.html">Tasks</a> row <code>{@code _ID}</code></td><td>An <a href="../-task-columns/-r-d-a-t-e.html">RDATE</a> for the given <a href="../-task-columns/-o-r-i-g-i-n-a-l_-i-n-s-t-a-n-c-e_-t-i-m-e.html">ORIGINAL_INSTANCE_TIME</a> time is added to the given master task, any <a href="../-task-columns/-e-x-d-a-t-e.html">EXDATE</a> for this time is removed. The task is inserted as an override to the given master. No fields are inherited though. <a href="../-task-columns/-o-r-i-g-i-n-a-l_-i-n-s-t-a-n-c-e_-a-l-l-d-a-y.html">ORIGINAL_INSTANCE_ALLDAY</a> will be set to <a href="../-task-columns/-i-s_-a-l-l-d-a-y.html">IS_ALLDAY</a> of the master. <p class="org.jetbrains.dokka.pages.commenttable@47ca878 paragraph"> Note, if the given master is non-recurring, this operation will turn it into a recurring task. </p></td></tr><tr><td>invalid <a href="../-tasks/index.html">Tasks</a> row <code>{@code * _ID}</code></td><td>An exception is thrown.</td></tr></tbody></table>Update<p class="paragraph"> Note, the data of an update must not contain any fields related to recurrence (<a href="../-task-columns/-r-r-u-l-e.html">RRULE</a>, <a href="../-task-columns/-r-d-a-t-e.html">RDATE</a>, <a href="../-task-columns/-e-x-d-a-t-e.html">EXDATE</a>, <a href="../-task-columns/-o-r-i-g-i-n-a-l_-i-n-s-t-a-n-c-e_-i-d.html"></a>, <a href="../-task-columns/-o-r-i-g-i-n-a-l_-i-n-s-t-a-n-c-e_-t-i-m-e.html">ORIGINAL_INSTANCE_TIME</a> and <a href="../-task-columns/-o-r-i-g-i-n-a-l_-i-n-s-t-a-n-c-e_-a-l-l-d-a-y.html">ORIGINAL_INSTANCE_ALLDAY</a>). Also note, this table supports writing <a href="../-task-columns/-d-u-r-a-t-i-o-n.html">DURATION</a> (if the instance has a <a href="../-task-columns/-d-t-s-t-a-r-t.html">DTSTART</a>), but reading it back will always return a <code>{@code null}</code><a href="../-task-columns/-d-u-r-a-t-i-o-n.html">DURATION</a> and a non-<code>{@code null}</code><a href="../-task-columns/-d-u-e.html">DUE</a> date. Reading the task in the tasks table will, however, return the original <a href="../-task-columns/-d-u-r-a-t-i-o-n.html">DURATION</a>. </p><table><thead></thead><tbody><tr><td></td><td></td></tr><tr><td>Recurring master task</td><td>A new override is created with the given data.<p class="org.jetbrains.dokka.pages.commenttable@47ca878 paragraph"> Note, any fields which are not provided are inherited from the master, except for <a href="../-task-columns/-d-t-s-t-a-r-t.html">DTSTART</a> and <a href="../-task-columns/-d-u-e.html">DUE</a> which will be inherited from the instance and <a href="../-task-columns/-d-u-r-a-t-i-o-n.html">DURATION</a>, <a href="../-task-columns/-r-r-u-l-e.html">RRULE</a>, <a href="../-task-columns/-r-d-a-t-e.html">RDATE</a> and <a href="../-task-columns/-e-x-d-a-t-e.html">EXDATE</a> which are set to <code>{@code null}</code>. <a href="../-task-columns/-o-r-i-g-i-n-a-l_-i-n-s-t-a-n-c-e_-i-d.html">ORIGINAL_INSTANCE_ID</a>, <a href="../-task-columns/-o-r-i-g-i-n-a-l_-i-n-s-t-a-n-c-e_-t-i-m-e.html"></a> and <a href="../-task-columns/-o-r-i-g-i-n-a-l_-i-n-s-t-a-n-c-e_-a-l-l-d-a-y.html">ORIGINAL_INSTANCE_ALLDAY</a> will be set accordingly.</p></td></tr><tr><td>Single instance task</td><td>The task is updated with the given values.</td></tr><tr><td>Recurrence override with existing master</td><td>The task is updated with the given values.</td></tr><tr><td>Recurrence override without existing master</td><td>The task is updated with the given values.</td></tr></tbody></table>Delete<table><thead></thead><tbody><tr><td></td><td></td></tr><tr><td>Recurring master task</td><td>An <a href="../-task-columns/-e-x-d-a-t-e.html">EXDATE</a> for this instance is added, any <a href="../-task-columns/-r-d-a-t-e.html"></a> for this instance is removed. The instance row is removed.<p class="org.jetbrains.dokka.pages.commenttable@47ca878 paragraph"> TODO: mark the task deleted if the remaining recurrence set is empty </p></td></tr><tr><td>Single instance task</td><td>The <a href="../-task-sync-columns/_-d-e-l-e-t-e-d.html">_DELETED</a> flag of the task is set.</td></tr><tr><td>Recurrence override with existing master</td><td>The <a href="../-task-sync-columns/_-d-e-l-e-t-e-d.html">_DELETED</a> flag of the override is set, an <a href="../-task-columns/-e-x-d-a-t-e.html">EXDATE</a> for this instance is added to the master, any <a href="../-task-columns/-r-d-a-t-e.html">RDATE</a> for this instance is removed from the master. TODO: mark the master deleted if the remaining recurrence set of the master is empty </td></tr><tr><td>Recurrence override without existing master</td><td>The <a href="../-task-sync-columns/_-d-e-l-e-t-e-d.html">_DELETED</a> flag of the task is set.</td></tr></tbody></table><h4 class="">Author</h4><p class="paragraph">Yannic Ahrens</p><p class="paragraph">Marten Gajda</p></div></div>
+          </div>
+          <div class="tabbedcontent">
+            <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="Functions">Functions</button><button class="section-tab" data-togglable="Properties">Properties</button></div>
+            <div class="tabs-section-body">
+              <h2 class="">Functions</h2>
+              <div class="table" data-togglable="Functions"><a data-name="596225832%2FFunctions%2F579055962" anchor-label="getContentUri" id="596225832%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="get-content-uri.html">getContentUri</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="596225832%2FFunctions%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title"><div class="divergent-group" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
+
+  <div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><div class="symbol monospace">open fun <a href="get-content-uri.html">getContentUri</a>(authority: <a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a>): <a href="https://developer.android.com/reference/kotlin/android/net/Uri.html">Uri</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+  </div>
+<a data-name="596225832%2FFunctions%2F579055962" anchor-label="getContentUri" id="596225832%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="brief "><a data-name="596225832%2FFunctions%2F579055962" anchor-label="getContentUri" id="596225832%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a>Get the instances content <a href="https://developer.android.com/reference/kotlin/android/net/Uri.html">Uri</a> using the given authority.</div></div>
+</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <h2 class="">Properties</h2>
+              <div class="table" data-togglable="Properties"><a data-name="111924295%2FProperties%2F579055962" anchor-label="ACCOUNT_NAME" id="111924295%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="-a-c-c-o-u-n-t_-n-a-m-e.html">ACCOUNT_NAME</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="111924295%2FProperties%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title">
+                        <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><a data-name="111924295%2FProperties%2F579055962" anchor-label="ACCOUNT_NAME" id="111924295%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="symbol monospace">val <a href="-a-c-c-o-u-n-t_-n-a-m-e.html">ACCOUNT_NAME</a>: <a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><a data-name="111924295%2FProperties%2F579055962" anchor-label="ACCOUNT_NAME" id="111924295%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>The name of the account the task belongs to.</div></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+<a data-name="1041699448%2FProperties%2F579055962" anchor-label="ACCOUNT_TYPE" id="1041699448%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="-a-c-c-o-u-n-t_-t-y-p-e.html">ACCOUNT_TYPE</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1041699448%2FProperties%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title">
+                        <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><a data-name="1041699448%2FProperties%2F579055962" anchor-label="ACCOUNT_TYPE" id="1041699448%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="symbol monospace">val <a href="-a-c-c-o-u-n-t_-t-y-p-e.html">ACCOUNT_TYPE</a>: <a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><a data-name="1041699448%2FProperties%2F579055962" anchor-label="ACCOUNT_TYPE" id="1041699448%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>The type of the account the task belongs to.</div></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+<a data-name="1111649542%2FProperties%2F579055962" anchor-label="CONTENT_URI_PATH" id="1111649542%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="-c-o-n-t-e-n-t_-u-r-i_-p-a-t-h.html">CONTENT_URI_PATH</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1111649542%2FProperties%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title">
+                        <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><a data-name="1111649542%2FProperties%2F579055962" anchor-label="CONTENT_URI_PATH" id="1111649542%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="symbol monospace">val <a href="-c-o-n-t-e-n-t_-u-r-i_-p-a-t-h.html">CONTENT_URI_PATH</a>: <a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+<a data-name="-1538520551%2FProperties%2F579055962" anchor-label="DEFAULT_SORT_ORDER" id="-1538520551%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="-d-e-f-a-u-l-t_-s-o-r-t_-o-r-d-e-r.html">DEFAULT_SORT_ORDER</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1538520551%2FProperties%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title">
+                        <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><a data-name="-1538520551%2FProperties%2F579055962" anchor-label="DEFAULT_SORT_ORDER" id="-1538520551%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="symbol monospace">val <a href="-d-e-f-a-u-l-t_-s-o-r-t_-o-r-d-e-r.html">DEFAULT_SORT_ORDER</a>: <a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+<a data-name="-2036437716%2FProperties%2F579055962" anchor-label="LIST_ACCESS_LEVEL" id="-2036437716%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="-l-i-s-t_-a-c-c-e-s-s_-l-e-v-e-l.html">LIST_ACCESS_LEVEL</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2036437716%2FProperties%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title">
+                        <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><a data-name="-2036437716%2FProperties%2F579055962" anchor-label="LIST_ACCESS_LEVEL" id="-2036437716%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="symbol monospace">val <a href="-l-i-s-t_-a-c-c-e-s-s_-l-e-v-e-l.html">LIST_ACCESS_LEVEL</a>: <a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><a data-name="-2036437716%2FProperties%2F579055962" anchor-label="LIST_ACCESS_LEVEL" id="-2036437716%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>The access level of the list this task belongs.</div></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+<a data-name="-669737278%2FProperties%2F579055962" anchor-label="LIST_COLOR" id="-669737278%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="-l-i-s-t_-c-o-l-o-r.html">LIST_COLOR</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-669737278%2FProperties%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title">
+                        <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><a data-name="-669737278%2FProperties%2F579055962" anchor-label="LIST_COLOR" id="-669737278%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="symbol monospace">val <a href="-l-i-s-t_-c-o-l-o-r.html">LIST_COLOR</a>: <a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><a data-name="-669737278%2FProperties%2F579055962" anchor-label="LIST_COLOR" id="-669737278%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>The color of the list this task belongs to as integer (0xaarrggbb).</div></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+<a data-name="580404650%2FProperties%2F579055962" anchor-label="LIST_NAME" id="580404650%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="-l-i-s-t_-n-a-m-e.html">LIST_NAME</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="580404650%2FProperties%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title">
+                        <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><a data-name="580404650%2FProperties%2F579055962" anchor-label="LIST_NAME" id="580404650%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="symbol monospace">val <a href="-l-i-s-t_-n-a-m-e.html">LIST_NAME</a>: <a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><a data-name="580404650%2FProperties%2F579055962" anchor-label="LIST_NAME" id="580404650%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>The name of the list this task belongs to as integer (0xaarrggbb).</div></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+<a data-name="-819776142%2FProperties%2F579055962" anchor-label="LIST_OWNER" id="-819776142%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="-l-i-s-t_-o-w-n-e-r.html">LIST_OWNER</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-819776142%2FProperties%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title">
+                        <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><a data-name="-819776142%2FProperties%2F579055962" anchor-label="LIST_OWNER" id="-819776142%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="symbol monospace">val <a href="-l-i-s-t_-o-w-n-e-r.html">LIST_OWNER</a>: <a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><a data-name="-819776142%2FProperties%2F579055962" anchor-label="LIST_OWNER" id="-819776142%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>The owner of the list this task belongs.</div></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+<a data-name="1037579236%2FProperties%2F579055962" anchor-label="VISIBLE" id="1037579236%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="-v-i-s-i-b-l-e.html">VISIBLE</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1037579236%2FProperties%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title">
+                        <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><a data-name="1037579236%2FProperties%2F579055962" anchor-label="VISIBLE" id="1037579236%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="symbol monospace">val <a href="-v-i-s-i-b-l-e.html">VISIBLE</a>: <a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><a data-name="1037579236%2FProperties%2F579055962" anchor-label="VISIBLE" id="1037579236%2FProperties%2F579055962" data-filterable-set=":dokkaHtml/release"></a>The visibility of the list this task belongs.</div></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="footer"><span class="go-to-top-icon"><a href="#content"></a></span><span>© 2022 Copyright</span><span class="pull-right"><span>Generated by </span><a href="https://github.com/Kotlin/dokka"><span>dokka</span><span class="padded-icon"></span></a></span></div>
+      </div>
+    </div>
+  </body>
+</html>
+

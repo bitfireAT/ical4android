@@ -1,0 +1,38 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>touchRelations</title>
+<link href="../../../../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../";</script><script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script><link href="../../../styles/style.css" rel="Stylesheet"><link href="../../../styles/logo-styles.css" rel="Stylesheet"><link href="../../../styles/jetbrains-mono.css" rel="Stylesheet"><link href="../../../styles/main.css" rel="Stylesheet"><script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script><script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script><script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script><script type="text/javascript" src="../../../scripts/main.js" async="async"></script>  </head>
+  <body>
+    <div id="container">
+      <div id="leftColumn"><a href="../../../index.html">
+          <div id="logo"></div>
+        </a>
+        <div id="paneSearch"></div>
+        <div id="sideMenu"></div>
+      </div>
+      <div id="main">
+        <div id="leftToggler"><span class="icon-toggler"></span></div>
+<script type="text/javascript" src="../../../scripts/main.js"></script>        <div class="main-content" id="content" pageIds="ical4android::at.bitfire.ical4android/AndroidTaskList/touchRelations/#/PointingToDeclaration//579055962">
+          <div class="navigation-wrapper" id="navigation-wrapper">
+            <div class="breadcrumbs"><a href="../../../index.html">ical4android</a>/<a href="../index.html">at.bitfire.ical4android</a>/<a href="index.html">AndroidTaskList</a>/<a href="touch-relations.html">touchRelations</a></div>
+            <div class="pull-right d-flex">
+              <div id="searchBar"></div>
+            </div>
+          </div>
+          <div class="cover ">
+            <h1 class="cover"><span>touch</span><wbr></wbr><span>Relations</span></h1>
+          </div>
+<div class="divergent-group" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
+
+  <div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><div class="symbol monospace">fun <a href="touch-relations.html">touchRelations</a>(): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html">Int</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+  </div>
+<p class="paragraph">When tasks are added or updated, they may refer to related tasks by UID (<a href="../../org.dmfs.tasks.contract/-task-contract/-property/-relation/-r-e-l-a-t-e-d_-u-i-d.html">Relation.RELATED_UID</a>). However, those related tasks may not be available (for instance, because they have not been synchronized yet), so that the tasks provider can't establish the actual relation (= set <span data-unresolved-link="org.dmfs.tasks.contract/TaskContract.Property.Relation/TASK_ID/#/PointingToDeclaration/">Relation.TASK_ID</span>) in the database.</p><p class="paragraph">As soon as such a related task is added, OpenTasks updates the <a href="../../org.dmfs.tasks.contract/-task-contract/-property/-relation/-r-e-l-a-t-e-d_-i-d.html">Relation.RELATED_ID</a>, but it does not update <span data-unresolved-link="org.dmfs.tasks.contract/TaskContract.Tasks/PARENT_ID/#/PointingToDeclaration/">Tasks.PARENT_ID</span> of the parent task: https://github.com/dmfs/opentasks/issues/877</p><p class="paragraph">This method shall be called after all tasks have been synchronized. It touches</p><ul><li><p class="paragraph">all <a href="../../org.dmfs.tasks.contract/-task-contract/-property/-relation/index.html">Relation</a> rows</p></li><li><p class="paragraph">with <a href="../../org.dmfs.tasks.contract/-task-contract/-property/-relation/-r-e-l-a-t-e-d_-i-d.html">Relation.RELATED_ID</a> (→ related task is already synchronized)</p></li><li><p class="paragraph">of tasks without <span data-unresolved-link="org.dmfs.tasks.contract/TaskContract.Tasks/PARENT_ID/#/PointingToDeclaration/">Tasks.PARENT_ID</span> (→ only touch relevant rows)</p></li></ul><p class="paragraph">so that missing <span data-unresolved-link="org.dmfs.tasks.contract/TaskContract.Tasks/PARENT_ID/#/PointingToDeclaration/">Tasks.PARENT_ID</span> fields are updated.</p><h4 class="">Return</h4><p class="paragraph">number of touched <a href="../../org.dmfs.tasks.contract/-task-contract/-property/-relation/index.html">Relation</a> rows</p></div>
+        </div>
+        <div class="footer"><span class="go-to-top-icon"><a href="#content"></a></span><span>© 2022 Copyright</span><span class="pull-right"><span>Generated by </span><a href="https://github.com/Kotlin/dokka"><span>dokka</span><span class="padded-icon"></span></a></span></div>
+      </div>
+    </div>
+  </body>
+</html>
+

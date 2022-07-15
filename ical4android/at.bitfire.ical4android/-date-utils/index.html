@@ -1,0 +1,142 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>DateUtils</title>
+<link href="../../../../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../";</script><script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script><link href="../../../styles/style.css" rel="Stylesheet"><link href="../../../styles/logo-styles.css" rel="Stylesheet"><link href="../../../styles/jetbrains-mono.css" rel="Stylesheet"><link href="../../../styles/main.css" rel="Stylesheet"><script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script><script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script><script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script><script type="text/javascript" src="../../../scripts/main.js" async="async"></script>  </head>
+  <body>
+    <div id="container">
+      <div id="leftColumn"><a href="../../../index.html">
+          <div id="logo"></div>
+        </a>
+        <div id="paneSearch"></div>
+        <div id="sideMenu"></div>
+      </div>
+      <div id="main">
+        <div id="leftToggler"><span class="icon-toggler"></span></div>
+<script type="text/javascript" src="../../../scripts/main.js"></script>        <div class="main-content" id="content" pageIds="ical4android::at.bitfire.ical4android/DateUtils///PointingToDeclaration//579055962">
+          <div class="navigation-wrapper" id="navigation-wrapper">
+            <div class="breadcrumbs"><a href="../../../index.html">ical4android</a>/<a href="../index.html">at.bitfire.ical4android</a>/<a href="index.html">DateUtils</a></div>
+            <div class="pull-right d-flex">
+              <div id="searchBar"></div>
+            </div>
+          </div>
+          <div class="cover ">
+            <h1 class="cover"><span>Date</span><wbr></wbr><span>Utils</span></h1>
+            <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><div class="symbol monospace">object <a href="index.html">DateUtils</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><p class="paragraph">Date/time utilities</p><p class="paragraph">Before this object is accessed the first time, the accessing thread's contextClassLoader must be set to an Android Context.classLoader!</p></div></div>
+          </div>
+          <div class="tabbedcontent">
+            <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="Functions">Functions</button></div>
+            <div class="tabs-section-body">
+              <h2 class="">Functions</h2>
+              <div class="table" data-togglable="Functions"><a data-name="142127559%2FFunctions%2F579055962" anchor-label="findAndroidTimezoneID" id="142127559%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="find-android-timezone-i-d.html">findAndroidTimezoneID</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="142127559%2FFunctions%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title"><div class="divergent-group" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
+
+  <div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><div class="symbol monospace">fun <a href="find-android-timezone-i-d.html">findAndroidTimezoneID</a>(tzID: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>?): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+  </div>
+<a data-name="142127559%2FFunctions%2F579055962" anchor-label="findAndroidTimezoneID" id="142127559%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="brief "><a data-name="142127559%2FFunctions%2F579055962" anchor-label="findAndroidTimezoneID" id="142127559%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a>For a given time zone ID taken from an iCalendar resource, find the matching Android time zone ID (if possible):<ol><li><p class="paragraph">Use a case-insensitive match (&quot;EUROPE/VIENNA&quot; will return &quot;Europe/Vienna&quot;,     assuming &quot;Europe/Vienna&quot;) is available in Android</p></li><li><p class="paragraph">Find partial matches (case-sensitive) in both directions, so both &quot;Vienna&quot;     and &quot;MyClient: Europe/Vienna&quot; will return &quot;Europe/Vienna&quot;. This shouldn't be     case-sensitive, because that would (for instance) return &quot;EST&quot; for &quot;Westeuropäische Sommerzeit&quot;</p></li><li><p class="paragraph">If nothing can be found, use the system default time zone</p></li></ol></div></div>
+</div>
+                    </div>
+                  </div>
+                </div>
+<a data-name="1149966068%2FFunctions%2F579055962" anchor-label="getZoneId" id="1149966068%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="get-zone-id.html">getZoneId</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1149966068%2FFunctions%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title"><div class="divergent-group" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
+
+  <div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><div class="symbol monospace">fun <a href="get-zone-id.html">getZoneId</a>(id: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>?): <a href="https://developer.android.com/reference/kotlin/java/time/ZoneId.html">ZoneId</a>?<span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+  </div>
+<a data-name="1149966068%2FFunctions%2F579055962" anchor-label="getZoneId" id="1149966068%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="brief "><a data-name="1149966068%2FFunctions%2F579055962" anchor-label="getZoneId" id="1149966068%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a>Gets a <a href="https://developer.android.com/reference/kotlin/java/time/ZoneId.html">ZoneId</a> from a given ID string.</div></div>
+</div>
+                    </div>
+                  </div>
+                </div>
+<a data-name="496957296%2FFunctions%2F579055962" anchor-label="ical4jTimeZone" id="496957296%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="ical4j-time-zone.html">ical4jTimeZone</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="496957296%2FFunctions%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title"><div class="divergent-group" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
+
+  <div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><div class="symbol monospace"><div class="block"><div class="block">@<a href="../-uses-thread-context-class-loader/index.html">UsesThreadContextClassLoader</a>()</div></div>fun <a href="ical4j-time-zone.html">ical4jTimeZone</a>(id: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>): <span data-unresolved-link="net.fortuna.ical4j.model/TimeZone///PointingToDeclaration/">TimeZone</span>?<span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+  </div>
+</div>
+</div>
+                    </div>
+                  </div>
+                </div>
+<a data-name="-1941332647%2FFunctions%2F579055962" anchor-label="isDate" id="-1941332647%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="is-date.html">isDate</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1941332647%2FFunctions%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title"><div class="divergent-group" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
+
+  <div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><div class="symbol monospace">fun <a href="is-date.html">isDate</a>(date: <span data-unresolved-link="net.fortuna.ical4j.model.property/DateProperty///PointingToDeclaration/">DateProperty</span>?): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+  </div>
+<a data-name="-1941332647%2FFunctions%2F579055962" anchor-label="isDate" id="-1941332647%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="brief "><a data-name="-1941332647%2FFunctions%2F579055962" anchor-label="isDate" id="-1941332647%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a>Determines whether a given date represents a DATE value.</div></div>
+</div>
+                    </div>
+                  </div>
+                </div>
+<a data-name="-1491251002%2FFunctions%2F579055962" anchor-label="isDateTime" id="-1491251002%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="is-date-time.html">isDateTime</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1491251002%2FFunctions%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title"><div class="divergent-group" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
+
+  <div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><div class="symbol monospace">fun <a href="is-date-time.html">isDateTime</a>(date: <span data-unresolved-link="net.fortuna.ical4j.model.property/DateProperty///PointingToDeclaration/">DateProperty</span>?): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+  </div>
+<a data-name="-1491251002%2FFunctions%2F579055962" anchor-label="isDateTime" id="-1491251002%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="brief "><a data-name="-1491251002%2FFunctions%2F579055962" anchor-label="isDateTime" id="-1491251002%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a>Determines whether a given date represents a DATE-TIME value.</div></div>
+</div>
+                    </div>
+                  </div>
+                </div>
+<a data-name="-1027985096%2FFunctions%2F579055962" anchor-label="parseVTimeZone" id="-1027985096%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a>
+                <div class="table-row" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release">
+                  <div class="main-subrow keyValue ">
+                    <div class=""><span class="inline-flex"><a href="parse-v-time-zone.html">parseVTimeZone</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1027985096%2FFunctions%2F579055962"></span>
+                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                        </span></span></div>
+                    <div>
+                      <div class="title"><div class="divergent-group" data-filterable-current=":dokkaHtml/release" data-filterable-set=":dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
+
+  <div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":dokkaHtml/release"><div class="symbol monospace"><div class="block"><div class="block">@<a href="../-uses-thread-context-class-loader/index.html">UsesThreadContextClassLoader</a>()</div></div>fun <a href="parse-v-time-zone.html">parseVTimeZone</a>(timezoneDef: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>): <span data-unresolved-link="net.fortuna.ical4j.model.component/VTimeZone///PointingToDeclaration/">VTimeZone</span><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+  </div>
+<a data-name="-1027985096%2FFunctions%2F579055962" anchor-label="parseVTimeZone" id="-1027985096%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a><div class="brief "><a data-name="-1027985096%2FFunctions%2F579055962" anchor-label="parseVTimeZone" id="-1027985096%2FFunctions%2F579055962" data-filterable-set=":dokkaHtml/release"></a>Parses a VTIMEZONE definition to a VTimeZone object.</div></div>
+</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="footer"><span class="go-to-top-icon"><a href="#content"></a></span><span>© 2022 Copyright</span><span class="pull-right"><span>Generated by </span><a href="https://github.com/Kotlin/dokka"><span>dokka</span><span class="padded-icon"></span></a></span></div>
+      </div>
+    </div>
+  </body>
+</html>
+
