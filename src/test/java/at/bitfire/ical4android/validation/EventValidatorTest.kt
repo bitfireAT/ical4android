@@ -134,10 +134,12 @@ class EventValidatorTest {
                "BEGIN:VEVENT\n" +
                "UID:381fb26b-2da5-4dd2-94d7-2e0874128aa7\n" +
                "DTSTART;VALUE=DATE:20080215\n" +                            // DATE
-               "RRULE:FREQ=YEARLY;UNTIL=20230214T000000Z;BYMONTHDAY=15\n" + // DATETIME (with timezone)
+               "RRULE:FREQ=YEARLY;TZID=Europe/Vienna;UNTIL=20230214T000000;BYMONTHDAY=15\n" + // DATETIME (with timezone)
                "END:VEVENT\n" +
                "END:VCALENDAR")).first()
-        assertEquals(Date("20230214"), event2.rRules.first.recur.until)
+        // cutting off time, takes timezone into account and expresses new time in UTC, which means having
+        // "TZID=Europe/Vienna" (GMT+2) and "T000000" (start of day) will make the date leap backwards
+        assertEquals(Date("20230213"), event2.rRules.first.recur.until)
     }
 
     @Test

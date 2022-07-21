@@ -9,13 +9,14 @@ import at.bitfire.ical4android.Event
 import at.bitfire.ical4android.Ical4Android
 import at.bitfire.ical4android.InvalidCalendarException
 import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
+import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDateTime
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
+import at.bitfire.ical4android.util.TimeApiExtensions.toZoneIdCompat
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.RRule
-import java.text.SimpleDateFormat
-import java.util.*
+import java.time.*
 
 /**
  * Sometimes CalendarStorage or servers respond with invalid event definitions. Here we try to
@@ -34,13 +35,14 @@ class EventValidator(val e: Event) {
          * Ensure proper start and end time
          */
         internal fun correctStartAndEndTime(e: Event): DtStart {
-            if (e.dtStart == null)
-                throw InvalidCalendarException("Event without start time")
-            else if (e.dtEnd != null && e.dtStart!!.date > e.dtEnd!!.date) {
-                Ical4Android.log.warning("DTSTART after DTEND; removing DTEND")
-                e.dtEnd = null
+            val dtStart = e.dtStart ?: throw InvalidCalendarException("Event without start time")
+            e.dtEnd?.let { dtEnd ->
+                if (dtStart.date > dtEnd.date) {
+                    Ical4Android.log.warning("DTSTART after DTEND; removing DTEND")
+                    e.dtEnd = null
+                }
             }
-            return e.dtStart!!
+            return dtStart
         }
 
         /**
@@ -52,6 +54,8 @@ class EventValidator(val e: Event) {
                     rRule.recur.until?.let { until ->
                         if (until is DateTime) {
                             Ical4Android.log.warning("DTSTART has DATE, but UNTIL has DATETIME; making UNTIL have DATE only")
+                            // takes timezone into account and expresses new time in UTC, which means having
+                            // "TZID=Europe/Vienna" (GMT+2) and "T000000" (start of day) will make the date leap backwards
                             rRule.recur.until = Date(until.toLocalDate().toIcal4jDate())
                         }
                     }
@@ -61,12 +65,18 @@ class EventValidator(val e: Event) {
                     rRule.recur.until?.let { until ->
                         if (until !is DateTime) {
                             Ical4Android.log.warning("DTSTART has DATETIME, but UNTIL has DATE; copying time from DTSTART to UNTIL")
-                            val sdf = SimpleDateFormat("HHmmss", Locale.US).apply {
-                                if (dtStart.isUtc) timeZone = TimeZone.getTimeZone("UTC")
-                            }
-                            val untilDate = SimpleDateFormat("yyyyMMdd", Locale.US).format(until)
-                            val dtStartTime = sdf.format(dtStart.date)
-                            rRule.recur.until = DateTime(untilDate +"T"+ dtStartTime + "Z".takeIf { dtStart.isUtc })
+                            val timeZone = if (dtStart.timeZone != null)
+                                dtStart.timeZone.toZoneIdCompat()
+                            else if (dtStart.isUtc)
+                                ZoneOffset.UTC
+                            else /* floating time */
+                                ZoneId.systemDefault()
+                            rRule.recur.until =
+                                ZonedDateTime.of(
+                                    until.toLocalDate(),                                        // date from until
+                                    LocalTime.ofInstant(dtStart.date.toInstant(), timeZone),    // time from dtStart
+                                    timeZone
+                                ).toIcal4jDateTime()
                         }
                     }
                 }
