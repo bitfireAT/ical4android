@@ -10,9 +10,7 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.database.DatabaseUtils
 import android.net.Uri
-import android.provider.CalendarContract
 import android.provider.CalendarContract.*
-import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.rule.GrantPermissionRule
 import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
@@ -21,7 +19,6 @@ import at.bitfire.ical4android.impl.TestCalendar
 import at.bitfire.ical4android.impl.TestEvent
 import at.bitfire.ical4android.util.AndroidTimeUtils
 import net.fortuna.ical4j.model.*
-import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
@@ -31,7 +28,6 @@ import org.junit.Assert.*
 import java.net.URI
 import java.time.Duration
 import java.time.Period
-import java.util.*
 
 class AndroidEventTest {
 
@@ -49,7 +45,7 @@ class AndroidEventTest {
         @BeforeClass
         @JvmStatic
         fun connectProvider() {
-            provider = getInstrumentation().targetContext.contentResolver.acquireContentProviderClient(CalendarContract.AUTHORITY)!!
+            provider = getInstrumentation().targetContext.contentResolver.acquireContentProviderClient(AUTHORITY)!!
         }
 
         @AfterClass
@@ -60,7 +56,7 @@ class AndroidEventTest {
 
     }
 
-    private val testAccount = Account("ical4android@example.com", CalendarContract.ACCOUNT_TYPE_LOCAL)
+    private val testAccount = Account("ical4android@example.com", ACCOUNT_TYPE_LOCAL)
 
     private val tzVienna = DateUtils.ical4jTimeZone("Europe/Vienna")!!
     private val tzShanghai = DateUtils.ical4jTimeZone("Asia/Shanghai")!!
@@ -75,7 +71,7 @@ class AndroidEventTest {
     fun prepare() {
         calendar = TestCalendar.findOrCreate(testAccount, provider)
         assertNotNull(calendar)
-        calendarUri = ContentUris.withAppendedId(CalendarContract.Calendars.CONTENT_URI, calendar.id)
+        calendarUri = ContentUris.withAppendedId(Calendars.CONTENT_URI, calendar.id)
     }
 
     @After
@@ -1804,7 +1800,7 @@ class AndroidEventTest {
     @Test
     fun testPopulateReminder_TypeEmail_AccountNameNotEmail() {
         // test account name that doesn't look like an email address
-        val nonEmailAccount = Account("ical4android", CalendarContract.ACCOUNT_TYPE_LOCAL)
+        val nonEmailAccount = Account("ical4android", ACCOUNT_TYPE_LOCAL)
         val testCalendar = TestCalendar.findOrCreate(nonEmailAccount, provider)
         try {
             populateReminder(testCalendar) {
