@@ -54,9 +54,7 @@ class EventValidator(val e: Event) {
                     rRule.recur.until?.let { until ->
                         if (until is DateTime) {
                             Ical4Android.log.warning("DTSTART has DATE, but UNTIL has DATETIME; making UNTIL have DATE only")
-                            // takes timezone into account and expresses new time in UTC, which means having
-                            // "TZID=Europe/Vienna" (GMT+2) and "T000000" (start of day) will make the date leap backwards
-                            rRule.recur.until = Date(until.toLocalDate().toIcal4jDate())
+                            rRule.recur.until = until.toLocalDate().toIcal4jDate()
                         }
                     }
                 }

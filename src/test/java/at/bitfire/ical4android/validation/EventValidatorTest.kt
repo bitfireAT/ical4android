@@ -16,6 +16,7 @@ import net.fortuna.ical4j.model.property.RRule
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.StringReader
+import java.util.*
 
 class EventValidatorTest {
 
@@ -112,34 +113,53 @@ class EventValidatorTest {
             dtStart = DtStart(Date("20211115"))                         // DATE
             rRules.add(RRule("FREQ=MONTHLY;UNTIL=20211214T235959Z"))    // DATETIME (UTC)
         }
-        assertEquals(1639526399000, event.rRules.first.recur.until.time)
-        assertEquals(DateTime("20211214T235959Z"), event.rRules.first.recur.until)
+        assertEquals(
+            DateTime("20211214T235959Z"),
+            event.rRules.first.recur.until
+        ) // close to flip up (T235959)
         EventValidator.sameTypeForDtStartAndRruleUntil(event.dtStart!!, event.rRules)
-        assertEquals(1639440000000, event.rRules.first.recur.until.time)
         assertEquals(Date("20211214"), event.rRules.first.recur.until)
 
-        val event1 = Event.eventsFromReader(StringReader(
-            "BEGIN:VCALENDAR\n" +
-               "BEGIN:VEVENT\n" +
-               "UID:51d8529a-5844-4609-918b-2891b855e0e8\n" +
-               "DTSTART;VALUE=DATE:20211115\n" +                             // DATE
-               "RRULE:FREQ=MONTHLY;UNTIL=20211214T235959;BYMONTHDAY=15\n" +  // DATETIME (no timezone)
-               "END:VEVENT\n" +
-               "END:VCALENDAR")).first()
+        val event1 = Event.eventsFromReader(
+            StringReader(
+                "BEGIN:VCALENDAR\n" +
+                        "BEGIN:VEVENT\n" +
+                        "UID:51d8529a-5844-4609-918b-2891b855e0e8\n" +
+                        "DTSTART;VALUE=DATE:20211115\n" +                             // DATE
+                        "RRULE:FREQ=MONTHLY;UNTIL=20211214T235959;BYMONTHDAY=15\n" +  // DATETIME (no timezone)
+                        "END:VEVENT\n" +
+                        "END:VCALENDAR"
+            )
+        ).first()
         assertEquals(1639440000000, event1.rRules.first.recur.until.time)
         assertEquals(Date("20211214"), event1.rRules.first.recur.until)
+    }
 
-        val event2 = Event.eventsFromReader(StringReader(
-            "BEGIN:VCALENDAR\n" +
-               "BEGIN:VEVENT\n" +
-               "UID:381fb26b-2da5-4dd2-94d7-2e0874128aa7\n" +
-               "DTSTART;VALUE=DATE:20080215\n" +                            // DATE
-               "RRULE:FREQ=YEARLY;TZID=Europe/Vienna;UNTIL=20230214T000000;BYMONTHDAY=15\n" + // DATETIME (with timezone)
-               "END:VEVENT\n" +
-               "END:VCALENDAR")).first()
-        // cutting off time, takes timezone into account and expresses new time in UTC, which means having
-        // "TZID=Europe/Vienna" (GMT+2) and "T000000" (start of day) will make the date leap backwards
-        assertEquals(Date("20230213"), event2.rRules.first.recur.until)
+    @Test
+    fun testSameTypeForDtStartAndRruleUntil_DtStartIsDateAndRruleUntilIsDateTime_flippingDate() {
+        // Date may flip when cutting off time due to timezones and DST
+
+        //TODO: check if test could still fail with wintertime
+
+        val event2 = Event().apply {
+            dtStart = DtStart(Date("20080215"))                                                     // DATE
+            rRules.add(RRule("FREQ=YEARLY;TZID=Europe/Vienna;UNTIL=20230214T000000;BYMONTHDAY=15")) // DATETIME (with timezone) and close to flip down (T000000)
+        }
+        val expectedDateTime = if (TimeZone.getDefault().equals(TimeZone.getTimeZone("UTC")))
+            DateTime("20230214T000000Z") // 1676332800000
+        else
+            DateTime("20230214T000000", tzReg.getTimeZone("Europe/Vienna")) // 1676329200000
+        assertEquals(expectedDateTime,
+            event2.rRules.first.recur.until
+        )
+        EventValidator.sameTypeForDtStartAndRruleUntil(event2.dtStart!!, event2.rRules)
+        val expectedDate = if (TimeZone.getDefault().equals(TimeZone.getTimeZone("UTC")))
+            Date("20230214") // 1676332800000
+        else
+            Date("20230213") // 1676246400000
+        assertEquals(expectedDate,
+            event2.rRules.first.recur.until
+        )
     }
 
     @Test
