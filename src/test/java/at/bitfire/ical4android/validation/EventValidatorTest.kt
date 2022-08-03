@@ -108,15 +108,16 @@ class EventValidatorTest {
     @Test
     fun testSameTypeForDtStartAndRruleUntil_DtStartIsDateAndRruleUntilIsDateTime() {
         // should remove (possibly existing) time in RRULE if DTSTART value is of type DATE (not DATETIME)
+        // we want time to be cut off hard, not taking time zones into account risking the date could flip when time is close to midnight
 
         val event = Event().apply {
             dtStart = DtStart(Date("20211115"))                         // DATE
-            rRules.add(RRule("FREQ=MONTHLY;UNTIL=20211214T235959Z"))    // DATETIME (UTC)
+            rRules.add(RRule("FREQ=MONTHLY;UNTIL=20211214T235959Z"))    // DATETIME (UTC), close to flip up
         }
         assertEquals(
             DateTime("20211214T235959Z"),
             event.rRules.first.recur.until
-        ) // close to flip up (T235959)
+        )
         EventValidator.sameTypeForDtStartAndRruleUntil(event.dtStart!!, event.rRules)
         assertEquals(Date("20211214"), event.rRules.first.recur.until)
 
@@ -126,7 +127,7 @@ class EventValidatorTest {
                         "BEGIN:VEVENT\n" +
                         "UID:51d8529a-5844-4609-918b-2891b855e0e8\n" +
                         "DTSTART;VALUE=DATE:20211115\n" +                             // DATE
-                        "RRULE:FREQ=MONTHLY;UNTIL=20211214T235959;BYMONTHDAY=15\n" +  // DATETIME (no timezone)
+                        "RRULE:FREQ=MONTHLY;UNTIL=20211214T235959;BYMONTHDAY=15\n" +  // DATETIME (no timezone), close to flip up
                         "END:VEVENT\n" +
                         "END:VCALENDAR"
             )
@@ -136,29 +137,21 @@ class EventValidatorTest {
     }
 
     @Test
-    fun testSameTypeForDtStartAndRruleUntil_DtStartIsDateAndRruleUntilIsDateTime_flippingDate() {
-        // Date may flip when cutting off time due to timezones and DST
-
-        //TODO: check if test could still fail with wintertime
-
+    fun testSameTypeForDtStartAndRruleUntil_DtStartIsDateAndRruleUntilIsDateTime_2() {
         val event2 = Event().apply {
-            dtStart = DtStart(Date("20080215"))                                                     // DATE
-            rRules.add(RRule("FREQ=YEARLY;TZID=Europe/Vienna;UNTIL=20230214T000000;BYMONTHDAY=15")) // DATETIME (with timezone) and close to flip down (T000000)
+            dtStart = DtStart(Date("20080215"))                                                     // DATE (local/system time zone)
+            rRules.add(RRule("FREQ=YEARLY;TZID=Europe/Vienna;UNTIL=20230218T000000;BYMONTHDAY=15")) // DATETIME (with timezone), close to flip down
         }
-        val expectedDateTime = if (TimeZone.getDefault().equals(TimeZone.getTimeZone("UTC")))
-            DateTime("20230214T000000Z") // 1676332800000
-        else
-            DateTime("20230214T000000", tzReg.getTimeZone("Europe/Vienna")) // 1676329200000
-        assertEquals(expectedDateTime,
-            event2.rRules.first.recur.until
-        )
+        // NOTE: ical4j will:
+        //  - ignore the time zone of the RRULE (TZID=Europe/Vienna)
+        //  - use the timezone from DTSTART to determine the time value (timezone of DTSTART is local/system for a DATE)
+        //  - take DST into account
+        // Because of this when running the test in a different timezone the date may flip down before we cut off time, making the test hard to predict.
+        // As it does not happen often, for the sake of simplicity we just accept either
         EventValidator.sameTypeForDtStartAndRruleUntil(event2.dtStart!!, event2.rRules)
-        val expectedDate = if (TimeZone.getDefault().equals(TimeZone.getTimeZone("UTC")))
-            Date("20230214") // 1676332800000
-        else
-            Date("20230213") // 1676246400000
-        assertEquals(expectedDate,
-            event2.rRules.first.recur.until
+        assertTrue(
+            Date("20230218") == event2.rRules.first.recur.until ||
+            Date("20230217") == event2.rRules.first.recur.until
         )
     }
 
