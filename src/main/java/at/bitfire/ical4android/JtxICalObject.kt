@@ -273,13 +273,13 @@ open class JtxICalObject(
                         }
 
                         // remove properties to add the rest to other
-                        component.properties.remove(component.action)
-                        component.properties.remove(component.summary)
-                        component.properties.remove(component.description)
-                        component.properties.remove(component.duration)
-                        component.properties.remove(component.attachment)
-                        component.properties.remove(component.repeat)
-                        component.properties.remove(component.trigger)
+                        component.properties.remove(element = component.action)
+                        component.properties.remove(element = component.summary)
+                        component.properties.remove(element = component.description)
+                        component.properties.remove(element = component.duration)
+                        component.properties.remove(element = component.attachment)
+                        component.properties.remove(element = component.repeat)
+                        component.properties.remove(element = component.trigger)
                         component.properties?.let { vAlarmProps -> this.other = JtxContract.getJsonStringFromXProperties(vAlarmProps) }
                     }
                     iCalObject.alarms.add(jtxAlarm)
