@@ -2,8 +2,9 @@
  * Copyright © All Contributors. See LICENSE and AUTHORS in the root directory for details.
  **************************************************************************************************/
 
-package at.bitfire.ical4android
+package at.bitfire.ical4android.validation
 
+import at.bitfire.ical4android.Ical4Android
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.transform.rfc5545.CreatedPropertyRule
@@ -18,10 +19,10 @@ import java.util.*
 import java.util.logging.Level
 
 /**
- * Applies some rules to increase compatibility or parsed iCalendars:
+ * Applies some rules to increase compatibility of parsed (incoming) iCalendars:
  *
  *   - [CreatedPropertyRule] to make sure CREATED is UTC
- *   - [DatePropertyRule], [DateListPropertyRule]: to rename Outlook-specific TZID parameters
+ *   - [DatePropertyRule], [DateListPropertyRule] to rename Outlook-specific TZID parameters
  * (like "W. Europe Standard Time" to an Android-friendly name like "Europe/Vienna")
  *
  */
@@ -30,10 +31,10 @@ object ICalPreprocessor {
     private val TZOFFSET_REGEXP = Regex("^(TZOFFSET(FROM|TO):[+\\-]?)((18|19|[2-6]\\d)\\d\\d)$", RegexOption.MULTILINE)
 
     private val propertyRules = arrayOf(
-            CreatedPropertyRule(),      // make sure CREATED is UTC
+        CreatedPropertyRule(),      // make sure CREATED is UTC
 
-            DatePropertyRule(),         // These two rules also replace VTIMEZONEs of the iCalendar ...
-            DateListPropertyRule()      // ... by the ical4j VTIMEZONE with the same TZID!
+        DatePropertyRule(),         // These two rules also replace VTIMEZONEs of the iCalendar ...
+        DateListPropertyRule(),     // ... by the ical4j VTIMEZONE with the same TZID!
     )
 
 
