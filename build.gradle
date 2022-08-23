@@ -1,4 +1,3 @@
-
 /***************************************************************************************************
  * Copyright © All Contributors. See LICENSE and AUTHORS in the root directory for details.
  **************************************************************************************************/
@@ -7,7 +6,7 @@ buildscript {
     ext.versions = [
         kotlin: '1.7.0',
         dokka: '1.5.0',
-        ical4j: '3.2.4',
+        ical4j: '3.2.5',
         // latest Apache Commons versions that don't require Java 8 (Android 7)
         commonsIO: '2.6'
     ]
@@ -18,7 +17,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.2.1'
+        classpath 'com.android.tools.build:gradle:7.2.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:${versions.dokka}"
     }
@@ -84,7 +83,10 @@ dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.6'
 
     api("org.mnode.ical4j:ical4j:${versions.ical4j}") {
+        // exclude modules which are in conflict with system libraries
         exclude group: 'commons-logging'
+        exclude group: 'org.json', module: 'json'
+        // exclude groovy because we don't need it
         exclude group: 'org.codehaus.groovy', module: 'groovy'
         exclude group: 'org.codehaus.groovy', module: 'groovy-dateutil'
     }
