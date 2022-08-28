@@ -53,15 +53,17 @@ class ICalendarTest {
 	@Test
 	fun testFromReader_calendarProperties() {
 		val calendar = ICalendar.fromReader(
-			StringReader("BEGIN:VCALENDAR\n" +
-				"VERSION:2.0\n" +
-				"METHOD:PUBLISH\n" +
-				"PRODID:something\n" +
-				"X-WR-CALNAME:Some Calendar\n" +
-				"COLOR:darkred\n" +
-				"X-APPLE-CALENDAR-COLOR:#123456\n" +
-				"END:VCALENDAR"
-		))
+			StringReader(
+				"BEGIN:VCALENDAR\n" +
+						"VERSION:2.0\n" +
+						"METHOD:PUBLISH\n" +
+						"PRODID:something\n" +
+						"X-WR-CALNAME:Some Calendar\n" +
+						"COLOR:darkred\n" +
+						"X-APPLE-CALENDAR-COLOR:#123456\n" +
+						"END:VCALENDAR"
+			)
+		)
 		assertEquals("Some Calendar", calendar.getProperty<Property>(ICalendar.CALENDAR_NAME).value)
 		assertEquals("darkred", calendar.getProperty<Property>(Color.PROPERTY_NAME).value)
 		assertEquals("#123456", calendar.getProperty<Property>(ICalendar.CALENDAR_COLOR).value)
@@ -141,28 +143,31 @@ class ICalendarTest {
 
     @Test
     fun testTimezoneDefToTzId_Valid() {
-		assertEquals("US-Eastern", ICalendar.timezoneDefToTzId("BEGIN:VCALENDAR\n" +
-				"PRODID:-//Example Corp.//CalDAV Client//EN\n" +
-				"VERSION:2.0\n" +
-				"BEGIN:VTIMEZONE\n" +
-				"TZID:US-Eastern\n" +
-				"LAST-MODIFIED:19870101T000000Z\n" +
-				"BEGIN:STANDARD\n" +
-				"DTSTART:19671029T020000\n" +
-				"RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10\n" +
-				"TZOFFSETFROM:-0400\n" +
-				"TZOFFSETTO:-0500\n" +
-				"TZNAME:Eastern Standard Time (US &amp; Canada)\n" +
-				"END:STANDARD\n" +
-				"BEGIN:DAYLIGHT\n" +
-				"DTSTART:19870405T020000\n" +
-				"RRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=4\n" +
-				"TZOFFSETFROM:-0500\n" +
-				"TZOFFSETTO:-0400\n" +
-				"TZNAME:Eastern Daylight Time (US &amp; Canada)\n" +
-				"END:DAYLIGHT\n" +
-				"END:VTIMEZONE\n" +
-				"END:VCALENDAR"))
+		assertEquals("US-Eastern", ICalendar.timezoneDefToTzId(
+			"BEGIN:VCALENDAR\n" +
+					"PRODID:-//Example Corp.//CalDAV Client//EN\n" +
+					"VERSION:2.0\n" +
+					"BEGIN:VTIMEZONE\n" +
+					"TZID:US-Eastern\n" +
+					"LAST-MODIFIED:19870101T000000Z\n" +
+					"BEGIN:STANDARD\n" +
+					"DTSTART:19671029T020000\n" +
+					"RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10\n" +
+					"TZOFFSETFROM:-0400\n" +
+					"TZOFFSETTO:-0500\n" +
+					"TZNAME:Eastern Standard Time (US &amp; Canada)\n" +
+					"END:STANDARD\n" +
+					"BEGIN:DAYLIGHT\n" +
+					"DTSTART:19870405T020000\n" +
+					"RRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=4\n" +
+					"TZOFFSETFROM:-0500\n" +
+					"TZOFFSETTO:-0400\n" +
+					"TZNAME:Eastern Daylight Time (US &amp; Canada)\n" +
+					"END:DAYLIGHT\n" +
+					"END:VTIMEZONE\n" +
+					"END:VCALENDAR"
+		)
+		)
 	}
 
 	@Test
@@ -171,10 +176,14 @@ class ICalendarTest {
 		assertNull(ICalendar.timezoneDefToTzId("/* invalid content */"))
 
         // time zone without TZID
-		assertNull(ICalendar.timezoneDefToTzId("BEGIN:VCALENDAR\n" +
-				"PRODID:-//Inverse inc./SOGo 2.2.10//EN\n" +
-				"VERSION:2.0\n" +
-				"END:VCALENDAR"))
+		assertNull(
+			ICalendar.timezoneDefToTzId(
+				"BEGIN:VCALENDAR\n" +
+						"PRODID:-//Inverse inc./SOGo 2.2.10//EN\n" +
+						"VERSION:2.0\n" +
+						"END:VCALENDAR"
+			)
+		)
     }
 
 
@@ -182,8 +191,9 @@ class ICalendarTest {
 	fun testVAlarmToMin_TriggerDuration_Negative() {
 		// TRIGGER;REL=START:-P1DT1H1M29S
 		val (ref, min) = ICalendar.vAlarmToMin(
-				VAlarm(Duration.parse("-P1DT1H1M29S")),
-				Event(), false)!!
+			VAlarm(Duration.parse("-P1DT1H1M29S")),
+			Event(), false
+		)!!
 		assertEquals(Related.START, ref)
 		assertEquals(60*24 + 60 + 1, min)
 	}
@@ -192,8 +202,9 @@ class ICalendarTest {
 	fun testVAlarmToMin_TriggerDuration_OnlySeconds() {
 		// TRIGGER;REL=START:-PT3600S
 		val (ref, min) = ICalendar.vAlarmToMin(
-				VAlarm(Duration.parse("-PT3600S")),
-				Event(), false)!!
+			VAlarm(Duration.parse("-PT3600S")),
+			Event(), false
+		)!!
 		assertEquals(Related.START, ref)
 		assertEquals(60, min)
 	}
@@ -202,8 +213,9 @@ class ICalendarTest {
 	fun testVAlarmToMin_TriggerDuration_Positive() {
 		// TRIGGER;REL=START:P1DT1H1M30S (alarm *after* start)
 		val (ref, min) = ICalendar.vAlarmToMin(
-				VAlarm(Duration.parse("P1DT1H1M30S")),
-				Event(), false)!!
+			VAlarm(Duration.parse("P1DT1H1M30S")),
+			Event(), false
+		)!!
 		assertEquals(Related.START, ref)
 		assertEquals(-(60*24 + 60 + 1), min)
 	}
@@ -270,8 +282,8 @@ class ICalendarTest {
 		val event = Event()
 		event.dtStart = DtStart(Date(currentTime))
 		val (ref, min) = ICalendar.vAlarmToMin(
-				VAlarm(Period.parse("-P1W1D")),
-				event, false
+			VAlarm(Period.parse("-P1W1D")),
+			event, false
 		)!!
 		assertEquals(Related.START, ref)
 		assertEquals(8*24*60, min)

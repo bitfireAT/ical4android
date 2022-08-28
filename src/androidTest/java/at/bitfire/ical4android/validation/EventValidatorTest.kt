@@ -16,34 +16,34 @@ import net.fortuna.ical4j.model.property.RRule
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.StringReader
-import java.util.*
 
 class EventValidatorTest {
 
-    val tzReg = TimeZoneRegistryFactory.getInstance().createRegistry()
+    companion object {
+        val tzReg = TimeZoneRegistryFactory.getInstance().createRegistry()
+    }
 
 
     // DTSTART and DTEND
 
-    @Test
-    fun testEnsureCorrectStartAndEndTime_noDtStart() {
-        assertThrows(InvalidCalendarException::class.java) {
-            val event = Event().apply {
-                dtEnd = DtEnd(DateTime("20000105T000000"))  // DATETIME
-                // no dtStart
-            }
-            EventValidator.correctStartAndEndTime(event)
+    @Test(expected = InvalidCalendarException::class)
+    fun testEnsureCorrectStartAndEndTime_noDtStart_DateTime() {
+        val event = Event().apply {
+            dtEnd = DtEnd(DateTime("20000105T000000"))  // DATETIME
+            // no dtStart
         }
+        EventValidator.correctStartAndEndTime(event)
+    }
 
-        assertThrows(InvalidCalendarException::class.java) {
-            Event.eventsFromReader(StringReader(
-                "BEGIN:VCALENDAR\n" +
-                "BEGIN:VEVENT\n" +
-                "UID:51d8529a-5844-4609-918b-2891b855e0e8\n" +
-                "DTEND;VALUE=DATE:20211116\n" +                   // DATE
-                "END:VEVENT\n" +
-                "END:VCALENDAR")).first()
-        }
+    @Test(expected = InvalidCalendarException::class)
+    fun testEnsureCorrectStartAndEndTime_noDtStart_Date() {
+        Event.eventsFromReader(StringReader(
+            "BEGIN:VCALENDAR\n" +
+            "BEGIN:VEVENT\n" +
+            "UID:51d8529a-5844-4609-918b-2891b855e0e8\n" +
+            "DTEND;VALUE=DATE:20211116\n" +                   // DATE
+            "END:VEVENT\n" +
+            "END:VCALENDAR")).first()
     }
 
     @Test

@@ -20,8 +20,8 @@ import net.fortuna.ical4j.model.property.Attendee
 import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
 import org.junit.*
-import org.junit.Assert.*
-
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import java.net.URI
 import java.util.*
 

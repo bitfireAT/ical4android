@@ -12,11 +12,13 @@ import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDateTime
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toZoneIdCompat
-import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.RRule
-import java.time.*
+import net.fortuna.ical4j.util.TimeZones
+import java.time.LocalTime
+import java.time.ZonedDateTime
+import java.util.*
 
 /**
  * Sometimes CalendarStorage or servers respond with invalid event definitions. Here we try to
@@ -63,17 +65,27 @@ class EventValidator(val e: Event) {
                     rRule.recur.until?.let { until ->
                         if (until !is DateTime) {
                             Ical4Android.log.warning("DTSTART has DATETIME, but UNTIL has DATE; copying time from DTSTART to UNTIL")
-                            val timeZone = if (dtStart.timeZone != null)
-                                dtStart.timeZone.toZoneIdCompat()
+                            val dtStartTimeZone = if (dtStart.timeZone != null)
+                                dtStart.timeZone
                             else if (dtStart.isUtc)
-                                ZoneOffset.UTC
+                                TimeZones.getUtcTimeZone()
                             else /* floating time */
-                                ZoneId.systemDefault()
+                                TimeZone.getDefault()
+
+                            val dtStartCal = Calendar.getInstance(dtStartTimeZone).apply {
+                                time = dtStart.date
+                            }
+                            val dtStartTime = LocalTime.of(
+                                dtStartCal.get(Calendar.HOUR_OF_DAY),
+                                dtStartCal.get(Calendar.MINUTE),
+                                dtStartCal.get(Calendar.SECOND)
+                            )
+
                             rRule.recur.until =
                                 ZonedDateTime.of(
-                                    until.toLocalDate(),                                        // date from until
-                                    LocalTime.ofInstant(dtStart.date.toInstant(), timeZone),    // time from dtStart
-                                    timeZone
+                                    until.toLocalDate(),    // date from until
+                                    dtStartTime,       // time from dtStart
+                                    dtStartTimeZone.toZoneIdCompat()
                                 ).toIcal4jDateTime()
                         }
                     }

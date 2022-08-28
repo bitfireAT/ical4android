@@ -5,8 +5,9 @@
 package at.bitfire.ical4android
 
 import net.fortuna.ical4j.model.property.TzOffsetFrom
+import org.junit.AfterClass
 import org.junit.Assert.assertEquals
-import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.ComparisonFailure
 import org.junit.Test
 import java.time.ZoneOffset
@@ -15,13 +16,22 @@ import java.util.*
 class LocaleNonWesternDigitsTest {
 
     companion object {
-        val locale = Locale("fa", "ir", "u-un-arabext")
-    }
+        val origLocale = Locale.getDefault()
+        val testLocale = Locale("fa", "ir", "u-un-arabext")
 
-    @Before
-    fun verifyLocale() {
-        assertEquals("Persian (Iran) locale not available", "fa", locale.language)
-        Locale.setDefault(locale)
+        @BeforeClass
+        @JvmStatic
+        fun setFaIrArabLocale() {
+            assertEquals("Persian (Iran) locale not available", "fa", testLocale.language)
+            Locale.setDefault(testLocale)
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun resetLocale() {
+            Locale.setDefault(origLocale)
+        }
+
     }
 
     @Test

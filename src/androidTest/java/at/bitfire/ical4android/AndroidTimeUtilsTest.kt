@@ -7,8 +7,6 @@ package at.bitfire.ical4android
 import at.bitfire.ical4android.util.AndroidTimeUtils
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.*
-import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.parameter.TzId
 import net.fortuna.ical4j.model.parameter.Value
@@ -19,11 +17,9 @@ import net.fortuna.ical4j.model.property.RDate
 import net.fortuna.ical4j.util.TimeZones
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.InputStreamReader
 import java.io.StringReader
 import java.time.Duration
 import java.time.Period
-import java.util.*
 
 class AndroidTimeUtilsTest {
 

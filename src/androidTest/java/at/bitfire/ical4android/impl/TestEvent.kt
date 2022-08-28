@@ -5,7 +5,6 @@
 package at.bitfire.ical4android.impl
 
 import android.content.ContentValues
-import android.provider.CalendarContract
 import android.provider.CalendarContract.Events
 import at.bitfire.ical4android.*
 import java.util.*
