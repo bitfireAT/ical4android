@@ -9,7 +9,7 @@ import android.content.ContentProviderClient
 import android.content.ContentValues
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
+import at.bitfire.ical4android.util.MiscUtils.ContentProviderClientHelper.closeCompat
 import at.bitfire.ical4android.impl.TestJtxCollection
 import at.techbee.jtx.JtxContract
 import at.techbee.jtx.JtxContract.asSyncAdapter

@@ -4,7 +4,7 @@
 
 package at.bitfire.ical4android.validation
 
-import at.bitfire.ical4android.DateUtils
+import at.bitfire.ical4android.util.DateUtils
 import at.bitfire.ical4android.Event
 import at.bitfire.ical4android.Ical4Android
 import at.bitfire.ical4android.InvalidCalendarException

@@ -4,6 +4,7 @@
 
 package at.bitfire.ical4android
 
+import at.bitfire.ical4android.util.DateUtils
 import org.junit.Assert
 import org.junit.Assert.assertNotNull
 import org.junit.Test

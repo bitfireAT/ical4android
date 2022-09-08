@@ -12,7 +12,7 @@ import android.net.Uri
 import android.provider.CalendarContract
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
+import at.bitfire.ical4android.util.MiscUtils.ContentProviderClientHelper.closeCompat
 import org.junit.After
 import org.junit.Assert.assertNotNull
 import org.junit.Before

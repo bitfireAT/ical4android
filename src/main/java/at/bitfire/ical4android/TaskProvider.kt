@@ -9,7 +9,7 @@ import android.content.ContentProviderClient
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.pm.PackageInfoCompat
-import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
+import at.bitfire.ical4android.util.MiscUtils.ContentProviderClientHelper.closeCompat
 import org.dmfs.tasks.contract.TaskContract
 import java.io.Closeable
 import java.util.logging.Level

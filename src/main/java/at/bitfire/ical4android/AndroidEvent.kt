@@ -14,9 +14,11 @@ import android.provider.CalendarContract.*
 import android.util.Patterns
 import androidx.annotation.CallSuper
 import at.bitfire.ical4android.BatchOperation.CpoBuilder
-import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
-import at.bitfire.ical4android.MiscUtils.UriHelper.asSyncAdapter
+import at.bitfire.ical4android.util.MiscUtils.CursorHelper.toValues
+import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
 import at.bitfire.ical4android.util.AndroidTimeUtils
+import at.bitfire.ical4android.util.DateUtils
+import at.bitfire.ical4android.util.MiscUtils
 import at.bitfire.ical4android.util.TimeApiExtensions
 import at.bitfire.ical4android.util.TimeApiExtensions.requireZoneId
 import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
@@ -25,7 +27,6 @@ import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalTime
 import at.bitfire.ical4android.util.TimeApiExtensions.toRfc5545Duration
 import at.bitfire.ical4android.util.TimeApiExtensions.toZonedDateTime
-import at.bitfire.ical4android.validation.EventValidator
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.component.VAlarm
