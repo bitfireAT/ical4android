@@ -4,7 +4,6 @@
 
 package at.bitfire.ical4android.util
 
-import at.bitfire.ical4android.util.DateUtils
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.property.DtEnd

@@ -11,8 +11,6 @@ import android.net.Uri
 import androidx.test.filters.SmallTest
 import at.bitfire.ical4android.util.MiscUtils.CursorHelper.toValues
 import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
-import at.bitfire.ical4android.util.DateUtils
-import at.bitfire.ical4android.util.MiscUtils
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Test
