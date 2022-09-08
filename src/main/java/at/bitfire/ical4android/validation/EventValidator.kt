@@ -9,7 +9,6 @@ import at.bitfire.ical4android.Event
 import at.bitfire.ical4android.Ical4Android
 import at.bitfire.ical4android.InvalidCalendarException
 import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
-import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDateTime
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toZoneIdCompat
 import net.fortuna.ical4j.model.DateTime
@@ -108,9 +107,15 @@ class EventValidator(val e: Event) {
                                 dtStartTimeZone.toZoneIdCompat()
                             )
 
+                            // Android requires UNTIL in UTC as defined in RFC 2445.
+                            // https://android.googlesource.com/platform/frameworks/opt/calendar/+/refs/tags/android-12.1.0_r27/src/com/android/calendarcommon2/RecurrenceProcessor.java#93
+                            val newUntilUTC = DateTime(true).apply {
+                                time = newUntil.toInstant().toEpochMilli()
+                            }
+
                             // remove current RRULE and remember new one to be added
                             val newRRule = RRule(Recur.Builder(rRule.recur)
-                                .until(newUntil.toIcal4jDateTime())
+                                .until(newUntilUTC)
                                 .build())
                             Ical4Android.log.info("New $newRRule (was ${rRule.toString().trim()})")
                             newRRules += newRRule

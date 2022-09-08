@@ -783,7 +783,6 @@ abstract class AndroidEvent(
             // add RRULEs
             if (event.rRules.isNotEmpty()) {
                 builder.withValue(Events.RRULE, event.rRules
-                    .map { rRule -> DateUtils.rRuleToUTC(rRule) }
                     .joinToString(AndroidTimeUtils.RECURRENCE_RULE_SEPARATOR) { it.value })
             } else
                 builder.withValue(Events.RRULE, null)
