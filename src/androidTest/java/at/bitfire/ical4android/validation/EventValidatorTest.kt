@@ -6,14 +6,12 @@ package at.bitfire.ical4android.validation
 
 import at.bitfire.ical4android.Event
 import at.bitfire.ical4android.InvalidCalendarException
-import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.DateTime
-import net.fortuna.ical4j.model.Recur
-import net.fortuna.ical4j.model.TimeZoneRegistryFactory
+import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.RRule
 import org.junit.Assert.*
+import org.junit.Assume
 import org.junit.Test
 import java.io.StringReader
 
@@ -156,7 +154,7 @@ class EventValidatorTest {
     }
 
     @Test
-    fun testSameTypeForDtStartAndRruleUntil_DtStartIsDateTimeAndRruleUntilIsDate() {
+    fun testSameTypeForDtStartAndRruleUntil_DtStartIsDateTimeWithTzAndRruleUntilIsDate() {
         // should add (possibly missing) time in UNTIL if DTSTART value is of type DATETIME (not just DATE)
 
         val event = Event().apply {
@@ -175,17 +173,34 @@ class EventValidatorTest {
                 "RRULE:FREQ=MONTHLY;UNTIL=20211214;BYMONTHDAY=15\n" +   // DATE
                 "END:VEVENT\n" +
                 "END:VCALENDAR")).first()
-        assertEquals("FREQ=MONTHLY;UNTIL=20211214T053000;BYMONTHDAY=15", event1.rRules.joinToString())
+        assertEquals("FREQ=MONTHLY;UNTIL=20211214T103000Z;BYMONTHDAY=15", event1.rRules.joinToString())
+    }
 
-        val event2 = Event.eventsFromReader(StringReader(
-            "BEGIN:VCALENDAR\n" +
-                "BEGIN:VEVENT\n" +
-                "UID:381fb26b-2da5-4dd2-94d7-2e0874128aa7\n" +
-                "DTSTART;VALUE=DATETIME:20080214T001100\n" +            // DATETIME (no timezone)
-                "RRULE:FREQ=YEARLY;UNTIL=20110214;BYMONTHDAY=15\n" +    // DATE
-                "END:VEVENT\n" +
-                "END:VCALENDAR")).first()
-        assertEquals("FREQ=YEARLY;UNTIL=20110214T001100;BYMONTHDAY=15", event2.rRules.joinToString())
+    @Test
+    fun testSameTypeForDtStartAndRruleUntil_DtStartIsDateTimeWithoutTzAndRruleUntilIsDate() {
+        // should add (possibly missing) time in UNTIL if DTSTART value is of type DATETIME (not just DATE)
+
+        val event = Event().apply {
+            dtStart = DtStart(DateTime("20110605T001100Z"))         // DATETIME (UTC)
+            rRules.add(RRule("FREQ=MONTHLY;UNTIL=20211214"))        // DATE
+        }
+        assertEquals("FREQ=MONTHLY;UNTIL=20211214", event.rRules.joinToString())
+        EventValidator.sameTypeForDtStartAndRruleUntil(event.dtStart!!, event.rRules)
+        assertEquals("FREQ=MONTHLY;UNTIL=20211214T001100Z", event.rRules.joinToString())
+
+        Assume.assumeTrue(TimeZone.getDefault().id == "Europe/Vienna")
+        val event2 = Event.eventsFromReader(
+            StringReader(
+                "BEGIN:VCALENDAR\n" +
+                        "BEGIN:VEVENT\n" +
+                        "UID:381fb26b-2da5-4dd2-94d7-2e0874128aa7\n" +
+                        "DTSTART;VALUE=DATETIME:20080214T001100\n" +            // DATETIME (no timezone)
+                        "RRULE:FREQ=YEARLY;UNTIL=20110214;BYMONTHDAY=15\n" +    // DATE
+                        "END:VEVENT\n" +
+                        "END:VCALENDAR"
+            )
+        ).first()
+        assertEquals("FREQ=YEARLY;UNTIL=20110213T231100Z;BYMONTHDAY=15", event2.rRules.joinToString())
     }
 
 

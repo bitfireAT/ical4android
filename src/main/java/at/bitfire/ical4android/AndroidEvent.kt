@@ -780,10 +780,12 @@ abstract class AndroidEvent(
             builder .withValue(Events.DURATION, duration?.toRfc5545Duration(dtStart.date.toInstant()))
                     .withValue(Events.DTEND, null)
 
-            // add RRULe
-            if (event.rRules.isNotEmpty())
-                builder.withValue(Events.RRULE, event.rRules.joinToString(AndroidTimeUtils.RECURRENCE_RULE_SEPARATOR) { it.value })
-            else
+            // add RRULEs
+            if (event.rRules.isNotEmpty()) {
+                builder.withValue(Events.RRULE, event.rRules
+                    .map { rRule -> DateUtils.rRuleToUTC(rRule) }
+                    .joinToString(AndroidTimeUtils.RECURRENCE_RULE_SEPARATOR) { it.value })
+            } else
                 builder.withValue(Events.RRULE, null)
 
             if (event.rDates.isNotEmpty()) {

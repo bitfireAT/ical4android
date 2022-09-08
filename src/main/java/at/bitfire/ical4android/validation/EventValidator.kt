@@ -63,12 +63,13 @@ class EventValidator(val e: Event) {
                             Ical4Android.log.warning("DTSTART has DATE, but UNTIL has DATETIME; making UNTIL have DATE only")
 
                             val newUntil = until.toLocalDate().toIcal4jDate()
-                            Ical4Android.log.warning("Setting UNTIL to $newUntil")
 
                             // remove current RRULE and remember new one to be added
-                            newRRules += RRule(Recur.Builder(rRule.recur)
+                            val newRRule = RRule(Recur.Builder(rRule.recur)
                                 .until(newUntil)
                                 .build())
+                            Ical4Android.log.info("New $newRRule (was ${rRule.toString().trim()})")
+                            newRRules += newRRule
                             rRuleIterator.remove()
                         }
                     }
@@ -105,13 +106,14 @@ class EventValidator(val e: Event) {
                                 until.toLocalDate(),    // date from until
                                 dtStartTime,       // time from dtStart
                                 dtStartTimeZone.toZoneIdCompat()
-                            ).toIcal4jDateTime()
-                            Ical4Android.log.warning("Setting UNTIL to $newUntil")
+                            )
 
                             // remove current RRULE and remember new one to be added
-                            newRRules += RRule(Recur.Builder(rRule.recur)
-                                .until(newUntil)
+                            val newRRule = RRule(Recur.Builder(rRule.recur)
+                                .until(newUntil.toIcal4jDateTime())
                                 .build())
+                            Ical4Android.log.info("New $newRRule (was ${rRule.toString().trim()})")
+                            newRRules += newRRule
                             rRuleIterator.remove()
                         }
                     }
