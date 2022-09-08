@@ -79,10 +79,10 @@ class EventValidatorTest {
             rRules.add(RRule("FREQ=MONTHLY;UNTIL=20251214T001100Z"))      // DATETIME (UTC)
         }
         assertEquals(DateTime("20211115T001100Z"), event.dtStart!!.date)
-        assertEquals(DateTime("20251214T001100Z"), event.rRules.first.recur.until)
+        assertEquals("RRULE:FREQ=MONTHLY;UNTIL=20251214T001100Z", event.rRules.first.toString().trimEnd())
         EventValidator.sameTypeForDtStartAndRruleUntil(event.dtStart!!, event.rRules)
         assertEquals(DateTime("20211115T001100Z"), event.dtStart!!.date)
-        assertEquals(DateTime("20251214T001100Z"), event.rRules.first.recur.until)
+        assertEquals("RRULE:FREQ=MONTHLY;UNTIL=20251214T001100Z", event.rRules.first.toString().trimEnd())
 
         val event1 = Event.eventsFromReader(StringReader(
             "BEGIN:VCALENDAR\n" +

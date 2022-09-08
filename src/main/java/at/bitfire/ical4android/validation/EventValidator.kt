@@ -13,6 +13,8 @@ import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDateTime
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toZoneIdCompat
 import net.fortuna.ical4j.model.DateTime
+import net.fortuna.ical4j.model.Parameter
+import net.fortuna.ical4j.model.Recur
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.RRule
 import net.fortuna.ical4j.util.TimeZones
@@ -61,7 +63,10 @@ class EventValidator(val e: Event) {
                     }
                 }
             } else if (DateUtils.isDateTime(dtStart)) {
-                for (rRule in rRules) {
+                val rRuleIterator = rRules.iterator()
+                val newRRules = mutableListOf<RRule>()
+                while (rRuleIterator.hasNext()) {
+                    val rRule = rRuleIterator.next()
                     rRule.recur.until?.let { until ->
                         if (until !is DateTime) {
                             Ical4Android.log.warning("DTSTART has DATETIME, but UNTIL has DATE; copying time from DTSTART to UNTIL")
@@ -81,15 +86,24 @@ class EventValidator(val e: Event) {
                                 dtStartCal.get(Calendar.SECOND)
                             )
 
-                            rRule.recur.until =
-                                ZonedDateTime.of(
-                                    until.toLocalDate(),    // date from until
-                                    dtStartTime,       // time from dtStart
-                                    dtStartTimeZone.toZoneIdCompat()
-                                ).toIcal4jDateTime()
+                            val newUntil = ZonedDateTime.of(
+                                until.toLocalDate(),    // date from until
+                                dtStartTime,       // time from dtStart
+                                dtStartTimeZone.toZoneIdCompat()
+                            ).toIcal4jDateTime()
+                            val newRRule = RRule(Recur.Builder(rRule.recur)
+                                .until(newUntil)
+                                .count(-1)
+                                .build())
+
+                            // remove current RRULE and remember new one to be added
+                            rRuleIterator.remove()
+                            newRRules += newRRule
                         }
                     }
                 }
+                // add repaired RRULEs
+                rRules += newRRules
             } else
                 throw InvalidCalendarException("Event with invalid DTSTART value")
         }
