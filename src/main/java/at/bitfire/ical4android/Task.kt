@@ -5,6 +5,7 @@
 package at.bitfire.ical4android
 
 import androidx.annotation.IntRange
+import at.bitfire.ical4android.util.DateUtils
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.*

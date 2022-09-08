@@ -10,8 +10,8 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
 import android.provider.CalendarContract.*
-import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
-import at.bitfire.ical4android.MiscUtils.UriHelper.asSyncAdapter
+import at.bitfire.ical4android.util.MiscUtils.CursorHelper.toValues
+import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
 import java.io.FileNotFoundException
 import java.util.*
 import java.util.logging.Level

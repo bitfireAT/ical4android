@@ -12,6 +12,7 @@ import android.net.Uri
 import androidx.test.filters.MediumTest
 import at.bitfire.ical4android.impl.TestTask
 import at.bitfire.ical4android.impl.TestTaskList
+import at.bitfire.ical4android.util.DateUtils
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateList
 import net.fortuna.ical4j.model.DateTime

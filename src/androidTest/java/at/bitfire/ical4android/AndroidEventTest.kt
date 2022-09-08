@@ -13,11 +13,12 @@ import android.net.Uri
 import android.provider.CalendarContract.*
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.rule.GrantPermissionRule
-import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
-import at.bitfire.ical4android.MiscUtils.UriHelper.asSyncAdapter
 import at.bitfire.ical4android.impl.TestCalendar
 import at.bitfire.ical4android.impl.TestEvent
 import at.bitfire.ical4android.util.AndroidTimeUtils
+import at.bitfire.ical4android.util.DateUtils
+import at.bitfire.ical4android.util.MiscUtils.ContentProviderClientHelper.closeCompat
+import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.*

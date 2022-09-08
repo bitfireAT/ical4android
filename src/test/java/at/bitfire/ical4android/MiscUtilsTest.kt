@@ -4,6 +4,7 @@
 
 package at.bitfire.ical4android
 
+import at.bitfire.ical4android.util.MiscUtils
 import org.junit.Assert.assertTrue
 import org.junit.Test
 

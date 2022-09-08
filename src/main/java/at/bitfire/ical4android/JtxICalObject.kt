@@ -10,7 +10,7 @@ import android.net.ParseException
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.util.Base64
-import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
+import at.bitfire.ical4android.util.MiscUtils.CursorHelper.toValues
 import at.techbee.jtx.JtxContract
 import at.techbee.jtx.JtxContract.JtxICalObject.TZ_ALLDAY
 import at.techbee.jtx.JtxContract.asSyncAdapter

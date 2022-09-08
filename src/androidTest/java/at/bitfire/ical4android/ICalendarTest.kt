@@ -4,6 +4,7 @@
 
 package at.bitfire.ical4android
 
+import at.bitfire.ical4android.util.DateUtils
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Component
 import net.fortuna.ical4j.model.Date

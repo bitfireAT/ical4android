@@ -7,7 +7,6 @@
 package at.bitfire.ical4android.util
 
 import android.text.format.Time
-import at.bitfire.ical4android.DateUtils
 import at.bitfire.ical4android.Ical4Android
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
