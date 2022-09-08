@@ -133,19 +133,19 @@ class TimeApiExtensionsTest {
     }
 
     @Test
-    fun testZonedDateTimeToIcal4jDateTime() {
+    fun testZonedDateTimeToIcal4jDateTime_NotUtc() {
         val tzBerlin = DateUtils.ical4jTimeZone("Europe/Berlin")
         assertEquals(
-                DateTime("20200705T010203", tzBerlin),
-                ZonedDateTime.of(2020, 7, 5, 1, 2, 3, 0, ZoneId.of("Europe/Berlin")).toIcal4jDateTime()
+            DateTime("20200705T010203", tzBerlin),
+            ZonedDateTime.of(2020, 7, 5, 1, 2, 3, 0, ZoneId.of("Europe/Berlin")).toIcal4jDateTime()
         )
     }
 
     @Test
     fun testZonedDateTimeToIcal4jDateTime_Utc() {
         assertEquals(
-                DateTime("20200705T010203Z"),
-                ZonedDateTime.of(2020, 7, 5, 1, 2, 3, 0, ZoneOffset.UTC).toIcal4jDateTime()
+            DateTime("20200705T010203Z"),
+            ZonedDateTime.of(2020, 7, 5, 1, 2, 3, 0, ZoneOffset.UTC).toIcal4jDateTime()
         )
     }
 

@@ -31,8 +31,15 @@ object TimeApiExtensions {
 
     /**
      * [TimeZone.toZoneId] can't be used with the current desugaring library yet!
+     *
+     * @return [ZoneId] of the time zone; [ZoneOffset.UTC] if the time zone equals to [TimeZones.getUtcTimeZone]
      */
-    fun TimeZone.toZoneIdCompat(): ZoneId = ZoneId.of(id)
+    fun TimeZone.toZoneIdCompat(): ZoneId {
+        return if (this == TimeZones.getUtcTimeZone())
+            ZoneOffset.UTC
+        else
+            ZoneId.of(id)
+    }
 
 
     /***** Dates *****/
@@ -69,6 +76,15 @@ object TimeApiExtensions {
         return Date(cal)
     }
 
+    /**
+     * Converts this zoned date-time (date/time with specific time zone) to an
+     * ical4j [DateTime] object.
+     *
+     * Sets UTC flag ([DateTime.isUtc], means `...ThhmmddZ` format) when this zone-date time object has a
+     * time zone of [ZoneOffset.UTC].
+     *
+     * @return ical4j [DateTime] of the given zoned date-time
+     */
     fun ZonedDateTime.toIcal4jDateTime(): DateTime {
         val date = DateTime(toEpochSecond() * MILLIS_PER_SECOND)
         if (zone == ZoneOffset.UTC)

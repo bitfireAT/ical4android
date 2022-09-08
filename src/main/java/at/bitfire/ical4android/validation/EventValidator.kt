@@ -13,7 +13,6 @@ import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDateTime
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toZoneIdCompat
 import net.fortuna.ical4j.model.DateTime
-import net.fortuna.ical4j.model.Parameter
 import net.fortuna.ical4j.model.Recur
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.RRule
@@ -54,17 +53,33 @@ class EventValidator(val e: Event) {
          */
         internal fun sameTypeForDtStartAndRruleUntil(dtStart: DtStart, rRules: MutableList<RRule>) {
             if (DateUtils.isDate(dtStart)) {
-                for (rRule in rRules) {
+                // DTSTART is a DATE
+                val newRRules = mutableListOf<RRule>()
+                val rRuleIterator = rRules.iterator()
+                while (rRuleIterator.hasNext()) {
+                    val rRule = rRuleIterator.next()
                     rRule.recur.until?.let { until ->
                         if (until is DateTime) {
                             Ical4Android.log.warning("DTSTART has DATE, but UNTIL has DATETIME; making UNTIL have DATE only")
-                            rRule.recur.until = until.toLocalDate().toIcal4jDate()
+
+                            val newUntil = until.toLocalDate().toIcal4jDate()
+                            Ical4Android.log.warning("Setting UNTIL to $newUntil")
+
+                            // remove current RRULE and remember new one to be added
+                            newRRules += RRule(Recur.Builder(rRule.recur)
+                                .until(newUntil)
+                                .build())
+                            rRuleIterator.remove()
                         }
                     }
                 }
+                // add repaired RRULEs
+                rRules += newRRules
+
             } else if (DateUtils.isDateTime(dtStart)) {
-                val rRuleIterator = rRules.iterator()
+                // DTSTART is a DATE-TIME
                 val newRRules = mutableListOf<RRule>()
+                val rRuleIterator = rRules.iterator()
                 while (rRuleIterator.hasNext()) {
                     val rRule = rRuleIterator.next()
                     rRule.recur.until?.let { until ->
@@ -91,13 +106,13 @@ class EventValidator(val e: Event) {
                                 dtStartTime,       // time from dtStart
                                 dtStartTimeZone.toZoneIdCompat()
                             ).toIcal4jDateTime()
-                            val newRRule = RRule(Recur.Builder(rRule.recur)
-                                .until(newUntil)
-                                .build())
+                            Ical4Android.log.warning("Setting UNTIL to $newUntil")
 
                             // remove current RRULE and remember new one to be added
+                            newRRules += RRule(Recur.Builder(rRule.recur)
+                                .until(newUntil)
+                                .build())
                             rRuleIterator.remove()
-                            newRRules += newRRule
                         }
                     }
                 }

@@ -175,7 +175,7 @@ class EventValidatorTest {
                 "RRULE:FREQ=MONTHLY;UNTIL=20211214;BYMONTHDAY=15\n" +   // DATE
                 "END:VEVENT\n" +
                 "END:VCALENDAR")).first()
-        assertEquals("RRULE:FREQ=MONTHLY;UNTIL=20211214T053000;BYMONTHDAY=15", event1.rRules.first.toString().trimEnd())
+        assertEquals("FREQ=MONTHLY;UNTIL=20211214T053000;BYMONTHDAY=15", event1.rRules.joinToString())
 
         val event2 = Event.eventsFromReader(StringReader(
             "BEGIN:VCALENDAR\n" +
@@ -185,7 +185,7 @@ class EventValidatorTest {
                 "RRULE:FREQ=YEARLY;UNTIL=20110214;BYMONTHDAY=15\n" +    // DATE
                 "END:VEVENT\n" +
                 "END:VCALENDAR")).first()
-        assertEquals("RRULE:FREQ=YEARLY;UNTIL=20110214T001100;BYMONTHDAY=15", event2.rRules.joinToString())
+        assertEquals("FREQ=YEARLY;UNTIL=20110214T001100;BYMONTHDAY=15", event2.rRules.joinToString())
     }
 
 
@@ -311,6 +311,8 @@ class EventValidatorTest {
         ), rrules.toTypedArray())
     }
 
+
+    // helpers
 
     private fun Iterable<RRule>.joinToString(): String =
         this.map { rRule -> rRule.value }.joinToString("\n")
