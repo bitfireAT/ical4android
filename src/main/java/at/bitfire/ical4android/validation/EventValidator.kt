@@ -93,7 +93,6 @@ class EventValidator(val e: Event) {
                             ).toIcal4jDateTime()
                             val newRRule = RRule(Recur.Builder(rRule.recur)
                                 .until(newUntil)
-                                .count(-1)
                                 .build())
 
                             // remove current RRULE and remember new one to be added

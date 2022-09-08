@@ -79,10 +79,10 @@ class EventValidatorTest {
             rRules.add(RRule("FREQ=MONTHLY;UNTIL=20251214T001100Z"))      // DATETIME (UTC)
         }
         assertEquals(DateTime("20211115T001100Z"), event.dtStart!!.date)
-        assertEquals("RRULE:FREQ=MONTHLY;UNTIL=20251214T001100Z", event.rRules.first.toString().trimEnd())
+        assertEquals("FREQ=MONTHLY;UNTIL=20251214T001100Z", event.rRules.joinToString())
         EventValidator.sameTypeForDtStartAndRruleUntil(event.dtStart!!, event.rRules)
         assertEquals(DateTime("20211115T001100Z"), event.dtStart!!.date)
-        assertEquals("RRULE:FREQ=MONTHLY;UNTIL=20251214T001100Z", event.rRules.first.toString().trimEnd())
+        assertEquals("FREQ=MONTHLY;UNTIL=20251214T001100Z", event.rRules.joinToString())
 
         val event1 = Event.eventsFromReader(StringReader(
             "BEGIN:VCALENDAR\n" +
@@ -92,7 +92,7 @@ class EventValidatorTest {
                "RRULE:FREQ=MONTHLY;UNTIL=20231214;BYMONTHDAY=15\n" +           // DATE
                "END:VEVENT\n" +
                "END:VCALENDAR")).first()
-        assertEquals(Date("20231214"), event1.rRules.first.recur.until)
+        assertEquals("FREQ=MONTHLY;UNTIL=20231214;BYMONTHDAY=15", event1.rRules.joinToString())
 
         val event2 = Event.eventsFromReader(StringReader(
             "BEGIN:VCALENDAR\n" +
@@ -102,7 +102,7 @@ class EventValidatorTest {
                "RRULE:FREQ=YEARLY;UNTIL=20230216;BYMONTHDAY=15\n" +            // DATE
                "END:VEVENT\n" +
                "END:VCALENDAR")).first()
-        assertEquals(Date("20230216"), event2.rRules.first.recur.until)
+        assertEquals("FREQ=YEARLY;UNTIL=20230216;BYMONTHDAY=15", event2.rRules.joinToString())
     }
 
     @Test
@@ -119,7 +119,7 @@ class EventValidatorTest {
             event.rRules.first.recur.until
         )
         EventValidator.sameTypeForDtStartAndRruleUntil(event.dtStart!!, event.rRules)
-        assertEquals(Date("20211214"), event.rRules.first.recur.until)
+        assertEquals("FREQ=MONTHLY;UNTIL=20211214", event.rRules.joinToString())
 
         val event1 = Event.eventsFromReader(
             StringReader(
@@ -133,7 +133,7 @@ class EventValidatorTest {
             )
         ).first()
         assertEquals(1639440000000, event1.rRules.first.recur.until.time)
-        assertEquals(Date("20211214"), event1.rRules.first.recur.until)
+        assertEquals("FREQ=MONTHLY;UNTIL=20211214;BYMONTHDAY=15", event1.rRules.joinToString())
     }
 
     @Test
@@ -150,8 +150,8 @@ class EventValidatorTest {
         // As it does not happen often, for the sake of simplicity we just accept either
         EventValidator.sameTypeForDtStartAndRruleUntil(event2.dtStart!!, event2.rRules)
         assertTrue(
-            Date("20230218") == event2.rRules.first.recur.until ||
-            Date("20230217") == event2.rRules.first.recur.until
+            "FREQ=YEARLY;UNTIL=20230218;BYMONTHDAY=15" == event2.rRules.joinToString() ||
+            "FREQ=YEARLY;UNTIL=20230217;BYMONTHDAY=15" == event2.rRules.joinToString()
         )
     }
 
@@ -163,9 +163,9 @@ class EventValidatorTest {
             dtStart = DtStart(DateTime("20110605T001100Z"))         // DATETIME (UTC)
             rRules.add(RRule("FREQ=MONTHLY;UNTIL=20211214"))        // DATE
         }
-        assertEquals(Date("20211214"), event.rRules.first.recur.until)
+        assertEquals("FREQ=MONTHLY;UNTIL=20211214", event.rRules.joinToString())
         EventValidator.sameTypeForDtStartAndRruleUntil(event.dtStart!!, event.rRules)
-        assertEquals(DateTime("20211214T001100Z"), event.rRules.first.recur.until)
+        assertEquals("FREQ=MONTHLY;UNTIL=20211214T001100Z", event.rRules.joinToString())
 
         val event1 = Event.eventsFromReader(StringReader(
             "BEGIN:VCALENDAR\n" +
@@ -175,7 +175,7 @@ class EventValidatorTest {
                 "RRULE:FREQ=MONTHLY;UNTIL=20211214;BYMONTHDAY=15\n" +   // DATE
                 "END:VEVENT\n" +
                 "END:VCALENDAR")).first()
-        assertEquals(DateTime("20211214T053000", tzReg.getTimeZone("America/New_York")), event1.rRules.first.recur.until)
+        assertEquals("RRULE:FREQ=MONTHLY;UNTIL=20211214T053000;BYMONTHDAY=15", event1.rRules.first.toString().trimEnd())
 
         val event2 = Event.eventsFromReader(StringReader(
             "BEGIN:VCALENDAR\n" +
@@ -185,7 +185,7 @@ class EventValidatorTest {
                 "RRULE:FREQ=YEARLY;UNTIL=20110214;BYMONTHDAY=15\n" +    // DATE
                 "END:VEVENT\n" +
                 "END:VCALENDAR")).first()
-        assertEquals(DateTime("20110214T001100"), event2.rRules.first.recur.until)
+        assertEquals("RRULE:FREQ=YEARLY;UNTIL=20110214T001100;BYMONTHDAY=15", event2.rRules.joinToString())
     }
 
 
@@ -310,5 +310,9 @@ class EventValidatorTest {
             rruleAfter
         ), rrules.toTypedArray())
     }
+
+
+    private fun Iterable<RRule>.joinToString(): String =
+        this.map { rRule -> rRule.value }.joinToString("\n")
 
 }
