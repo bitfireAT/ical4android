@@ -6,8 +6,7 @@ package at.bitfire.ical4android
 
 import net.fortuna.ical4j.model.DefaultTimeZoneRegistryFactory
 import net.fortuna.ical4j.model.TimeZoneRegistry
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.*
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
@@ -16,7 +15,7 @@ import java.time.zone.ZoneRulesException
 
 class AndroidCompatTimeZoneRegistryTest {
 
-    val ical4jRegistry = DefaultTimeZoneRegistryFactory.getInstance().createRegistry()
+    lateinit var ical4jRegistry: TimeZoneRegistry
     lateinit var registry: TimeZoneRegistry
 
     val systemKnowsKyiv =
@@ -29,6 +28,7 @@ class AndroidCompatTimeZoneRegistryTest {
 
     @Before
     fun createRegistry() {
+        ical4jRegistry = DefaultTimeZoneRegistryFactory.getInstance().createRegistry()
         registry = AndroidCompatTimeZoneRegistry.Factory().createRegistry()
     }
 
@@ -45,6 +45,7 @@ class AndroidCompatTimeZoneRegistryTest {
     fun getTimeZone_Existing_Kiev() {
         Assume.assumeFalse(systemKnowsKyiv)
         val tz = registry.getTimeZone("Europe/Kiev")
+        assertFalse(tz === ical4jRegistry.getTimeZone("Europe/Kiev"))      // we have made a copy
         assertEquals("Europe/Kiev", tz?.id)
         assertEquals("Europe/Kiev", tz?.vTimeZone?.timeZoneId?.value)
     }
@@ -53,9 +54,8 @@ class AndroidCompatTimeZoneRegistryTest {
     fun getTimeZone_Existing_Kyiv() {
         Assume.assumeFalse(systemKnowsKyiv)
 
-        // See ical4jRegistry.getTimeZone code
-        // assertNull(ical4jRegistry.getTimeZone("Europe/Kyiv"))
-
+        /* Unfortunately, AndroidCompatTimeZoneRegistry can't rewrite to Europy/Kyiv to anything because
+           it doesn't know a valid Android name for it. */
         assertEquals(
             ical4jRegistry.getTimeZone("Europe/Kyiv"),
             registry.getTimeZone("Europe/Kyiv")

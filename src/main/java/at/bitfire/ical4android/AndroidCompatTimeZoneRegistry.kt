@@ -1,15 +1,36 @@
 package at.bitfire.ical4android
 
-import net.fortuna.ical4j.model.DefaultTimeZoneRegistryFactory
-import net.fortuna.ical4j.model.TimeZone
-import net.fortuna.ical4j.model.TimeZoneRegistry
-import net.fortuna.ical4j.model.TimeZoneRegistryFactory
+import net.fortuna.ical4j.model.*
+import net.fortuna.ical4j.model.component.VTimeZone
+import net.fortuna.ical4j.model.property.TzId
 import java.time.ZoneId
 
+/**
+ * The purpose of this class is that if a time zone has a different name in ical4j and Android,
+ * it should use the Android name.
+ *
+ * For instance, if a time zone is known as "Europe/Kyiv" (with alias "Europe/Kiev") in ical4j
+ * and only "Europe/Kiev" in Android, this registry behaves like the default [TimeZoneRegistryImpl],
+ * but the returned time zone for `getTimeZone("Europe/Kiev")` has an ID of "Europe/Kiev" and not
+ * "Europe/Kyiv".
+ */
 class AndroidCompatTimeZoneRegistry(
     private val base: TimeZoneRegistry
 ): TimeZoneRegistry by base {
 
+    /**
+     * Gets the time zone for a given ID.
+     *
+     * If a time zone with the given ID exists in Android, the icalj timezone for this ID
+     * is returned, but the TZID is set to the Android name (and not the ical4j name, which
+     * may not be known to Android).
+     *
+     * If a time zone with the given ID doesn't exist in Android, this method returns the
+     * result of its [base] method.
+     *
+     * @param id
+     * @return time zone
+     */
     override fun getTimeZone(id: String): TimeZone? {
         // check whether time zone is available on Android
         val androidTzId =
@@ -33,10 +54,20 @@ class AndroidCompatTimeZoneRegistry(
         val tz = base.getTimeZone(id)
         if (tz.id != androidTzId) {
             Ical4Android.log.warning("Using Android TZID $androidTzId instead of ical4j ${tz.id}")
-            tz.id = androidTzId                              // set TimeZone ID
-            tz.vTimeZone.timeZoneId.value = androidTzId      // set VTIMEZONE TZID
-        }
-        return tz
+
+            // create a copy of the VTIMEZONE so that we don't modify the original registry values (which are not immutable)
+            val vTimeZone = tz.vTimeZone
+            val newVTimeZoneProperties = PropertyList(vTimeZone.properties)
+            newVTimeZoneProperties.removeAll { property ->
+                property is TzId
+            }
+            newVTimeZoneProperties += TzId(androidTzId)
+            return TimeZone(VTimeZone(
+                newVTimeZoneProperties,
+                vTimeZone.observances
+            ))
+        } else
+            return tz
     }
 
 
