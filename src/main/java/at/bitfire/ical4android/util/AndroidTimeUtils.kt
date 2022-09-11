@@ -104,6 +104,8 @@ object AndroidTimeUtils {
      * Returns the time-zone ID for a given date or date-time that should be used to store it
      * in the Android calendar provider.
      *
+     * Does not check whether Android actually knows the time zone ID – use [androidifyTimeZone] for that.
+     *
      * @param date DateProperty (DATE or DATE-TIME) whose time-zone information is used
      *
      * @return - UTC for dates and UTC date-times
