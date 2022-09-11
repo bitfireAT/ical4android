@@ -5,7 +5,6 @@ import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.TimeZoneRegistry
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory
 import java.time.ZoneId
-import java.time.zone.ZoneRulesException
 
 class AndroidCompatTimeZoneRegistry(
     private val base: TimeZoneRegistry
@@ -16,7 +15,7 @@ class AndroidCompatTimeZoneRegistry(
         val androidTzId =
             try {
                 ZoneId.of(id).id
-            } catch (e: ZoneRulesException) {
+            } catch (e: Exception) {
                 /* Not available in Android, should return null in a later version.
                    However, we return the ical4j timezone to keep the changes caused by AndroidCompatTimeZoneRegistry introduction
                    as small as possible. */
@@ -37,16 +36,16 @@ class AndroidCompatTimeZoneRegistry(
             tz.id = androidTzId                              // set TimeZone ID
             tz.vTimeZone.timeZoneId.value = androidTzId      // set VTIMEZONE TZID
         }
-
         return tz
     }
 
 
     class Factory : TimeZoneRegistryFactory() {
 
-        private val ical4jRegistry = DefaultTimeZoneRegistryFactory().createRegistry()
-
-        override fun createRegistry() = AndroidCompatTimeZoneRegistry(ical4jRegistry)
+        override fun createRegistry(): TimeZoneRegistry {
+            val ical4jRegistry = DefaultTimeZoneRegistryFactory().createRegistry()
+            return AndroidCompatTimeZoneRegistry(ical4jRegistry)
+        }
 
     }
 

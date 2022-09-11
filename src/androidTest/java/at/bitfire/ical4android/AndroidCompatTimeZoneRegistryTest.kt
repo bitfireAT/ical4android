@@ -5,6 +5,7 @@
 package at.bitfire.ical4android
 
 import net.fortuna.ical4j.model.DefaultTimeZoneRegistryFactory
+import net.fortuna.ical4j.model.TimeZoneRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assume
@@ -16,7 +17,7 @@ import java.time.zone.ZoneRulesException
 class AndroidCompatTimeZoneRegistryTest {
 
     val ical4jRegistry = DefaultTimeZoneRegistryFactory.getInstance().createRegistry()
-    lateinit var registry: AndroidCompatTimeZoneRegistry
+    lateinit var registry: TimeZoneRegistry
 
     val systemKnowsKyiv =
         try {
