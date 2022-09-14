@@ -1066,10 +1066,10 @@ duration?.let(props::add)
         var updateUri = JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account)
         updateUri = Uri.withAppendedPath(updateUri, this.id.toString())
 
-        val values = ContentValues()
+        val values = ContentValues(1)
         values.put(JtxContract.JtxICalObject.FLAGS, flags)
-
         collection.client.update(updateUri, values, null, null)
+        this.flags = flags
     }
 
     /**
