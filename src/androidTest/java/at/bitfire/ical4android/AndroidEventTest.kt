@@ -13,11 +13,12 @@ import android.net.Uri
 import android.provider.CalendarContract.*
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.rule.GrantPermissionRule
-import at.bitfire.ical4android.MiscUtils.ContentProviderClientHelper.closeCompat
-import at.bitfire.ical4android.MiscUtils.UriHelper.asSyncAdapter
 import at.bitfire.ical4android.impl.TestCalendar
 import at.bitfire.ical4android.impl.TestEvent
 import at.bitfire.ical4android.util.AndroidTimeUtils
+import at.bitfire.ical4android.util.DateUtils
+import at.bitfire.ical4android.util.MiscUtils.ContentProviderClientHelper.closeCompat
+import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.*
@@ -28,6 +29,7 @@ import org.junit.Assert.*
 import java.net.URI
 import java.time.Duration
 import java.time.Period
+import java.util.TimeZone
 
 class AndroidEventTest {
 
@@ -1455,6 +1457,21 @@ class AndroidEventTest {
             assertEquals(DtStart(DateTime("20200621T180000", tzShanghai)), result.dtStart)
             assertEquals(DtEnd(DateTime("20200621T190000", tzShanghai)), result.dtEnd)
             assertNull(result.duration)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_NonAllDay_Recurring_Duration_KievTimeZone() {
+        populateEvent(false) {
+            put(Events.DTSTART, 1592733600000L)  // 21/06/2020 18:00 +0800
+            put(Events.EVENT_TIMEZONE, "Europe/Kiev")
+            put(Events.DURATION, "PT1H")
+            put(Events.RRULE, "FREQ=DAILY;COUNT=2")
+        }.let { result ->
+            assertEquals(1592733600000L, result.dtStart?.date?.time)
+            assertEquals(1592733600000L + 3600000, result.dtEnd?.date?.time)
+            assertEquals("Europe/Kiev", result.dtStart?.timeZone?.id)
+            assertEquals("Europe/Kiev", result.dtEnd?.timeZone?.id)
         }
     }
 

@@ -2,8 +2,10 @@
  * Copyright © All Contributors. See LICENSE and AUTHORS in the root directory for details.
  **************************************************************************************************/
 
-package at.bitfire.ical4android
+package at.bitfire.ical4android.util
 
+import at.bitfire.ical4android.Ical4Android
+import at.bitfire.ical4android.UsesThreadContextClassLoader
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime

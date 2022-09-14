@@ -4,6 +4,7 @@
 
 package at.bitfire.ical4android
 
+import at.bitfire.ical4android.util.DateUtils
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.RelType

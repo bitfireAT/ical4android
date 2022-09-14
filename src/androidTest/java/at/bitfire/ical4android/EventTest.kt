@@ -1,8 +1,10 @@
 /***************************************************************************************************
  * Copyright © All Contributors. See LICENSE and AUTHORS in the root directory for details.
  **************************************************************************************************/
+
 package at.bitfire.ical4android
 
+import at.bitfire.ical4android.util.DateUtils
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.Parameter
@@ -325,8 +327,8 @@ class EventTest {
     }
 
     private fun parseCalendar(fname: String, charset: Charset = Charsets.UTF_8): List<Event> =
-            javaClass.classLoader!!.getResourceAsStream("events/$fname").use { stream ->
-                return Event.eventsFromReader(InputStreamReader(stream, charset))
-            }
+        javaClass.classLoader!!.getResourceAsStream("events/$fname").use { stream ->
+            return Event.eventsFromReader(InputStreamReader(stream, charset))
+        }
 
 }

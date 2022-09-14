@@ -8,8 +8,8 @@ import android.accounts.Account
 import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
-import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
-import at.bitfire.ical4android.MiscUtils.UriHelper.asSyncAdapter
+import at.bitfire.ical4android.util.MiscUtils.CursorHelper.toValues
+import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
 import org.dmfs.tasks.contract.TaskContract
 import org.dmfs.tasks.contract.TaskContract.Property.Relation
 import org.dmfs.tasks.contract.TaskContract.TaskLists

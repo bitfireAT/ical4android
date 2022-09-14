@@ -2,20 +2,20 @@
  * Copyright © All Contributors. See LICENSE and AUTHORS in the root directory for details.
  **************************************************************************************************/
 
-package at.bitfire.ical4android
+package at.bitfire.ical4android.util
 
 import android.accounts.Account
 import android.content.ContentValues
 import android.database.MatrixCursor
 import android.net.Uri
 import androidx.test.filters.SmallTest
-import at.bitfire.ical4android.MiscUtils.CursorHelper.toValues
-import at.bitfire.ical4android.MiscUtils.UriHelper.asSyncAdapter
+import at.bitfire.ical4android.util.MiscUtils.CursorHelper.toValues
+import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class MiscUtilsAndroidTest {
+class MiscUtilsTest {
 
     private val tzVienna = DateUtils.ical4jTimeZone("Europe/Vienna")
 

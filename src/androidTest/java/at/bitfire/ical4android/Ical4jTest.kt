@@ -21,14 +21,18 @@ class Ical4jTest {
     @Test
     fun testEmailParameter() {
         // https://github.com/ical4j/ical4j/issues/418
-        val e = Event.eventsFromReader(StringReader("BEGIN:VCALENDAR\n" +
-                "VERSION:2.0\n" +
-                "BEGIN:VEVENT\n" +
-                "SUMMARY:Test\n" +
-                "DTSTART;VALUE=DATE:20200702\n" +
-                "ATTENDEE;EMAIL=attendee1@example.com:sample:attendee1\n" +
-                "END:VEVENT\n" +
-                "END:VCALENDAR")).first()
+        val e = Event.eventsFromReader(
+            StringReader(
+                "BEGIN:VCALENDAR\n" +
+                        "VERSION:2.0\n" +
+                        "BEGIN:VEVENT\n" +
+                        "SUMMARY:Test\n" +
+                        "DTSTART;VALUE=DATE:20200702\n" +
+                        "ATTENDEE;EMAIL=attendee1@example.com:sample:attendee1\n" +
+                        "END:VEVENT\n" +
+                        "END:VCALENDAR"
+            )
+        ).first()
         assertEquals("attendee1@example.com", e.attendees.first.getParameter<Email>(Parameter.EMAIL).value)
     }
 
