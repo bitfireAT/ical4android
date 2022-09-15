@@ -109,7 +109,7 @@ class JtxICalObjectTest {
             this.dtstamp = System.currentTimeMillis()
             this.sequence = 1
             this.color = -2298423
-            this.dirty = false
+            this.dirty = true
             this.deleted = false
             this.fileName = "test.ics"
             this.eTag = "0"
@@ -165,7 +165,6 @@ class JtxICalObjectTest {
     @Test fun check_SCHEDULETAG() = insertRetrieveAssertString(JtxICalObject.SCHEDULETAG, sample?.scheduleTag, Component.VJOURNAL.name)
     @Test fun check_FLAGS() = insertRetrieveAssertInt(JtxICalObject.FLAGS, sample?.flags, Component.VJOURNAL.name)
 
-
     private fun insertRetrieveAssertString(field: String, fieldContent: String?, component: String) {
 
         assertNotNull(fieldContent)    // fieldContent should not be null, check if the testcase was built correctly
@@ -184,8 +183,9 @@ class JtxICalObjectTest {
         }
     }
 
-    private fun insertRetrieveAssertBoolean(field: String, fieldContent: Boolean?, component: String) {
 
+    private fun insertRetrieveAssertBoolean(field: String, fieldContent: Boolean?, component: String) {
+        // ATTENTION: getAsBoolean() should not be used as it would interpret "0" and "1" both as false for API-levels < 26
         assertNotNull(fieldContent)    // fieldContent should not be null, check if the testcase was built correctly
 
         val cv = ContentValues().apply {
@@ -198,7 +198,9 @@ class JtxICalObjectTest {
             val itemCV = ContentValues()
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, itemCV)
-            assertEquals(fieldContent, itemCV.getAsBoolean(field))
+            val retrievedFieldContent = itemCV.getAsString(field)
+            val retrievedFieldBoolean = retrievedFieldContent == "1"
+            assertEquals(fieldContent, retrievedFieldBoolean)
         }
     }
 
@@ -381,7 +383,7 @@ class JtxICalObjectTest {
             assertEquals(attendee.member, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.MEMBER))
             assertEquals(attendee.partstat, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.PARTSTAT))
             assertEquals(attendee.role, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.ROLE))
-            assertEquals(attendee.rsvp, retrievedAttendeeCV.getAsBoolean(JtxContract.JtxAttendee.RSVP))
+            assertEquals(attendee.rsvp, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.RSVP) == "1")
             assertEquals(attendee.delegatedfrom, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.DELEGATEDFROM))
             assertEquals(attendee.delegatedto, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.DELEGATEDTO))
             assertEquals(attendee.sentby, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.SENTBY))

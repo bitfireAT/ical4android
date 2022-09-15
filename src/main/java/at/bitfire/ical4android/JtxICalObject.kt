@@ -1428,8 +1428,8 @@ duration?.let(props::add)
             values.getAsString(JtxContract.JtxICalObject.RECURID)?.let { recurid -> this.recurid = recurid }
 
             this.collectionId = collection.id
-            values.getAsBoolean(JtxContract.JtxICalObject.DIRTY)?.let { dirty -> this.dirty = dirty }
-            values.getAsBoolean(JtxContract.JtxICalObject.DELETED)?.let { deleted -> this.deleted = deleted }
+            values.getAsString(JtxContract.JtxICalObject.DIRTY)?.let { dirty -> this.dirty = dirty == "1" }
+            values.getAsString(JtxContract.JtxICalObject.DELETED)?.let { deleted -> this.deleted = deleted == "1" }
 
             values.getAsString(JtxContract.JtxICalObject.FILENAME)?.let { fileName -> this.fileName = fileName }
             values.getAsString(JtxContract.JtxICalObject.ETAG)?.let { eTag -> this.eTag = eTag }
@@ -1498,7 +1498,7 @@ duration?.let(props::add)
                     attendeeValues.getAsString(JtxContract.JtxAttendee.MEMBER)?.let { member -> this.member = member }
                     attendeeValues.getAsString(JtxContract.JtxAttendee.ROLE)?.let { role -> this.role = role }
                     attendeeValues.getAsString(JtxContract.JtxAttendee.PARTSTAT)?.let { partstat -> this.partstat = partstat }
-                    attendeeValues.getAsBoolean(JtxContract.JtxAttendee.RSVP)?.let { rsvp -> this.rsvp = rsvp }
+                    attendeeValues.getAsString(JtxContract.JtxAttendee.RSVP)?.let { rsvp -> this.rsvp = rsvp == "1" }
                     attendeeValues.getAsString(JtxContract.JtxAttendee.DELEGATEDTO)?.let { delto -> this.delegatedto = delto }
                     attendeeValues.getAsString(JtxContract.JtxAttendee.DELEGATEDFROM)?.let { delfrom -> this.delegatedfrom = delfrom }
                     attendeeValues.getAsString(JtxContract.JtxAttendee.SENTBY)?.let { sentby -> this.sentby = sentby }
@@ -1506,7 +1506,6 @@ duration?.let(props::add)
                     attendeeValues.getAsString(JtxContract.JtxAttendee.DIR)?.let { dir -> this.dir = dir }
                     attendeeValues.getAsString(JtxContract.JtxAttendee.LANGUAGE)?.let { lang -> this.language = lang }
                     attendeeValues.getAsString(JtxContract.JtxAttendee.OTHER)?.let { other -> this.other = other }
-
                 }
                 attendees.add(attendee)
             }
