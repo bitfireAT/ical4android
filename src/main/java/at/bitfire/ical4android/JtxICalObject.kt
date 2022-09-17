@@ -196,12 +196,12 @@ open class JtxICalObject(
     companion object {
 
         const val X_PROP_COMPLETEDTIMEZONE = "X-COMPLETEDTIMEZONE"
+        const val X_PARAM_ATTACH_LABEL = "X-LABEL"     // used for filename
 
         const val MAX_ATTACHMENT_SYNC_SIZE = 102400 // = 100KB
 
         /**
-         * Parses an iCalendar resource, applies [ICalPreprocessor] to increase compatibility
-         * and extracts the VTODOs and/or VJOURNALS.
+         * Parses an iCalendar resource and extracts the VTODOs and/or VJOURNALS.
          *
          * @param reader where the iCalendar is taken from
          *
@@ -421,6 +421,10 @@ open class JtxICalObject(
                         prop.parameters?.getParameter<FmtType>(Parameter.FMTTYPE)?.let {
                             attachment.fmttype = it.value
                             prop.parameters?.remove(it)
+                        }
+                        prop.parameters?.getParameter<XParameter>(X_PARAM_ATTACH_LABEL)?.let {
+                            attachment.filename = it.value
+                            prop.parameters.remove(it)
                         }
 
                         attachment.other = JtxContract.getJsonStringFromXParameters(prop.parameters)
@@ -807,6 +811,7 @@ open class JtxICalObject(
                     if(attachmentBytes.size <= MAX_ATTACHMENT_SYNC_SIZE) {     // Sync only small attachments that are smaller than 100 KB, larger ones are ignored
                         val att = Attach(attachmentBytes).apply {
                             attachment.fmttype?.let { this.parameters.add(FmtType(it)) }
+                            attachment.filename?.let { this.parameters.add(XParameter(X_PARAM_ATTACH_LABEL, it)) }
                         }
                         props += att
                     }
@@ -815,6 +820,7 @@ open class JtxICalObject(
                     attachment.uri?.let { uri ->
                         val att = Attach(URI(uri)).apply {
                             attachment.fmttype?.let { this.parameters.add(FmtType(it)) }
+                            attachment.filename?.let { this.parameters.add(XParameter(X_PARAM_ATTACH_LABEL, it)) }
                         }
                         props += att
                     }
@@ -1060,10 +1066,10 @@ duration?.let(props::add)
         var updateUri = JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account)
         updateUri = Uri.withAppendedPath(updateUri, this.id.toString())
 
-        val values = ContentValues()
+        val values = ContentValues(1)
         values.put(JtxContract.JtxICalObject.FLAGS, flags)
-
         collection.client.update(updateUri, values, null, null)
+        this.flags = flags
     }
 
     /**
@@ -1276,6 +1282,7 @@ duration?.let(props::add)
                 put(JtxContract.JtxAttachment.URI, attachment.uri)
                 put(JtxContract.JtxAttachment.FMTTYPE, attachment.fmttype)
                 put(JtxContract.JtxAttachment.OTHER, attachment.other)
+                put(JtxContract.JtxAttachment.FILENAME, attachment.filename)
             }
             val newAttachment = collection.client.insert(
                 JtxContract.JtxAttachment.CONTENT_URI.asSyncAdapter(
@@ -1533,7 +1540,7 @@ duration?.let(props::add)
                     attachmentValues.getAsString(JtxContract.JtxAttachment.BINARY)?.let { value -> this.binary = value }
                     attachmentValues.getAsString(JtxContract.JtxAttachment.FMTTYPE)?.let { fmttype -> this.fmttype = fmttype }
                     attachmentValues.getAsString(JtxContract.JtxAttachment.OTHER)?.let { other -> this.other = other }
-
+                    attachmentValues.getAsString(JtxContract.JtxAttachment.FILENAME)?.let { filename -> this.filename = filename }
                 }
                 attachments.add(attachment)
             }

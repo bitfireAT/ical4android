@@ -1,13 +1,16 @@
-/***************************************************************************************************
- * Copyright © All Contributors. See LICENSE and AUTHORS in the root directory for details.
- **************************************************************************************************/
+/*
+ * Copyright (c) Techbee e.U.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Public License v3.0
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/gpl.html
+ */
 
 package at.techbee.jtx
 
 import android.accounts.Account
 import android.net.Uri
 import android.provider.BaseColumns
-import android.util.Log
 import at.bitfire.ical4android.Ical4Android
 import net.fortuna.ical4j.model.ParameterList
 import net.fortuna.ical4j.model.Property
@@ -39,7 +42,7 @@ object JtxContract {
     const val AUTHORITY = "at.techbee.jtx.provider"
 
     /** The version of this SyncContentProviderContract */
-    const val VERSION = 1
+    const val VERSION = 2
 
     /** Constructs an Uri for the Jtx Sync Adapter with the given Account
      * @param [account] The account that should be appended to the Base Uri
@@ -1218,6 +1221,13 @@ object JtxContract {
         const val FMTTYPE = "fmttype"
 
         /**
+         * Purpose:  To specify the filename of the attachment.
+         * This is an X-PROPERTY that should be addressed as "X-LABEL"
+         * Type: [String]
+         */
+        const val FILENAME = "filename"
+
+        /**
          * Purpose:  To specify other properties for the attachment.
          * see [https://tools.ietf.org/html/rfc5545#section-3.8.1.1]
          * The Parameters are stored as JSON. There are two helper functions provided:
@@ -1405,5 +1415,4 @@ object JtxContract {
          */
         const val UNKNOWN_VALUE = "value"
     }
-
 }
