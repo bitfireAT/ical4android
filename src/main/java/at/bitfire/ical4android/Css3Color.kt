@@ -178,6 +178,8 @@ enum class Css3Color(val argb: Int) {
                     Color.parseColor(color)
                 } catch(e: IllegalArgumentException) {
                     null
+                } catch(e: StringIndexOutOfBoundsException) {
+                    null
                 }
 
         /**
