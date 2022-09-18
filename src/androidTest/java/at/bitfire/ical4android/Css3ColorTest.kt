@@ -21,6 +21,9 @@ class Css3ColorTest {
         // ARGB value
         assertEquals(0xffffff00.toInt(), Css3Color.colorFromString("#ffffff00"))
 
+        // empty value
+        assertNull(Css3Color.colorFromString(""))
+
         // invalid value
         assertNull(Css3Color.colorFromString("DoesNotExist"))
     }
