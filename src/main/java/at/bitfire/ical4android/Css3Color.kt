@@ -176,9 +176,8 @@ enum class Css3Color(val argb: Int) {
             fromString(color)?.argb ?:
                 try {
                     Color.parseColor(color)
-                } catch(e: IllegalArgumentException) {
-                    null
-                } catch(e: StringIndexOutOfBoundsException) {
+                } catch(e: Exception) {
+                    Ical4Android.log.warning("Invalid color value: $color")
                     null
                 }
 
@@ -192,6 +191,7 @@ enum class Css3Color(val argb: Int) {
                 try {
                     valueOf(name.lowercase())
                 } catch (e: IllegalArgumentException) {
+                    Ical4Android.log.warning("Invalid color name: $name")
                     null
                 }
 
