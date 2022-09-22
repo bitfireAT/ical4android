@@ -199,7 +199,7 @@ class JtxICalObjectTest {
             it.moveToFirst()
             DatabaseUtils.cursorRowToContentValues(it, itemCV)
             val retrievedFieldContent = itemCV.getAsString(field)
-            val retrievedFieldBoolean = retrievedFieldContent == "1"
+            val retrievedFieldBoolean = retrievedFieldContent == "1" || retrievedFieldContent == "true"
             assertEquals(fieldContent, retrievedFieldBoolean)
         }
     }
@@ -383,7 +383,8 @@ class JtxICalObjectTest {
             assertEquals(attendee.member, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.MEMBER))
             assertEquals(attendee.partstat, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.PARTSTAT))
             assertEquals(attendee.role, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.ROLE))
-            assertEquals(attendee.rsvp, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.RSVP) == "1")
+            assertEquals(attendee.rsvp, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.RSVP) == "1"
+                    || retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.RSVP) == "true")
             assertEquals(attendee.delegatedfrom, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.DELEGATEDFROM))
             assertEquals(attendee.delegatedto, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.DELEGATEDTO))
             assertEquals(attendee.sentby, retrievedAttendeeCV.getAsString(JtxContract.JtxAttendee.SENTBY))
