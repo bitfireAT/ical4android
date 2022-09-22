@@ -69,8 +69,11 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
         syncstate = values.getAsString(JtxContract.JtxCollection.SYNC_VERSION)
 
         supportsVEVENT = values.getAsString(JtxContract.JtxCollection.SUPPORTSVEVENT) == "1"
+                || values.getAsString(JtxContract.JtxCollection.SUPPORTSVEVENT) == "true"
         supportsVTODO = values.getAsString(JtxContract.JtxCollection.SUPPORTSVTODO) == "1"
+                || values.getAsString(JtxContract.JtxCollection.SUPPORTSVTODO) == "true"
         supportsVJOURNAL = values.getAsString(JtxContract.JtxCollection.SUPPORTSVJOURNAL) == "1"
+                || values.getAsString(JtxContract.JtxCollection.SUPPORTSVJOURNAL) == "true"
 
         this.context = context
     }
