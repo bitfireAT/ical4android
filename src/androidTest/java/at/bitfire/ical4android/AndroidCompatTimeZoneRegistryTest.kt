@@ -5,6 +5,7 @@
 package at.bitfire.ical4android
 
 import net.fortuna.ical4j.model.DefaultTimeZoneRegistryFactory
+import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.TimeZoneRegistry
 import org.junit.Assert.*
 import org.junit.Assume
@@ -39,6 +40,18 @@ class AndroidCompatTimeZoneRegistryTest {
             ical4jRegistry.getTimeZone("Europe/Vienna"),
             registry.getTimeZone("Europe/Vienna")
         )
+    }
+
+    @Test
+    fun getTimeZone_Existing_ButNotInIcal4j() {
+        val reg = AndroidCompatTimeZoneRegistry(object: TimeZoneRegistry {
+            override fun register(timezone: TimeZone?) = throw NotImplementedError()
+            override fun register(timezone: TimeZone?, update: Boolean) = throw NotImplementedError()
+            override fun clear() = throw NotImplementedError()
+            override fun getTimeZone(id: String?) = null
+
+        })
+        assertNull(reg.getTimeZone("Europe/Berlin"))
     }
 
     @Test
