@@ -894,15 +894,15 @@ abstract class AndroidEvent(
             builder .withValue(Events.HAS_ATTENDEE_DATA, 0)
                     .withValue(Events.ORGANIZER, calendar.ownerAccount)
 
-        // Attention: don't update event with STATUS != null to STATUS = null  (causes calendar provider operation to fail)!
+        // Attention: don't update event with STATUS != null to STATUS = null (causes calendar provider operation to fail)!
         // In this case, the whole event must be deleted and inserted again.
         if (/* insert, not an update */ id == null || /* update, but we're not updating to null */ event.status != null)
-        builder.withValue(Events.STATUS, when (event.status) {
-            null -> null
-            Status.VEVENT_CONFIRMED -> Events.STATUS_CONFIRMED
-            Status.VEVENT_CANCELLED -> Events.STATUS_CANCELED
-            else -> Events.STATUS_TENTATIVE
-        })
+            builder.withValue(Events.STATUS, when (event.status) {
+                null /* not possible by if statement */ -> null
+                Status.VEVENT_CONFIRMED -> Events.STATUS_CONFIRMED
+                Status.VEVENT_CANCELLED -> Events.STATUS_CANCELED
+                else -> Events.STATUS_TENTATIVE
+            })
 
         builder .withValue(Events.AVAILABILITY, if (event.opaque) Events.AVAILABILITY_BUSY else Events.AVAILABILITY_FREE)
                 .withValue(Events.ACCESS_LEVEL, when (event.classification) {
