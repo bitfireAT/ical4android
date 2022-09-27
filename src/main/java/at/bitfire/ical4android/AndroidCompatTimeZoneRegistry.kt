@@ -32,7 +32,11 @@ class AndroidCompatTimeZoneRegistry(
      * @return time zone
      */
     override fun getTimeZone(id: String): TimeZone? {
-        // check whether time zone is available on Android
+        val tz: TimeZone? = base.getTimeZone(id)
+        if (tz == null)     // ical4j doesn't know time zone, return null
+            return null
+
+        // check whether time zone is available on Android, too
         val androidTzId =
             try {
                 ZoneId.of(id).id
@@ -40,7 +44,7 @@ class AndroidCompatTimeZoneRegistry(
                 /* Not available in Android, should return null in a later version.
                    However, we return the ical4j timezone to keep the changes caused by AndroidCompatTimeZoneRegistry introduction
                    as small as possible. */
-                return base.getTimeZone(id)
+                return tz
             }
 
         /* Time zone known by Android. Unfortunately, we can't use the Android timezone database directly
@@ -51,8 +55,7 @@ class AndroidCompatTimeZoneRegistry(
            Example: getTimeZone("Europe/Kiev") returns a TimeZone with TZID:Europe/Kyiv since ical4j/3.2.5,
            but most Android devices don't now Europe/Kyiv yet.
            */
-        val tz: TimeZone? = base.getTimeZone(id)
-        if (tz != null && tz.id != androidTzId) {
+        if (tz.id != androidTzId) {
             Ical4Android.log.warning("Using Android TZID $androidTzId instead of ical4j ${tz.id}")
 
             // create a copy of the VTIMEZONE so that we don't modify the original registry values (which are not immutable)
