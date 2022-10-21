@@ -17,7 +17,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.0'
+        classpath 'com.android.tools.build:gradle:7.3.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:${versions.dokka}"
     }
@@ -44,6 +44,8 @@ android {
 
         buildConfigField "String", "version_ical4j", "\"${versions.ical4j}\""
     }
+
+    namespace 'at.bitfire.ical4android'
 
     compileOptions {
         // ical4j >= 3.x uses the Java 8 Time API
