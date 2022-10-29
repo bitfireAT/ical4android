@@ -40,11 +40,12 @@ jobs:
           submodules: true
       - uses: gradle/wrapper-validation-action@v1
 
-      - name: Cache gradle dependencies
+      - name: Cache APKs and gradle dependencies
         uses: actions/cache@v2
         with:
           key: ${{ runner.os }}-1
           path: |
+            ~/.apk
             ~/.gradle/caches
             ~/.gradle/wrapper
 
@@ -52,10 +53,10 @@ jobs:
         run: start-emulator.sh
       - name: Install task apps
         run: |
-          mkdir apk && cd apk
-          wget -q -O org.dmfs.tasks.apk https://f-droid.org/archive/org.dmfs.tasks_80800.apk && adb install org.dmfs.tasks.apk
-          wget -q -O org.tasks.apk https://f-droid.org/archive/org.tasks_120400.apk && adb install org.tasks.apk
-          wget -q -O at.techbee.jtx.apk https://f-droid.org/archive/at.techbee.jtx_100140002.apk && adb install at.techbee.jtx.apk
+          mkdir .apk && cd .apk
+          wget -cq -O org.dmfs.tasks.apk https://f-droid.org/archive/org.dmfs.tasks_80800.apk && adb install org.dmfs.tasks.apk
+          wget -cq -O org.tasks.apk https://f-droid.org/archive/org.tasks_120400.apk && adb install org.tasks.apk
+          wget -cq -O at.techbee.jtx.apk https://f-droid.org/archive/at.techbee.jtx_100140002.apk && adb install at.techbee.jtx.apk
           cd ..
       - name: Run connected tests
         run: ./gradlew connectedCheck -Pandroid.testInstrumentationRunnerArguments.notAnnotation=androidx.test.filters.FlakyTest
