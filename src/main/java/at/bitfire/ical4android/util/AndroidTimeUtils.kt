@@ -55,7 +55,7 @@ object AndroidTimeUtils {
     fun androidifyTimeZone(date: DateProperty?) {
         if (DateUtils.isDateTime(date) && date?.isUtc == false) {
             val tzID = date.timeZone?.id
-            date.timeZone = bestMatchingTzId(tzID)
+            date.timeZone = bestMatchingAndroidTzId(tzID)
         }
     }
 
@@ -75,7 +75,7 @@ object AndroidTimeUtils {
 
             // Won't work until resolved in ical4j (https://github.com/ical4j/ical4j/discussions/568)
             // DateListProperty.setTimeZone() does not set the timeZone property when the DateList has PERIODs
-            dateList.timeZone = bestMatchingTzId(tzID)
+            dateList.timeZone = bestMatchingAndroidTzId(tzID)
 
             return //  RDate can only contain periods OR dates - not both, bail out fast
         }
@@ -85,12 +85,19 @@ object AndroidTimeUtils {
         if (dates != null && dates.size > 0) {
             if (dates.type == Value.DATE_TIME && !dates.isUtc) {
                 val tzID = dates.timeZone?.id
-                dateList.timeZone = bestMatchingTzId(tzID)
+                dateList.timeZone = bestMatchingAndroidTzId(tzID)
             }
         }
     }
 
-    private fun bestMatchingTzId(tzID: String?): TimeZone? {
+    /**
+     * Will try to find the best matching android time zone id, for given time zone id [tzID].
+     * Returns default time zone id, if null is passed.
+     *
+     * @param tzID simple timezone ID. ie "Europe/Berlin"
+     * @return TimeZone best matching timezone available in android
+     */
+    fun bestMatchingAndroidTzId(tzID: String?): TimeZone? {
         val bestMatchingTzId = DateUtils.findAndroidTimezoneID(tzID)
         return if (tzID == bestMatchingTzId) {
             DateUtils.ical4jTimeZone(tzID)
