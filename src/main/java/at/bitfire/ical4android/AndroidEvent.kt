@@ -216,11 +216,12 @@ abstract class AndroidEvent(
 
         } else /* !allDay */ {
             // use DATE-TIME values
-            val startTz = row.getAsString(Events.EVENT_TIMEZONE)?.let { tzId ->
-                DateUtils.ical4jTimeZone(tzId)
-            }
+
+            // check time zone ID (calendar apps may insert no or an invalid ID)
+            val startTzId = DateUtils.findAndroidTimezoneID(row.getAsString(Events.EVENT_TIMEZONE))
+            val startTz = DateUtils.ical4jTimeZone(startTzId)
             val dtStartDateTime = DateTime(tsStart).apply {
-                if (startTz != null) {
+                if (startTz != null) {  // null if there was not ical4j time zone for startTzId, which should not happen, but technically may happen
                     if (TimeZones.isUtc(startTz))
                         isUtc = true
                     else
@@ -228,7 +229,6 @@ abstract class AndroidEvent(
                 }
             }
             event.dtStart = DtStart(dtStartDateTime)
-            AndroidTimeUtils.androidifyTimeZone(event.dtStart)      // because it may have an ical4j timezone ID that is not available in Android
 
             // Android events MUST have duration or dtend [https://developer.android.com/reference/android/provider/CalendarContract.Events#operations].
             // Assume 1 hour if missing (should never occur, but occurs).
