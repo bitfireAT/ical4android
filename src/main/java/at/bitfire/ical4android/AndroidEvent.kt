@@ -216,9 +216,10 @@ abstract class AndroidEvent(
 
         } else /* !allDay */ {
             // use DATE-TIME values
-            val startTz = row.getAsString(Events.EVENT_TIMEZONE)?.let { tzId ->
-                AndroidTimeUtils.bestMatchingAndroidTzId(tzId) // because it may have a timezone ID that is not available in Android
-            }
+
+            // check time zone ID (calendar apps may insert no or an invalid ID)
+            val startTzId = DateUtils.findAndroidTimezoneID(row.getAsString(Events.EVENT_TIMEZONE))
+            val startTz = DateUtils.ical4jTimeZone(startTzId)
             val dtStartDateTime = DateTime(tsStart).apply {
                 if (startTz != null) {
                     if (TimeZones.isUtc(startTz))

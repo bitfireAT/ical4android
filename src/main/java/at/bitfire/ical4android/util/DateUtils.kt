@@ -39,15 +39,15 @@ object DateUtils {
     // time zones
 
     /**
-     * For a given time zone ID taken from an iCalendar resource, find the matching
-     * Android time zone ID (if possible):
+     * Find the best matching Android (= available in system and Java timezone registry)
+     * time zone ID for a given arbitrary time zone ID:
      *
      * 1. Use a case-insensitive match ("EUROPE/VIENNA" will return "Europe/Vienna",
-     *    assuming "Europe/Vienna") is available in Android
+     *    assuming "Europe/Vienna") is available in Android.
      * 2. Find partial matches (case-sensitive) in both directions, so both "Vienna"
-     *    and "MyClient: Europe/Vienna" will return "Europe/Vienna". This shouldn't be
-     *    case-sensitive, because that would (for instance) return "EST" for "Westeuropäische Sommerzeit"
-     * 3. If nothing can be found, use the system default time zone
+     *    and "MyClient: Europe/Vienna" will return "Europe/Vienna". This shouln't be
+     *    case-insensitive, because that would for instance return "EST" for "Westeuropäische Sommerzeit".
+     * 3. If nothing can be found or [tzId] is `null`, return the system default time zone.
      *
      * @param tzID time zone ID to be converted into Android time zone ID
      *
