@@ -95,6 +95,17 @@ object DateUtils {
 
     @Suppress("DEPRECATION")
     @UsesThreadContextClassLoader
+    /**
+     * Loads a time zone from the ical4j time zone registry (which contains the
+     * VTIMEZONE definitions).
+     *
+     * All Android time zone IDs plus some other time zones should be available.
+     * However, the possibility that the time zone is not available in ical4j should
+     * be handled.
+     *
+     * @param id    time zone ID (like `Europe/Vienna`)
+     * @return the ical4j time zone (VTIMEZONE), or `null` if no VTIMEZONE is available
+     */
     fun ical4jTimeZone(id: String): TimeZone? = tzRegistry.getTimeZone(id)
 
     /**

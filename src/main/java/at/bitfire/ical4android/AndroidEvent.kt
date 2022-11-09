@@ -221,7 +221,7 @@ abstract class AndroidEvent(
             val startTzId = DateUtils.findAndroidTimezoneID(row.getAsString(Events.EVENT_TIMEZONE))
             val startTz = DateUtils.ical4jTimeZone(startTzId)
             val dtStartDateTime = DateTime(tsStart).apply {
-                if (startTz != null) {
+                if (startTz != null) {  // null if there was not ical4j time zone for startTzId, which should not happen, but technically may happen
                     if (TimeZones.isUtc(startTz))
                         isUtc = true
                     else
