@@ -35,7 +35,6 @@ abstract class AndroidTaskList<out T : AndroidTask>(
         fun create(account: Account, provider: TaskProvider, info: ContentValues): Uri {
             info.put(TaskContract.ACCOUNT_NAME, account.name)
             info.put(TaskContract.ACCOUNT_TYPE, account.type)
-            info.put(TaskLists.ACCESS_LEVEL, 0)
 
             Ical4Android.log.info("Creating local task list: $info")
             return provider.client.insert(provider.taskListsUri().asSyncAdapter(account), info)
