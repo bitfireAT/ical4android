@@ -28,9 +28,9 @@ class TaskProvider private constructor(
             private val readPermission: String,
             private val writePermission: String
     ) {
-        OpenTasks("org.dmfs.tasks", "org.dmfs.tasks", 103, "1.1.8.2", PERMISSION_OPENTASKS_READ, PERMISSION_OPENTASKS_WRITE),
+        JtxBoard("at.techbee.jtx.provider", "at.techbee.jtx", 101010006, "1.01.01", PERMISSION_JTX_READ, PERMISSION_JTX_WRITE),
         TasksOrg("org.tasks.opentasks", "org.tasks", 100000, "10.0", PERMISSION_TASKS_ORG_READ, PERMISSION_TASKS_ORG_WRITE),
-        JtxBoard("at.techbee.jtx.provider", "at.techbee.jtx", 101010006, "1.01.01", PERMISSION_JTX_READ, PERMISSION_JTX_WRITE);
+        OpenTasks("org.dmfs.tasks", "org.dmfs.tasks", 103, "1.1.8.2", PERMISSION_OPENTASKS_READ, PERMISSION_OPENTASKS_WRITE);
 
         companion object {
             fun fromAuthority(authority: String): ProviderName {
