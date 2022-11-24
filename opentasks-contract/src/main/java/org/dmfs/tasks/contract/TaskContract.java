@@ -384,12 +384,21 @@ public final class TaskContract
         String LIST_COLOR = "list_color";
 
         /**
-         * The access level a user has on this list. <strong>This value is not used yet, sync adapters should set it to <code>0</code></strong>.
+         * The access level a user has on this list (taken from android.provider.CalendarContract).
          * <p>
-         * Value: Integer
+         * Value: Integer (one of the values below)
          * </p>
          */
         String ACCESS_LEVEL = "list_access_level";
+
+        /** Not specified by client, should be treated as read-write */
+        Integer ACCESS_LEVEL_UNDEFINED = 0;
+
+        /** Can read all tasks and details, no write access */
+        Integer ACCESS_LEVEL_READ = 200;
+
+        /** Full access to the tasks list */
+        Integer ACCESS_LEVEL_OWNER = 700;
 
         /**
          * Indicates that a task list is set to be visible.
