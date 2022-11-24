@@ -18,6 +18,7 @@ import net.fortuna.ical4j.model.component.VJournal
 import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.property.Version
 import java.util.*
+import java.util.logging.Level
 
 open class JtxCollection<out T: JtxICalObject>(val account: Account,
                                                val client: ContentProviderClient,
@@ -26,8 +27,11 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
 
     companion object {
 
-        fun create(account: Account, client: ContentProviderClient, values: ContentValues): Uri =
-            client.insert(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), values)?: throw CalendarStorageException("Couldn't create JTX Collection")
+        fun create(account: Account, client: ContentProviderClient, values: ContentValues): Uri {
+            Ical4Android.log.log(Level.FINE, "Creating jtx Board collection", values)
+            return client.insert(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), values)
+                ?: throw CalendarStorageException("Couldn't create JTX Collection")
+        }
 
         fun<T: JtxCollection<JtxICalObject>> find(account: Account, client: ContentProviderClient, context: Context, factory: JtxCollectionFactory<T>, where: String?, whereArgs: Array<String>?): List<T> {
             val collections = LinkedList<T>()
@@ -56,10 +60,12 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
 
 
     fun delete() {
+        Ical4Android.log.log(Level.FINE, "Deleting jtx Board collection (#$id)")
         client.delete(ContentUris.withAppendedId(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), id), null, null)
     }
 
     fun update(values: ContentValues) {
+        Ical4Android.log.log(Level.FINE, "Updating jtx Board collection (#$id)", values)
         client.update(ContentUris.withAppendedId(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), id), values, null, null)
     }
 

@@ -58,7 +58,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 
             info.putAll(calendarBaseValues)
 
-            Ical4Android.log.info("Creating local calendar: $info")
+            Ical4Android.log.log(Level.FINE, "Creating local calendar", info)
             return provider.insert(Calendars.CONTENT_URI.asSyncAdapter(account), info) ?:
                     throw Exception("Couldn't create calendar: provider returned null")
         }
@@ -168,9 +168,15 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
     }
 
 
-    fun update(info: ContentValues) = provider.update(calendarSyncURI(), info, null, null)
+    fun update(info: ContentValues): Int {
+        Ical4Android.log.log(Level.FINE, "Updating local calendar (#$id)", info)
+        return provider.update(calendarSyncURI(), info, null, null)
+    }
 
-    fun delete() = provider.delete(calendarSyncURI(), null, null)
+    fun delete(): Int {
+        Ical4Android.log.log(Level.FINE, "Deleting local calendar (#$id)")
+        return provider.delete(calendarSyncURI(), null, null)
+    }
 
 
     /**

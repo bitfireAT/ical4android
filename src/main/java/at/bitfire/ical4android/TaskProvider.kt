@@ -16,8 +16,8 @@ import java.util.logging.Level
 
 
 class TaskProvider private constructor(
-        val name: ProviderName,
-        val client: ContentProviderClient
+    val name: ProviderName,
+    val client: ContentProviderClient
 ): Closeable {
 
     enum class ProviderName(
@@ -44,6 +44,7 @@ class TaskProvider private constructor(
         val permissions: Array<String>
             get() = arrayOf(readPermission, writePermission)
     }
+
 
     companion object {
 
