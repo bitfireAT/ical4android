@@ -361,6 +361,12 @@ open class ICalendar {
         uid = UUID.randomUUID().toString()
     }
 
+    fun prodId(): ProdId =
+        if (userAgents.isEmpty())
+            prodId
+        else
+            ProdId(prodId.value + " (" + userAgents.joinToString(",") + ")")
+
     override fun toString() = MiscUtils.reflectionToString(this)
 
 }

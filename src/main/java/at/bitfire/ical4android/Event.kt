@@ -206,11 +206,7 @@ class Event: ICalendar() {
 
         val ical = Calendar()
         ical.properties += Version.VERSION_2_0
-        ical.properties +=
-                if (userAgents.isEmpty())
-                    prodId
-                else
-                    ProdId(prodId.value + " (" + userAgents.joinToString(",") + ")")
+        ical.properties += prodId()
 
         val dtStart = dtStart ?: throw InvalidCalendarException("Won't generate event without start time")
 
