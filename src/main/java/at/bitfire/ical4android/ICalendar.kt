@@ -29,6 +29,9 @@ open class ICalendar {
     var uid: String? = null
     var sequence: Int? = null
 
+    /** list of CUAs which have edited the event since last sync */
+    var userAgents = LinkedList<String>()
+
     companion object {
 
         // static ical4j initialization

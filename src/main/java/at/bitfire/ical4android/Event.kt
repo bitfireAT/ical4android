@@ -24,9 +24,6 @@ import java.util.*
 
 class Event: ICalendar() {
 
-    /** list of CUAs which have edited the event since last sync */
-    var userAgents = LinkedList<String>()
-
     // uid and sequence are inherited from iCalendar
     var recurrenceId: RecurrenceId? = null
 
