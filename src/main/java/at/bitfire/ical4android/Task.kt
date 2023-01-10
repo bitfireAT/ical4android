@@ -163,7 +163,7 @@ class Task: ICalendar() {
 
         val ical = Calendar()
         ical.properties += Version.VERSION_2_0
-        ical.properties += prodId
+        ical.properties += prodId()
 
         val vTodo = VToDo(true /* generates DTSTAMP */)
         ical.components += vTodo
