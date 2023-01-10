@@ -58,6 +58,12 @@ open class ICalendar {
         var prodId = ProdId("+//IDN bitfire.at//ical4android")
 
 
+        fun prodId(userAgents: List<String>): ProdId =
+            if (userAgents.isEmpty())
+                prodId
+            else
+                ProdId(prodId.value + " (" + userAgents.joinToString(",") + ")")
+
         // parser
 
         /**
@@ -361,11 +367,7 @@ open class ICalendar {
         uid = UUID.randomUUID().toString()
     }
 
-    fun prodId(): ProdId =
-        if (userAgents.isEmpty())
-            prodId
-        else
-            ProdId(prodId.value + " (" + userAgents.joinToString(",") + ")")
+    fun prodId(): ProdId = prodId(userAgents)
 
     override fun toString() = MiscUtils.reflectionToString(this)
 
