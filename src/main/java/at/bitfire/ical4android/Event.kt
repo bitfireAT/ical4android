@@ -24,9 +24,6 @@ import java.util.*
 
 class Event: ICalendar() {
 
-    /** list of CUAs which have edited the event since last sync */
-    var userAgents = LinkedList<String>()
-
     // uid and sequence are inherited from iCalendar
     var recurrenceId: RecurrenceId? = null
 
@@ -209,11 +206,7 @@ class Event: ICalendar() {
 
         val ical = Calendar()
         ical.properties += Version.VERSION_2_0
-        ical.properties +=
-                if (userAgents.isEmpty())
-                    prodId
-                else
-                    ProdId(prodId.value + " (" + userAgents.joinToString(",") + ")")
+        ical.properties += prodId()
 
         val dtStart = dtStart ?: throw InvalidCalendarException("Won't generate event without start time")
 

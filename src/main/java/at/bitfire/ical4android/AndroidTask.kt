@@ -140,6 +140,7 @@ abstract class AndroidTask(
         task.sequence = values.getAsInteger(Tasks.SYNC_VERSION)
         task.summary = values.getAsString(Tasks.TITLE)
         task.location = values.getAsString(Tasks.LOCATION)
+        task.userAgents += taskList.provider.name.packageName
 
         values.getAsString(Tasks.GEO)?.let { geo ->
             val (lng, lat) = geo.split(',')

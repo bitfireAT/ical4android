@@ -29,6 +29,9 @@ open class ICalendar {
     var uid: String? = null
     var sequence: Int? = null
 
+    /** list of CUAs which have edited the event since last sync */
+    var userAgents = LinkedList<String>()
+
     companion object {
 
         // static ical4j initialization
@@ -54,6 +57,11 @@ open class ICalendar {
          */
         var prodId = ProdId("+//IDN bitfire.at//ical4android")
 
+        fun prodId(userAgents: List<String>): ProdId =
+            if (userAgents.isEmpty())
+                prodId
+            else
+                ProdId(prodId.value + " (" + userAgents.joinToString(",") + ")")
 
         // parser
 
@@ -357,6 +365,8 @@ open class ICalendar {
     protected fun generateUID() {
         uid = UUID.randomUUID().toString()
     }
+
+    fun prodId(): ProdId = prodId(userAgents)
 
     override fun toString() = MiscUtils.reflectionToString(this)
 

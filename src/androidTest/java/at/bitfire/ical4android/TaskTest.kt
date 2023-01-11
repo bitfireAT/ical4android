@@ -191,7 +191,7 @@ class TaskTest {
         t.write(os)
         val raw = os.toString(Charsets.UTF_8.name())
 
-        assertTrue(raw.contains("PRODID:${ICalendar.prodId.value}"))
+        assertTrue(raw.contains("PRODID:${t.prodId().value}"))
         assertTrue(raw.contains("UID:SAMPLEUID"))
         assertTrue(raw.contains("DTSTAMP:"))
         assertTrue(raw.contains("DTSTART;TZID=Europe/Berlin:20190101T100000"))
