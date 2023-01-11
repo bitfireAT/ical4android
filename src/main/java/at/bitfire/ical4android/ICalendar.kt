@@ -57,7 +57,6 @@ open class ICalendar {
          */
         var prodId = ProdId("+//IDN bitfire.at//ical4android")
 
-
         fun prodId(userAgents: List<String>): ProdId =
             if (userAgents.isEmpty())
                 prodId

@@ -548,7 +548,7 @@ open class JtxICalObject(
 
         val ical = Calendar()
         ical.properties += Version.VERSION_2_0
-        ical.properties += ICalendar.prodId(listOf("at.techbee.jtx"))
+        ical.properties += ICalendar.prodId(listOf(TaskProvider.ProviderName.JtxBoard.packageName))
 
         val calComponent = when (component) {
             JtxContract.JtxICalObject.Component.VTODO.name -> VToDo(true /* generates DTSTAMP */)
