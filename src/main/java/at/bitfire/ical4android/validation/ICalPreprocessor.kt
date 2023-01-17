@@ -30,6 +30,8 @@ object ICalPreprocessor {
 
     private val TZOFFSET_REGEXP = Regex("^(TZOFFSET(FROM|TO):[+\\-]?)((18|19|[2-6]\\d)\\d\\d)$", RegexOption.MULTILINE)
 
+    private val INVALID_DAY_PERIOD_REGEX = Regex("-?PT-?\\d+D", setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))
+
     private val propertyRules = arrayOf(
         CreatedPropertyRule(),      // make sure CREATED is UTC
 
@@ -70,6 +72,68 @@ object ICalPreprocessor {
                 result = fixStringFromReader()
             }
         } else
+            result = fixStringFromReader()
+
+        if (result != null)
+            return StringReader(result)
+
+        // not modified, return original iCalendar
+        reader.reset()
+        return reader
+    }
+
+    /**
+     * Fixes durations with day offsets with the 'T' prefix.
+     * @param reader Reader that reads the potentially broken iCalendar
+     * @see <a href="https://github.com/bitfireAT/icsx5/issues/100">GitHub</a>
+     */
+    fun fixInvalidDayOffset(reader: Reader): Reader {
+        fun fixStringFromReader(): String {
+            // Convert the reader to a string
+            var str = IOUtils.toString(reader)
+            val found = INVALID_DAY_PERIOD_REGEX.findAll(str)
+            // Find all matches for the expression
+            for (match in found) {
+                // Get the range of the match
+                val range = match.range
+                // Get the start position of the match
+                val start = range.first
+                // And the end position
+                val end = range.last
+                // Get the position of the number inside str (without the prefix)
+                val numPos = str.indexOf("PT", start) + 2
+                // And get the number, converting it to long
+                val number = str.substring(numPos, end).toLongOrNull()
+                // If the number has been converted to long correctly
+                if (number != null) {
+                    // Build a new string with the prefix given, and the number converted to hours
+                    val newPiece = str.substring(start, numPos) + (number*24) + "H"
+                    // Replace the range found with the new piece
+                    str = str.replaceRange(IntRange(start, end), newPiece)
+                }
+            }
+            return str
+        }
+
+        var result: String? = null
+
+        val resetSupported = try {
+            reader.reset()
+            true
+        } catch (e: IOException) {
+            false
+        }
+
+        if (resetSupported) {
+            // reset is supported, no need to copy the whole stream to another String (unless we have to fix the period)
+            val horizonFind = Scanner(reader)
+                .findWithinHorizon(INVALID_DAY_PERIOD_REGEX.toPattern(), 0)
+            if (horizonFind != null) {
+                reader.reset()
+                result = fixStringFromReader()
+            }
+        } else
+        // If reset is not supported, always try to fix the issue by copying the string
             result = fixStringFromReader()
 
         if (result != null)
