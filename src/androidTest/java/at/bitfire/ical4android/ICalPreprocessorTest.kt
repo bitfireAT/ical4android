@@ -65,6 +65,56 @@ class ICalPreprocessorTest {
     }
 
     @Test
+    fun testFixInvalidDurationTPrefixOffset() {
+        val invalid = "BEGIN:VEVENT\n" +
+                "LAST-MODIFIED:20230108T011226Z\n" +
+                "DTSTAMP:20230108T011226Z\n" +
+                "X-ECAL-SCHEDULE:63b0e38979739f000d5c1724\n" +
+                "DTSTART:20230101T015100Z\n" +
+                "DTEND:20230101T020600Z\n" +
+                "SUMMARY:This is a test event\n" +
+                "TRANSP:TRANSPARENT\n" +
+                "SEQUENCE:0\n" +
+                "UID:63b0e389453c5d000e1161ae\n" +
+                "PRIORITY:5\n" +
+                "X-MICROSOFT-CDO-IMPORTANCE:1\n" +
+                "CLASS:PUBLIC\n" +
+                "DESCRIPTION:Example description\n" +
+                "BEGIN:VALARM\n" +
+                "TRIGGER:-PT2D\n" +
+                "ACTION:DISPLAY\n" +
+                "DESCRIPTION:Reminder\n" +
+                "END:VALARM\n" +
+                "END:VEVENT"
+        val valid = "BEGIN:VEVENT\n" +
+                "LAST-MODIFIED:20230108T011226Z\n" +
+                "DTSTAMP:20230108T011226Z\n" +
+                "X-ECAL-SCHEDULE:63b0e38979739f000d5c1724\n" +
+                "DTSTART:20230101T015100Z\n" +
+                "DTEND:20230101T020600Z\n" +
+                "SUMMARY:This is a test event\n" +
+                "TRANSP:TRANSPARENT\n" +
+                "SEQUENCE:0\n" +
+                "UID:63b0e389453c5d000e1161ae\n" +
+                "PRIORITY:5\n" +
+                "X-MICROSOFT-CDO-IMPORTANCE:1\n" +
+                "CLASS:PUBLIC\n" +
+                "DESCRIPTION:Example description\n" +
+                "BEGIN:VALARM\n" +
+                "TRIGGER:-PT48H\n" +
+                "ACTION:DISPLAY\n" +
+                "DESCRIPTION:Reminder\n" +
+                "END:VALARM\n" +
+                "END:VEVENT"
+        ICalPreprocessor.fixInvalidDayOffset(StringReader(invalid)).let { result ->
+            assertEquals(valid, IOUtils.toString(result))
+        }
+        ICalPreprocessor.fixInvalidDayOffset(StringReader(valid)).let { result ->
+            assertEquals(valid, IOUtils.toString(result))
+        }
+    }
+
+    @Test
     fun testMsTimeZones() {
         javaClass.classLoader!!.getResourceAsStream("events/outlook1.ics").use { stream ->
             val reader = InputStreamReader(stream, Charsets.UTF_8)
