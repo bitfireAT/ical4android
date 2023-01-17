@@ -124,6 +124,7 @@ class ICalPreprocessorTest {
         } catch (e: Exception) {
             false
         }
+        // Check that the original value cannot be parsed to a Duration
         assertEquals(originalIsValid, false)
 
         val fixed = ICalPreprocessor.fixInvalidDayOffset(StringReader(original))
@@ -133,6 +134,7 @@ class ICalPreprocessorTest {
         } catch (e: Exception) {
             false
         }
+        // Check that the new value is a valid Duration
         assertEquals(fixedIsValid, true)
     }
 
