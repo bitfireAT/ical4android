@@ -13,6 +13,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.InputStreamReader
 import java.io.StringReader
+import java.time.Duration
 
 class ICalPreprocessorTest {
 
@@ -112,6 +113,27 @@ class ICalPreprocessorTest {
         ICalPreprocessor.fixInvalidDayOffset(StringReader(valid)).let { result ->
             assertEquals(valid, IOUtils.toString(result))
         }
+    }
+
+    @Test
+    fun testFixInvalidDuration() {
+        val original = "-PT2D"
+        val originalIsValid = try {
+            Duration.parse(original)
+            true
+        } catch (e: Exception) {
+            false
+        }
+        assertEquals(originalIsValid, false)
+
+        val fixed = ICalPreprocessor.fixInvalidDayOffset(StringReader(original))
+        val fixedIsValid = try {
+            Duration.parse(IOUtils.toString(fixed))
+            true
+        } catch (e: Exception) {
+            false
+        }
+        assertEquals(fixedIsValid, true)
     }
 
     @Test
