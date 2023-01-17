@@ -82,11 +82,12 @@ open class ICalendar {
 
             // apply hacks and workarounds that operate on plain text level
             val reader2 = ICalPreprocessor.fixInvalidUtcOffset(reader)
+            val reader3 = ICalPreprocessor.fixInvalidDayOffset(reader2)
 
             // parse stream
             val calendar: Calendar
             try {
-                calendar = CalendarBuilder().build(reader2)
+                calendar = CalendarBuilder().build(reader3)
             } catch(e: ParserException) {
                 throw InvalidCalendarException("Couldn't parse iCalendar", e)
             } catch(e: IllegalArgumentException) {
