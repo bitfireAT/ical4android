@@ -146,7 +146,7 @@ class ICalPreprocessorTest {
             val vEvent = calendar.getComponent(Component.VEVENT) as VEvent
 
             assertEquals("W. Europe Standard Time", vEvent.startDate.timeZone.id)
-            ICalPreprocessor.preProcess(calendar)
+            ICalPreprocessor.preprocessCalendar(calendar)
             assertEquals("Europe/Vienna", vEvent.startDate.timeZone.id)
         }
     }

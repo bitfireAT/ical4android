@@ -80,14 +80,13 @@ open class ICalendar {
             Ical4Android.log.fine("Parsing iCalendar stream")
             Ical4Android.checkThreadContextClassLoader()
 
-            // apply hacks and workarounds that operate on plain text level
-            val reader2 = ICalPreprocessor.fixInvalidUtcOffset(reader)
-            val reader3 = ICalPreprocessor.fixInvalidDayOffset(reader2)
+            // preprocess stream to work around some problems that can't be fixed later
+            val preprocessed = ICalPreprocessor.preprocessStream(reader)
 
             // parse stream
             val calendar: Calendar
             try {
-                calendar = CalendarBuilder().build(reader3)
+                calendar = CalendarBuilder().build(preprocessed)
             } catch(e: ParserException) {
                 throw InvalidCalendarException("Couldn't parse iCalendar", e)
             } catch(e: IllegalArgumentException) {
@@ -96,7 +95,7 @@ open class ICalendar {
 
             // apply ICalPreprocessor for increased compatibility
             try {
-                ICalPreprocessor.preProcess(calendar)
+                ICalPreprocessor.preprocessCalendar(calendar)
             } catch (e: Exception) {
                 Ical4Android.log.log(Level.WARNING, "Couldn't pre-process iCalendar", e)
             }
