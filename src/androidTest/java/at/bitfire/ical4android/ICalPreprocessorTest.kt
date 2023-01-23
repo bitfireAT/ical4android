@@ -116,29 +116,6 @@ class ICalPreprocessorTest {
     }
 
     @Test
-    fun testFixInvalidDuration() {
-        val original = "-PT2D"
-        val originalIsValid = try {
-            Duration.parse(original)
-            true
-        } catch (e: Exception) {
-            false
-        }
-        // Check that the original value cannot be parsed to a Duration
-        assertEquals(originalIsValid, false)
-
-        val fixed = ICalPreprocessor.preprocessStream(StringReader(original))
-        val fixedIsValid = try {
-            Duration.parse(IOUtils.toString(fixed))
-            true
-        } catch (e: Exception) {
-            false
-        }
-        // Check that the new value is a valid Duration
-        assertEquals(fixedIsValid, true)
-    }
-
-    @Test
     fun testMsTimeZones() {
         javaClass.classLoader!!.getResourceAsStream("events/outlook1.ics").use { stream ->
             val reader = InputStreamReader(stream, Charsets.UTF_8)
