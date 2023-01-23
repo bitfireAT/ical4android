@@ -57,10 +57,10 @@ class ICalPreprocessorTest {
                 "TZNAME:EST" +
                 "END:STANDARD\n" +
                 "END:VTIMEZONE"
-        ICalPreprocessor.fixInvalidUtcOffset(StringReader(invalid)).let { result ->
+        ICalPreprocessor.preprocessStream(StringReader(invalid)).let { result ->
             assertEquals(valid, IOUtils.toString(result))
         }
-        ICalPreprocessor.fixInvalidUtcOffset(StringReader(valid)).let { result ->
+        ICalPreprocessor.preprocessStream(StringReader(valid)).let { result ->
             assertEquals(valid, IOUtils.toString(result))
         }
     }
@@ -107,10 +107,10 @@ class ICalPreprocessorTest {
                 "DESCRIPTION:Reminder\n" +
                 "END:VALARM\n" +
                 "END:VEVENT"
-        ICalPreprocessor.fixInvalidDayOffset(StringReader(invalid)).let { result ->
+        ICalPreprocessor.preprocessStream(StringReader(invalid)).let { result ->
             assertEquals(valid, IOUtils.toString(result))
         }
-        ICalPreprocessor.fixInvalidDayOffset(StringReader(valid)).let { result ->
+        ICalPreprocessor.preprocessStream(StringReader(valid)).let { result ->
             assertEquals(valid, IOUtils.toString(result))
         }
     }
@@ -127,7 +127,7 @@ class ICalPreprocessorTest {
         // Check that the original value cannot be parsed to a Duration
         assertEquals(originalIsValid, false)
 
-        val fixed = ICalPreprocessor.fixInvalidDayOffset(StringReader(original))
+        val fixed = ICalPreprocessor.preprocessStream(StringReader(original))
         val fixedIsValid = try {
             Duration.parse(IOUtils.toString(fixed))
             true
