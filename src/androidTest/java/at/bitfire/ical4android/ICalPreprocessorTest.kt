@@ -102,7 +102,7 @@ class ICalPreprocessorTest {
                 "CLASS:PUBLIC\n" +
                 "DESCRIPTION:Example description\n" +
                 "BEGIN:VALARM\n" +
-                "TRIGGER:-PT48H\n" +
+                "TRIGGER:-P2D\n" +
                 "ACTION:DISPLAY\n" +
                 "DESCRIPTION:Reminder\n" +
                 "END:VALARM\n" +

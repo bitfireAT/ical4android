@@ -20,11 +20,11 @@ class FixInvalidDayOffsetPreprocessorTest {
     @Test
     fun test_FixString_DayOffsetFrom_Invalid() {
         assertEquals(
-            "DURATION:-PT24H",
+            "DURATION:-P1D",
             FixInvalidDayOffsetPreprocessor.fixString("DURATION:-PT1D"),
         )
         assertEquals(
-            "TRIGGER:-PT48H",
+            "TRIGGER:-P2D",
             FixInvalidDayOffsetPreprocessor.fixString("TRIGGER:-PT2D"),
         )
     }
