@@ -12,7 +12,7 @@ object FixInvalidDayOffsetPreprocessor : StreamPreprocessor() {
 
     override fun regexpForProblem() = Regex(
         "^(DURATION|TRIGGER):-?PT-?\\d+D$",
-        setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE),
+        setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE)
     )
 
     override fun fixString(original: String): String {

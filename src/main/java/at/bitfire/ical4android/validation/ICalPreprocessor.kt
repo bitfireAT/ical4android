@@ -33,8 +33,8 @@ object ICalPreprocessor {
     )
 
     val streamPreprocessors = arrayOf(
-        FixInvalidUtcOffsetPreprocessor,
-        FixInvalidDayOffsetPreprocessor
+        FixInvalidUtcOffsetPreprocessor,    // fix things like TZOFFSET(FROM,TO):+5730
+        FixInvalidDayOffsetPreprocessor     // fix things like DURATION:PT2D
     )
 
     /**
@@ -66,14 +66,14 @@ object ICalPreprocessor {
     @Suppress("UNCHECKED_CAST")
     private fun applyRules(property: Property) {
         propertyRules
-                .filter { rule -> rule.supportedType.isAssignableFrom(property::class.java) }
-                .forEach {
-                    val beforeStr = property.toString()
-                    (it as Rfc5545PropertyRule<Property>).applyTo(property)
-                    val afterStr = property.toString()
-                    if (beforeStr != afterStr)
-                        Ical4Android.log.log(Level.FINER, "$beforeStr -> $afterStr")
-                }
+            .filter { rule -> rule.supportedType.isAssignableFrom(property::class.java) }
+            .forEach {
+                val beforeStr = property.toString()
+                (it as Rfc5545PropertyRule<Property>).applyTo(property)
+                val afterStr = property.toString()
+                if (beforeStr != afterStr)
+                    Ical4Android.log.log(Level.FINER, "$beforeStr -> $afterStr")
+            }
     }
 
 }

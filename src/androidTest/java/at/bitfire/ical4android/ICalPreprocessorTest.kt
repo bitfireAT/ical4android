@@ -66,7 +66,7 @@ class ICalPreprocessorTest {
     }
 
     @Test
-    fun testFixInvalidDurationTPrefixOffset() {
+    fun testFixInvalidDuration() {
         val invalid = "BEGIN:VEVENT\n" +
                 "LAST-MODIFIED:20230108T011226Z\n" +
                 "DTSTAMP:20230108T011226Z\n" +
