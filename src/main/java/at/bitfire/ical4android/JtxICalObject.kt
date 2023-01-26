@@ -1405,8 +1405,6 @@ duration?.let(props::add)
         this.attachments = newData.attachments
         this.alarms = newData.alarms
         this.unknown = newData.unknown
-
-        //this.recurInstances = newData.recurInstances  // not necessary
     }
 
     /**

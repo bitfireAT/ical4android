@@ -144,7 +144,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
         client.query(
             JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account),
             null,
-            "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ? AND ${JtxContract.JtxICalObject.FILENAME} = ?", arrayOf(id.toString(), filename),
+            "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ? AND ${JtxContract.JtxICalObject.FILENAME} = ? AND ${JtxContract.JtxICalObject.RECURID} IS NULL", arrayOf(id.toString(), filename),
             null
         ).use { cursor ->
             Ical4Android.log.fine("queryByFilename: found ${cursor?.count} records in ${account.name}")
@@ -162,6 +162,28 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
      */
     fun queryByUID(uid: String): ContentValues? {
         client.query(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), null, "${JtxContract.JtxICalObject.UID} = ?", arrayOf(uid), null).use { cursor ->
+            Ical4Android.log.fine("queryByUID: found ${cursor?.count} records in ${account.name}")
+            if (cursor?.count != 1)
+                return null
+            cursor.moveToFirst()
+            return cursor.toValues()
+        }
+    }
+
+
+    /**
+     * @param [uid] of the entry that should be retrieved as content values
+     * @return Content Values of the found item with the given UID or null if the result was empty or more than 1
+     * The query checks for the [uid] within all collections of this account, not only the current collection.
+     */
+    fun queryRecur(uid: String, recurid: String, dtstart: Long): ContentValues? {
+        client.query(
+            JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account),
+            null,
+            "${JtxContract.JtxICalObject.UID} = ? AND ${JtxContract.JtxICalObject.RECURID} = ? AND ${JtxContract.JtxICalObject.DTSTART} = ?",
+            arrayOf(uid, recurid, dtstart.toString()),
+            null
+        ).use { cursor ->
             Ical4Android.log.fine("queryByUID: found ${cursor?.count} records in ${account.name}")
             if (cursor?.count != 1)
                 return null
