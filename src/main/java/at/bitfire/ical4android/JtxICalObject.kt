@@ -24,7 +24,10 @@ import net.fortuna.ical4j.model.component.VJournal
 import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
-import java.io.*
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.io.OutputStream
+import java.io.Reader
 import java.net.URI
 import java.net.URISyntaxException
 import java.time.format.DateTimeParseException
@@ -883,7 +886,10 @@ open class JtxICalObject(
             props += RRule(rrule)
         }
         recurid?.let { recurid ->
-            props += RecurrenceId(recurid)
+            props += if(dtstartTimezone == TZ_ALLDAY)
+                RecurrenceId(Date(recurid))
+            else
+                RecurrenceId(DateTime(recurid))
         }
 
         rdate?.let { rdateString ->
