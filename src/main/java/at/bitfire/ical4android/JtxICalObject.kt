@@ -100,6 +100,8 @@ open class JtxICalObject(
     var alarms: MutableList<Alarm> = mutableListOf()
     var unknown: MutableList<Unknown> = mutableListOf()
 
+    private var recurInstances: MutableList<JtxICalObject> = mutableListOf()
+
 
 
 
@@ -626,6 +628,17 @@ open class JtxICalObject(
 
             }
             calComponent.components.add(vAlarm)
+        }
+
+
+        recurInstances.forEach { recurInstance ->
+            val recurCalComponent = when (recurInstance.component) {
+                JtxContract.JtxICalObject.Component.VTODO.name -> VToDo(true /* generates DTSTAMP */)
+                JtxContract.JtxICalObject.Component.VJOURNAL.name -> VJournal(true /* generates DTSTAMP */)
+                else -> return null
+            }
+            ical.components += recurCalComponent
+            recurInstance.addProperties(recurCalComponent.properties)
         }
 
         ICalendar.softValidate(ical)
@@ -1386,6 +1399,8 @@ duration?.let(props::add)
         this.attachments = newData.attachments
         this.alarms = newData.alarms
         this.unknown = newData.unknown
+
+        //this.recurInstances = newData.recurInstances  // not necessary
     }
 
     /**
@@ -1562,11 +1577,18 @@ duration?.let(props::add)
             // Take care of uknown properties
             val unknownContentValues = getUnknownContentValues()
             unknownContentValues.forEach { unknownValues ->
-            val unknwn = Unknown().apply {
-                unknownValues.getAsLong(JtxContract.JtxUnknown.ID)?.let { id -> this.unknownId = id }
-                unknownValues.getAsString(JtxContract.JtxUnknown.UNKNOWN_VALUE)?.let { value -> this.value = value }
+                val unknwn = Unknown().apply {
+                    unknownValues.getAsLong(JtxContract.JtxUnknown.ID)?.let { id -> this.unknownId = id }
+                    unknownValues.getAsString(JtxContract.JtxUnknown.UNKNOWN_VALUE)?.let { value -> this.value = value }
+                }
+                unknown.add(unknwn)
             }
-            unknown.add(unknwn)
+
+        getRecurInstancesContentValues().forEach { recurInstanceValues ->
+            recurInstances.add(
+                JtxICalObject(collection).apply { populateFromContentValues(recurInstanceValues) }
+            )
+
         }
     }
 
@@ -1574,54 +1596,47 @@ duration?.let(props::add)
      * Puts the current JtxICalObjects attributes into Content Values
      * @return The JtxICalObject attributes as [ContentValues] (exluding list properties)
      */
-    private fun toContentValues(): ContentValues {
+    private fun toContentValues() = ContentValues().apply {
+            put(JtxContract.JtxICalObject.ID, id)
+            put(JtxContract.JtxICalObject.SUMMARY, summary)
+            put(JtxContract.JtxICalObject.DESCRIPTION, description)
+            put(JtxContract.JtxICalObject.COMPONENT, component)
+            put(JtxContract.JtxICalObject.STATUS, status)
+            put(JtxContract.JtxICalObject.CLASSIFICATION, classification)
+            put(JtxContract.JtxICalObject.PRIORITY, priority)
+            put(JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID, collectionId)
+            put(JtxContract.JtxICalObject.UID, uid)
+            put(JtxContract.JtxICalObject.COLOR, color)
+            put(JtxContract.JtxICalObject.URL, url)
+            put(JtxContract.JtxICalObject.GEO_LAT, geoLat)
+            put(JtxContract.JtxICalObject.GEO_LONG, geoLong)
+            put(JtxContract.JtxICalObject.LOCATION, location)
+            put(JtxContract.JtxICalObject.LOCATION_ALTREP, locationAltrep)
+            put(JtxContract.JtxICalObject.PERCENT, percent)
+            put(JtxContract.JtxICalObject.DTSTAMP, dtstamp)
+            put(JtxContract.JtxICalObject.DTSTART, dtstart)
+            put(JtxContract.JtxICalObject.DTSTART_TIMEZONE, dtstartTimezone)
+            put(JtxContract.JtxICalObject.DTEND, dtend)
+            put(JtxContract.JtxICalObject.DTEND_TIMEZONE, dtendTimezone)
+            put(JtxContract.JtxICalObject.COMPLETED, completed)
+            put(JtxContract.JtxICalObject.COMPLETED_TIMEZONE, completedTimezone)
+            put(JtxContract.JtxICalObject.DUE, due)
+            put(JtxContract.JtxICalObject.DUE_TIMEZONE, dueTimezone)
+            put(JtxContract.JtxICalObject.DURATION, duration)
+            put(JtxContract.JtxICalObject.CREATED, created)
+            put(JtxContract.JtxICalObject.LAST_MODIFIED, lastModified)
+            put(JtxContract.JtxICalObject.SEQUENCE, sequence)
+            put(JtxContract.JtxICalObject.RRULE, rrule)
+            put(JtxContract.JtxICalObject.RDATE, rdate)
+            put(JtxContract.JtxICalObject.EXDATE, exdate)
+            put(JtxContract.JtxICalObject.RECURID, recurid)
 
-        val values = ContentValues()
-        values.put(JtxContract.JtxICalObject.ID, id)
-        summary.let { values.put(JtxContract.JtxICalObject.SUMMARY, it)  }
-        description.let { values.put(JtxContract.JtxICalObject.DESCRIPTION, it) }
-        values.put(JtxContract.JtxICalObject.COMPONENT, component)
-        status.let { values.put(JtxContract.JtxICalObject.STATUS, it) }
-        classification.let { values.put(JtxContract.JtxICalObject.CLASSIFICATION, it) }
-        priority.let { values.put(JtxContract.JtxICalObject.PRIORITY, it) }
-        values.put(JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID, collectionId)
-        values.put(JtxContract.JtxICalObject.UID, uid)
-        values.put(JtxContract.JtxICalObject.COLOR, color)
-        values.put(JtxContract.JtxICalObject.URL, url)
-        geoLat.let { values.put(JtxContract.JtxICalObject.GEO_LAT, it) }
-        geoLong.let { values.put(JtxContract.JtxICalObject.GEO_LONG, it) }
-        location.let { values.put(JtxContract.JtxICalObject.LOCATION, it) }
-        locationAltrep.let { values.put(JtxContract.JtxICalObject.LOCATION_ALTREP, it) }
-        percent.let { values.put(JtxContract.JtxICalObject.PERCENT, it) }
-        values.put(JtxContract.JtxICalObject.DTSTAMP, dtstamp)
-        dtstart.let { values.put(JtxContract.JtxICalObject.DTSTART, it) }
-        dtstartTimezone.let { values.put(JtxContract.JtxICalObject.DTSTART_TIMEZONE, it) }
-        dtend.let { values.put(JtxContract.JtxICalObject.DTEND, it) }
-        dtendTimezone.let { values.put(JtxContract.JtxICalObject.DTEND_TIMEZONE, it) }
-        completed.let { values.put(JtxContract.JtxICalObject.COMPLETED, it) }
-        completedTimezone.let { values.put(JtxContract.JtxICalObject.COMPLETED_TIMEZONE, it) }
-        due.let { values.put(JtxContract.JtxICalObject.DUE, it) }
-        dueTimezone.let { values.put(JtxContract.JtxICalObject.DUE_TIMEZONE, it) }
-        duration.let { values.put(JtxContract.JtxICalObject.DURATION, it) }
-
-        created.let { values.put(JtxContract.JtxICalObject.CREATED, it) }
-        lastModified.let { values.put(JtxContract.JtxICalObject.LAST_MODIFIED, it) }
-        sequence.let { values.put(JtxContract.JtxICalObject.SEQUENCE, it) }
-
-        rrule.let { values.put(JtxContract.JtxICalObject.RRULE, it) }
-        rdate.let { values.put(JtxContract.JtxICalObject.RDATE, it) }
-        exdate.let { values.put(JtxContract.JtxICalObject.EXDATE, it) }
-        recurid.let { values.put(JtxContract.JtxICalObject.RECURID, it) }
-
-        fileName.let { values.put(JtxContract.JtxICalObject.FILENAME, it) }
-        eTag.let { values.put(JtxContract.JtxICalObject.ETAG, it) }
-        scheduleTag.let { values.put(JtxContract.JtxICalObject.SCHEDULETAG, it) }
-        values.put(JtxContract.JtxICalObject.FLAGS, flags)
-        values.put(JtxContract.JtxICalObject.DIRTY, dirty)
-
-        return values
-    }
-
+            put(JtxContract.JtxICalObject.FILENAME, fileName)
+            put(JtxContract.JtxICalObject.ETAG, eTag)
+            put(JtxContract.JtxICalObject.SCHEDULETAG, scheduleTag)
+            put(JtxContract.JtxICalObject.FLAGS, flags)
+            put(JtxContract.JtxICalObject.DIRTY, dirty)
+        }
 
     /**
      * @return The categories of the given JtxICalObject as a list of ContentValues
@@ -1813,5 +1828,28 @@ duration?.let(props::add)
             }
         }
         return unknownValues
+    }
+
+    /**
+     * @return The unknown properties of the given JtxICalObject as a list of ContentValues
+     */
+    private fun getRecurInstancesContentValues(): List<ContentValues> {
+
+        val instancesUrl = JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(collection.account)
+        val instancesValues: MutableList<ContentValues> = mutableListOf()
+        if(rrule?.isNotEmpty() == true) {
+            collection.client.query(
+                instancesUrl,
+                null,
+                "${JtxContract.JtxICalObject.UID} = ? AND ${JtxContract.JtxICalObject.RECURID} IS NOT NULL AND ${JtxContract.JtxICalObject.SEQUENCE} > 0",
+                arrayOf(uid),
+                null
+            )?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    instancesValues.add(cursor.toValues())
+                }
+            }
+        }
+        return instancesValues
     }
 }
