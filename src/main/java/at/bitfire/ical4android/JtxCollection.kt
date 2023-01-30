@@ -234,7 +234,13 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
      * @return a string with all JtxICalObjects within the collection as iCalendar
      */
     fun getICSForCollection(): String {
-        client.query(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), null, "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ? AND ${JtxContract.JtxICalObject.DELETED} = ?", arrayOf(id.toString(), "0"), null).use { cursor ->
+        client.query(
+            JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account),
+            null,
+            "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ? AND ${JtxContract.JtxICalObject.DELETED} = ? AND (${JtxContract.JtxICalObject.RECURID} IS NULL OR (${JtxContract.JtxICalObject.RECURID} IS NOT NULL AND ${JtxContract.JtxICalObject.SEQUENCE} > 0))",
+            arrayOf(id.toString(), "0"),
+            null
+        ).use { cursor ->
             Ical4Android.log.fine("getICSForCollection: found ${cursor?.count} records in ${account.name}")
 
             val ical = Calendar()
