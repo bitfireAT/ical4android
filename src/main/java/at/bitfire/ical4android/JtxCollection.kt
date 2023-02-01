@@ -237,7 +237,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
         client.query(
             JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account),
             null,
-            "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ? AND ${JtxContract.JtxICalObject.DELETED} = ? AND (${JtxContract.JtxICalObject.RECURID} IS NULL OR (${JtxContract.JtxICalObject.RECURID} IS NOT NULL AND ${JtxContract.JtxICalObject.SEQUENCE} > 0))",
+            "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ? AND ${JtxContract.JtxICalObject.DELETED} = ? AND ${JtxContract.JtxICalObject.RECURID} IS NULL",
             arrayOf(id.toString(), "0"),
             null
         ).use { cursor ->
