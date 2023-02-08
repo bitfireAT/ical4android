@@ -71,6 +71,26 @@ class ICalendarTest {
 	}
 
 	@Test
+	fun testFromReader_invalidProperty() {
+		ICalendar.fromReader(
+			StringReader(
+				"BEGIN:VCALENDAR\n" +
+				"BEGIN:VEVENT\n" +
+				"LAST-MODIFIED:20230108T011226Z\n" +
+				"DTSTAMP:20230108T011226Z\n" +
+				"DTSTART:20230101T015100Z\n" +
+				"DTEND:20230101T020600Z\n" +
+				"SUMMARY:This is a test event\n" +
+				"DESCRIPTION:Example description\n" +
+				"UID:63b0e389453c5d000e1161ae\n" +
+				"GEO:0\n" +
+				"END:VEVENT" +
+				"END:VCALENDAR"
+			)
+		)
+	}
+
+	@Test
 	fun testMinifyVTimezone_UTC() {
 		// Keep the only observance for UTC.
 		// DATE-TIME values in UTC are usually noted with ...Z and don't have a VTIMEZONE,
