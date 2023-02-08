@@ -6,8 +6,15 @@ package at.bitfire.ical4android.validation
 
 import org.junit.Assert.*
 import org.junit.Test
+import java.time.Duration
 
 class FixInvalidDayOffsetPreprocessorTest {
+
+    private fun fixStringAndAssert(expected: String, string: String) {
+        val fixed = FixInvalidDayOffsetPreprocessor.fixString(string)
+        Duration.parse(fixed.substring(fixed.indexOf(':') + 1))
+        assertEquals(expected, fixed)
+    }
 
     @Test
     fun test_FixString_NoOccurrence() {
@@ -19,26 +26,17 @@ class FixInvalidDayOffsetPreprocessorTest {
 
     @Test
     fun test_FixString_DayOffsetFrom_Invalid() {
-        assertEquals(
-            "DURATION:-P1D",
-            FixInvalidDayOffsetPreprocessor.fixString("DURATION:-PT1D"),
-        )
-        assertEquals(
-            "TRIGGER:-P2D",
-            FixInvalidDayOffsetPreprocessor.fixString("TRIGGER:-PT2D"),
-        )
+        fixStringAndAssert("DURATION:-P1D", "DURATION:-PT1D")
+        fixStringAndAssert("TRIGGER:-P2D", "TRIGGER:-PT2D")
+
+        fixStringAndAssert("DURATION:-P1D", "DURATION:-P1DT")
+        fixStringAndAssert("TRIGGER:-P2D", "TRIGGER:-P2DT")
     }
 
     @Test
     fun test_FixString_DayOffsetFrom_Valid() {
-        assertEquals(
-            "DURATION:-PT12H",
-            FixInvalidDayOffsetPreprocessor.fixString("DURATION:-PT12H"),
-        )
-        assertEquals(
-            "TRIGGER:-PT12H",
-            FixInvalidDayOffsetPreprocessor.fixString("TRIGGER:-PT12H"),
-        )
+        fixStringAndAssert("DURATION:-PT12H", "DURATION:-PT12H")
+        fixStringAndAssert("TRIGGER:-PT12H", "TRIGGER:-PT12H")
     }
 
     @Test
