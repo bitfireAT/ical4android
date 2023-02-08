@@ -10,7 +10,7 @@ import java.time.Duration
 
 class FixInvalidDayOffsetPreprocessorTest {
 
-    private fun fixStringAndCheck(string: String, expected: String) {
+    private fun fixStringAndAssert(expected: String, string: String) {
         val fixed = FixInvalidDayOffsetPreprocessor.fixString(string)
         Duration.parse(fixed.substring(fixed.indexOf(':') + 1))
         assertEquals(expected, fixed)
@@ -26,23 +26,17 @@ class FixInvalidDayOffsetPreprocessorTest {
 
     @Test
     fun test_FixString_DayOffsetFrom_Invalid() {
-        fixStringAndCheck("DURATION:-PT1D", "DURATION:-P1D")
-        fixStringAndCheck("TRIGGER:-PT2D", "TRIGGER:-P2D")
+        fixStringAndAssert("DURATION:-P1D", "DURATION:-PT1D")
+        fixStringAndAssert("TRIGGER:-P2D", "TRIGGER:-PT2D")
 
-        fixStringAndCheck("DURATION:-P1DT", "DURATION:-P1D")
-        fixStringAndCheck("TRIGGER:-P2DT", "TRIGGER:-P2D")
+        fixStringAndAssert("DURATION:-P1D", "DURATION:-P1DT")
+        fixStringAndAssert("TRIGGER:-P2D", "TRIGGER:-P2DT")
     }
 
     @Test
     fun test_FixString_DayOffsetFrom_Valid() {
-        fixStringAndCheck(
-            "DURATION:-PT12H",
-            "DURATION:-PT12H",
-        )
-        fixStringAndCheck(
-            "TRIGGER:-PT12H",
-            "TRIGGER:-PT12H",
-        )
+        fixStringAndAssert("DURATION:-PT12H", "DURATION:-PT12H")
+        fixStringAndAssert("TRIGGER:-PT12H", "TRIGGER:-PT12H")
     }
 
     @Test

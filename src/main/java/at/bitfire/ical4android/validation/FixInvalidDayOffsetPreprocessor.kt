@@ -6,7 +6,7 @@ package at.bitfire.ical4android.validation
 
 /**
  * Fixes durations with day offsets with the 'T' prefix.
- * See also https://github.com/bitfireAT/icsx5/issues/100
+ * See also https://github.com/bitfireAT/ical4android/issues/77
  */
 object FixInvalidDayOffsetPreprocessor : StreamPreprocessor() {
 
