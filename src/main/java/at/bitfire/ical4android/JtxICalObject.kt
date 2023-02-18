@@ -81,7 +81,7 @@ open class JtxICalObject(
     var rdate: String? = null    //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5.2
     var recurid: String? = null  //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5
 
-    var rstatus: String? = null
+    //var rstatus: String? = null
 
     var collectionId: Long = collection.id
 
@@ -201,7 +201,8 @@ open class JtxICalObject(
     companion object {
 
         const val X_PROP_COMPLETEDTIMEZONE = "X-COMPLETEDTIMEZONE"
-        const val X_PARAM_ATTACH_LABEL = "X-LABEL"     // used for filename
+        const val X_PARAM_ATTACH_LABEL = "X-LABEL"     // used for filename in KOrganizer
+        const val X_PARAM_FILENAME = "FILENAME"     // used for filename in GNOME Evolution
 
         /**
          * Parses an iCalendar resource and extracts the VTODOs and/or VJOURNALS.
@@ -426,6 +427,10 @@ open class JtxICalObject(
                             prop.parameters?.remove(it)
                         }
                         prop.parameters?.getParameter<XParameter>(X_PARAM_ATTACH_LABEL)?.let {
+                            attachment.filename = it.value
+                            prop.parameters.remove(it)
+                        }
+                        prop.parameters?.getParameter<XParameter>(X_PARAM_FILENAME)?.let {
                             attachment.filename = it.value
                             prop.parameters.remove(it)
                         }
@@ -822,7 +827,10 @@ open class JtxICalObject(
                     val attachmentBytes = ParcelFileDescriptor.AutoCloseInputStream(attachmentFile).readBytes()
                     val att = Attach(attachmentBytes).apply {
                         attachment.fmttype?.let { this.parameters.add(FmtType(it)) }
-                        attachment.filename?.let { this.parameters.add(XParameter(X_PARAM_ATTACH_LABEL, it)) }
+                        attachment.filename?.let {
+                            this.parameters.add(XParameter(X_PARAM_ATTACH_LABEL, it))
+                            this.parameters.add(XParameter(X_PARAM_FILENAME, it))
+                        }
                     }
                     props += att
 
@@ -830,7 +838,10 @@ open class JtxICalObject(
                     attachment.uri?.let { uri ->
                         val att = Attach(URI(uri)).apply {
                             attachment.fmttype?.let { this.parameters.add(FmtType(it)) }
-                            attachment.filename?.let { this.parameters.add(XParameter(X_PARAM_ATTACH_LABEL, it)) }
+                            attachment.filename?.let {
+                                this.parameters.add(XParameter(X_PARAM_ATTACH_LABEL, it))
+                                this.parameters.add(XParameter(X_PARAM_FILENAME, it))
+                            }
                         }
                         props += att
                     }
