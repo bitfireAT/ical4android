@@ -1119,10 +1119,16 @@ object JtxContract {
         const val DESCRIPTION = "description"
 
         /**
-         * Purpose:  This column/property defines the owner of the collection.
+         * Purpose:  This column/property defines the owner url of the collection.
          * Type: [String]
          */
         const val OWNER = "owner"
+
+        /**
+         * Purpose:  This column/property defines the display name of the owner of the collection.
+         * Type: [String]
+         */
+        const val OWNER_DISPLAYNAME = "ownerDisplayname"
 
         /**
          * Purpose:  This column/property defines the color of the collection items.
