@@ -4,8 +4,6 @@
 
 package at.bitfire.ical4android.validation
 
-import java.time.Duration
-
 /**
  * Fixes durations with day offsets with the 'T' prefix.
  * See also https://github.com/bitfireAT/ical4android/issues/77
