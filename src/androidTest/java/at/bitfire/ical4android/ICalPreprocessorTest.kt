@@ -4,16 +4,17 @@
 
 package at.bitfire.ical4android
 
+import at.bitfire.ical4android.validation.FixInvalidDayOffsetPreprocessor
 import at.bitfire.ical4android.validation.ICalPreprocessor
+import java.io.InputStreamReader
+import java.io.StringReader
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Component
 import net.fortuna.ical4j.model.component.VEvent
 import org.apache.commons.io.IOUtils
+import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.io.InputStreamReader
-import java.io.StringReader
-import java.time.Duration
 
 class ICalPreprocessorTest {
 
@@ -67,51 +68,76 @@ class ICalPreprocessorTest {
 
     @Test
     fun testFixInvalidDuration() {
-        val invalid = "BEGIN:VEVENT\n" +
-                "LAST-MODIFIED:20230108T011226Z\n" +
-                "DTSTAMP:20230108T011226Z\n" +
-                "X-ECAL-SCHEDULE:63b0e38979739f000d5c1724\n" +
-                "DTSTART:20230101T015100Z\n" +
-                "DTEND:20230101T020600Z\n" +
-                "SUMMARY:This is a test event\n" +
+        val calendar = "BEGIN:VCALENDAR\n" +
+                "PRODID:-//E-DIARY//E-DIARY 1.0//EN\n" +
+                "VERSION:2.0\n" +
+                "METHOD:PUBLISH\n" +
+                "X-WR-CALNAME:Calname\n" +
+                "X-Built-On-Cache-Miss:true\n" +
+                "BEGIN:VEVENT\n" +
+                "LAST-MODIFIED:20230223T030355Z\n" +
+                "DTSTAMP:20230223T030355Z\n" +
+                "LOCATION:MCG\n" +
+                "X-ECAL-SCHEDULE:508efe5dfb0615bb30000001\n" +
+                "DTSTART:20230317T084000Z\n" +
+                "DTEND:20230317T114000Z\n" +
+                "SUMMARY:Example Event Summary\n" +
                 "TRANSP:TRANSPARENT\n" +
                 "SEQUENCE:0\n" +
-                "UID:63b0e389453c5d000e1161ae\n" +
+                "UID:63945a154c410f17fb7528a7\n" +
                 "PRIORITY:5\n" +
                 "X-MICROSOFT-CDO-IMPORTANCE:1\n" +
                 "CLASS:PUBLIC\n" +
-                "DESCRIPTION:Example description\n" +
+                "DESCRIPTION:Event Description\n" +
                 "BEGIN:VALARM\n" +
-                "TRIGGER:-PT2D\n" +
+                "TRIGGER:-P2DT\n" +
                 "ACTION:DISPLAY\n" +
                 "DESCRIPTION:Reminder\n" +
                 "END:VALARM\n" +
-                "END:VEVENT"
-        val valid = "BEGIN:VEVENT\n" +
-                "LAST-MODIFIED:20230108T011226Z\n" +
-                "DTSTAMP:20230108T011226Z\n" +
-                "X-ECAL-SCHEDULE:63b0e38979739f000d5c1724\n" +
-                "DTSTART:20230101T015100Z\n" +
-                "DTEND:20230101T020600Z\n" +
-                "SUMMARY:This is a test event\n" +
+                "BEGIN:VALARM\n" +
+                "TRIGGER:-PT15M\n" +
+                "ACTION:DISPLAY\n" +
+                "DESCRIPTION:Reminder\n" +
+                "END:VALARM\n" +
+                "END:VEVENT\n" +
+                "BEGIN:VEVENT\n" +
+                "LAST-MODIFIED:20230223T030355Z\n" +
+                "DTSTAMP:20230223T030355Z\n" +
+                "LOCATION:MCG\n" +
+                "X-ECAL-SCHEDULE:508efe5dfb0615bb30000001\n" +
+                "DTSTART:20230325T024500Z\n" +
+                "DTEND:20230325T054500Z\n" +
+                "SUMMARY:Example Event Summary 2\n" +
                 "TRANSP:TRANSPARENT\n" +
                 "SEQUENCE:0\n" +
-                "UID:63b0e389453c5d000e1161ae\n" +
+                "UID:63945a154c410f17fb7528a8\n" +
                 "PRIORITY:5\n" +
                 "X-MICROSOFT-CDO-IMPORTANCE:1\n" +
                 "CLASS:PUBLIC\n" +
-                "DESCRIPTION:Example description\n" +
+                "DESCRIPTION:Example Event Description 2\n" +
                 "BEGIN:VALARM\n" +
-                "TRIGGER:-P2D\n" +
+                "TRIGGER:-P5DT\n" +
                 "ACTION:DISPLAY\n" +
                 "DESCRIPTION:Reminder\n" +
                 "END:VALARM\n" +
-                "END:VEVENT"
-        ICalPreprocessor.preprocessStream(StringReader(invalid)).let { result ->
-            assertEquals(valid, IOUtils.toString(result))
+                "BEGIN:VALARM\n" +
+                "TRIGGER:-P2DT\n" +
+                "ACTION:DISPLAY\n" +
+                "DESCRIPTION:Reminder\n" +
+                "END:VALARM\n" +
+                "END:VEVENT\n" +
+                "END:VCALENDAR"
+
+        val isValid = try {
+            CalendarBuilder().build(StringReader(calendar))
+            true
+        } catch (e: Exception) {
+            false
         }
-        ICalPreprocessor.preprocessStream(StringReader(valid)).let { result ->
-            assertEquals(valid, IOUtils.toString(result))
+        Assert.assertFalse(isValid)
+
+        FixInvalidDayOffsetPreprocessor.preprocess(StringReader(calendar)).let { result ->
+            CalendarBuilder().build(result)
         }
     }
 
