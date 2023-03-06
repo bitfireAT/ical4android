@@ -4,6 +4,8 @@
 
 package at.bitfire.ical4android.validation
 
+import java.time.Duration
+
 /**
  * Fixes durations with day offsets with the 'T' prefix.
  * See also https://github.com/bitfireAT/ical4android/issues/77
@@ -22,12 +24,13 @@ object FixInvalidDayOffsetPreprocessor : StreamPreprocessor() {
         var s: String = original
 
         // Find all matches for the expression
-        val found = regexpForProblem().find(s) ?: return s
-        for (match in found.groupValues) {
-            val fixed = match
+        val found = regexpForProblem().findAll(s)
+        for (match in found) {
+            val matchStr = match.value
+            val fixed = matchStr
                 .replace("PT", "P")
                 .replace("DT", "D")
-            s = s.replace(match, fixed)
+            s = s.replace(matchStr, fixed)
         }
         return s
     }
