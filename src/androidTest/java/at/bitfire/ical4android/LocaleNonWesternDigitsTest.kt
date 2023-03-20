@@ -4,14 +4,13 @@
 
 package at.bitfire.ical4android
 
+import java.time.ZoneOffset
+import java.util.Locale
 import net.fortuna.ical4j.model.property.TzOffsetFrom
 import org.junit.AfterClass
 import org.junit.Assert.assertEquals
 import org.junit.BeforeClass
-import org.junit.ComparisonFailure
 import org.junit.Test
-import java.time.ZoneOffset
-import java.util.*
 
 class LocaleNonWesternDigitsTest {
 
@@ -45,7 +44,7 @@ class LocaleNonWesternDigitsTest {
         assertEquals("2020", String.format(Locale.ROOT, "%d", 2020))
     }
 
-    @Test(expected = ComparisonFailure::class)      // should not fail in future
+    @Test()
     fun testLocale_ical4j() {
         val offset = TzOffsetFrom(ZoneOffset.ofHours(1))
         val iCal = offset.toString()
