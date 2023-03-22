@@ -1,0 +1,764 @@
+BEGIN:VCALENDAR
+PRODID:-//E-DIARY//E-DIARY 1.0//EN
+VERSION:2.0
+METHOD:PUBLISH
+X-WR-CALNAME:Collingwood Magpies Football Club
+X-Built-On-Cache-Miss:true
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:MCG
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230317T084000Z
+DTEND:20230317T114000Z
+SUMMARY:Round 1: Geelong Cats V Collingwood
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f17fb7528a7
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 1 | Watch live on Channel 7\, Kayo | Join the conversatio
+ n @CollingwoodFC #GoPies \n\nCan't get the game? Follow the action live at
+  the Collingwood Match Centre\n\nMatch Centre\nhttps://ecal.ai/f/jS6Wx/TS6
+ N\n\nBuy Tickets\nhttps://ecal.ai/f/kcCl6/TS6N\n\nVisit our Superstore\nht
+ tps://ecal.ai/f/jS6Wy/TS6N\n\nDownload our Official Club App\nhttps://ecal
+ .ai/f/jS6Wz/TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6WB/TS6N\n\nTwitter\nhtt
+ ps://ecal.ai/f/jS6WC/TS6N\n\nYouTube\nhttps://ecal.ai/f/jS6WD/TS6N\n\nInst
+ agram\nhttps://ecal.ai/f/jS6WF/TS6N\n\nManage my ECAL\nhttps://support.eca
+ l.com
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:MCG
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230325T024500Z
+DTEND:20230325T054500Z
+SUMMARY:Round 2: Collingwood V Port Adelaide
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f17fb7528a8
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 2 | Watch live on Channel 7\, Kayo | Join the conversatio
+ n @CollingwoodFC #GoPies\n\nGet to the game! Purchase your tickets now!\n\
+ nBuy Tickets\nhttps://ecal.ai/f/kcCl7/TS6N\n\nJoin the Magpie Army\nhttps:
+ //ecal.ai/f/jS6WG/TS6N\n\nVisit our Superstore\nhttps://ecal.ai/f/jS6WH/TS
+ 6N\n\nDownload our Official Club App\nhttps://ecal.ai/f/jS6WJ/TS6N\n\nFace
+ book\nhttps://ecal.ai/f/jS6WK/TS6N\n\nTwitter\nhttps://ecal.ai/f/jS6WL/TS6
+ N\n\nYouTube\nhttps://ecal.ai/f/jS6WM/TS6N\n\nInstagram\nhttps://ecal.ai/f
+ /jS6WN/TS6N\n\nManage my ECAL\nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P5DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:MCG
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230331T085000Z
+DTEND:20230331T115000Z
+SUMMARY:Round 3: Collingwood V Richmond
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f17fb7528a9
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 3 | Watch live on Channel 7\, Kayo | Join the conversatio
+ n @CollingwoodFC #GoPies\n\nGet to the game! Purchase your tickets now!\n\
+ nBuy Tickets\nhttps://ecal.ai/f/kcCl8/TS6N\n\nJoin the Magpie Army\nhttps:
+ //ecal.ai/f/jS6WP/TS6N\n\nVisit our Superstore\nhttps://ecal.ai/f/jS6WQ/TS
+ 6N\n\nDownload our Official Club App\nhttps://ecal.ai/f/jS6WR/TS6N\n\nFace
+ book\nhttps://ecal.ai/f/jS6WS/TS6N\n\nTwitter\nhttps://ecal.ai/f/jS6WT/TS6
+ N\n\nYouTube\nhttps://ecal.ai/f/jS6WV/TS6N\n\nInstagram\nhttps://ecal.ai/f
+ /jS6WW/TS6N\n\nManage my ECAL\nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P5DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:Gabba
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230406T093500Z
+DTEND:20230406T123500Z
+SUMMARY:Round 4: Brisbane Lions V Collingwood
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f17fb7528aa
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 4 | Watch live on Kayo | Join the conversation @Collingwo
+ odFC #GoPies \n\nCan't get the game? Follow the action live at the Colling
+ wood Match Centre\n\nMatch Centre\nhttps://ecal.ai/f/jS6WX/TS6N\n\nBuy Tic
+ kets\nhttps://ecal.ai/f/kcCl9/TS6N\n\nVisit our Superstore\nhttps://ecal.a
+ i/f/jS6WY/TS6N\n\nDownload our Official Club App\nhttps://ecal.ai/f/jS6WZ/
+ TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6X1/TS6N\n\nTwitter\nhttps://ecal.ai
+ /f/jS6X2/TS6N\n\nYouTube\nhttps://ecal.ai/f/jS6X3/TS6N\n\nInstagram\nhttps
+ ://ecal.ai/f/jS6X5/TS6N\n\nManage my ECAL\nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:Adelaide Oval
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230416T065000Z
+DTEND:20230416T095000Z
+SUMMARY:Round 5: Collingwood V St Kilda
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f17fb7528ab
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 5 | Watch live on Kayo | Join the conversation @Collingwo
+ odFC #GoPies\n\nGet to the game! Purchase your tickets now!\n\nBuy Tickets
+ \nhttps://ecal.ai/f/jSgPX/TS6N\n\nJoin the Magpie Army\nhttps://ecal.ai/f/
+ jSdvf/TS6N\n\nVisit our Superstore\nhttps://ecal.ai/f/jS6X8/TS6N\n\nDownlo
+ ad our Official Club App\nhttps://ecal.ai/f/jS6X9/TS6N\n\nFacebook\nhttps:
+ //ecal.ai/f/jS6Xb/TS6N\n\nTwitter\nhttps://ecal.ai/f/jS6Xc/TS6N\n\nYouTube
+ \nhttps://ecal.ai/f/jS6Xd/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6Xf/TS6N\
+ n\nManage my ECAL\nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P5DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:MCG
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230425T052000Z
+DTEND:20230425T082000Z
+SUMMARY:Round 6: Collingwood V Essendon
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f17fb7528ac
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 6 | Watch live on Kayo | Join the conversation @Collingwo
+ odFC #GoPies\n\nGet to the game! Purchase your tickets now!\n\nBuy Tickets
+ \nhttps://ecal.ai/f/kcClb/TS6N\n\nJoin the Magpie Army\nhttps://ecal.ai/f/
+ jS6Xg/TS6N\n\nVisit our Superstore\nhttps://ecal.ai/f/jS6Xh/TS6N\n\nDownlo
+ ad our Official Club App\nhttps://ecal.ai/f/jS6Xj/TS6N\n\nFacebook\nhttps:
+ //ecal.ai/f/jS6Xk/TS6N\n\nTwitter\nhttps://ecal.ai/f/jS6Xl/TS6N\n\nYouTube
+ \nhttps://ecal.ai/f/jS6Xm/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6Xn/TS6N\
+ n\nManage my ECAL\nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P5DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:MCG
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230507T052000Z
+DTEND:20230507T082000Z
+SUMMARY:Round 8: Collingwood V Sydney Swans
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f71643dece5
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 8 | Watch live on Kayo | Join the conversation @Collingwo
+ odFC #GoPies\n\nGet to the game! Purchase your tickets now!\n\nBuy Tickets
+ \nhttps://ecal.ai/f/kcClc/TS6N\n\nJoin the Magpie Army\nhttps://ecal.ai/f/
+ jS6Wp/TS6N\n\nVisit our Superstore\nhttps://ecal.ai/f/jS6Wq/TS6N\n\nDownlo
+ ad our Official Club App\nhttps://ecal.ai/f/jS6Wr/TS6N\n\nFacebook\nhttps:
+ //ecal.ai/f/jS6Ws/TS6N\n\nTwitter\nhttps://ecal.ai/f/jS6Wt/TS6N\n\nYouTube
+ \nhttps://ecal.ai/f/jS6Wv/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6Ww/TS6N\
+ n\nManage my ECAL\nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P5DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:MCG
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230514T064000Z
+DTEND:20230514T094000Z
+SUMMARY:Round 9: Collingwood V GWS Giants
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f1d557e01d4
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 9 | Watch live on Kayo | Join the conversation @Collingwo
+ odFC #GoPies\n\nGet to the game! Purchase your tickets now!\n\nBuy Tickets
+ \nhttps://ecal.ai/f/kcCld/TS6N\n\nJoin the Magpie Army\nhttps://ecal.ai/f/
+ jS6Xp/TS6N\n\nVisit our Superstore\nhttps://ecal.ai/f/jS6Xq/TS6N\n\nDownlo
+ ad our Official Club App\nhttps://ecal.ai/f/jS6Xr/TS6N\n\nFacebook\nhttps:
+ //ecal.ai/f/jS6Xs/TS6N\n\nTwitter\nhttps://ecal.ai/f/jS6Xt/TS6N\n\nYouTube
+ \nhttps://ecal.ai/f/jS6Xv/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6Xw/TS6N\
+ n\nManage my ECAL\nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P5DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:MCG
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230521T052000Z
+DTEND:20230521T082000Z
+SUMMARY:Round 10: Carlton V Collingwood
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f1d557e01d5
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 10 | Watch live on Kayo | Join the conversation @Collingw
+ oodFC #GoPies \n\nCan't get the game? Follow the action live at the Collin
+ gwood Match Centre\n\nMatch Centre\nhttps://ecal.ai/f/jS6Xx/TS6N\n\nBuy Ti
+ ckets\nhttps://ecal.ai/f/kcClf/TS6N\n\nVisit our Superstore\nhttps://ecal.
+ ai/f/jS6Xy/TS6N\n\nDownload our Official Club App\nhttps://ecal.ai/f/jS6Xz
+ /TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6XB/TS6N\n\nTwitter\nhttps://ecal.a
+ i/f/jS6XC/TS6N\n\nYouTube\nhttps://ecal.ai/f/jS6XD/TS6N\n\nInstagram\nhttp
+ s://ecal.ai/f/jS6XF/TS6N\n\nManage my ECAL\nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:Marvel Stadium
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230528T052000Z
+DTEND:20230528T082000Z
+SUMMARY:Round 11: Collingwood V North Melbourne
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f17fb7528ad
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 11 | Watch live on Kayo | Join the conversation @Collingw
+ oodFC #GoPies\n\nGet to the game! Purchase your tickets now!\n\nBuy Ticket
+ s\nhttps://ecal.ai/f/kfV4R/TS6N\n\nJoin the Magpie Army\nhttps://ecal.ai/f
+ /jS6XG/TS6N\n\nVisit our Superstore\nhttps://ecal.ai/f/jS6XH/TS6N\n\nDownl
+ oad our Official Club App\nhttps://ecal.ai/f/jS6XJ/TS6N\n\nFacebook\nhttps
+ ://ecal.ai/f/jS6XK/TS6N\n\nTwitter\nhttps://ecal.ai/f/jS6XL/TS6N\n\nYouTub
+ e\nhttps://ecal.ai/f/jS6XM/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6XN/TS6N
+ \n\nManage my ECAL\nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P5DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:Optus Stadium
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230603T063500Z
+DTEND:20230603T093500Z
+SUMMARY:Round 12: West Coast Eagles V Collingwood
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f17fb7528ae
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 12 | Watch live on Kayo | Join the conversation @Collingw
+ oodFC #GoPies \n\nCan't get the game? Follow the action live at the Collin
+ gwood Match Centre\n\nMatch Centre\nhttps://ecal.ai/f/jS6XP/TS6N\n\nVisit 
+ our Superstore\nhttps://ecal.ai/f/jS6XQ/TS6N\n\nDownload our Official Club
+  App\nhttps://ecal.ai/f/jS6XR/TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6XS/TS
+ 6N\n\nTwitter\nhttps://ecal.ai/f/jS6XT/TS6N\n\nYouTube\nhttps://ecal.ai/f/
+ jS6XV/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6XW/TS6N\n\nManage my ECAL\nh
+ ttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:MCG
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230612T052000Z
+DTEND:20230612T082000Z
+SUMMARY:Round 13: Melbourne V Collingwood
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f17fb7528af
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 13 | Watch live on Kayo | Join the conversation @Collingw
+ oodFC #GoPies \n\nCan't get the game? Follow the action live at the Collin
+ gwood Match Centre\n\nMatch Centre\nhttps://ecal.ai/f/jS6XX/TS6N\n\nBuy Ti
+ ckets\nhttps://ecal.ai/f/kcClg/TS6N\n\nVisit our Superstore\nhttps://ecal.
+ ai/f/jS6XY/TS6N\n\nDownload our Official Club App\nhttps://ecal.ai/f/jS6XZ
+ /TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6Y1/TS6N\n\nTwitter\nhttps://ecal.a
+ i/f/jS6Y2/TS6N\n\nYouTube\nhttps://ecal.ai/f/jS6Y3/TS6N\n\nInstagram\nhttp
+ s://ecal.ai/f/jS6Y4/TS6N\n\nManage my ECAL\nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:MCG
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230625T031000Z
+DTEND:20230625T061000Z
+SUMMARY:Round 15: Collingwood V Adelaide Crows
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f1d557e01d6
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 15 | Watch live on Kayo | Join the conversation @Collingw
+ oodFC #GoPies\n\nGet to the game! Purchase your tickets now!\n\nBuy Ticket
+ s\nhttps://ecal.ai/f/kcClh/TS6N\n\nJoin the Magpie Army\nhttps://ecal.ai/f
+ /jS6Y5/TS6N\n\nVisit our Superstore\nhttps://ecal.ai/f/jS6Y6/TS6N\n\nDownl
+ oad our Official Club App\nhttps://ecal.ai/f/jS6Y7/TS6N\n\nFacebook\nhttps
+ ://ecal.ai/f/jS6Y8/TS6N\n\nTwitter\nhttps://ecal.ai/f/jS6Y9/TS6N\n\nYouTub
+ e\nhttps://ecal.ai/f/jS6Yb/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6Yc/TS6N
+ \n\nManage my ECAL\nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P5DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:Heritage Bank Stadium
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230629T020000Z
+DTEND:20230629T030000Z
+SUMMARY:Round 16: Gold Coast Suns V Collingwood (Date & Time TBC)
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f1d557e01d7
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 16 | Watch live on Kayo | Join the conversation @Collingw
+ oodFC #GoPies \n\nCan't get the game? Follow the action live at the Collin
+ gwood Match Centre\n\nMatch Centre\nhttps://ecal.ai/f/jS6Yd/TS6N\n\nVisit 
+ our Superstore\nhttps://ecal.ai/f/jS6Yf/TS6N\n\nDownload our Official Club
+  App\nhttps://ecal.ai/f/jS6Yg/TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6Yh/TS
+ 6N\n\nTwitter\nhttps://ecal.ai/f/jS6Yj/TS6N\n\nYouTube\nhttps://ecal.ai/f/
+ jS6Yk/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6Yl/TS6N\n\nManage my ECAL\nh
+ ttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:Marvel Stadium
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230706T020000Z
+DTEND:20230706T030000Z
+SUMMARY:Round 17: Western Bulldogs V Collingwood (Date & Time TBC)
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f17fb7528b0
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 17 | Watch live on Kayo | Join the conversation @Collingw
+ oodFC #GoPies \n\nCan't get the game? Follow the action live at the Collin
+ gwood Match Centre\n\nMatch Centre\nhttps://ecal.ai/f/jS6Ym/TS6N\n\nVisit 
+ our Superstore\nhttps://ecal.ai/f/jS6Yn/TS6N\n\nDownload our Official Club
+  App\nhttps://ecal.ai/f/jS6Yp/TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6Yq/TS
+ 6N\n\nTwitter\nhttps://ecal.ai/f/jS6Yr/TS6N\n\nYouTube\nhttps://ecal.ai/f/
+ jS6Ys/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6Yt/TS6N\n\nManage my ECAL\nh
+ ttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:MCG
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230713T020000Z
+DTEND:20230713T030000Z
+SUMMARY:Round 18: Collingwood V Fremantle (Date & Time TBC)
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f17fb7528b1
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 18 | Watch live on Kayo | Join the conversation @Collingw
+ oodFC #GoPies\n\nJoin the Magpie Army\nhttps://ecal.ai/f/jS6Yv/TS6N\n\nVis
+ it our Superstore\nhttps://ecal.ai/f/jS6Yw/TS6N\n\nDownload our Official C
+ lub App\nhttps://ecal.ai/f/jS6Yx/TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6Yy
+ /TS6N\n\nTwitter\nhttps://ecal.ai/f/jS6Yz/TS6N\n\nYouTube\nhttps://ecal.ai
+ /f/jS6YB/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6YC/TS6N\n\nManage my ECAL
+ \nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P5DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:Adelaide Oval
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230721T023000Z
+DTEND:20230721T033000Z
+SUMMARY:Round 19: Port Adelaide V Collingwood (Date & Time TBC)
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f71643dece6
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 19 | Watch live on Kayo | Join the conversation @Collingw
+ oodFC #GoPies \n\nCan't get the game? Follow the action live at the Collin
+ gwood Match Centre\n\nMatch Centre\nhttps://ecal.ai/f/jS6YD/TS6N\n\nVisit 
+ our Superstore\nhttps://ecal.ai/f/jS6YF/TS6N\n\nDownload our Official Club
+  App\nhttps://ecal.ai/f/jS6YG/TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6YH/TS
+ 6N\n\nTwitter\nhttps://ecal.ai/f/jS6YJ/TS6N\n\nYouTube\nhttps://ecal.ai/f/
+ jS6YK/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6YL/TS6N\n\nManage my ECAL\nh
+ ttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:MCG
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230728T020000Z
+DTEND:20230728T030000Z
+SUMMARY:Round 20: Collingwood V Carlton (Date & Time TBC)
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f17fb7528b2
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 20 | Watch live on Kayo | Join the conversation @Collingw
+ oodFC #GoPies\n\nJoin the Magpie Army\nhttps://ecal.ai/f/jS6YM/TS6N\n\nVis
+ it our Superstore\nhttps://ecal.ai/f/jS6YN/TS6N\n\nDownload our Official C
+ lub App\nhttps://ecal.ai/f/jS6YP/TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6YQ
+ /TS6N\n\nTwitter\nhttps://ecal.ai/f/jS6YR/TS6N\n\nYouTube\nhttps://ecal.ai
+ /f/jS6YS/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6YT/TS6N\n\nManage my ECAL
+ \nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P5DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:MCG
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230804T020000Z
+DTEND:20230804T030000Z
+SUMMARY:Round 21: Hawthorn V Collingwood (Date & Time TBC)
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f1d557e01d8
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 21 | Watch live on Kayo | Join the conversation @Collingw
+ oodFC #GoPies \n\nCan't get the game? Follow the action live at the Collin
+ gwood Match Centre\n\nMatch Centre\nhttps://ecal.ai/f/jS6YV/TS6N\n\nVisit 
+ our Superstore\nhttps://ecal.ai/f/jS6YW/TS6N\n\nDownload our Official Club
+  App\nhttps://ecal.ai/f/jS6YX/TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6YY/TS
+ 6N\n\nTwitter\nhttps://ecal.ai/f/jS6YZ/TS6N\n\nYouTube\nhttps://ecal.ai/f/
+ jS6Z1/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6Z2/TS6N\n\nManage my ECAL\nh
+ ttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:MCG
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230811T020000Z
+DTEND:20230811T030000Z
+SUMMARY:Round 22: Collingwood V Geelong Cats (Date & Time TBC)
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f71643dece7
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 22 | Watch live on Kayo | Join the conversation @Collingw
+ oodFC #GoPies\n\nJoin the Magpie Army\nhttps://ecal.ai/f/jS6Z3/TS6N\n\nVis
+ it our Superstore\nhttps://ecal.ai/f/jS6Z4/TS6N\n\nDownload our Official C
+ lub App\nhttps://ecal.ai/f/jS6Z5/TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6Z6
+ /TS6N\n\nTwitter\nhttps://ecal.ai/f/jS6Z7/TS6N\n\nYouTube\nhttps://ecal.ai
+ /f/jS6Z8/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6Z9/TS6N\n\nManage my ECAL
+ \nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P5DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:Marvel Stadium
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230818T020000Z
+DTEND:20230818T030000Z
+SUMMARY:Round 23: Collingwood V Brisbane Lions (Date & Time TBC)
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f1d557e01d9
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 23 | Watch live on Kayo | Join the conversation @Collingw
+ oodFC #GoPies\n\nJoin the Magpie Army\nhttps://ecal.ai/f/jS6Zb/TS6N\n\nVis
+ it our Superstore\nhttps://ecal.ai/f/jS6Zc/TS6N\n\nDownload our Official C
+ lub App\nhttps://ecal.ai/f/jS6Zd/TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6Zf
+ /TS6N\n\nTwitter\nhttps://ecal.ai/f/jS6Zg/TS6N\n\nYouTube\nhttps://ecal.ai
+ /f/jS6Zh/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6Zj/TS6N\n\nManage my ECAL
+ \nhttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P5DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:20230315T023423Z
+DTSTAMP:20230315T023423Z
+LOCATION:MCG
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+DTSTART:20230825T020000Z
+DTEND:20230825T030000Z
+SUMMARY:Round 24: Essendon V Collingwood (Date & Time TBC)
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f17fb7528b3
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 24 | Watch live on Kayo | Join the conversation @Collingw
+ oodFC #GoPies \n\nCan't get the game? Follow the action live at the Collin
+ gwood Match Centre\n\nMatch Centre\nhttps://ecal.ai/f/jS6Zk/TS6N\n\nVisit 
+ our Superstore\nhttps://ecal.ai/f/jS6Zl/TS6N\n\nDownload our Official Club
+  App\nhttps://ecal.ai/f/jS6Zm/TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6Zn/TS
+ 6N\n\nTwitter\nhttps://ecal.ai/f/jS6Zp/TS6N\n\nYouTube\nhttps://ecal.ai/f/
+ jS6Zq/TS6N\n\nInstagram\nhttps://ecal.ai/f/jS6Zr/TS6N\n\nManage my ECAL\nh
+ ttps://support.ecal.com
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+LAST-MODIFIED:00010101T000000Z
+DTSTAMP:00010101T000000Z
+LOCATION:Adelaide Oval
+X-ECAL-SCHEDULE:
+DTSTART:20230430T064000Z
+DTEND:20230430T094000Z
+SUMMARY:Round 7: Adelaide Crows V Collingwood
+TRANSP:TRANSPARENT
+SEQUENCE:0
+UID:63945a154c410f71643dece4
+PRIORITY:5
+X-MICROSOFT-CDO-IMPORTANCE:1
+CLASS:PUBLIC
+DESCRIPTION:Round 7 | Watch live on Kayo | Join the conversation @Collingwo
+ odFC #GoPies \n\nCan't get the game? Follow the action live at the Colling
+ wood Match Centre\n\nMatch Centre\nhttps://ecal.ai/f/jS6Wg/TS6N\n\nBuy Tic
+ kets\nhttps://ecal.ai/f/kn1hb/TS6N\n\nVisit our Superstore\nhttps://ecal.a
+ i/f/jS6Wh/TS6N\n\nDownload our Official Club App\nhttps://ecal.ai/f/jS6Wj/
+ TS6N\n\nFacebook\nhttps://ecal.ai/f/jS6Wk/TS6N\n\nTwitter\nhttps://ecal.ai
+ /f/jS6Wl/TS6N\n\nYouTube\nhttps://ecal.ai/f/jS6Wm/TS6N\n\nInstagram\nhttps
+ ://ecal.ai/f/jS6Wn/TS6N\n\nManage my ECAL\nhttps://support.ecal.com
+X-ECAL-SCHEDULE:508efe5dfb0615bb30000001
+BEGIN:VALARM
+TRIGGER:-P2DT
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+END:VCALENDAR
