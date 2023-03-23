@@ -6,12 +6,10 @@ package at.bitfire.ical4android
 
 import at.bitfire.ical4android.util.MiscUtils
 import at.bitfire.ical4android.validation.ICalPreprocessor
-import net.fortuna.ical4j.data.CalendarBuilder
-import net.fortuna.ical4j.data.ParserException
+import net.fortuna.ical4j.data.*
+import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.Parameter
-import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.*
 import net.fortuna.ical4j.model.parameter.Related
 import net.fortuna.ical4j.model.property.*
@@ -86,7 +84,11 @@ open class ICalendar {
             // parse stream
             val calendar: Calendar
             try {
-                calendar = CalendarBuilder().build(preprocessed)
+                calendar = CalendarBuilder(
+                    CalendarParserFactory.getInstance().get(),
+                    ContentHandlerContext().withSupressInvalidProperties(true),
+                    TimeZoneRegistryFactory.getInstance().createRegistry()
+                ).build(preprocessed)
             } catch(e: ParserException) {
                 throw InvalidCalendarException("Couldn't parse iCalendar", e)
             } catch(e: IllegalArgumentException) {

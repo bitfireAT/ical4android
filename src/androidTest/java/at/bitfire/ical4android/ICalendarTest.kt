@@ -18,8 +18,7 @@ import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.Due
 import net.fortuna.ical4j.util.TimeZones
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.*
 import org.junit.Test
 import java.io.StringReader
 import java.time.Duration
@@ -68,6 +67,25 @@ class ICalendarTest {
 		assertEquals("Some Calendar", calendar.getProperty<Property>(ICalendar.CALENDAR_NAME).value)
 		assertEquals("darkred", calendar.getProperty<Property>(Color.PROPERTY_NAME).value)
 		assertEquals("#123456", calendar.getProperty<Property>(ICalendar.CALENDAR_COLOR).value)
+	}
+
+	@Test
+	fun testFromReader_invalidProperty() {
+		// The GEO property is invalid and should be ignored.
+		// The calendar is however parsed without exception.
+		assertNotNull(ICalendar.fromReader(
+			StringReader(
+				"BEGIN:VCALENDAR\n" +
+						"PRODID:something\n" +
+						"VERSION:2.0\n" +
+						"BEGIN:VEVENT\n" +
+						"UID:xxx@example.com\n" +
+						"SUMMARY:Example Event with invalid GEO property\n" +
+						"GEO:37.7957246371765\n" +
+						"END:VEVENT\n" +
+						"END:VCALENDAR"
+			)
+		))
 	}
 
 	@Test
