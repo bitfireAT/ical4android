@@ -87,7 +87,7 @@ open class ICalendar {
                 calendar = CalendarBuilder(
                     CalendarParserFactory.getInstance().get(),
                     ContentHandlerContext().withSupressInvalidProperties(true),
-                    TimeZoneRegistryFactory.getInstance().createRegistry(),
+                    TimeZoneRegistryFactory.getInstance().createRegistry()
                 ).build(preprocessed)
                 // calendar = CalendarBuilder().build(preprocessed)
             } catch(e: ParserException) {
