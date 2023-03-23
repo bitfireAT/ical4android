@@ -72,11 +72,24 @@ class ICalendarTest {
 
 	@Test
 	fun testFromReader_invalidProperty() {
-		javaClass.classLoader!!.getResourceAsStream("events/invalid-geo.ics").use { stream ->
-			ICalendar.fromReader(
-				stream.reader()
+		ICalendar.fromReader(
+			StringReader(
+				"BEGIN:VCALENDAR\n" +
+						"PRODID:something\n" +
+						"VERSION:2.0\n" +
+						"BEGIN:VEVENT\n" +
+						"LAST-MODIFIED:20221209T081404Z\n" +
+						"DTSTAMP:20221209T081102Z\n" +
+						"UID:xxx@example.com\n" +
+						"SUMMARY:Example Event\n" +
+						"DTSTART;TZID=Europe/Berlin:20221229T150000\n" +
+						"DTEND;TZID=Europe/Berlin:20230101T110000\n" +
+						"GEO:37.7957246371765\n" +
+						"DESCRIPTION:This is a description\n" +
+						"END:VEVENT\n" +
+						"END:VCALENDAR"
 			)
-		}
+		)
 	}
 
 	@Test
