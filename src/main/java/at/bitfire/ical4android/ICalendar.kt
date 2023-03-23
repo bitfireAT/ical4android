@@ -89,7 +89,6 @@ open class ICalendar {
                     ContentHandlerContext().withSupressInvalidProperties(true),
                     TimeZoneRegistryFactory.getInstance().createRegistry()
                 ).build(preprocessed)
-                // calendar = CalendarBuilder().build(preprocessed)
             } catch(e: ParserException) {
                 throw InvalidCalendarException("Couldn't parse iCalendar", e)
             } catch(e: IllegalArgumentException) {
