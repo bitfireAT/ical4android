@@ -21,13 +21,16 @@ object FixInvalidDayOffsetPreprocessor : StreamPreprocessor() {
     override fun fixString(original: String): String {
         var s: String = original
 
-        // Find all matches for the expression
-        val found = regexpForProblem().find(s) ?: return s
-        for (match in found.groupValues) {
-            val fixed = match
+        // Find all instances matching the defined expression
+        val found = regexpForProblem().findAll(s)
+
+        // ..and repair them
+        for (match in found) {
+            val matchStr = match.value
+            val fixed = matchStr
                 .replace("PT", "P")
                 .replace("DT", "D")
-            s = s.replace(match, fixed)
+            s = s.replace(matchStr, fixed)
         }
         return s
     }

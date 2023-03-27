@@ -4,15 +4,26 @@
 
 package at.bitfire.ical4android.validation
 
-import org.junit.Assert.*
-import org.junit.Test
 import java.time.Duration
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class FixInvalidDayOffsetPreprocessorTest {
 
-    private fun fixStringAndAssert(expected: String, string: String) {
-        val fixed = FixInvalidDayOffsetPreprocessor.fixString(string)
-        Duration.parse(fixed.substring(fixed.indexOf(':') + 1))
+    private fun fixAndAssert(expected: String, testValue: String) {
+
+        // Fix the duration string
+        val fixed = FixInvalidDayOffsetPreprocessor.fixString(testValue)
+
+        // Test the duration can now be parsed
+        for (line in fixed.split('\n')) {
+            val duration = line.substring(line.indexOf(':') + 1)
+            Duration.parse(duration)
+        }
+
+        // Assert
         assertEquals(expected, fixed)
     }
 
@@ -26,17 +37,34 @@ class FixInvalidDayOffsetPreprocessorTest {
 
     @Test
     fun test_FixString_DayOffsetFrom_Invalid() {
-        fixStringAndAssert("DURATION:-P1D", "DURATION:-PT1D")
-        fixStringAndAssert("TRIGGER:-P2D", "TRIGGER:-PT2D")
+        fixAndAssert("DURATION:-P1D", "DURATION:-PT1D")
+        fixAndAssert("TRIGGER:-P2D", "TRIGGER:-PT2D")
 
-        fixStringAndAssert("DURATION:-P1D", "DURATION:-P1DT")
-        fixStringAndAssert("TRIGGER:-P2D", "TRIGGER:-P2DT")
+        fixAndAssert("DURATION:-P1D", "DURATION:-P1DT")
+        fixAndAssert("TRIGGER:-P2D", "TRIGGER:-P2DT")
     }
 
     @Test
     fun test_FixString_DayOffsetFrom_Valid() {
-        fixStringAndAssert("DURATION:-PT12H", "DURATION:-PT12H")
-        fixStringAndAssert("TRIGGER:-PT12H", "TRIGGER:-PT12H")
+        fixAndAssert("DURATION:-PT12H", "DURATION:-PT12H")
+        fixAndAssert("TRIGGER:-PT12H", "TRIGGER:-PT12H")
+    }
+
+    @Test
+    fun test_FixString_DayOffsetFromMultiple_Invalid() {
+        fixAndAssert("DURATION:-P1D\nTRIGGER:-P2D", "DURATION:-PT1D\nTRIGGER:-PT2D")
+        fixAndAssert("DURATION:-P1D\nTRIGGER:-P2D", "DURATION:-P1DT\nTRIGGER:-P2DT")
+    }
+
+    @Test
+    fun test_FixString_DayOffsetFromMultiple_Valid() {
+        fixAndAssert("DURATION:-PT12H\nTRIGGER:-PT12H", "DURATION:-PT12H\nTRIGGER:-PT12H")
+    }
+
+    @Test
+    fun test_FixString_DayOffsetFromMultiple_Mixed() {
+        fixAndAssert("DURATION:-P1D\nDURATION:-PT12H\nTRIGGER:-P2D", "DURATION:-PT1D\nDURATION:-PT12H\nTRIGGER:-PT2D")
+        fixAndAssert("DURATION:-P1D\nDURATION:-PT12H\nTRIGGER:-P2D", "DURATION:-P1DT\nDURATION:-PT12H\nTRIGGER:-P2DT")
     }
 
     @Test
