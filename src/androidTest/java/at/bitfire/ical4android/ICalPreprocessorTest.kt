@@ -20,7 +20,7 @@ import org.junit.Test
 class ICalPreprocessorTest {
 
     @Test
-    fun testPreprocesStream_appliesStreamProcessors() {
+    fun testPreprocessStream_appliesStreamProcessors() {
         mockkObject(FixInvalidDayOffsetPreprocessor, FixInvalidUtcOffsetPreprocessor) {
             ICalPreprocessor.preprocessStream(StringReader(""))
 
