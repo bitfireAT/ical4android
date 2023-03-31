@@ -5,6 +5,9 @@
 package at.bitfire.ical4android
 
 import at.bitfire.ical4android.util.DateUtils
+import java.io.StringReader
+import java.time.Duration
+import java.time.Period
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Component
 import net.fortuna.ical4j.model.Date
@@ -13,16 +16,16 @@ import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.parameter.Related
+import net.fortuna.ical4j.model.property.Attach
 import net.fortuna.ical4j.model.property.Color
 import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.Due
 import net.fortuna.ical4j.util.TimeZones
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
-import java.io.StringReader
-import java.time.Duration
-import java.time.Period
 
 class ICalendarTest {
 
@@ -86,6 +89,23 @@ class ICalendarTest {
 						"END:VCALENDAR"
 			)
 		))
+
+		// When providing invalid encoding in an attachment, it should be ignored
+		val iCalendar = ICalendar.fromReader(
+			StringReader(
+				"BEGIN:VCALENDAR\n" +
+						"PRODID:something\n" +
+						"VERSION:2.0\n" +
+						"BEGIN:VEVENT\n" +
+						"UID:xxx@example.com\n" +
+						"SUMMARY:Example Event with invalid attachment encoding\n" +
+						"ATTACH;ENCODING=\"BASE64,BASE64\";ID=rfc2445.ics;VALUE=BINARY:\n" +
+						"END:VEVENT\n" +
+						"END:VCALENDAR"
+			)
+		)
+		// Make sure the attachment has been ignored
+		assertNull(iCalendar.getProperty<Attach>(Property.ATTACH)?.value)
 	}
 
 	@Test
