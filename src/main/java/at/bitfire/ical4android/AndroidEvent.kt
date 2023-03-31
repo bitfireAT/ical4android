@@ -27,12 +27,6 @@ import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalTime
 import at.bitfire.ical4android.util.TimeApiExtensions.toRfc5545Duration
 import at.bitfire.ical4android.util.TimeApiExtensions.toZonedDateTime
-import net.fortuna.ical4j.model.*
-import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.component.VAlarm
-import net.fortuna.ical4j.model.parameter.*
-import net.fortuna.ical4j.model.property.*
-import net.fortuna.ical4j.util.TimeZones
 import java.io.FileNotFoundException
 import java.net.URI
 import java.net.URISyntaxException
@@ -41,6 +35,12 @@ import java.time.Duration
 import java.time.Period
 import java.util.*
 import java.util.logging.Level
+import net.fortuna.ical4j.model.*
+import net.fortuna.ical4j.model.Date
+import net.fortuna.ical4j.model.component.VAlarm
+import net.fortuna.ical4j.model.parameter.*
+import net.fortuna.ical4j.model.property.*
+import net.fortuna.ical4j.util.TimeZones
 
 /**
  * Stores and retrieves VEVENT iCalendar objects (represented as [Event]s) to/from the
@@ -990,6 +990,10 @@ abstract class AndroidEvent(
     }
 
     protected open fun insertUnknownProperty(batch: BatchOperation, idxEvent: Int?, property: Property) {
+        if (property.value == null) {
+            Ical4Android.log.warning("Ignoring unknown property with null value")
+            return
+        }
         if (property.value.length > UnknownProperty.MAX_UNKNOWN_PROPERTY_SIZE) {
             Ical4Android.log.warning("Ignoring unknown property with ${property.value.length} octets (too long)")
             return
