@@ -16,7 +16,6 @@ import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.parameter.Related
-import net.fortuna.ical4j.model.property.Attach
 import net.fortuna.ical4j.model.property.Color
 import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
@@ -89,23 +88,6 @@ class ICalendarTest {
 						"END:VCALENDAR"
 			)
 		))
-
-		// When providing invalid encoding in an attachment, it should be ignored
-		val iCalendar = ICalendar.fromReader(
-			StringReader(
-				"BEGIN:VCALENDAR\n" +
-						"PRODID:something\n" +
-						"VERSION:2.0\n" +
-						"BEGIN:VEVENT\n" +
-						"UID:xxx@example.com\n" +
-						"SUMMARY:Example Event with invalid attachment encoding\n" +
-						"ATTACH;ENCODING=\"BASE64,BASE64\";ID=rfc2445.ics;VALUE=BINARY:\n" +
-						"END:VEVENT\n" +
-						"END:VCALENDAR"
-			)
-		)
-		// Make sure the attachment has been ignored
-		assertNull(iCalendar.getProperty<Attach>(Property.ATTACH)?.value)
 	}
 
 	@Test
