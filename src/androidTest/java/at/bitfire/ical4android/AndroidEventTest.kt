@@ -29,7 +29,6 @@ import org.junit.Assert.*
 import java.net.URI
 import java.time.Duration
 import java.time.Period
-import java.util.TimeZone
 
 class AndroidEventTest {
 
@@ -1266,6 +1265,16 @@ class AndroidEventTest {
                 assertEquals("en", property.getParameter<Language>(Parameter.LANGUAGE).value)
                 assertEquals("Custom Value", property.value)
             }
+        }
+    }
+
+    @Test
+    fun testBuildUnknownProperty_NoValue() {
+        buildEvent(true) {
+            unknownProperties += XProperty("ATTACH", ParameterList(), null)
+        }.let { result ->
+            // The property should not have been added, so the first unknown property should be null
+            assertNull(firstUnknownProperty(result))
         }
     }
 

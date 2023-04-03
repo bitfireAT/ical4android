@@ -4,13 +4,13 @@
 
 package at.bitfire.ical4android
 
-import java.time.ZoneOffset
-import java.util.Locale
 import net.fortuna.ical4j.model.property.TzOffsetFrom
 import org.junit.AfterClass
 import org.junit.Assert.assertEquals
 import org.junit.BeforeClass
 import org.junit.Test
+import java.time.ZoneOffset
+import java.util.*
 
 class LocaleNonWesternDigitsTest {
 

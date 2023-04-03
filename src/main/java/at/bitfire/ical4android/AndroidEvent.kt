@@ -990,6 +990,10 @@ abstract class AndroidEvent(
     }
 
     protected open fun insertUnknownProperty(batch: BatchOperation, idxEvent: Int?, property: Property) {
+        if (property.value == null) {
+            Ical4Android.log.warning("Ignoring unknown property with null value")
+            return
+        }
         if (property.value.length > UnknownProperty.MAX_UNKNOWN_PROPERTY_SIZE) {
             Ical4Android.log.warning("Ignoring unknown property with ${property.value.length} octets (too long)")
             return
