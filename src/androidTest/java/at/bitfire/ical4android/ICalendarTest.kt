@@ -5,9 +5,6 @@
 package at.bitfire.ical4android
 
 import at.bitfire.ical4android.util.DateUtils
-import java.io.StringReader
-import java.time.Duration
-import java.time.Period
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Component
 import net.fortuna.ical4j.model.Date
@@ -21,10 +18,11 @@ import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.Due
 import net.fortuna.ical4j.util.TimeZones
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
+import org.junit.Assert.*
 import org.junit.Test
+import java.io.StringReader
+import java.time.Duration
+import java.time.Period
 
 class ICalendarTest {
 
