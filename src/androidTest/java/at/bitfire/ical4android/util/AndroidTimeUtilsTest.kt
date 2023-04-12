@@ -325,7 +325,7 @@ class AndroidTimeUtilsTest {
         // DATEs (without time) have to be converted to <date>T000000Z for Android
         val list = ArrayList<DateListProperty>(1)
         list.add(RDate(DateList("20150101,20150702", Value.DATE, tzDefault)))
-        val androidString = AndroidTimeUtils.recurrenceSetsToAndroidString(list, true)
+        val androidTimeString = AndroidTimeUtils.recurrenceSetsToAndroidString(list, true)
         // We ignore the timezone
         assertTrue("^.*/.*;20150101T000000Z,20150702T000000Z$".toRegex().matches(androidString))
     }
@@ -344,7 +344,7 @@ class AndroidTimeUtilsTest {
         // DATE-TIME (floating time or UTC) recurrences for all-day events have to converted to <date>T000000Z for Android
         val list = ArrayList<DateListProperty>(1)
         list.add(RDate(DateList("20150101T000000,20150702T000000Z", Value.DATE_TIME, tzDefault)))
-        val androidString = AndroidTimeUtils.recurrenceSetsToAndroidString(list, true)
+        val androidTimeString = AndroidTimeUtils.recurrenceSetsToAndroidString(list, true)
         // We ignore the timezone
         assertTrue("^.*/.*;20150101T000000Z,20150702T000000Z$".toRegex().matches(androidString))
     }
