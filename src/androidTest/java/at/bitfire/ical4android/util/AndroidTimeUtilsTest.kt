@@ -4,6 +4,9 @@
 
 package at.bitfire.ical4android.util
 
+import java.io.StringReader
+import java.time.Duration
+import java.time.Period
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.component.VTimeZone
@@ -14,11 +17,11 @@ import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.ExDate
 import net.fortuna.ical4j.model.property.RDate
 import net.fortuna.ical4j.util.TimeZones
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.StringReader
-import java.time.Duration
-import java.time.Period
 
 class AndroidTimeUtilsTest {
 
@@ -321,8 +324,10 @@ class AndroidTimeUtilsTest {
     fun testRecurrenceSetsToAndroidString_Date() {
         // DATEs (without time) have to be converted to <date>T000000Z for Android
         val list = ArrayList<DateListProperty>(1)
-        list.add(RDate(DateList("20150101,20150702", Value.DATE)))
-        assertEquals("20150101T000000Z,20150702T000000Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, true))
+        list.add(RDate(DateList("20150101,20150702", Value.DATE, tzDefault)))
+        val androidTimeString = AndroidTimeUtils.recurrenceSetsToAndroidString(list, true)
+        // We ignore the timezone
+        assertEquals("20150101T000000Z,20150702T000000Z", androidTimeString.substringAfter(';'))
     }
 
     @Test
@@ -338,8 +343,10 @@ class AndroidTimeUtilsTest {
     fun testRecurrenceSetsToAndroidString_TimeAlthoughAllDay() {
         // DATE-TIME (floating time or UTC) recurrences for all-day events have to converted to <date>T000000Z for Android
         val list = ArrayList<DateListProperty>(1)
-        list.add(RDate(DateList("20150101T000000,20150702T000000Z", Value.DATE_TIME)))
-        assertEquals("20150101T000000Z,20150702T000000Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, true))
+        list.add(RDate(DateList("20150101T000000,20150702T000000Z", Value.DATE_TIME, tzDefault)))
+        val androidTimeString = AndroidTimeUtils.recurrenceSetsToAndroidString(list, true)
+        // We ignore the timezone
+        assertEquals("20150101T000000Z,20150702T000000Z", androidTimeString.substringAfter(';'))
     }
 
     @Test
