@@ -327,7 +327,7 @@ class AndroidTimeUtilsTest {
         list.add(RDate(DateList("20150101,20150702", Value.DATE, tzDefault)))
         val androidTimeString = AndroidTimeUtils.recurrenceSetsToAndroidString(list, true)
         // We ignore the timezone
-        assertTrue("^.*/.*;20150101T000000Z,20150702T000000Z$".toRegex().matches(androidString))
+        assertEquals("20150101T000000Z,20150702T000000Z", androidTimeString.substringAfter(';'))
     }
 
     @Test
@@ -346,7 +346,7 @@ class AndroidTimeUtilsTest {
         list.add(RDate(DateList("20150101T000000,20150702T000000Z", Value.DATE_TIME, tzDefault)))
         val androidTimeString = AndroidTimeUtils.recurrenceSetsToAndroidString(list, true)
         // We ignore the timezone
-        assertTrue("^.*/.*;20150101T000000Z,20150702T000000Z$".toRegex().matches(androidString))
+        assertEquals("20150101T000000Z,20150702T000000Z", androidTimeString.substringAfter(';'))
     }
 
     @Test
