@@ -4,6 +4,9 @@
 
 package at.bitfire.ical4android.util
 
+import java.io.StringReader
+import java.time.Duration
+import java.time.Period
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.component.VTimeZone
@@ -14,11 +17,11 @@ import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.ExDate
 import net.fortuna.ical4j.model.property.RDate
 import net.fortuna.ical4j.util.TimeZones
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.StringReader
-import java.time.Duration
-import java.time.Period
 
 class AndroidTimeUtilsTest {
 
@@ -379,7 +382,7 @@ class AndroidTimeUtilsTest {
         list.add(RDate(DateList("20150103T113030", Value.DATE_TIME, tzToronto)))
         list.add(RDate(DateList("20150704T113040", Value.DATE_TIME, tzBerlin)))
         assertEquals("America/Toronto;20150103T113030\n" +
-                "Europe/Berlin;20150704T053040", AndroidTimeUtils.recurrenceSetsToAndroidString(list, false))
+                "Europe/Berlin;20150704T113040", AndroidTimeUtils.recurrenceSetsToAndroidString(list, false))
     }
 
     @Test
