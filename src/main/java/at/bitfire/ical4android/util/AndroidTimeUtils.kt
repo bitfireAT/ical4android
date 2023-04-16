@@ -8,10 +8,15 @@ package at.bitfire.ical4android.util
 
 import android.text.format.Time
 import at.bitfire.ical4android.Ical4Android
+import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDateTime
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.Period
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAmount
 import java.util.LinkedList
 import java.util.Locale
@@ -207,49 +212,81 @@ object AndroidTimeUtils {
      *
      * @throws ParseException when the string cannot be parsed
      */
-    fun<T: DateListProperty> androidStringToRecurrenceSet(dbStr: String, allDay: Boolean, exclude: Long? = null, generator: (DateList) -> T): T
-    {
-        // 1. split string into time zone and actual dates
-        var timeZone: TimeZone?
-        val datesStr: String
+    fun <T : DateListProperty> androidStringToRecurrenceSet(
+        dbStr: String,
+        allDay: Boolean,
+        exclude: Long? = null,
+        generator: (DateList) -> T
+    ): T {
+        val lines = dbStr.split("\n")
 
-        val limiter = dbStr.indexOf(RECURRENCE_LIST_TZID_SEPARATOR)
-        if (limiter != -1) {    // TZID given
-            val tzId = dbStr.substring(0, limiter)
-            timeZone = DateUtils.ical4jTimeZone(tzId)
-            if (TimeZones.isUtc(timeZone))
-                timeZone = null
-            datesStr = dbStr.substring(limiter + 1)
-        } else {
-            timeZone = null
-            datesStr = dbStr
+        // If there's only one line, or one repeated timezone, that will be taken. Otherwise the
+        // DateList will be the first one given, and all the dates will be calculated to match.
+        // This is because there's no way to state multiple timezones inside a single DateListProperty
+
+        val timezones = lines
+            .mapNotNull { line ->
+                val index = line.indexOf(RECURRENCE_LIST_TZID_SEPARATOR)
+                if (index == -1) return@mapNotNull null
+                val tzId = line.substring(0, index)
+                DateUtils.ical4jTimeZone(tzId)
+            }
+            // Convert to set to merge duplicates
+            .toSet()
+
+        // Update dateList's timezone and store if should be adjusted
+        val mainTimeZone: TimeZone =
+            if (timezones.isNotEmpty())
+                timezones.first()
+            else // If size is greater than 1, set to UTC (null)
+                DateUtils.ical4jTimeZone(TimeZones.UTC_ID)!!
+
+        val dateList = DateList(
+            if (allDay) Value.DATE
+            else Value.DATE_TIME,
+            mainTimeZone
+        )
+
+        if (mainTimeZone.id == TimeZones.UTC_ID) dateList.isUtc = true
+
+        for (line in lines) {
+            val timeZoneId = line.substringBefore(RECURRENCE_LIST_TZID_SEPARATOR, TimeZones.UTC_ID)
+            val lineZoneId = ZoneId.of(timeZoneId)
+
+            // Store the timezone id of the current line, default to UTC
+            val dates = line
+                .substringAfter(RECURRENCE_LIST_TZID_SEPARATOR)
+                .split(RECURRENCE_LIST_VALUE_SEPARATOR)
+                .map { dateStr ->
+                    val pattern = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss['Z']")
+                    if (allDay)
+                        LocalDate
+                            .parse(dateStr, pattern)
+                            .atTime(0, 0)
+                            .atZone(lineZoneId)
+                            .withZoneSameInstant(mainTimeZone.toZoneId())
+                            .toIcal4jDateTime()
+                    else
+                        LocalDateTime
+                            .parse(dateStr, pattern)
+                            .atZone(lineZoneId)
+                            .withZoneSameInstant(mainTimeZone.toZoneId())
+                            .toIcal4jDateTime()
+                }
+                .filter { it.time != exclude }
+                .map {
+                    if (allDay)
+                        Date(it.time)
+                    else
+                        DateTime(it.time)
+                }
+            dateList.addAll(dates)
         }
 
-        // 2. process date string and generate list of DATEs or DATE-TIMEs
-        val dateList =
-                if (allDay)
-                    DateList(datesStr, Value.DATE)
-                else
-                    DateList(datesStr, Value.DATE_TIME, timeZone)
-
-        // 3. filter excludes
-        val iter = dateList.iterator()
-        while (iter.hasNext()) {
-            val date = iter.next()
-            if (date.time == exclude)
-                iter.remove()
+        return generator(dateList).apply {
+            if (dates.type == Value.DATE_TIME && !dates.isUtc)
+                timeZone = mainTimeZone
         }
-
-        // 4. generate requested DateListProperty (RDate/ExDate) from list of DATEs or DATE-TIMEs
-        val property = generator(dateList)
-        if (!allDay) {
-            if (timeZone != null)
-                property.timeZone = timeZone
-            else
-                property.setUtc(true)
-        }
-
-        return property
     }
 
     /**
