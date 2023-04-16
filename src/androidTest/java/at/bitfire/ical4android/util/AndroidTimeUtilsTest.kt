@@ -313,7 +313,7 @@ class AndroidTimeUtilsTest {
         assertEquals(tzToronto, exDates.timeZone)
         assertEquals(2, exDates.size)
         assertEquals(1420302630000L, exDates[0].time)
-        assertEquals(/* replace this by 2015/01/03 11:30:30 in Europe/Berlin */ 12345, exDates[1].time)
+        assertEquals(1436002240000L, exDates[1].time)
     }
 
     @Test
@@ -394,7 +394,7 @@ class AndroidTimeUtilsTest {
         list.add(RDate(DateList("20150103T113030Z", Value.DATE_TIME)))
         list.add(RDate(DateList("20150704T113040", Value.DATE_TIME, tzBerlin)))
         assertEquals("20150103T113030Z\n" +
-                "Europe/Berlin;20150704T093040", AndroidTimeUtils.recurrenceSetsToAndroidString(list, false))
+                "Europe/Berlin;20150704T113040", AndroidTimeUtils.recurrenceSetsToAndroidString(list, false))
     }
 
     @Test
