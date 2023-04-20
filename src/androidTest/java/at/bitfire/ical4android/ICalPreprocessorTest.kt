@@ -9,13 +9,14 @@ import at.bitfire.ical4android.validation.FixInvalidUtcOffsetPreprocessor
 import at.bitfire.ical4android.validation.ICalPreprocessor
 import io.mockk.mockkObject
 import io.mockk.verify
+import java.io.InputStreamReader
+import java.io.StringReader
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Component
 import net.fortuna.ical4j.model.component.VEvent
+import net.fortuna.ical4j.model.component.VTimeZone
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.io.InputStreamReader
-import java.io.StringReader
 
 class ICalPreprocessorTest {
 
@@ -43,6 +44,26 @@ class ICalPreprocessorTest {
             assertEquals("W. Europe Standard Time", vEvent.startDate.timeZone.id)
             ICalPreprocessor.preprocessCalendar(calendar)
             assertEquals("Europe/Vienna", vEvent.startDate.timeZone.id)
+        }
+    }
+
+    @Test
+    fun testPreprocessCalendar_InvalidTimeZones() {
+        javaClass.classLoader!!.getResourceAsStream("events/dublin.ics").use { stream ->
+            val reader = InputStreamReader(stream, Charsets.UTF_8)
+            val calendar = CalendarBuilder().build(reader)
+
+            val vTimeZone = calendar.getComponent<VTimeZone>(Component.VTIMEZONE)
+            val vEvent = calendar.getComponent<VEvent>(Component.VEVENT)
+
+            assertEquals("Europe/Dublin", vTimeZone.timeZoneId.value)
+            assertEquals("Europe/Dublin", vEvent.startDate.timeZone.id)
+            assertEquals("Europe/Dublin", vEvent.endDate.timeZone.id)
+
+            ICalPreprocessor.preprocessCalendar(calendar)
+            assertEquals("Europe/London", vTimeZone.timeZoneId.value)
+            assertEquals("Europe/London", vEvent.startDate.timeZone.id)
+            assertEquals("Europe/London", vEvent.endDate.timeZone.id)
         }
     }
 
