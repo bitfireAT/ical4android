@@ -6,16 +6,17 @@ package at.bitfire.ical4android.validation
 
 import at.bitfire.ical4android.Ical4Android
 import at.bitfire.ical4android.validation.rules.ReplaceInvalidTzDatetimeRule
-import at.bitfire.ical4android.validation.rules.ReplaceInvalidTzTzIdRule
+import at.bitfire.ical4android.validation.rules.ReplaceInvalidTzVTimeZoneRule
 import java.io.Reader
 import java.util.*
 import java.util.logging.Level
 import net.fortuna.ical4j.model.Calendar
+import net.fortuna.ical4j.model.Component
 import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.transform.rfc5545.CreatedPropertyRule
 import net.fortuna.ical4j.transform.rfc5545.DateListPropertyRule
 import net.fortuna.ical4j.transform.rfc5545.DatePropertyRule
-import net.fortuna.ical4j.transform.rfc5545.Rfc5545PropertyRule
+import net.fortuna.ical4j.transform.rfc5545.Rfc5545Rule
 
 /**
  * Applies some rules to increase compatibility of parsed (incoming) iCalendars:
@@ -27,14 +28,14 @@ import net.fortuna.ical4j.transform.rfc5545.Rfc5545PropertyRule
  */
 object ICalPreprocessor {
 
-    private val propertyRules = arrayOf(
+    private val preprocessorRules = arrayOf(
         CreatedPropertyRule(),      // make sure CREATED is UTC
 
         DatePropertyRule(),         // These two rules also replace VTIMEZONEs of the iCalendar ...
         DateListPropertyRule(),     // ... by the ical4j VTIMEZONE with the same TZID!
 
         ReplaceInvalidTzDatetimeRule, // Replace Invalid TZs (Dublin) with equivalent ones
-        ReplaceInvalidTzTzIdRule
+        ReplaceInvalidTzVTimeZoneRule
     )
 
     val streamPreprocessors = arrayOf(
@@ -64,21 +65,33 @@ object ICalPreprocessor {
      */
     fun preprocessCalendar(calendar: Calendar) {
         for (component in calendar.components)
-            for (property in component.properties)
-                applyRules(property)
+            applyRules(component)
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun applyRules(property: Property) {
-        propertyRules
-            .filter { rule -> rule.supportedType.isAssignableFrom(property::class.java) }
+    private fun applyRules(component: Component) {
+        // Apply rules to component
+        preprocessorRules
+            .filter { rule -> rule.supportedType.isAssignableFrom(component::class.java) }
             .forEach {
-                val beforeStr = property.toString()
-                (it as Rfc5545PropertyRule<Property>).applyTo(property)
-                val afterStr = property.toString()
+                val beforeStr = component.toString()
+                (it as Rfc5545Rule<Component>).applyTo(component)
+                val afterStr = component.toString()
                 if (beforeStr != afterStr)
                     Ical4Android.log.log(Level.FINER, "$beforeStr -> $afterStr")
             }
+
+        // Apply to properties
+        for (property in component.properties)
+            preprocessorRules
+                .filter { rule -> rule.supportedType.isAssignableFrom(property::class.java) }
+                .forEach {
+                    val beforeStr = property.toString()
+                    (it as Rfc5545Rule<Property>).applyTo(property)
+                    val afterStr = property.toString()
+                    if (beforeStr != afterStr)
+                        Ical4Android.log.log(Level.FINER, "$beforeStr -> $afterStr")
+                }
     }
 
 }
