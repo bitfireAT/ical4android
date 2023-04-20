@@ -5,15 +5,17 @@
 package at.bitfire.ical4android.validation
 
 import at.bitfire.ical4android.Ical4Android
+import at.bitfire.ical4android.validation.rules.ReplaceInvalidTzDatetimeRule
+import at.bitfire.ical4android.validation.rules.ReplaceInvalidTzTzIdRule
+import java.io.Reader
+import java.util.*
+import java.util.logging.Level
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.transform.rfc5545.CreatedPropertyRule
 import net.fortuna.ical4j.transform.rfc5545.DateListPropertyRule
 import net.fortuna.ical4j.transform.rfc5545.DatePropertyRule
 import net.fortuna.ical4j.transform.rfc5545.Rfc5545PropertyRule
-import java.io.Reader
-import java.util.*
-import java.util.logging.Level
 
 /**
  * Applies some rules to increase compatibility of parsed (incoming) iCalendars:
@@ -30,6 +32,9 @@ object ICalPreprocessor {
 
         DatePropertyRule(),         // These two rules also replace VTIMEZONEs of the iCalendar ...
         DateListPropertyRule(),     // ... by the ical4j VTIMEZONE with the same TZID!
+
+        ReplaceInvalidTzDatetimeRule, // Replace Invalid TZs (Dublin) with equivalent ones
+        ReplaceInvalidTzTzIdRule
     )
 
     val streamPreprocessors = arrayOf(
