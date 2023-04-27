@@ -182,10 +182,12 @@ object AndroidTimeUtils {
             }
 
             // Add the list of dates generated into the key of the date's timezone.
-            val newList = datesMap.getOrDefault(tzId, emptyList()).toMutableList()
-            newList.add(
-                datesList.joinToString(RECURRENCE_LIST_VALUE_SEPARATOR)
-            )
+            val newList = datesMap.getOrDefault(tzId, emptyList())
+                .toMutableList()
+                .apply {
+                    // Add all the dates from datesList
+                    addAll(datesList)
+                }
             datesMap[tzId] = newList
         }
 
