@@ -431,7 +431,10 @@ class AndroidEventTest {
         assertNull(values.get(Events.DTEND))
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 
-        assertTrue("20200601T000000Z,20210601T000000Z,\\[.*\\]20220601T000000Z".toRegex().matches(values.getAsString(Events.RDATE)))
+        assertTrue(
+            ("20200601T000000Z,20210601T000000Z\n" +
+                ".*;20220601T000000Z").toRegex().matches(values.getAsString(Events.RDATE))
+        )
     }
 
     @Test
