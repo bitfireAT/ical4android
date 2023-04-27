@@ -506,9 +506,7 @@ class AndroidEventTest {
         assertEquals("PT5M30S", values.getAsString(Events.DURATION))
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 
-        val rewritten = DateTime("20200602T113000")
-        rewritten.timeZone = tzShanghai
-        assertEquals("${tzShanghai.id};20200601T123000,$rewritten", values.get(Events.RDATE))
+        assertTrue("${tzShanghai.id};20200601T123000\n.*;20200602T113000".toRegex().matches(values.getAsString(Events.RDATE)))
         assertEquals("$tzIdDefault;20200602T113000", values.get(Events.EXDATE))
     }
 
