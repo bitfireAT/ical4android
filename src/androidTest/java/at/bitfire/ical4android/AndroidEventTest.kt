@@ -25,6 +25,7 @@ import at.bitfire.ical4android.util.AndroidTimeUtils
 import at.bitfire.ical4android.util.DateUtils
 import at.bitfire.ical4android.util.MiscUtils.ContentProviderClientHelper.closeCompat
 import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
+import io.mockk.InternalPlatformDsl.toStr
 import java.net.URI
 import java.time.Duration
 import java.time.Period
@@ -290,7 +291,7 @@ class AndroidEventTest {
         assertNull(values.get(Events.DTEND))
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 
-        assertEquals("${tzShanghai.id};20200601T123000,20200701T183000,20200702T183000,20200801T123000,20200802T123000", values.getAsString(Events.RDATE))
+        assertEquals("${tzShanghai.id};20200601T123000,20200801T123000,20200802T123000\n${tzVienna.id};20200701T123000,20200702T123000", values.getAsString(Events.RDATE))
     }
 
     @Test
