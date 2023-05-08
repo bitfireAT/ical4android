@@ -9,7 +9,7 @@ import java.util.logging.Level
  * @see <a href="https://github.com/ical4j/ical4j/issues/493">GitHub Issue</a>
  */
 object FixTimezonePreprocessor: StreamPreprocessor() {
-    private val TZOFFSET_REGEXP = Regex("Europe\\/Dublin",
+    private val TZOFFSET_REGEXP = Regex("Europe/Dublin",
         setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))
 
     override fun regexpForProblem(): Regex = TZOFFSET_REGEXP
