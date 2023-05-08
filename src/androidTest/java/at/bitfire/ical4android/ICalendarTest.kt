@@ -18,7 +18,9 @@ import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.Due
 import net.fortuna.ical4j.util.TimeZones
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 import java.io.StringReader
 import java.time.Duration
@@ -27,19 +29,19 @@ import java.time.Period
 class ICalendarTest {
 
 	// UTC timezone
-	val tzUTC = DateUtils.ical4jTimeZone(TimeZones.UTC_ID)!!.vTimeZone
+	private val tzUTC = DateUtils.ical4jTimeZone(TimeZones.UTC_ID)!!.vTimeZone
 
 	// Austria (Europa/Vienna) uses DST regularly
-	val vtzVienna = readTimeZone("Vienna.ics")
+	private val vtzVienna = readTimeZone("Vienna.ics")
 
 	// Pakistan (Asia/Karachi) used DST only in 2002, 2008 and 2009; no known future occurrences
-	val vtzKarachi = readTimeZone("Karachi.ics")
+	private val vtzKarachi = readTimeZone("Karachi.ics")
 
 	// Somalia (Africa/Mogadishu) has never used DST
-	val vtzMogadishu = readTimeZone("Mogadishu.ics")
+	private val vtzMogadishu = readTimeZone("Mogadishu.ics")
 
 	// current time stamp
-	val currentTime = java.util.Date().time
+	private val currentTime = java.util.Date().time
 
 
 	private fun readTimeZone(fileName: String): VTimeZone {
@@ -87,6 +89,39 @@ class ICalendarTest {
 			)
 		))
 	}
+
+	@Test
+	fun testFromReader_rejectedTimeZone() {
+		val vtzFromGoogle = "BEGIN:VCALENDAR\n" +
+				"CALSCALE:GREGORIAN\n" +
+				"VERSION:2.0\n" +
+				"BEGIN:VEVENT\n" +
+				"DTSTART;TZID=Europe/Dublin:20230208T203415\n" +
+				"END:VEVENT\n" +
+				"BEGIN:VTIMEZONE\n" +
+				"TZID:Europe/Dublin\n" +
+				"BEGIN:STANDARD\n" +
+				"TZOFFSETFROM:+0000\n" +
+				"TZOFFSETTO:+0100\n" +
+				"TZNAME:IST\n" +
+				"DTSTART:19700329T010000\n" +
+				"RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU\n" +
+				"END:STANDARD\n" +
+				"BEGIN:DAYLIGHT\n" +
+				"TZOFFSETFROM:+0100\n" +
+				"TZOFFSETTO:+0000\n" +
+				"TZNAME:GMT\n" +
+				"DTSTART:19701025T020000\n" +
+				"RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU\n" +
+				"END:DAYLIGHT\n" +
+				"END:VTIMEZONE\n" +
+				"END:VCALENDAR"
+		val event = Event.eventsFromReader(StringReader(vtzFromGoogle)).first()
+		val start = event.dtStart!!.date
+		assertEquals(DateTime("20230208T203415Z").time, start.time)
+		assertEquals("Europe/Dublin", (start as DateTime).timeZone.id)
+	}
+
 
 	@Test
 	fun testMinifyVTimezone_UTC() {

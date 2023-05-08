@@ -6,19 +6,34 @@ package at.bitfire.ical4android
 
 import at.bitfire.ical4android.util.MiscUtils
 import at.bitfire.ical4android.validation.ICalPreprocessor
+import at.bitfire.ical4android.validation.ValidatingTimeZoneRegistry
 import net.fortuna.ical4j.data.*
-import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.component.*
+import net.fortuna.ical4j.model.Parameter
+import net.fortuna.ical4j.model.Property
+import net.fortuna.ical4j.model.TimeZoneRegistryFactory
+import net.fortuna.ical4j.model.component.Daylight
+import net.fortuna.ical4j.model.component.Observance
+import net.fortuna.ical4j.model.component.Standard
+import net.fortuna.ical4j.model.component.VAlarm
+import net.fortuna.ical4j.model.component.VEvent
+import net.fortuna.ical4j.model.component.VTimeZone
+import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.parameter.Related
-import net.fortuna.ical4j.model.property.*
+import net.fortuna.ical4j.model.property.Color
+import net.fortuna.ical4j.model.property.ProdId
+import net.fortuna.ical4j.model.property.RDate
+import net.fortuna.ical4j.model.property.RRule
+import net.fortuna.ical4j.model.property.TzUrl
+import net.fortuna.ical4j.model.property.XProperty
 import net.fortuna.ical4j.validate.ValidationException
 import java.io.Reader
 import java.io.StringReader
 import java.time.Duration
 import java.time.Period
-import java.util.*
+import java.util.LinkedList
+import java.util.UUID
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -87,7 +102,7 @@ open class ICalendar {
                 calendar = CalendarBuilder(
                     CalendarParserFactory.getInstance().get(),
                     ContentHandlerContext().withSupressInvalidProperties(true),
-                    TimeZoneRegistryFactory.getInstance().createRegistry()
+                    ValidatingTimeZoneRegistry(TimeZoneRegistryFactory.getInstance().createRegistry())
                 ).build(preprocessed)
             } catch(e: ParserException) {
                 throw InvalidCalendarException("Couldn't parse iCalendar", e)

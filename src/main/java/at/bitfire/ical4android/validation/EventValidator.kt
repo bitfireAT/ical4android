@@ -5,6 +5,7 @@
 package at.bitfire.ical4android.validation
 
 import at.bitfire.ical4android.Event
+import at.bitfire.ical4android.ICalendar
 import at.bitfire.ical4android.Ical4Android
 import at.bitfire.ical4android.InvalidCalendarException
 import at.bitfire.ical4android.util.DateUtils
@@ -18,11 +19,15 @@ import net.fortuna.ical4j.model.property.RRule
 import net.fortuna.ical4j.util.TimeZones
 import java.time.LocalTime
 import java.time.ZonedDateTime
-import java.util.*
+import java.util.Calendar
+import java.util.TimeZone
 
 /**
  * Sometimes CalendarStorage or servers respond with invalid event definitions. Here we try to
  * validate, repair and assume whatever seems appropriate before denying the whole event.
+ *
+ * Important: some validation also happens in [ICalendar.fromReader], so always use that method
+ * (or [Event.eventsFromReader]) to parse iCalendars with validation.
  */
 class EventValidator(val e: Event) {
 
