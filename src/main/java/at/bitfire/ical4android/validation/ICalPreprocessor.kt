@@ -5,18 +5,15 @@
 package at.bitfire.ical4android.validation
 
 import at.bitfire.ical4android.Ical4Android
-import at.bitfire.ical4android.validation.rules.ReplaceInvalidTzDatetimeRule
-import at.bitfire.ical4android.validation.rules.ReplaceInvalidTzVTimeZoneRule
 import java.io.Reader
 import java.util.*
 import java.util.logging.Level
 import net.fortuna.ical4j.model.Calendar
-import net.fortuna.ical4j.model.Component
 import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.transform.rfc5545.CreatedPropertyRule
 import net.fortuna.ical4j.transform.rfc5545.DateListPropertyRule
 import net.fortuna.ical4j.transform.rfc5545.DatePropertyRule
-import net.fortuna.ical4j.transform.rfc5545.Rfc5545Rule
+import net.fortuna.ical4j.transform.rfc5545.Rfc5545PropertyRule
 
 /**
  * Applies some rules to increase compatibility of parsed (incoming) iCalendars:
@@ -32,15 +29,13 @@ object ICalPreprocessor {
         CreatedPropertyRule(),      // make sure CREATED is UTC
 
         DatePropertyRule(),         // These two rules also replace VTIMEZONEs of the iCalendar ...
-        DateListPropertyRule(),     // ... by the ical4j VTIMEZONE with the same TZID!
-
-        ReplaceInvalidTzDatetimeRule, // Replace Invalid TZs (Dublin) with equivalent ones
-        ReplaceInvalidTzVTimeZoneRule
+        DateListPropertyRule()      // ... by the ical4j VTIMEZONE with the same TZID!
     )
 
     val streamPreprocessors = arrayOf(
         FixInvalidUtcOffsetPreprocessor,    // fix things like TZOFFSET(FROM,TO):+5730
-        FixInvalidDayOffsetPreprocessor     // fix things like DURATION:PT2D
+        FixInvalidDayOffsetPreprocessor,    // fix things like DURATION:PT2D
+        FixTimezonePreprocessor             // fix Dublin timezone
     )
 
     /**
@@ -65,33 +60,22 @@ object ICalPreprocessor {
      */
     fun preprocessCalendar(calendar: Calendar) {
         for (component in calendar.components)
-            applyRules(component)
+            for (property in component.properties)
+                applyRules(property)
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun applyRules(component: Component) {
+    private fun applyRules(property: Property) {
         // Apply rules to component
         preprocessorRules
-            .filter { rule -> rule.supportedType.isAssignableFrom(component::class.java) }
+            .filter { rule -> rule.supportedType.isAssignableFrom(property::class.java) }
             .forEach {
-                val beforeStr = component.toString()
-                (it as Rfc5545Rule<Component>).applyTo(component)
-                val afterStr = component.toString()
+                val beforeStr = property.toString()
+                (it as Rfc5545PropertyRule<Property>).applyTo(property)
+                val afterStr = property.toString()
                 if (beforeStr != afterStr)
                     Ical4Android.log.log(Level.FINER, "$beforeStr -> $afterStr")
             }
-
-        // Apply to properties
-        for (property in component.properties)
-            preprocessorRules
-                .filter { rule -> rule.supportedType.isAssignableFrom(property::class.java) }
-                .forEach {
-                    val beforeStr = property.toString()
-                    (it as Rfc5545Rule<Property>).applyTo(property)
-                    val afterStr = property.toString()
-                    if (beforeStr != afterStr)
-                        Ical4Android.log.log(Level.FINER, "$beforeStr -> $afterStr")
-                }
     }
 
 }
