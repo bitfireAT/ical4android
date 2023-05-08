@@ -95,8 +95,8 @@ class ICalPreprocessorTest {
                 "END:DAYLIGHT\n" +
                 "END:VTIMEZONE\n" +
                 "END:VCALENDAR"
-        val iCalFromGoogle = CalendarBuilder().build(StringReader(vtzFromGoogle))
-        ICalPreprocessor.preprocessCalendar(iCalFromGoogle)
+        val reader = ICalPreprocessor.preprocessStream(StringReader(vtzFromGoogle))
+        val iCalFromGoogle = CalendarBuilder().build(reader)
         val notDublinFromGoogle = iCalFromGoogle.getComponent(Component.VTIMEZONE) as VTimeZone
 
         // Check that TZ has been replaced by London
