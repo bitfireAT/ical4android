@@ -25,7 +25,7 @@ import net.fortuna.ical4j.transform.rfc5545.Rfc5545PropertyRule
  */
 object ICalPreprocessor {
 
-    private val preprocessorRules = arrayOf(
+    private val propertyRules = arrayOf(
         CreatedPropertyRule(),      // make sure CREATED is UTC
 
         DatePropertyRule(),         // These two rules also replace VTIMEZONEs of the iCalendar ...
@@ -67,7 +67,7 @@ object ICalPreprocessor {
     @Suppress("UNCHECKED_CAST")
     private fun applyRules(property: Property) {
         // Apply rules to component
-        preprocessorRules
+        propertyRules
             .filter { rule -> rule.supportedType.isAssignableFrom(property::class.java) }
             .forEach {
                 val beforeStr = property.toString()
