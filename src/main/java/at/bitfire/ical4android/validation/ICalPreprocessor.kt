@@ -11,6 +11,7 @@ import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.transform.rfc5545.CreatedPropertyRule
 import net.fortuna.ical4j.transform.rfc5545.DateListPropertyRule
 import net.fortuna.ical4j.transform.rfc5545.DatePropertyRule
+import net.fortuna.ical4j.transform.rfc5545.Rfc5545PropertyRule
 import net.fortuna.ical4j.transform.rfc5545.Rfc5545Rule
 import java.io.Reader
 import java.util.*
@@ -26,7 +27,7 @@ import java.util.logging.Level
  */
 object ICalPreprocessor {
 
-    private val preprocessorRules = arrayOf(
+    private val propertyRules = arrayOf(
         CreatedPropertyRule(),      // make sure CREATED is UTC
 
         DatePropertyRule(),         // These two rules also replace VTIMEZONEs of the iCalendar ...
@@ -60,33 +61,21 @@ object ICalPreprocessor {
      */
     fun preprocessCalendar(calendar: Calendar) {
         for (component in calendar.components)
-            applyRules(component)
+            for (property in component.properties)
+                applyRules(property)
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun applyRules(component: Component) {
-        // Apply rules to component
-        preprocessorRules
-            .filter { rule -> rule.supportedType.isAssignableFrom(component::class.java) }
+    private fun applyRules(property: Property) {
+        propertyRules
+            .filter { rule -> rule.supportedType.isAssignableFrom(property::class.java) }
             .forEach {
-                val beforeStr = component.toString()
-                (it as Rfc5545Rule<Component>).applyTo(component)
-                val afterStr = component.toString()
+                val beforeStr = property.toString()
+                (it as Rfc5545PropertyRule<Property>).applyTo(property)
+                val afterStr = property.toString()
                 if (beforeStr != afterStr)
                     Ical4Android.log.log(Level.FINER, "$beforeStr -> $afterStr")
             }
-
-        // Apply to properties
-        for (property in component.properties)
-            preprocessorRules
-                .filter { rule -> rule.supportedType.isAssignableFrom(property::class.java) }
-                .forEach {
-                    val beforeStr = property.toString()
-                    (it as Rfc5545Rule<Property>).applyTo(property)
-                    val afterStr = property.toString()
-                    if (beforeStr != afterStr)
-                        Ical4Android.log.log(Level.FINER, "$beforeStr -> $afterStr")
-                }
     }
 
 }
