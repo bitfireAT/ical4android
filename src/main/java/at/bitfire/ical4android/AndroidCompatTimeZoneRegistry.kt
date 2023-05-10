@@ -1,13 +1,22 @@
 package at.bitfire.ical4android
 
-import net.fortuna.ical4j.model.*
+import net.fortuna.ical4j.model.DefaultTimeZoneRegistryFactory
+import net.fortuna.ical4j.model.PropertyList
+import net.fortuna.ical4j.model.TimeZone
+import net.fortuna.ical4j.model.TimeZoneRegistry
+import net.fortuna.ical4j.model.TimeZoneRegistryFactory
+import net.fortuna.ical4j.model.TimeZoneRegistryImpl
+import net.fortuna.ical4j.model.component.Daylight
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.property.TzId
 import java.time.ZoneId
 
 /**
- * The purpose of this class is that if a time zone has a different name in ical4j and Android,
- * it should use the Android name.
+ * Wrapper around default [TimeZoneRegistry] that uses the Android name if a time zone has a
+ * different name in ical4j and Android.
+ *
+ * **This time zone registry is set as default registry for ical4android projects in
+ * resources/ical4j.properties.**
  *
  * For instance, if a time zone is known as "Europe/Kyiv" (with alias "Europe/Kiev") in ical4j
  * and only "Europe/Kiev" in Android, this registry behaves like the default [TimeZoneRegistryImpl],
@@ -32,9 +41,8 @@ class AndroidCompatTimeZoneRegistry(
      * @return time zone
      */
     override fun getTimeZone(id: String): TimeZone? {
-        val tz: TimeZone? = base.getTimeZone(id)
-        if (tz == null)     // ical4j doesn't know time zone, return null
-            return null
+        val tz: TimeZone = base.getTimeZone(id)
+            ?: return null      // ical4j doesn't know time zone, return null
 
         // check whether time zone is available on Android, too
         val androidTzId =
@@ -76,7 +84,7 @@ class AndroidCompatTimeZoneRegistry(
 
     class Factory : TimeZoneRegistryFactory() {
 
-        override fun createRegistry(): TimeZoneRegistry {
+        override fun createRegistry(): AndroidCompatTimeZoneRegistry {
             val ical4jRegistry = DefaultTimeZoneRegistryFactory().createRegistry()
             return AndroidCompatTimeZoneRegistry(ical4jRegistry)
         }

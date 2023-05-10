@@ -91,7 +91,7 @@ class ICalendarTest {
 	}
 
 	@Test
-	fun testFromReader_rejectedTimeZone() {
+	fun testFromReader_tzWithNegativeDst() {
 		val vtzFromGoogle = "BEGIN:VCALENDAR\n" +
 				"CALSCALE:GREGORIAN\n" +
 				"VERSION:2.0\n" +

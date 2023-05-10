@@ -17,9 +17,9 @@ import java.time.zone.ZoneRulesException
 class AndroidCompatTimeZoneRegistryTest {
 
     lateinit var ical4jRegistry: TimeZoneRegistry
-    lateinit var registry: TimeZoneRegistry
+    lateinit var registry: AndroidCompatTimeZoneRegistry
 
-    val systemKnowsKyiv =
+    private val systemKnowsKyiv =
         try {
             ZoneId.of("Europe/Kyiv")
             true
@@ -29,7 +29,7 @@ class AndroidCompatTimeZoneRegistryTest {
 
     @Before
     fun createRegistry() {
-        ical4jRegistry = DefaultTimeZoneRegistryFactory.getInstance().createRegistry()
+        ical4jRegistry = DefaultTimeZoneRegistryFactory().createRegistry()
         registry = AndroidCompatTimeZoneRegistry.Factory().createRegistry()
     }
 
