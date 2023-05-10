@@ -6,7 +6,9 @@ package at.bitfire.ical4android
 
 import android.accounts.Account
 import android.content.ContentProviderClient
+import android.content.ContentResolver
 import android.content.ContentValues
+import android.content.Context
 import android.database.DatabaseUtils
 import android.os.ParcelFileDescriptor
 import androidx.test.platform.app.InstrumentationRegistry
@@ -38,14 +40,14 @@ class JtxICalObjectTest {
 
     companion object {
 
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val contentResolver = context.contentResolver
+        private val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
+        private val contentResolver: ContentResolver = context.contentResolver
 
         private lateinit var client: ContentProviderClient
 
         @JvmField
         @ClassRule
-        val permissionRule = GrantPermissionRule.grant(*TaskProvider.PERMISSIONS_JTX)
+        val permissionRule: GrantPermissionRule = GrantPermissionRule.grant(*TaskProvider.PERMISSIONS_JTX)
 
         @BeforeClass
         @JvmStatic
@@ -65,8 +67,8 @@ class JtxICalObjectTest {
     }
 
     private val testAccount = Account("TEST", JtxContract.JtxCollection.TEST_ACCOUNT_TYPE)
-    var collection: JtxCollection<at.bitfire.ical4android.JtxICalObject>? = null
-    var sample: at.bitfire.ical4android.JtxICalObject? = null
+    private var collection: JtxCollection<at.bitfire.ical4android.JtxICalObject>? = null
+    private var sample: at.bitfire.ical4android.JtxICalObject? = null
 
     private val url = "https://jtx.techbee.at"
     private val displayname = "jtxTest"
@@ -95,6 +97,7 @@ class JtxICalObjectTest {
             this.dtend = System.currentTimeMillis()
             this.dtendTimezone = "Europe/Paris"
             this.status = JtxICalObject.StatusJournal.FINAL.name
+            this.xstatus = "my status"
             this.classification = JtxICalObject.Classification.PUBLIC.name
             this.url = "https://jtx.techbee.at"
             this.contact = "jtx@techbee.at"
@@ -102,6 +105,7 @@ class JtxICalObjectTest {
             this.geoLong = 16.3738
             this.location = "Vienna"
             this.locationAltrep = "Wien"
+            this.geofenceRadius = 10
             this.percent = 99
             this.priority = 1
             this.due = System.currentTimeMillis()
@@ -144,6 +148,8 @@ class JtxICalObjectTest {
     @Test fun check_DTEND() = insertRetrieveAssertLong(JtxICalObject.DTEND, sample?.dtend, Component.VJOURNAL.name)
     @Test fun check_DTEND_TIMEZONE() = insertRetrieveAssertString(JtxICalObject.DTEND_TIMEZONE, sample?.dtendTimezone, Component.VJOURNAL.name)
     @Test fun check_STATUS() = insertRetrieveAssertString(JtxICalObject.STATUS, sample?.status, Component.VJOURNAL.name)
+    @Test fun check_XSTATUS() = insertRetrieveAssertString(JtxICalObject.EXTENDED_STATUS, sample?.xstatus, Component.VJOURNAL.name)
+
     @Test fun check_CLASSIFICATION() = insertRetrieveAssertString(JtxICalObject.CLASSIFICATION, sample?.classification, Component.VJOURNAL.name)
     @Test fun check_URL() = insertRetrieveAssertString(JtxICalObject.URL, sample?.url, Component.VJOURNAL.name)
     @Test fun check_CONTACT() = insertRetrieveAssertString(JtxICalObject.CONTACT, sample?.contact, Component.VJOURNAL.name)
@@ -151,6 +157,8 @@ class JtxICalObjectTest {
     @Test fun check_GEO_LONG() = insertRetrieveAssertDouble(JtxICalObject.GEO_LONG, sample?.geoLong, Component.VJOURNAL.name)
     @Test fun check_LOCATION() = insertRetrieveAssertString(JtxICalObject.LOCATION, sample?.location, Component.VJOURNAL.name)
     @Test fun check_LOCATION_ALTREP() = insertRetrieveAssertString(JtxICalObject.LOCATION_ALTREP, sample?.locationAltrep, Component.VJOURNAL.name)
+    @Test fun check_GEOFENCE_RADIUS() = insertRetrieveAssertInt(JtxICalObject.GEOFENCE_RADIUS, sample?.geofenceRadius, Component.VJOURNAL.name)
+
     @Test fun check_PERCENT() = insertRetrieveAssertInt(JtxICalObject.PERCENT, sample?.percent, Component.VJOURNAL.name)
     @Test fun check_PRIORITY() = insertRetrieveAssertInt(JtxICalObject.PRIORITY, sample?.priority, Component.VJOURNAL.name)
     @Test fun check_DUE() = insertRetrieveAssertLong(JtxICalObject.DUE, sample?.due, Component.VJOURNAL.name)
