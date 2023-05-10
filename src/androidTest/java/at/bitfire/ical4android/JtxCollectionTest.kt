@@ -13,8 +13,15 @@ import at.bitfire.ical4android.impl.TestJtxCollection
 import at.bitfire.ical4android.util.MiscUtils.ContentProviderClientHelper.closeCompat
 import at.techbee.jtx.JtxContract
 import at.techbee.jtx.JtxContract.asSyncAdapter
-import junit.framework.TestCase.*
-import org.junit.*
+import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertNotNull
+import junit.framework.TestCase.assertTrue
+import org.junit.After
+import org.junit.AfterClass
+import org.junit.Assume
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 
 class JtxCollectionTest {
 

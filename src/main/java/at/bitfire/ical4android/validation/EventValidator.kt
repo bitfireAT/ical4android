@@ -18,7 +18,8 @@ import net.fortuna.ical4j.model.property.RRule
 import net.fortuna.ical4j.util.TimeZones
 import java.time.LocalTime
 import java.time.ZonedDateTime
-import java.util.*
+import java.util.Calendar
+import java.util.TimeZone
 
 /**
  * Sometimes CalendarStorage or servers respond with invalid event definitions. Here we try to

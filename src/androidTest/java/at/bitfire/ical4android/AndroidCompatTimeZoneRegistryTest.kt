@@ -7,7 +7,9 @@ package at.bitfire.ical4android
 import net.fortuna.ical4j.model.DefaultTimeZoneRegistryFactory
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.TimeZoneRegistry
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
@@ -17,9 +19,9 @@ import java.time.zone.ZoneRulesException
 class AndroidCompatTimeZoneRegistryTest {
 
     lateinit var ical4jRegistry: TimeZoneRegistry
-    lateinit var registry: TimeZoneRegistry
+    lateinit var registry: AndroidCompatTimeZoneRegistry
 
-    val systemKnowsKyiv =
+    private val systemKnowsKyiv =
         try {
             ZoneId.of("Europe/Kyiv")
             true
@@ -29,7 +31,7 @@ class AndroidCompatTimeZoneRegistryTest {
 
     @Before
     fun createRegistry() {
-        ical4jRegistry = DefaultTimeZoneRegistryFactory.getInstance().createRegistry()
+        ical4jRegistry = DefaultTimeZoneRegistryFactory().createRegistry()
         registry = AndroidCompatTimeZoneRegistry.Factory().createRegistry()
     }
 

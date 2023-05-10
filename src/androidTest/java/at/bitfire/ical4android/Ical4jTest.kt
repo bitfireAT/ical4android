@@ -5,7 +5,12 @@
 package at.bitfire.ical4android
 
 import net.fortuna.ical4j.data.CalendarBuilder
-import net.fortuna.ical4j.model.*
+import net.fortuna.ical4j.model.Component
+import net.fortuna.ical4j.model.DateTime
+import net.fortuna.ical4j.model.Parameter
+import net.fortuna.ical4j.model.TemporalAmountAdapter
+import net.fortuna.ical4j.model.TimeZone
+import net.fortuna.ical4j.model.TimeZoneRegistryFactory
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.parameter.Email
 import org.junit.Assert.assertEquals
@@ -68,9 +73,10 @@ class Ical4jTest {
         assertEquals(1616720400000, dt2.time)
     }
 
-    @Test(expected = AssertionError::class)
-    fun testTzDublin_external() {
+    @Test
+    fun testTzDublin_negativeDst() {
         // https://github.com/ical4j/ical4j/issues/493
+        // fixed by enabling net.fortuna.ical4j.timezone.offset.negative_dst_supported in ical4j.properties
         val vtzFromGoogle = "BEGIN:VCALENDAR\n" +
                 "CALSCALE:GREGORIAN\n" +
                 "VERSION:2.0\n" +

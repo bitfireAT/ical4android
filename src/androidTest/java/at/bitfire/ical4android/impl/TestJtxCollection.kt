@@ -11,7 +11,7 @@ import at.bitfire.ical4android.JtxCollectionFactory
 import at.bitfire.ical4android.JtxICalObject
 import at.bitfire.ical4android.util.MiscUtils.CursorHelper.toValues
 import at.techbee.jtx.JtxContract
-import java.util.*
+import java.util.LinkedList
 
 class TestJtxCollection(
         account: Account,

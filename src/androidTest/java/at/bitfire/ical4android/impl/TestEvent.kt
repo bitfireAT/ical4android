@@ -6,8 +6,12 @@ package at.bitfire.ical4android.impl
 
 import android.content.ContentValues
 import android.provider.CalendarContract.Events
-import at.bitfire.ical4android.*
-import java.util.*
+import at.bitfire.ical4android.AndroidCalendar
+import at.bitfire.ical4android.AndroidEvent
+import at.bitfire.ical4android.AndroidEventFactory
+import at.bitfire.ical4android.BatchOperation
+import at.bitfire.ical4android.Event
+import java.util.UUID
 
 class TestEvent: AndroidEvent {
 

@@ -15,7 +15,7 @@ import org.dmfs.tasks.contract.TaskContract.Property.Relation
 import org.dmfs.tasks.contract.TaskContract.TaskLists
 import org.dmfs.tasks.contract.TaskContract.Tasks
 import java.io.FileNotFoundException
-import java.util.*
+import java.util.LinkedList
 import java.util.logging.Level
 
 
