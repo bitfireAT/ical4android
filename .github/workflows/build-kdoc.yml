@@ -21,7 +21,7 @@ jobs:
       - uses: gradle/gradle-build-action@v2
 
       - name: Build KDoc
-        run: ./gradlew --no-daemon dokkaHtml
+        run: ./gradlew --no-daemon --no-configuration-cache dokkaHtml
 
       - uses: actions/upload-pages-artifact@v1
         with:
