@@ -90,38 +90,6 @@ class ICalendarTest {
 		))
 	}
 
-	@Test
-	fun testFromReader_tzWithNegativeDst() {
-		val vtzFromGoogle = "BEGIN:VCALENDAR\n" +
-				"CALSCALE:GREGORIAN\n" +
-				"VERSION:2.0\n" +
-				"BEGIN:VEVENT\n" +
-				"DTSTART;TZID=Europe/Dublin:20230208T203415\n" +
-				"END:VEVENT\n" +
-				"BEGIN:VTIMEZONE\n" +
-				"TZID:Europe/Dublin\n" +
-				"BEGIN:STANDARD\n" +
-				"TZOFFSETFROM:+0000\n" +
-				"TZOFFSETTO:+0100\n" +
-				"TZNAME:IST\n" +
-				"DTSTART:19700329T010000\n" +
-				"RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU\n" +
-				"END:STANDARD\n" +
-				"BEGIN:DAYLIGHT\n" +
-				"TZOFFSETFROM:+0100\n" +
-				"TZOFFSETTO:+0000\n" +
-				"TZNAME:GMT\n" +
-				"DTSTART:19701025T020000\n" +
-				"RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU\n" +
-				"END:DAYLIGHT\n" +
-				"END:VTIMEZONE\n" +
-				"END:VCALENDAR"
-		val event = Event.eventsFromReader(StringReader(vtzFromGoogle)).first()
-		val start = event.dtStart!!.date
-		assertEquals(DateTime("20230208T203415Z").time, start.time)
-		assertEquals("Europe/Dublin", (start as DateTime).timeZone.id)
-	}
-
 
 	@Test
 	fun testMinifyVTimezone_UTC() {

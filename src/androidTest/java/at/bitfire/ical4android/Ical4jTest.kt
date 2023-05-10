@@ -73,9 +73,10 @@ class Ical4jTest {
         assertEquals(1616720400000, dt2.time)
     }
 
-    @Test(expected = AssertionError::class)
-    fun testTzDublin_external() {
+    @Test
+    fun testTzDublin_negativeDst() {
         // https://github.com/ical4j/ical4j/issues/493
+        // fixed by enabling net.fortuna.ical4j.timezone.offset.negative_dst_supported in ical4j.properties
         val vtzFromGoogle = "BEGIN:VCALENDAR\n" +
                 "CALSCALE:GREGORIAN\n" +
                 "VERSION:2.0\n" +
