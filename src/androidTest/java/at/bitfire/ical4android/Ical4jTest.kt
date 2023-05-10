@@ -5,7 +5,12 @@
 package at.bitfire.ical4android
 
 import net.fortuna.ical4j.data.CalendarBuilder
-import net.fortuna.ical4j.model.*
+import net.fortuna.ical4j.model.Component
+import net.fortuna.ical4j.model.DateTime
+import net.fortuna.ical4j.model.Parameter
+import net.fortuna.ical4j.model.TemporalAmountAdapter
+import net.fortuna.ical4j.model.TimeZone
+import net.fortuna.ical4j.model.TimeZoneRegistryFactory
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.parameter.Email
 import org.junit.Assert.assertEquals

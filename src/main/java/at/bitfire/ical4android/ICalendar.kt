@@ -9,7 +9,6 @@ import at.bitfire.ical4android.validation.ICalPreprocessor
 import net.fortuna.ical4j.data.*
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.DefaultTimeZoneRegistryFactory
 import net.fortuna.ical4j.model.Parameter
 import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory

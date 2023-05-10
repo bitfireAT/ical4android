@@ -9,16 +9,13 @@ import at.bitfire.ical4android.validation.FixInvalidUtcOffsetPreprocessor
 import at.bitfire.ical4android.validation.ICalPreprocessor
 import io.mockk.mockkObject
 import io.mockk.verify
-import java.io.InputStreamReader
-import java.io.StringReader
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Component
-import net.fortuna.ical4j.model.DateTime
-import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VEvent
-import net.fortuna.ical4j.model.component.VTimeZone
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.io.InputStreamReader
+import java.io.StringReader
 
 class ICalPreprocessorTest {
 

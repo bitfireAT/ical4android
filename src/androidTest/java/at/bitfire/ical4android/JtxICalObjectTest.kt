@@ -17,10 +17,20 @@ import at.techbee.jtx.JtxContract
 import at.techbee.jtx.JtxContract.JtxICalObject
 import at.techbee.jtx.JtxContract.JtxICalObject.Component
 import at.techbee.jtx.JtxContract.asSyncAdapter
-import junit.framework.TestCase.*
+import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertNotNull
+import junit.framework.TestCase.assertNull
+import junit.framework.TestCase.assertTrue
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Property
-import org.junit.*
+import org.junit.After
+import org.junit.AfterClass
+import org.junit.Assert
+import org.junit.Assume
+import org.junit.Before
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.InputStreamReader
 

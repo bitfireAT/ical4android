@@ -10,7 +10,7 @@ import org.junit.Assert.assertEquals
 import org.junit.BeforeClass
 import org.junit.Test
 import java.time.ZoneOffset
-import java.util.*
+import java.util.Locale
 
 class LocaleNonWesternDigitsTest {
 
