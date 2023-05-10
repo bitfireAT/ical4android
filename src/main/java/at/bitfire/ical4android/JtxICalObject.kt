@@ -91,6 +91,7 @@ open class JtxICalObject(
     var geoLong: Double? = null
     var location: String? = null
     var locationAltrep: String? = null
+    var geofenceRadius: Int? = null
 
     var uid: String = UUID.randomUUID().toString()
 
@@ -229,6 +230,7 @@ open class JtxICalObject(
         const val X_PARAM_ATTACH_LABEL = "X-LABEL"     // used for filename in KOrganizer
         const val X_PARAM_FILENAME = "FILENAME"     // used for filename in GNOME Evolution
         const val X_PROP_XSTATUS = "X-STATUS"   // used to define an extended status (additionally to standard status)
+        const val X_PROP_GEOFENCE_RADIUS = "X-GEOFENCE-RADIUS"   // used to define a Geofence-Radius to notifiy the user when close
 
         /**
          * Parses an iCalendar resource and extracts the VTODOs and/or VJOURNALS.
@@ -543,6 +545,7 @@ open class JtxICalObject(
                     else -> when(prop.name) {
                         X_PROP_COMPLETEDTIMEZONE -> iCalObject.completedTimezone = prop.value
                         X_PROP_XSTATUS -> iCalObject.xstatus = prop.value
+                        X_PROP_GEOFENCE_RADIUS -> iCalObject.geofenceRadius = try { prop.value.toInt() } catch (e: NumberFormatException) { Ical4Android.log.warning("Wrong format for geofenceRadius: ${prop.value}"); null }
                         else -> iCalObject.unknown.add(Unknown(value = UnknownProperty.toJsonString(prop)))               // save the whole property for unknown properties
                     }
                 }
@@ -717,6 +720,9 @@ open class JtxICalObject(
         }
         if (geoLat != null && geoLong != null) {
             props += Geo(geoLat!!.toBigDecimal(), geoLong!!.toBigDecimal())
+        }
+        geofenceRadius?.let { geofenceRadius ->
+            props += XProperty(X_PROP_GEOFENCE_RADIUS, geofenceRadius.toString())
         }
         color?.let { props += Color(null, Css3Color.nearestMatch(it).name) }
         url?.let {
@@ -1398,6 +1404,7 @@ duration?.let(props::add)
         this.locationAltrep = newData.locationAltrep
         this.geoLat = newData.geoLat
         this.geoLong = newData.geoLong
+        this.geofenceRadius = newData.geofenceRadius
         this.percent = newData.percent
         this.classification = newData.classification
         this.status = newData.status
@@ -1457,6 +1464,7 @@ duration?.let(props::add)
         values.getAsDouble(JtxContract.JtxICalObject.GEO_LONG)?.let { geoLong -> this.geoLong = geoLong }
         values.getAsString(JtxContract.JtxICalObject.LOCATION)?.let { location -> this.location = location }
         values.getAsString(JtxContract.JtxICalObject.LOCATION_ALTREP)?.let { locationAltrep -> this.locationAltrep = locationAltrep }
+        values.getAsInteger(JtxContract.JtxICalObject.GEOFENCE_RADIUS)?.let { geofenceRadius -> this.geofenceRadius = geofenceRadius  }
         values.getAsInteger(JtxContract.JtxICalObject.PERCENT)?.let { percent -> this.percent = percent }
         values.getAsInteger(JtxContract.JtxICalObject.PRIORITY)?.let { priority -> this.priority = priority }
         values.getAsLong(JtxContract.JtxICalObject.DUE)?.let { due -> this.due = due }
@@ -1682,6 +1690,7 @@ duration?.let(props::add)
         put(JtxContract.JtxICalObject.GEO_LONG, geoLong)
         put(JtxContract.JtxICalObject.LOCATION, location)
         put(JtxContract.JtxICalObject.LOCATION_ALTREP, locationAltrep)
+        put(JtxContract.JtxICalObject.GEOFENCE_RADIUS, geofenceRadius)
         put(JtxContract.JtxICalObject.PERCENT, percent)
         put(JtxContract.JtxICalObject.DTSTAMP, dtstamp)
         put(JtxContract.JtxICalObject.DTSTART, dtstart)
