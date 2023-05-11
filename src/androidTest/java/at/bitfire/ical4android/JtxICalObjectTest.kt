@@ -9,6 +9,7 @@ import android.content.ContentProviderClient
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
+import android.content.pm.PackageManager
 import android.database.DatabaseUtils
 import android.os.ParcelFileDescriptor
 import androidx.test.platform.app.InstrumentationRegistry
@@ -148,7 +149,11 @@ class JtxICalObjectTest {
     @Test fun check_DTEND() = insertRetrieveAssertLong(JtxICalObject.DTEND, sample?.dtend, Component.VJOURNAL.name)
     @Test fun check_DTEND_TIMEZONE() = insertRetrieveAssertString(JtxICalObject.DTEND_TIMEZONE, sample?.dtendTimezone, Component.VJOURNAL.name)
     @Test fun check_STATUS() = insertRetrieveAssertString(JtxICalObject.STATUS, sample?.status, Component.VJOURNAL.name)
-    @Test fun check_XSTATUS() = insertRetrieveAssertString(JtxICalObject.EXTENDED_STATUS, sample?.xstatus, Component.VJOURNAL.name)
+    @Test fun check_XSTATUS() {
+        val jtxVersionCode = context.packageManager.getPackageInfo("at.techbee.jtx", PackageManager.PackageInfoFlags.of(0)).longVersionCode
+        Assume.assumeTrue(jtxVersionCode > 204020003)
+        insertRetrieveAssertString(JtxICalObject.EXTENDED_STATUS, sample?.xstatus, Component.VJOURNAL.name)
+    }
 
     @Test fun check_CLASSIFICATION() = insertRetrieveAssertString(JtxICalObject.CLASSIFICATION, sample?.classification, Component.VJOURNAL.name)
     @Test fun check_URL() = insertRetrieveAssertString(JtxICalObject.URL, sample?.url, Component.VJOURNAL.name)
@@ -157,7 +162,11 @@ class JtxICalObjectTest {
     @Test fun check_GEO_LONG() = insertRetrieveAssertDouble(JtxICalObject.GEO_LONG, sample?.geoLong, Component.VJOURNAL.name)
     @Test fun check_LOCATION() = insertRetrieveAssertString(JtxICalObject.LOCATION, sample?.location, Component.VJOURNAL.name)
     @Test fun check_LOCATION_ALTREP() = insertRetrieveAssertString(JtxICalObject.LOCATION_ALTREP, sample?.locationAltrep, Component.VJOURNAL.name)
-    @Test fun check_GEOFENCE_RADIUS() = insertRetrieveAssertInt(JtxICalObject.GEOFENCE_RADIUS, sample?.geofenceRadius, Component.VJOURNAL.name)
+    @Test fun check_GEOFENCE_RADIUS() {
+        val jtxVersionCode = context.packageManager.getPackageInfo("at.techbee.jtx", PackageManager.PackageInfoFlags.of(0)).longVersionCode
+        Assume.assumeTrue(jtxVersionCode > 204020003)
+        insertRetrieveAssertInt(JtxICalObject.GEOFENCE_RADIUS, sample?.geofenceRadius, Component.VJOURNAL.name)
+    }
 
     @Test fun check_PERCENT() = insertRetrieveAssertInt(JtxICalObject.PERCENT, sample?.percent, Component.VJOURNAL.name)
     @Test fun check_PRIORITY() = insertRetrieveAssertInt(JtxICalObject.PRIORITY, sample?.priority, Component.VJOURNAL.name)
