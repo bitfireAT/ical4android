@@ -28,7 +28,7 @@ class TaskProvider private constructor(
             private val readPermission: String,
             private val writePermission: String
     ) {
-        JtxBoard("at.techbee.jtx.provider", "at.techbee.jtx", 203000001, "2.03.00", PERMISSION_JTX_READ, PERMISSION_JTX_WRITE),
+        JtxBoard("at.techbee.jtx.provider", "at.techbee.jtx", 204030000, "2.04.03", PERMISSION_JTX_READ, PERMISSION_JTX_WRITE),
         TasksOrg("org.tasks.opentasks", "org.tasks", 100000, "10.0", PERMISSION_TASKS_ORG_READ, PERMISSION_TASKS_ORG_WRITE),
         OpenTasks("org.dmfs.tasks", "org.dmfs.tasks", 103, "1.1.8.2", PERMISSION_OPENTASKS_READ, PERMISSION_OPENTASKS_WRITE);
 
