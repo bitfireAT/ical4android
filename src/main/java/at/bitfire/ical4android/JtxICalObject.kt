@@ -106,7 +106,7 @@ open class JtxICalObject(
     var exdate: String? = null   //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5.1
     var rdate: String? = null    //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5.2
     var recurid: String? = null  //only for recurring events, see https://tools.ietf.org/html/rfc5545#section-3.8.5
-
+    var recuridTimezone: String? = null
     //var rstatus: String? = null
 
     var collectionId: Long = collection.id
@@ -416,7 +416,15 @@ open class JtxICalObject(
                         }
                         iCalObject.exdate = exdateList.toTypedArray().joinToString(separator = ",")
                     }
-                    is RecurrenceId -> iCalObject.recurid = prop.value
+                    is RecurrenceId -> {
+                        iCalObject.recurid = prop.date.toString()
+                        when {
+                            prop.date is DateTime && prop.timeZone != null -> iCalObject.recuridTimezone = prop.timeZone.id
+                            prop.date is DateTime && prop.isUtc -> iCalObject.recuridTimezone = TimeZone.getTimeZone("UTC").id
+                            prop.date is DateTime && !prop.isUtc && prop.timeZone == null -> iCalObject.recuridTimezone = null
+                            else -> iCalObject.recuridTimezone = TZ_ALLDAY     // prop.date is Date (and not DateTime), therefore it must be Allday
+                        }
+                    }
 
                     //is RequestStatus -> iCalObject.rstatus = prop.value
 
@@ -932,10 +940,12 @@ open class JtxICalObject(
             props += RRule(rrule)
         }
         recurid?.let { recurid ->
-            props += if(dtstartTimezone == TZ_ALLDAY)
-                RecurrenceId(Date(recurid))
-            else
-                RecurrenceId(DateTime(recurid))
+            props += when {
+                recuridTimezone == TZ_ALLDAY -> RecurrenceId(Date(recurid))
+                recuridTimezone == TimeZone.getTimeZone("UTC").id -> RecurrenceId(DateTime(recurid).apply { this.isUtc = true })
+                recuridTimezone.isNullOrEmpty() -> RecurrenceId(DateTime(recurid).apply { this.isUtc = false })
+                else -> RecurrenceId(DateTime(recurid, TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone(recuridTimezone)))
+            }
         }
 
         rdate?.let { rdateString ->
@@ -1428,6 +1438,7 @@ duration?.let(props::add)
         this.rdate = newData.rdate
         this.exdate = newData.exdate
         this.recurid = newData.recurid
+        this.recuridTimezone = newData.recuridTimezone
 
 
         this.categories = newData.categories
@@ -1483,6 +1494,7 @@ duration?.let(props::add)
         values.getAsString(JtxContract.JtxICalObject.EXDATE)?.let { exdate -> this.exdate = exdate }
         values.getAsString(JtxContract.JtxICalObject.RDATE)?.let { rdate -> this.rdate = rdate }
         values.getAsString(JtxContract.JtxICalObject.RECURID)?.let { recurid -> this.recurid = recurid }
+        values.getAsString(JtxContract.JtxICalObject.RECURID_TIMEZONE)?.let { recuridTimezone -> this.recuridTimezone = recuridTimezone }
 
         this.collectionId = collection.id
         values.getAsString(JtxContract.JtxICalObject.DIRTY)?.let { dirty -> this.dirty = dirty == "1" || dirty == "true" }
@@ -1709,6 +1721,7 @@ duration?.let(props::add)
         put(JtxContract.JtxICalObject.RDATE, rdate)
         put(JtxContract.JtxICalObject.EXDATE, exdate)
         put(JtxContract.JtxICalObject.RECURID, recurid)
+        put(JtxContract.JtxICalObject.RECURID_TIMEZONE, recuridTimezone)
 
         put(JtxContract.JtxICalObject.FILENAME, fileName)
         put(JtxContract.JtxICalObject.ETAG, eTag)
