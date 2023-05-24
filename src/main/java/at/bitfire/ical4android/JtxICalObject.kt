@@ -418,11 +418,11 @@ open class JtxICalObject(
                     }
                     is RecurrenceId -> {
                         iCalObject.recurid = prop.date.toString()
-                        when {
-                            prop.date is DateTime && prop.timeZone != null -> iCalObject.recuridTimezone = prop.timeZone.id
-                            prop.date is DateTime && prop.isUtc -> iCalObject.recuridTimezone = TimeZone.getTimeZone("UTC").id
-                            prop.date is DateTime && !prop.isUtc && prop.timeZone == null -> iCalObject.recuridTimezone = null
-                            else -> iCalObject.recuridTimezone = TZ_ALLDAY     // prop.date is Date (and not DateTime), therefore it must be Allday
+                        iCalObject.recuridTimezone = when {
+                            prop.date is DateTime && prop.timeZone != null ->  prop.timeZone.id
+                            prop.date is DateTime && prop.isUtc -> TimeZone.getTimeZone("UTC").id
+                            prop.date is DateTime && !prop.isUtc && prop.timeZone == null -> null
+                            else -> TZ_ALLDAY     // prop.date is Date (and not DateTime), therefore it must be Allday
                         }
                     }
 
