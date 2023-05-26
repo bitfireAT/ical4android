@@ -4,11 +4,11 @@
 
 package at.bitfire.ical4android.validation
 
-import java.time.Duration
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Duration
 
 class FixInvalidDayOffsetPreprocessorTest {
 

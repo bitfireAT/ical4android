@@ -4,11 +4,15 @@
 
 package at.bitfire.ical4android
 
-import android.content.*
+import android.content.ContentProviderClient
+import android.content.ContentProviderOperation
+import android.content.ContentProviderResult
+import android.content.ContentUris
+import android.content.OperationApplicationException
 import android.net.Uri
 import android.os.RemoteException
 import android.os.TransactionTooLargeException
-import java.util.*
+import java.util.LinkedList
 import java.util.logging.Level
 
 class BatchOperation(

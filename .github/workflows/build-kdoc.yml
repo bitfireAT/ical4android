@@ -1,10 +1,16 @@
-name: Build KDoc
+name: Build and publish KDoc
 on:
   push:
     branches: [main]
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   build:
-    name: Build and publish KDoc
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -15,12 +21,19 @@ jobs:
       - uses: gradle/gradle-build-action@v2
 
       - name: Build KDoc
-        run: ./gradlew dokkaHtml
-      - name: Publish KDoc
-        if: success()
-        uses: crazy-max/ghaction-github-pages@v3
+        run: ./gradlew --no-daemon --no-configuration-cache dokkaHtml
+
+      - uses: actions/upload-pages-artifact@v1
         with:
-          target_branch: gh-pages
-          build_dir: build/dokka/html
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: build/dokka/html
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1

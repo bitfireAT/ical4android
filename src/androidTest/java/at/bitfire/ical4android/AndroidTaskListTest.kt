@@ -15,7 +15,9 @@ import org.dmfs.tasks.contract.TaskContract
 import org.dmfs.tasks.contract.TaskContract.Properties
 import org.dmfs.tasks.contract.TaskContract.Property.Relation
 import org.dmfs.tasks.contract.TaskContract.Tasks
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AndroidTaskListTest(providerName: TaskProvider.ProviderName):

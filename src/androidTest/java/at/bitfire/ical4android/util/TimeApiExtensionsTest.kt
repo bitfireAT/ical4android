@@ -20,7 +20,15 @@ import net.fortuna.ical4j.util.TimeZones
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.time.*
+import java.time.DayOfWeek
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.Period
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 
 class TimeApiExtensionsTest {
 

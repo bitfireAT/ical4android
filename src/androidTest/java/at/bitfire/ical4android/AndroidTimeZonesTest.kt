@@ -10,7 +10,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Test
 import java.time.ZoneId
 import java.time.format.TextStyle
-import java.util.*
+import java.util.Locale
 
 class AndroidTimeZonesTest {
 

@@ -7,7 +7,12 @@ package at.bitfire.ical4android
 import android.content.ContentResolver
 import net.fortuna.ical4j.data.DefaultParameterFactorySupplier
 import net.fortuna.ical4j.data.DefaultPropertyFactorySupplier
-import net.fortuna.ical4j.model.*
+import net.fortuna.ical4j.model.Parameter
+import net.fortuna.ical4j.model.ParameterBuilder
+import net.fortuna.ical4j.model.ParameterFactory
+import net.fortuna.ical4j.model.Property
+import net.fortuna.ical4j.model.PropertyBuilder
+import net.fortuna.ical4j.model.PropertyFactory
 import org.json.JSONArray
 import org.json.JSONObject
 

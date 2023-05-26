@@ -4,9 +4,6 @@
 
 package at.bitfire.ical4android.util
 
-import java.io.StringReader
-import java.time.Duration
-import java.time.Period
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.component.VTimeZone
@@ -22,6 +19,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.StringReader
+import java.time.Duration
+import java.time.Period
 
 class AndroidTimeUtilsTest {
 

@@ -25,10 +25,6 @@ import at.bitfire.ical4android.util.AndroidTimeUtils
 import at.bitfire.ical4android.util.DateUtils
 import at.bitfire.ical4android.util.MiscUtils.ContentProviderClientHelper.closeCompat
 import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
-import io.mockk.InternalPlatformDsl.toStr
-import java.net.URI
-import java.time.Duration
-import java.time.Period
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateList
 import net.fortuna.ical4j.model.DateTime
@@ -59,6 +55,9 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+import java.net.URI
+import java.time.Duration
+import java.time.Period
 
 class AndroidEventTest {
 

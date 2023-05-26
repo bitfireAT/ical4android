@@ -29,10 +29,10 @@ object ICalPreprocessor {
         CreatedPropertyRule(),      // make sure CREATED is UTC
 
         DatePropertyRule(),         // These two rules also replace VTIMEZONEs of the iCalendar ...
-        DateListPropertyRule(),     // ... by the ical4j VTIMEZONE with the same TZID!
+        DateListPropertyRule()      // ... by the ical4j VTIMEZONE with the same TZID!
     )
 
-    val streamPreprocessors = arrayOf(
+    private val streamPreprocessors = arrayOf(
         FixInvalidUtcOffsetPreprocessor,    // fix things like TZOFFSET(FROM,TO):+5730
         FixInvalidDayOffsetPreprocessor     // fix things like DURATION:PT2D
     )

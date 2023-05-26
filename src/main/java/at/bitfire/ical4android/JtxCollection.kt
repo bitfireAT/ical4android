@@ -17,7 +17,7 @@ import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.component.VJournal
 import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.property.Version
-import java.util.*
+import java.util.LinkedList
 import java.util.logging.Level
 
 open class JtxCollection<out T: JtxICalObject>(val account: Account,

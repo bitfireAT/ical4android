@@ -7,9 +7,17 @@ package at.bitfire.ical4android.util
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.util.TimeZones
-import java.time.*
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.Period
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.temporal.TemporalAmount
-import java.util.*
+import java.util.Calendar
+import java.util.TimeZone
 
 object TimeApiExtensions {
 
