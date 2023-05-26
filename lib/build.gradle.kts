@@ -59,6 +59,28 @@ android {
     lint {
         disable += listOf("AllowBackup", "InvalidPackage")
     }
+
+    publishing {
+        // Configure publish variant
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
+}
+
+publishing {
+    // Configure publishing data
+    publications {
+        register("release", MavenPublication::class.java) {
+            groupId = "com.github.bitfireAT"
+            artifactId = "ical4android"
+            version = project.properties["ical4android.version"] as String
+
+            afterEvaluate {
+                from(components["release"])
+            }
+        }
+    }
 }
 
 dependencies {
