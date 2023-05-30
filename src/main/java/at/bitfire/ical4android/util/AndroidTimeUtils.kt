@@ -181,10 +181,8 @@ object AndroidTimeUtils {
             }
 
             // Add the list of dates generated into the key of the date's timezone.
-            val newList = datesMap.getOrDefault(tzId, mutableListOf())
-            // Add all the dates from datesList
-            newList.addAll(datesList)
-            datesMap[tzId] = newList
+            val tzDatesList = datesMap.getOrPut(tzId) { mutableListOf() }
+            tzDatesList.addAll(datesList)
         }
 
         // Group all the dates by timezone, but don't prefix timezones that are UTC
@@ -201,7 +199,8 @@ object AndroidTimeUtils {
      * constructed from these values.
      *
      * @param dbStr     formatted string from Android calendar provider (RDATE/EXDATE field)
-     *                  expected format: "[TZID;]date1,date2,date3" where date is "yyyymmddThhmmss[Z]"
+     *                  expected format: `[TZID;]date1,date2,date3` where date is `yyyymmddThhmmss[Z]`;
+     *                  may consist of multiple lines, separated by `\n`
      * @param allDay    true: list will contain DATE values; false: list will contain DATE_TIME values
      * @param exclude   this time stamp won't be added to the [DateListProperty]
      * @param generator generates the [DateListProperty]; must call the constructor with the one argument of type [DateList]
@@ -218,19 +217,14 @@ object AndroidTimeUtils {
     ): T {
         val lines = dbStr.split("\n")
 
-        // If there's only one line, or one repeated timezone, that will be taken. Otherwise the
-        // DateList will be the first one given, and all the dates will be calculated to match.
-        // This is because there's no way to state multiple timezones inside a single DateListProperty
-
-        val timezones = lines
-            .mapNotNull { line ->
+        // extract time zone IDs from the lines
+        val timezones =
+            lines.mapNotNull { line ->
                 val index = line.indexOf(RECURRENCE_LIST_TZID_SEPARATOR)
                 if (index == -1) return@mapNotNull null
                 val tzId = line.substring(0, index)
                 DateUtils.ical4jTimeZone(tzId)
-            }
-            // Convert to set to merge duplicates
-            .toSet()
+            }.toSet()           // convert to set to merge duplicates
 
         // Update dateList's timezone and store if should be adjusted
         val mainTimeZone: TimeZone =
