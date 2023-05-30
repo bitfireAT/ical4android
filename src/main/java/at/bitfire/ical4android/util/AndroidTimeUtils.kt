@@ -9,6 +9,12 @@ package at.bitfire.ical4android.util
 import android.text.format.Time
 import at.bitfire.ical4android.Ical4Android
 import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDateTime
+import net.fortuna.ical4j.model.*
+import net.fortuna.ical4j.model.parameter.Value
+import net.fortuna.ical4j.model.property.DateListProperty
+import net.fortuna.ical4j.model.property.DateProperty
+import net.fortuna.ical4j.model.property.RDate
+import net.fortuna.ical4j.util.TimeZones
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.time.Duration
@@ -20,13 +26,6 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAmount
 import java.util.LinkedList
 import java.util.Locale
-import net.fortuna.ical4j.model.*
-import net.fortuna.ical4j.model.parameter.Value
-import net.fortuna.ical4j.model.property.DateListProperty
-import net.fortuna.ical4j.model.property.DateProperty
-import net.fortuna.ical4j.model.property.ExDate
-import net.fortuna.ical4j.model.property.RDate
-import net.fortuna.ical4j.util.TimeZones
 
 object AndroidTimeUtils {
 
@@ -147,7 +146,7 @@ object AndroidTimeUtils {
         */
         val dateFormatUtcMidnight = SimpleDateFormat("yyyyMMdd'T'000000'Z'", Locale.ROOT)
         /** Provides a collection of dates for each timezone id (key) */
-        val datesMap = mutableMapOf<String, List<String>>()
+        val datesMap = mutableMapOf<String, MutableList<String>>()
 
         for (dateListProp in dates) {
             if (dateListProp is RDate && dateListProp.periods.isNotEmpty()) {
@@ -182,21 +181,18 @@ object AndroidTimeUtils {
             }
 
             // Add the list of dates generated into the key of the date's timezone.
-            val newList = datesMap.getOrDefault(tzId, emptyList())
-                .toMutableList()
-                .apply {
-                    // Add all the dates from datesList
-                    addAll(datesList)
-                }
+            val newList = datesMap.getOrDefault(tzId, mutableListOf())
+            // Add all the dates from datesList
+            newList.addAll(datesList)
             datesMap[tzId] = newList
         }
 
         // Group all the dates by timezone, but don't prefix timezones that are UTC
-        return datesMap.map { (tzId, value) ->
-            val tzPrefix = if (tzId != TimeZones.UTC_ID)
-                tzId + RECURRENCE_LIST_TZID_SEPARATOR
-            else ""
-            tzPrefix + value.joinToString(RECURRENCE_LIST_VALUE_SEPARATOR)
+        return datesMap.map { (tzId, dateStrList) ->
+            val s = StringBuilder()
+            if (tzId != TimeZones.UTC_ID)
+                s.append(tzId).append(RECURRENCE_LIST_TZID_SEPARATOR)
+            s.append(dateStrList.joinToString(RECURRENCE_LIST_VALUE_SEPARATOR))
         }.joinToString("\n")
     }
 
@@ -306,12 +302,8 @@ object AndroidTimeUtils {
         val allDay = tz == null
         val strDates = LinkedList<String>()
         for (dateListProp in dates) {
-            if (dateListProp is RDate)
-                if (dateListProp.periods.isNotEmpty())
-                    Ical4Android.log.warning("RDATE PERIOD not supported, ignoring")
-                else if (dateListProp is ExDate)
-                    if (dateListProp.periods.isNotEmpty())
-                        Ical4Android.log.warning("EXDATE PERIOD not supported, ignoring")
+            if (dateListProp is RDate && dateListProp.periods.isNotEmpty())
+                Ical4Android.log.warning("RDATE PERIOD not supported, ignoring")
 
             for (date in dateListProp.dates) {
                 val dateToUse =
