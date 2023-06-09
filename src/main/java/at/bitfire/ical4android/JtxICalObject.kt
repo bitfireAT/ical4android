@@ -582,6 +582,11 @@ open class JtxICalObject(
                 Ical4Android.log.warning("Found DURATION without DTSTART; ignoring")
                 iCalObject.duration = null
             }
+
+            if(iCalObject.rrule != null && iCalObject.dtstart == null) {
+                Ical4Android.log.warning("Found RECURRENCE-RULE without DTSTART; dropping rule")
+                iCalObject.rrule = null
+            }
         }
     }
 
