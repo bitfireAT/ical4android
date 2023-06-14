@@ -55,7 +55,7 @@ by Google LLC. Android is a trademark of Google LLC._
 2. Add the dependency to your module's `build.gradle` file:
     ```groovy
     dependencies {
-       implementation 'com.github.bitfireAT:cert4android:<version>'
+       implementation 'com.github.bitfireAT:ical4android:<version>'
     }
     ```
 
