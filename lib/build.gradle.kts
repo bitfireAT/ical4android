@@ -13,13 +13,11 @@ val version_ical4j = "3.2.11"
 
 android {
     compileSdk = 33
-    buildToolsVersion = "33.0.0"
 
     namespace = "at.bitfire.ical4android"
 
     defaultConfig {
         minSdk = 21        // Android 5.0
-        targetSdk = 33     // Android 13
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
