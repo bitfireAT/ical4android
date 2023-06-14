@@ -72,7 +72,7 @@ publishing {
         register("release", MavenPublication::class.java) {
             groupId = "com.github.bitfireAT"
             artifactId = "ical4android"
-            version = project.properties["ical4android.version"] as String
+            version = System.getenv("GIT_COMMIT")
 
             afterEvaluate {
                 from(components["release"])

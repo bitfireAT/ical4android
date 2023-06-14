@@ -9,4 +9,4 @@ plugins {
 }
 
 group = "at.bitfire"
-version = project.properties["ical4android.version"]
+version = System.getenv("GIT_COMMIT")
