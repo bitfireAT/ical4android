@@ -81,12 +81,6 @@ publishing {
     }
 }
 
-configurations {
-    all {
-        exclude(group = "org.codehaus.groovy", module = "groovy-dateutil")
-    }
-}
-
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.21")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
@@ -96,8 +90,7 @@ dependencies {
         exclude(group = "commons-logging")
         exclude(group = "org.json", module = "json")
         // exclude groovy because we don"t need it
-        exclude(group = "org.codehaus.groovy", module = "groovy")
-        exclude(group = "org.codehaus.groovy", module = "groovy-dateutil")
+        exclude(group = "org.codehaus.groovy")
     }
     // ical4j requires newer Apache Commons libraries, which require Java8. Force latest Java7 versions.
     // noinspection GradleDependency
