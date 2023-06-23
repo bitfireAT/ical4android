@@ -81,6 +81,12 @@ publishing {
     }
 }
 
+configurations {
+    all {
+        exclude(group = "org.codehaus.groovy", module = "groovy-dateutil")
+    }
+}
+
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.21")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
