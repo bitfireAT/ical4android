@@ -81,22 +81,21 @@ publishing {
     }
 }
 
-// exclude groovy because we don"t need it, and it needs API 26+
-configurations {
-    all {
-        exclude(group = "org.codehaus.groovy")
-    }
+configurations.forEach {
+    // exclude modules which are in conflict with system libraries
+    it.exclude("commons-logging")
+    it.exclude("org.json", "json")
+
+    // exclude groovy because we don"t need it, and it needs API 26+
+    it.exclude("org.codehaus.groovy", "groovy")
+    it.exclude("org.codehaus.groovy", "groovy-dateutil")
 }
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.21")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 
-    api("org.mnode.ical4j:ical4j:${version_ical4j}") {
-        // exclude modules which are in conflict with system libraries
-        exclude(group = "commons-logging")
-        exclude(group = "org.json", module = "json")
-    }
+    api("org.mnode.ical4j:ical4j:${version_ical4j}")
     // ical4j requires newer Apache Commons libraries, which require Java8. Force latest Java7 versions.
     // noinspection GradleDependency
     api("org.apache.commons:commons-collections4") {
@@ -112,10 +111,11 @@ dependencies {
     }
 
     // noinspection GradleDependency
+    @Suppress("GradleDependency")
     implementation("commons-io:commons-io:2.6")
 
     implementation("org.slf4j:slf4j-jdk14:2.0.3")
-    implementation("androidx.core:core-ktx:1.10.0")
+    implementation("androidx.core:core-ktx:1.10.1")
 
     androidTestImplementation("androidx.test:core:1.5.0")
     androidTestImplementation("androidx.test:runner:1.5.2")
