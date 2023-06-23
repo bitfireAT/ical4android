@@ -50,7 +50,7 @@ android {
 
     packaging {
         resources {
-            excludes += listOf("META-INF/DEPENDENCIES", "META-INF/LICENSE", "META-INF/*.md")
+            excludes += listOf("META-INF/DEPENDENCIES", "META-INF/LICENSE", "META-INF/*.md", "META-INF/INDEX.LIST")
         }
     }
 
