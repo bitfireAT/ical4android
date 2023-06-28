@@ -21,11 +21,11 @@ jobs:
       - uses: gradle/gradle-build-action@v2
 
       - name: Build KDoc
-        run: ./gradlew --no-daemon --no-configuration-cache dokkaHtml
+        run: ./gradlew --no-daemon --no-configuration-cache ical4android:dokkaHtml
 
       - uses: actions/upload-pages-artifact@v1
         with:
-          path: build/dokka/html
+          path: lib/build/dokka/html
 
   deploy:
     environment:

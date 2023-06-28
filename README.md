@@ -1,6 +1,7 @@
 
 [![Development tests](https://github.com/bitfireAT/ical4android/actions/workflows/test-dev.yml/badge.svg)](https://github.com/bitfireAT/ical4android/actions/workflows/test-dev.yml)
 [![Documentation](https://img.shields.io/badge/documentation-kdoc-brightgreen)](https://bitfireat.github.io/ical4android/)
+[![Latest Version](https://img.shields.io/jitpack/version/com.github.bitfireAT/ical4android)](https://jitpack.io/#bitfireAT/ical4android)
 
 
 # ical4android
@@ -32,17 +33,31 @@ by Google LLC. Android is a trademark of Google LLC._
 
 ## How to use
 
-You can use ical4android as a git submodule or using [jitpack.io](https://jitpack.io/#bitfireAT/ical4android):
-
+1. Add the [jitpack.io](https://jitpack.io) repository to your project's level `build.gradle`:
+    ```groovy
     allprojects {
         repositories {
-            maven { url 'https://jitpack.io' }
+            // ... more repos
+            maven { url "https://jitpack.io" }
         }
     }
-    dependencies {
-        implementation 'com.github.bitfireAT:ical4android:<version>'        // see tags for latest version, like 1.0, or use the latest commit ID from main branch
-        //implementation 'com.github.bitfireAT:ical4android:main-SNAPSHOT'  // use it only for testing because it doesn't generate reproducible builds
+    ```
+   or if you are using `settings.gradle`:
+    ```groovy
+    dependencyResolutionManagement {
+        repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+        repositories {
+            // ... more repos
+            maven { url "https://jitpack.io" }
+        }
     }
+    ```
+2. Add the dependency to your module's `build.gradle` file:
+    ```groovy
+    dependencies {
+       implementation 'com.github.bitfireAT:ical4android:<version>'
+    }
+    ```
 
 
 ## Contact
