@@ -5,8 +5,8 @@
 plugins {
     id("com.android.library")
     id("kotlin-android")
-    id("org.jetbrains.dokka")
     id("maven-publish")
+    id("org.jetbrains.dokka")
 }
 
 val version_ical4j = "3.2.11"
@@ -39,13 +39,15 @@ android {
         jvmToolchain(17)
     }
 
-    buildFeatures {
-        buildConfig = true
-    }
+    buildFeatures.buildConfig = true
 
-    sourceSets["main"].java {
-        srcDir("${projectDir}/src/main/java")
-        srcDir("${rootDir}/opentasks-contract/src/main/java")
+    sourceSets["main"].apply {
+        kotlin {
+            srcDir("${projectDir}/src/main/kotlin")
+        }
+        java {
+            srcDir("${rootDir}/opentasks-contract/src/main/java")
+        }
     }
 
     packaging {
@@ -92,10 +94,13 @@ configurations.forEach {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.21")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 
+    implementation("androidx.core:core-ktx:1.10.1")
     api("org.mnode.ical4j:ical4j:${version_ical4j}")
+    implementation("org.slf4j:slf4j-jdk14:2.0.3")       // ical4j logging over java.util.Logger
+
     // ical4j requires newer Apache Commons libraries, which require Java8. Force latest Java7 versions.
     // noinspection GradleDependency
     api("org.apache.commons:commons-collections4") {
@@ -109,13 +114,9 @@ dependencies {
             strictly("3.8.1")
         }
     }
-
     // noinspection GradleDependency
     @Suppress("GradleDependency")
     implementation("commons-io:commons-io:2.6")
-
-    implementation("org.slf4j:slf4j-jdk14:2.0.3")
-    implementation("androidx.core:core-ktx:1.10.1")
 
     androidTestImplementation("androidx.test:core:1.5.0")
     androidTestImplementation("androidx.test:runner:1.5.2")
