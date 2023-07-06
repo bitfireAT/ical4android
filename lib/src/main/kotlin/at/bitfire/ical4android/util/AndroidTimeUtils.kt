@@ -219,7 +219,7 @@ object AndroidTimeUtils {
         allDay: Boolean,
         exclude: Long? = null,
         generator: (DateList) -> T
-    ): T {
+    ): List<T> {
         val lines = dbStr.split("\n")
 
         // extract time zone IDs from the lines
@@ -231,58 +231,52 @@ object AndroidTimeUtils {
                 DateUtils.ical4jTimeZone(tzId)
             }.toSet()           // convert to set to merge duplicates
 
-        // Update dateList's timezone and store if should be adjusted
-        val mainTimeZone: TimeZone =
-            if (timezones.isNotEmpty())
-                timezones.first()
-            else // If size is greater than 1, set to UTC (null)
-                DateUtils.ical4jTimeZone(TimeZones.UTC_ID)!!
-
-        val dateList = DateList(
-            if (allDay) Value.DATE
-            else Value.DATE_TIME,
-            mainTimeZone
-        )
-
-        if (mainTimeZone.id == TimeZones.UTC_ID) dateList.isUtc = true
-
-        for (line in lines) {
-            val timeZoneId = line.substringBefore(RECURRENCE_LIST_TZID_SEPARATOR, TimeZones.UTC_ID)
-            val lineZoneId = ZoneId.of(timeZoneId)
+        return timezones.map { timezone ->
+            /** Has all the dates for the current timezone. */
+            val dateLines = lines.filter { line ->
+                val timeZoneId = line.substringBefore(RECURRENCE_LIST_TZID_SEPARATOR, TimeZones.UTC_ID)
+                val lineZoneId = ZoneId.of(timeZoneId)
+                lineZoneId == timezone.toZoneId()
+            }
+            val dateList = DateList(
+                if (allDay) Value.DATE
+                else Value.DATE_TIME,
+                timezone
+            )
+            if (timezone.id == TimeZones.UTC_ID) dateList.isUtc = true
 
             // Store the timezone id of the current line, default to UTC
-            val dates = line
-                .substringAfter(RECURRENCE_LIST_TZID_SEPARATOR)
-                .split(RECURRENCE_LIST_VALUE_SEPARATOR)
-                .map { dateStr ->
-                    val pattern = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss['Z']")
-                    if (allDay)
-                        LocalDate
-                            .parse(dateStr, pattern)
-                            .atTime(0, 0)
-                            .atZone(lineZoneId)
-                            .withZoneSameInstant(mainTimeZone.toZoneId())
-                            .toIcal4jDateTime()
-                    else
-                        LocalDateTime
-                            .parse(dateStr, pattern)
-                            .atZone(lineZoneId)
-                            .withZoneSameInstant(mainTimeZone.toZoneId())
-                            .toIcal4jDateTime()
-                }
-                .filter { it.time != exclude }
-                .map {
-                    if (allDay)
-                        Date(it.time)
-                    else
-                        DateTime(it.time)
-                }
+            val dates = dateLines.flatMap { line ->
+                line.substringAfter(RECURRENCE_LIST_TZID_SEPARATOR)
+                    .split(RECURRENCE_LIST_VALUE_SEPARATOR)
+                    .map { dateStr ->
+                        val pattern = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss['Z']")
+                        if (allDay)
+                            LocalDate
+                                .parse(dateStr, pattern)
+                                .atTime(0, 0)
+                                .atZone(timezone.toZoneId())
+                                .toIcal4jDateTime()
+                        else
+                            LocalDateTime
+                                .parse(dateStr, pattern)
+                                .atZone(timezone.toZoneId())
+                                .toIcal4jDateTime()
+                    }
+                    .filter { it.time != exclude }
+                    .map {
+                        if (allDay)
+                            Date(it.time)
+                        else
+                            DateTime(it.time)
+                    }
+            }
             dateList.addAll(dates)
-        }
 
-        return generator(dateList).apply {
-            if (dates.type == Value.DATE_TIME && !dates.isUtc)
-                timeZone = mainTimeZone
+            generator(dateList).apply {
+                if (this.dates.type == Value.DATE_TIME && !this.dates.isUtc)
+                    this.timeZone = timezone
+            }
         }
     }
 
