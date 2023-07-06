@@ -302,6 +302,21 @@ class AndroidTimeUtilsTest {
     }
 
     @Test
+    fun testAndroidStringToRecurrenceSets_ZonedTimes_DifferentZones() {
+        // list of times with different time zones
+        val exDate = AndroidTimeUtils.androidStringToRecurrenceSet("${tzToronto.id};20150103T113030\n" +
+                "${tzBerlin.id};20150704T113040",false) { ExDate(it) }
+        assertEquals(tzToronto, exDate.timeZone)
+        assertEquals(tzToronto.id, (exDate.getParameter(Parameter.TZID) as TzId).value)
+        val exDates = exDate.dates
+        assertEquals(Value.DATE_TIME, exDates.type)
+        assertEquals(tzToronto, exDates.timeZone)
+        assertEquals(2, exDates.size)
+        assertEquals(1420302630000L, exDates[0].time)
+        assertEquals(1436002240000L, exDates[1].time)
+    }
+
+    @Test
     fun testAndroidStringToRecurrenceSets_Dates() {
         // list of dates
         val exDate = AndroidTimeUtils.androidStringToRecurrenceSet("20150101T103010Z,20150702T103020Z", true) { ExDate(it) }
@@ -366,7 +381,8 @@ class AndroidTimeUtilsTest {
         val list = ArrayList<DateListProperty>(2)
         list.add(RDate(DateList("20150103T113030", Value.DATE_TIME, tzToronto)))
         list.add(RDate(DateList("20150704T113040", Value.DATE_TIME, tzBerlin)))
-        assertEquals("America/Toronto;20150103T113030,20150704T053040", AndroidTimeUtils.recurrenceSetsToAndroidString(list, false))
+        assertEquals("America/Toronto;20150103T113030\n" +
+                "Europe/Berlin;20150704T113040", AndroidTimeUtils.recurrenceSetsToAndroidString(list, false))
     }
 
     @Test
@@ -377,7 +393,8 @@ class AndroidTimeUtilsTest {
         val list = ArrayList<DateListProperty>(2)
         list.add(RDate(DateList("20150103T113030Z", Value.DATE_TIME)))
         list.add(RDate(DateList("20150704T113040", Value.DATE_TIME, tzBerlin)))
-        assertEquals("20150103T113030Z,20150704T093040Z", AndroidTimeUtils.recurrenceSetsToAndroidString(list, false))
+        assertEquals("20150103T113030Z\n" +
+                "Europe/Berlin;20150704T113040", AndroidTimeUtils.recurrenceSetsToAndroidString(list, false))
     }
 
     @Test

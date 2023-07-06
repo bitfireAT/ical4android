@@ -203,7 +203,7 @@ class AndroidEventTest {
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 
         assertEquals("FREQ=DAILY;COUNT=5\nFREQ=WEEKLY;COUNT=10", values.getAsString(Events.RRULE))
-        assertEquals("${tzVienna.id};20200601T123000,20210601T123000", values.getAsString(Events.RDATE))
+        assertEquals("Europe/Vienna;20200601T123000,20210601T123000", values.getAsString(Events.RDATE))
     }
 
     @Test
@@ -254,7 +254,7 @@ class AndroidEventTest {
         assertNull(values.get(Events.DTEND))
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 
-        assertEquals("${tzVienna.id};20200601T123000,20200602T113000", values.get(Events.RDATE))
+        assertEquals("Europe/Vienna;20200601T123000,20200602T113000", values.get(Events.RDATE))
     }
 
     @Test
@@ -290,7 +290,7 @@ class AndroidEventTest {
         assertNull(values.get(Events.DTEND))
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 
-        assertEquals("${tzShanghai.id};20200601T123000,20200701T183000,20200702T183000,20200801T123000,20200802T123000", values.getAsString(Events.RDATE))
+        assertEquals("Asia/Shanghai;20200601T123000,20200801T123000,20200802T123000\nEurope/Vienna;20200701T123000,20200702T123000", values.getAsString(Events.RDATE))
     }
 
     @Test
@@ -420,7 +420,7 @@ class AndroidEventTest {
             dtStart = DtStart(Date("20200601"))
             dtEnd = DtEnd(Date("20200701"))
             rDates += RDate(DateList("20210601", Value.DATE))
-            rDates += RDate(DateList("20220601T120030", Value.DATE_TIME))
+            rDates += RDate(DateList("20220601T120030", Value.DATE_TIME, tzVienna))
         }
         assertEquals(1, values.getAsInteger(Events.ALL_DAY))
 
@@ -431,7 +431,10 @@ class AndroidEventTest {
         assertNull(values.get(Events.DTEND))
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 
-        assertEquals("20200601T000000Z,20210601T000000Z,20220601T000000Z", values.get(Events.RDATE))
+        assertEquals(
+            "20200601T000000Z,20210601T000000Z\n" +
+                    "Europe/Vienna;20220601T000000Z", values.getAsString(Events.RDATE)
+        )
     }
 
     @Test
@@ -491,8 +494,8 @@ class AndroidEventTest {
         val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzShanghai)
             duration = Duration(null, "PT5M30S")
-            rDates += RDate(DateList("20200602T113000", Value.DATE_TIME))
-            exDates += ExDate(DateList("20200602T113000", Value.DATE_TIME))
+            rDates += RDate(DateList("20200602T113000", Value.DATE_TIME, tzVienna))
+            exDates += ExDate(DateList("20200602T113000", Value.DATE_TIME, tzVienna))
         }
         assertEquals(0, values.getAsInteger(Events.ALL_DAY))
 
@@ -504,8 +507,8 @@ class AndroidEventTest {
 
         val rewritten = DateTime("20200602T113000")
         rewritten.timeZone = tzShanghai
-        assertEquals("${tzShanghai.id};20200601T123000,$rewritten", values.get(Events.RDATE))
-        assertEquals("$tzIdDefault;20200602T113000", values.get(Events.EXDATE))
+        assertEquals("Asia/Shanghai;20200601T123000\nEurope/Vienna;20200602T113000", values.get(Events.RDATE))
+        assertEquals("Europe/Vienna;20200602T113000", values.get(Events.EXDATE))
     }
 
     @Test
