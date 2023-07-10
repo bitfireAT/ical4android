@@ -342,10 +342,13 @@ class AndroidTimeUtilsTest {
     @Test
     fun testAndroidStringToRecurrenceSets_Dates() {
         // list of dates
-        AndroidTimeUtils.androidStringToRecurrenceSet(
+        val exDateList = AndroidTimeUtils.androidStringToRecurrenceSet(
             "20150101T103010Z,20150702T103020Z",
             true
-        ) { ExDate(it) }.forEach { exDate ->
+        ) { ExDate(it) }
+        assertEquals(1, exDateList.size)
+
+        exDateList[0].let { exDate ->
             val exDates = exDate.dates
             assertEquals(Value.DATE, exDates.type)
             assertEquals(2, exDates.size)
@@ -356,11 +359,14 @@ class AndroidTimeUtilsTest {
 
     @Test
     fun testAndroidStringToRecurrenceSets_Exclude() {
-        AndroidTimeUtils.androidStringToRecurrenceSet(
+        val exDateList = AndroidTimeUtils.androidStringToRecurrenceSet(
             "${tzToronto.id};20150103T113030",
             false,
             1420302630000L
-        ) { ExDate(it) }.forEach { exDate ->
+        ) { ExDate(it) }
+        assertEquals(1, exDateList.size)
+
+        exDateList[0].let { exDate ->
             assertEquals(0, exDate.dates.size)
         }
     }
