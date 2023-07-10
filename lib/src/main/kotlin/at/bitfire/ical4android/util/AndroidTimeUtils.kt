@@ -210,7 +210,8 @@ object AndroidTimeUtils {
      * @param exclude   this time stamp won't be added to the [DateListProperty]
      * @param generator generates the [DateListProperty]; must call the constructor with the one argument of type [DateList]
      *
-     * @return          instance of "type" containing the parsed dates/times from the string
+     * @return          instance of "type" containing the parsed dates/times from the string, grouped
+     *                  by timezone
      *
      * @throws ParseException when the string cannot be parsed
      */
@@ -223,11 +224,14 @@ object AndroidTimeUtils {
         val lines = dbStr.split("\n")
 
         // extract time zone IDs from the lines
-        val timezones =
+        val timezones: Set<TimeZone> =
             lines.mapNotNull { line ->
                 val index = line.indexOf(RECURRENCE_LIST_TZID_SEPARATOR)
-                if (index == -1) return@mapNotNull null
-                val tzId = line.substring(0, index)
+                // If timezone is not found, default to UTC
+                val tzId = if (index == -1)
+                    TimeZones.UTC_ID
+                else
+                    line.substring(0, index)
                 DateUtils.ical4jTimeZone(tzId)
             }.toSet()           // convert to set to merge duplicates
 
