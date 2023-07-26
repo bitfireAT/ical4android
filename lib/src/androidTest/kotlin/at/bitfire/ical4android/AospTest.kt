@@ -12,23 +12,22 @@ import android.net.Uri
 import android.provider.CalendarContract
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import at.bitfire.ical4android.util.InitCalendarProviderRule
 import at.bitfire.ical4android.util.MiscUtils.ContentProviderClientHelper.closeCompat
 import at.bitfire.ical4android.util.MiscUtils.CursorHelper.toValues
-import org.junit.After
+import org.junit.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
 
 class AospTest {
 
-    @JvmField
-    @Rule
-    val permissionRule = GrantPermissionRule.grant(
-        Manifest.permission.READ_CALENDAR,
-        Manifest.permission.WRITE_CALENDAR
-    )!!
+    companion object {
+
+        @JvmField
+        @ClassRule
+        val initCalendarProviderRule = InitCalendarProviderRule.withPermissions
+
+    }
 
     private val testAccount = Account("test@example.com", CalendarContract.ACCOUNT_TYPE_LOCAL)
 
