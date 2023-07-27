@@ -11,14 +11,24 @@ import at.bitfire.ical4android.util.DateUtils
 import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toZoneIdCompat
+import java.time.DateTimeException
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.Recur
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.RRule
 import net.fortuna.ical4j.util.TimeZones
 import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
+import java.time.temporal.Temporal
 import java.util.Calendar
+import java.util.Date
+import java.util.LinkedList
 import java.util.TimeZone
 
 /**
@@ -37,10 +47,12 @@ class EventValidator(val e: Event) {
         /**
          * Ensure proper start and end time
          */
-        internal fun correctStartAndEndTime(e: Event): DtStart {
+        internal fun correctStartAndEndTime(e: Event): DtStart<Temporal> {
             val dtStart = e.dtStart ?: throw InvalidCalendarException("Event without start time")
+            val startInstant = Instant.from(dtStart.date)
             e.dtEnd?.let { dtEnd ->
-                if (dtStart.date > dtEnd.date) {
+                val endInstant = Instant.from(dtEnd.date)
+                if (startInstant > endInstant) {
                     Ical4Android.log.warning("DTSTART after DTEND; removing DTEND")
                     e.dtEnd = null
                 }
@@ -51,50 +63,56 @@ class EventValidator(val e: Event) {
         /**
          * Tries to make the value type of UNTIL and DTSTART the same (both DATE or DATETIME).
          */
-        internal fun sameTypeForDtStartAndRruleUntil(dtStart: DtStart, rRules: MutableList<RRule>) {
+        internal fun sameTypeForDtStartAndRruleUntil(
+            dtStart: DtStart<Temporal>,
+            rRules: LinkedList<RRule<Temporal>>
+        ) {
             if (DateUtils.isDate(dtStart)) {
                 // DTSTART is a DATE
-                val newRRules = mutableListOf<RRule>()
-                val rRuleIterator = rRules.iterator()
-                while (rRuleIterator.hasNext()) {
-                    val rRule = rRuleIterator.next()
+                val newRRules = mutableListOf<RRule<Temporal>>()
+                for (rRule in rRules) {
                     rRule.recur.until?.let { until ->
-                        if (until is DateTime) {
+                        if (until.isSupported(ChronoUnit.HOURS)) {
                             Ical4Android.log.warning("DTSTART has DATE, but UNTIL has DATETIME; making UNTIL have DATE only")
 
-                            val newUntil = until.toLocalDate().toIcal4jDate()
+                            val newUntil = LocalDate.from(until)
 
                             // remove current RRULE and remember new one to be added
-                            val newRRule = RRule(Recur.Builder(rRule.recur)
-                                .until(newUntil)
-                                .build())
+                            val newRRule = RRule(
+                                Recur.Builder(rRule.recur)
+                                    .until(newUntil)
+                                    .build()
+                            )
                             Ical4Android.log.info("New $newRRule (was ${rRule.toString().trim()})")
                             newRRules += newRRule
-                            rRuleIterator.remove()
                         }
                     }
                 }
                 // add repaired RRULEs
                 rRules += newRRules
-
             } else if (DateUtils.isDateTime(dtStart)) {
                 // DTSTART is a DATE-TIME
-                val newRRules = mutableListOf<RRule>()
+                val newRRules = mutableListOf<RRule<Temporal>>()
                 val rRuleIterator = rRules.iterator()
                 while (rRuleIterator.hasNext()) {
                     val rRule = rRuleIterator.next()
                     rRule.recur.until?.let { until ->
-                        if (until !is DateTime) {
+                        if (!until.isSupported(ChronoUnit.HOURS)) {
                             Ical4Android.log.warning("DTSTART has DATETIME, but UNTIL has DATE; copying time from DTSTART to UNTIL")
-                            val dtStartTimeZone = if (dtStart.timeZone != null)
-                                dtStart.timeZone
-                            else if (dtStart.isUtc)
-                                TimeZones.getUtcTimeZone()
-                            else /* floating time */
-                                TimeZone.getDefault()
+                            val dtStartTimeZone =
+                                try {
+                                    ZonedDateTime.from(dtStart.date).zone
+                                } catch (_: DateTimeException) {
+                                    if (dtStart.isUtc)
+                                        ZoneOffset.UTC
+                                    else /* floating time */
+                                        ZoneId.systemDefault()
+                                }
 
-                            val dtStartCal = Calendar.getInstance(dtStartTimeZone).apply {
-                                time = dtStart.date
+                            val dtStartCal = Calendar.getInstance(
+                                net.fortuna.ical4j.model.TimeZone.getTimeZone(dtStartTimeZone)
+                            ).apply {
+                                time = Date(Instant.from(dtStart.date).toEpochMilli())
                             }
                             val dtStartTime = LocalTime.of(
                                 dtStartCal.get(Calendar.HOUR_OF_DAY),
@@ -102,17 +120,13 @@ class EventValidator(val e: Event) {
                                 dtStartCal.get(Calendar.SECOND)
                             )
 
-                            val newUntil = ZonedDateTime.of(
-                                until.toLocalDate(),    // date from until
-                                dtStartTime,       // time from dtStart
-                                dtStartTimeZone.toZoneIdCompat()
-                            )
+                            val newUntil = LocalDate.from(until)
+                                .atTime(dtStartTime)
+                                .atZone(dtStartTimeZone)
 
                             // Android requires UNTIL in UTC as defined in RFC 2445.
                             // https://android.googlesource.com/platform/frameworks/opt/calendar/+/refs/tags/android-12.1.0_r27/src/com/android/calendarcommon2/RecurrenceProcessor.java#93
-                            val newUntilUTC = DateTime(true).apply {
-                                time = newUntil.toInstant().toEpochMilli()
-                            }
+                            val newUntilUTC = newUntil.withZoneSameInstant(ZoneOffset.UTC)
 
                             // remove current RRULE and remember new one to be added
                             val newRRule = RRule(Recur.Builder(rRule.recur)
@@ -133,7 +147,10 @@ class EventValidator(val e: Event) {
         /**
          * Will remove the RRULES of an event where UNTIL lies before DTSTART
          */
-        internal fun removeRRulesWithUntilBeforeDtStart(dtStart: DtStart, rRules: MutableList<RRule>) {
+        internal fun removeRRulesWithUntilBeforeDtStart(
+            dtStart: DtStart<Temporal>,
+            rRules: LinkedList<RRule<Temporal>>
+        ) {
             val iter = rRules.iterator()
             while (iter.hasNext()) {
                 val rRule = iter.next()
@@ -147,9 +164,10 @@ class EventValidator(val e: Event) {
         /**
          * Checks whether UNTIL of an RRULE lies before DTSTART
          */
-        internal fun hasUntilBeforeDtStart(dtStart: DtStart, rRule: RRule): Boolean {
-            val until = rRule.recur.until ?: return false
-            return until < dtStart.date
+        internal fun hasUntilBeforeDtStart(dtStart: DtStart<Temporal>, rRule: RRule<Temporal>): Boolean {
+            val until = Instant.from(rRule.recur.until) ?: return false
+            val start = Instant.from(dtStart.date)
+            return until < start
         }
     }
 }

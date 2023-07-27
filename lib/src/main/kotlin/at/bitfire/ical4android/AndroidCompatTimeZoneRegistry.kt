@@ -9,6 +9,8 @@ import net.fortuna.ical4j.model.TimeZoneRegistryImpl
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.property.TzId
 import java.time.ZoneId
+import net.fortuna.ical4j.model.ComponentList
+import net.fortuna.ical4j.model.ContentCollection
 
 /**
  * Wrapper around default [TimeZoneRegistry] that uses the Android name if a time zone has a
@@ -67,15 +69,18 @@ class AndroidCompatTimeZoneRegistry(
 
             // create a copy of the VTIMEZONE so that we don't modify the original registry values (which are not immutable)
             val vTimeZone = tz.vTimeZone
-            val newVTimeZoneProperties = PropertyList(vTimeZone.properties)
-            newVTimeZoneProperties.removeAll { property ->
-                property is TzId
+            val newVTimeZoneProperties = PropertyList(vTimeZone.getProperties())
+            newVTimeZoneProperties.all.forEach { property ->
+                if (property is TzId)
+                    newVTimeZoneProperties.remove(property)
             }
-            newVTimeZoneProperties += TzId(androidTzId)
-            return TimeZone(VTimeZone(
-                newVTimeZoneProperties,
-                vTimeZone.observances
-            ))
+            newVTimeZoneProperties.add(TzId(androidTzId))
+            return TimeZone(
+                VTimeZone(
+                    newVTimeZoneProperties,
+                    ComponentList(vTimeZone.observances)
+                )
+            )
         } else
             return tz
     }

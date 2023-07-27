@@ -10,6 +10,7 @@ import net.fortuna.ical4j.util.TimeZones
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.Period
 import java.time.ZoneId
@@ -51,37 +52,58 @@ object TimeApiExtensions {
 
     /***** Dates *****/
 
+    // FIXME - All ical4j's Date and DateTime uses must be removed
+
+    @Deprecated("ical 4.0 no longer uses Date and DateTime components. All usages should be removed.")
     fun Date.toLocalDate(): LocalDate {
         val utcDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneOffset.UTC)
         return utcDateTime.toLocalDate()
     }
 
+    @Deprecated(
+        "ical 4.0 no longer uses Date and DateTime components. All usages should be removed.",
+        replaceWith = ReplaceWith("ZonedDateTime.requireTimeZone")
+    )
     fun DateTime.requireTimeZone(): TimeZone =
             if (isUtc)
                 TimeZones.getUtcTimeZone()
             else
                 timeZone ?: TimeZone.getDefault()
 
+    @Deprecated(
+        "ical 4.0 no longer uses Date and DateTime components. ZonedDateTime already has a zone component"
+    )
     fun DateTime.requireZoneId(): ZoneId =
             if (isUtc)
                 ZoneOffset.UTC
             else
                 timeZone?.toZoneIdCompat() ?: ZoneId.systemDefault()
 
+    @Deprecated("ical 4.0 no longer uses Date and DateTime components. All usages should be removed.")
     fun DateTime.toLocalDate(): LocalDate =
             toZonedDateTime().toLocalDate()
 
+    @Deprecated("ical 4.0 no longer uses Date and DateTime components. All usages should be removed.")
     fun DateTime.toLocalTime(): LocalTime =
             toZonedDateTime().toLocalTime()
 
+    @Deprecated("ical 4.0 no longer uses Date and DateTime components. All usages should be removed.")
     fun DateTime.toZonedDateTime(): ZonedDateTime =
             ZonedDateTime.ofInstant(Instant.ofEpochMilli(time), requireZoneId())
 
+    @Deprecated("ical 4.0 no longer uses Date and DateTime components. All usages should be removed.")
     fun LocalDate.toIcal4jDate(): Date {
         val cal = Calendar.getInstance(TimeZones.getDateTimeZone())
         cal.set(year, monthValue - 1, dayOfMonth, 0, 0, 0)
         return Date(cal)
     }
+
+    fun ZonedDateTime.requireTimeZone(): TimeZone =
+        if (zone == ZoneOffset.UTC)
+            TimeZones.getUtcTimeZone()
+        else
+            TimeZone.getTimeZone(zone) ?: TimeZone.getDefault()
+
 
     /**
      * Converts this zoned date-time (date/time with specific time zone) to an
@@ -92,6 +114,7 @@ object TimeApiExtensions {
      *
      * @return ical4j [DateTime] of the given zoned date-time
      */
+    @Deprecated("ical4j 4.0 uses Java 8's time objects. Date and Time should no longer be used.")
     fun ZonedDateTime.toIcal4jDateTime(): DateTime {
         val date = DateTime(toEpochSecond() * MILLIS_PER_SECOND)
         if (zone == ZoneOffset.UTC)

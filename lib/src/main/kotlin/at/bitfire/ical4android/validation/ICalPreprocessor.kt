@@ -7,13 +7,13 @@ package at.bitfire.ical4android.validation
 import at.bitfire.ical4android.Ical4Android
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.Property
-import net.fortuna.ical4j.transform.rfc5545.CreatedPropertyRule
-import net.fortuna.ical4j.transform.rfc5545.DateListPropertyRule
-import net.fortuna.ical4j.transform.rfc5545.DatePropertyRule
-import net.fortuna.ical4j.transform.rfc5545.Rfc5545PropertyRule
 import java.io.Reader
 import java.util.*
 import java.util.logging.Level
+import net.fortuna.ical4j.model.component.CalendarComponent
+import net.fortuna.ical4j.transform.property.DateListPropertyRule
+import net.fortuna.ical4j.transform.property.DatePropertyRule
+import net.fortuna.ical4j.transform.property.Rfc5545PropertyRule
 
 /**
  * Applies some rules to increase compatibility of parsed (incoming) iCalendars:
@@ -25,8 +25,9 @@ import java.util.logging.Level
  */
 object ICalPreprocessor {
 
-    private val propertyRules = arrayOf(
-        CreatedPropertyRule(),      // make sure CREATED is UTC
+    private val propertyRules: Array<Rfc5545PropertyRule<out Property>> = arrayOf(
+        // FIXME - CreatedPropertyRule has been removed
+        // CreatedPropertyRule(),      // make sure CREATED is UTC
 
         DatePropertyRule(),         // These two rules also replace VTIMEZONEs of the iCalendar ...
         DateListPropertyRule()      // ... by the ical4j VTIMEZONE with the same TZID!
@@ -58,8 +59,8 @@ object ICalPreprocessor {
      * @param calendar the calendar object that is going to be modified
      */
     fun preprocessCalendar(calendar: Calendar) {
-        for (component in calendar.components)
-            for (property in component.properties)
+        for (component in calendar.getComponents<CalendarComponent>())
+            for (property in component.getProperties<Property>())
                 applyRules(property)
     }
 

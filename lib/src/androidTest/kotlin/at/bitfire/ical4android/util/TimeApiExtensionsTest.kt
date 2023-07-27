@@ -34,6 +34,7 @@ class TimeApiExtensionsTest {
 
     val tzBerlin: TimeZone = DateUtils.ical4jTimeZone("Europe/Berlin")!!
 
+    // FIXME - All ical4j's Date and DateTime uses must be removed
 
     @Test
     fun testTimeZone_toZoneIdCompat_NotUtc() {
@@ -59,6 +60,12 @@ class TimeApiExtensionsTest {
     @Test
     fun testDateTime_requireTimeZone() {
         val time = DateTime("2020707T010203", tzBerlin)
+        assertEquals(tzBerlin, time.requireTimeZone())
+    }
+
+    @Test
+    fun testZonedDateTime_requireTimeZone() {
+        val time = ZonedDateTime.parse("2020707T010203[${tzBerlin.id}]")
         assertEquals(tzBerlin, time.requireTimeZone())
     }
 

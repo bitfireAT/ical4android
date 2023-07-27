@@ -10,7 +10,12 @@ import android.content.ContentValues
 import android.content.EntityIterator
 import android.net.Uri
 import android.os.RemoteException
-import android.provider.CalendarContract.*
+import android.provider.CalendarContract.Attendees
+import android.provider.CalendarContract.Colors
+import android.provider.CalendarContract.Events
+import android.provider.CalendarContract.EventsEntity
+import android.provider.CalendarContract.ExtendedProperties
+import android.provider.CalendarContract.Reminders
 import android.util.Patterns
 import androidx.annotation.CallSuper
 import at.bitfire.ical4android.BatchOperation.CpoBuilder
@@ -20,27 +25,46 @@ import at.bitfire.ical4android.util.MiscUtils
 import at.bitfire.ical4android.util.MiscUtils.CursorHelper.toValues
 import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
 import at.bitfire.ical4android.util.TimeApiExtensions
-import at.bitfire.ical4android.util.TimeApiExtensions.requireZoneId
-import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
-import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDateTime
-import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
-import at.bitfire.ical4android.util.TimeApiExtensions.toLocalTime
 import at.bitfire.ical4android.util.TimeApiExtensions.toRfc5545Duration
-import at.bitfire.ical4android.util.TimeApiExtensions.toZonedDateTime
-import net.fortuna.ical4j.model.*
-import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.component.VAlarm
-import net.fortuna.ical4j.model.parameter.*
-import net.fortuna.ical4j.model.property.*
-import net.fortuna.ical4j.util.TimeZones
 import java.io.FileNotFoundException
 import java.net.URI
 import java.net.URISyntaxException
-import java.time.*
 import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.Period
-import java.util.*
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
+import java.time.temporal.Temporal
+import java.util.Locale
 import java.util.logging.Level
+import kotlin.jvm.optionals.getOrNull
+import net.fortuna.ical4j.model.DateList
+import net.fortuna.ical4j.model.Parameter
+import net.fortuna.ical4j.model.Property
+import net.fortuna.ical4j.model.component.VAlarm
+import net.fortuna.ical4j.model.parameter.Cn
+import net.fortuna.ical4j.model.parameter.Email
+import net.fortuna.ical4j.model.parameter.PartStat
+import net.fortuna.ical4j.model.parameter.Rsvp
+import net.fortuna.ical4j.model.property.Action
+import net.fortuna.ical4j.model.property.Attendee
+import net.fortuna.ical4j.model.property.Clazz
+import net.fortuna.ical4j.model.property.Description
+import net.fortuna.ical4j.model.property.DtEnd
+import net.fortuna.ical4j.model.property.DtStart
+import net.fortuna.ical4j.model.property.ExDate
+import net.fortuna.ical4j.model.property.ExRule
+import net.fortuna.ical4j.model.property.Organizer
+import net.fortuna.ical4j.model.property.RDate
+import net.fortuna.ical4j.model.property.RRule
+import net.fortuna.ical4j.model.property.RecurrenceId
+import net.fortuna.ical4j.model.property.Status
+import net.fortuna.ical4j.model.property.Summary
+import net.fortuna.ical4j.util.TimeZones
 
 /**
  * Stores and retrieves VEVENT iCalendar objects (represented as [Event]s) to/from the
@@ -185,7 +209,7 @@ abstract class AndroidEvent(
                     null
 
         if (allDay) {
-            event.dtStart = DtStart(Date(tsStart))
+            event.dtStart = DtStart(Instant.ofEpochMilli(tsStart))
 
             // Android events MUST have duration or dtend [https://developer.android.com/reference/android/provider/CalendarContract.Events#operations].
             // Assume 1 day if missing (should never occur, but occurs).
@@ -210,7 +234,7 @@ abstract class AndroidEvent(
                         Ical4Android.log.fine("dtEnd $tsEnd (allDay) = dtStart, won't generate DTEND property")
 
                     else /* tsEnd > tsStart */ ->
-                        event.dtEnd = DtEnd(Date(tsEnd))
+                        event.dtEnd = DtEnd(Instant.ofEpochMilli(tsEnd))
                 }
             }
 
@@ -220,12 +244,14 @@ abstract class AndroidEvent(
             // check time zone ID (calendar apps may insert no or an invalid ID)
             val startTzId = DateUtils.findAndroidTimezoneID(row.getAsString(Events.EVENT_TIMEZONE))
             val startTz = DateUtils.ical4jTimeZone(startTzId)
-            val dtStartDateTime = DateTime(tsStart).apply {
+            val dtStartDateTime: ZonedDateTime = Instant.ofEpochMilli(tsStart).let { instant ->
                 if (startTz != null) {  // null if there was not ical4j time zone for startTzId, which should not happen, but technically may happen
                     if (TimeZones.isUtc(startTz))
-                        isUtc = true
+                        instant.atZone(ZoneOffset.UTC)
                     else
-                        timeZone = startTz
+                        instant.atZone(startTz.toZoneId())
+                } else {
+                    instant.atZone(ZoneId.systemDefault())
                 }
             }
             event.dtStart = DtStart(dtStartDateTime)
@@ -237,8 +263,7 @@ abstract class AndroidEvent(
 
             if (duration != null) {
                 // Some servers have problems with DURATION, so we always generate DTEND.
-                val zonedStart = dtStartDateTime.toZonedDateTime()
-                tsEnd = (zonedStart + duration).toInstant().toEpochMilli()
+                tsEnd = (dtStartDateTime + duration).toInstant().toEpochMilli()
                 duration = null
             }
 
@@ -251,12 +276,14 @@ abstract class AndroidEvent(
                     val endTz = row.getAsString(Events.EVENT_END_TIMEZONE)?.let { tzId ->
                         DateUtils.ical4jTimeZone(tzId)
                     } ?: startTz
-                    event.dtEnd = DtEnd(DateTime(tsEnd).apply {
+                    event.dtEnd = DtEnd(Instant.ofEpochMilli(tsEnd).let { instant ->
                         if (endTz != null) {
                             if (TimeZones.isUtc(endTz))
-                                isUtc = true
+                                instant.atZone(ZoneOffset.UTC)
                             else
-                                timeZone = endTz
+                                instant.atZone(endTz.toZoneId())
+                        } else {
+                            instant.atZone(ZoneId.systemDefault())
                         }
                     })
                 }
@@ -301,9 +328,9 @@ abstract class AndroidEvent(
 
         // status
         when (row.getAsInteger(Events.STATUS)) {
-            Events.STATUS_CONFIRMED -> event.status = Status.VEVENT_CONFIRMED
-            Events.STATUS_TENTATIVE -> event.status = Status.VEVENT_TENTATIVE
-            Events.STATUS_CANCELED -> event.status = Status.VEVENT_CANCELLED
+            Events.STATUS_CONFIRMED -> event.status = Status(Status.VALUE_CONFIRMED)
+            Events.STATUS_TENTATIVE -> event.status = Status(Status.VALUE_TENTATIVE)
+            Events.STATUS_CANCELED -> event.status = Status(Status.VALUE_CANCELLED)
         }
 
         // availability
@@ -312,7 +339,7 @@ abstract class AndroidEvent(
         // scheduling
         if (groupScheduled) {
             // ORGANIZER must only be set for group-scheduled events (= events with attendees)
-            if (row.containsKey(Events.ORGANIZER) && groupScheduled)
+            if (row.containsKey(Events.ORGANIZER))
                 try {
                     event.organizer = Organizer(URI("mailto", row.getAsString(Events.ORGANIZER), null))
                 } catch (e: URISyntaxException) {
@@ -322,25 +349,26 @@ abstract class AndroidEvent(
 
         // classification
         when (row.getAsInteger(Events.ACCESS_LEVEL)) {
-            Events.ACCESS_PUBLIC -> event.classification = Clazz.PUBLIC
-            Events.ACCESS_PRIVATE -> event.classification = Clazz.PRIVATE
-            Events.ACCESS_CONFIDENTIAL -> event.classification = Clazz.CONFIDENTIAL
+            Events.ACCESS_PUBLIC -> event.classification = Clazz(Clazz.VALUE_PUBLIC)
+            Events.ACCESS_PRIVATE -> event.classification = Clazz(Clazz.VALUE_PRIVATE)
+            Events.ACCESS_CONFIDENTIAL -> event.classification = Clazz(Clazz.VALUE_CONFIDENTIAL)
         }
 
         // exceptions from recurring events
         row.getAsLong(Events.ORIGINAL_INSTANCE_TIME)?.let { originalInstanceTime ->
             val originalAllDay = (row.getAsInteger(Events.ORIGINAL_ALL_DAY) ?: 0) != 0
-            val originalDate =
-                    if (originalAllDay)
-                        Date(originalInstanceTime)
-                    else
-                        DateTime(originalInstanceTime)
-            if (originalDate is DateTime) {
+            var originalDate: Temporal = Instant.ofEpochMilli(originalInstanceTime).let { instant ->
+                if (originalAllDay)
+                    LocalDate.from(instant)
+                else
+                    LocalDateTime.from(instant)
+            }
+            (originalDate as? LocalDateTime)?.let { date ->
                 event.dtStart?.let { dtStart ->
                     if (dtStart.isUtc)
-                        originalDate.isUtc = true
-                    else if (dtStart.timeZone != null)
-                        originalDate.timeZone = dtStart.timeZone
+                        originalDate = date.atZone(ZoneOffset.UTC)
+                    else if (dtStart.date is ZonedDateTime)
+                        originalDate = date.atZone((dtStart.date as ZonedDateTime).zone)
                 }
             }
             event.recurrenceId = RecurrenceId(originalDate)
@@ -351,34 +379,35 @@ abstract class AndroidEvent(
         Ical4Android.log.log(Level.FINE, "Read event attendee from calender provider", row)
 
         try {
-            val attendee: Attendee
             val email = row.getAsString(Attendees.ATTENDEE_EMAIL)
             val idNS = row.getAsString(Attendees.ATTENDEE_ID_NAMESPACE)
             val id = row.getAsString(Attendees.ATTENDEE_IDENTITY)
 
-            if (idNS != null || id != null) {
-                // attendee identified by namespace and ID
-                attendee = Attendee(URI(idNS, id, null))
-                email?.let { attendee.parameters.add(Email(it)) }
-            } else
-                // attendee identified by email address
-                attendee = Attendee(URI("mailto", email, null))
-            val params = attendee.parameters
+            var attendee: Attendee =
+                if (idNS != null || id != null) {
+                    // attendee identified by namespace and ID
+                    Attendee(URI(idNS, id, null)).let { attendee ->
+                        email?.let { attendee.withParameter(Email(it)) as Attendee } ?: attendee
+                    }
+                } else {
+                    // attendee identified by email address
+                    Attendee(URI("mailto", email, null))
+                }
 
             // always add RSVP (offer attendees to accept/decline)
-            params.add(Rsvp.TRUE)
+            attendee = attendee.withParameter(Rsvp.TRUE) as Attendee
 
-            row.getAsString(Attendees.ATTENDEE_NAME)?.let { cn -> params.add(Cn(cn)) }
+            row.getAsString(Attendees.ATTENDEE_NAME)?.let { attendee = attendee.withParameter(Cn(it)) as Attendee }
 
             // type/relation mapping is complex and thus outsourced to AttendeeMappings
-            AttendeeMappings.androidToICalendar(row, attendee)
+            attendee = AttendeeMappings.androidToICalendar(row, attendee)
 
             // status
             when (row.getAsInteger(Attendees.ATTENDEE_STATUS)) {
-                Attendees.ATTENDEE_STATUS_INVITED -> params.add(PartStat.NEEDS_ACTION)
-                Attendees.ATTENDEE_STATUS_ACCEPTED -> params.add(PartStat.ACCEPTED)
-                Attendees.ATTENDEE_STATUS_DECLINED -> params.add(PartStat.DECLINED)
-                Attendees.ATTENDEE_STATUS_TENTATIVE -> params.add(PartStat.TENTATIVE)
+                Attendees.ATTENDEE_STATUS_INVITED -> attendee = attendee.withParameter(PartStat.NEEDS_ACTION) as Attendee
+                Attendees.ATTENDEE_STATUS_ACCEPTED -> attendee = attendee.withParameter(PartStat.ACCEPTED) as Attendee
+                Attendees.ATTENDEE_STATUS_DECLINED -> attendee = attendee.withParameter(PartStat.DECLINED) as Attendee
+                Attendees.ATTENDEE_STATUS_TENTATIVE -> attendee = attendee.withParameter(PartStat.TENTATIVE) as Attendee
                 Attendees.ATTENDEE_STATUS_NONE -> { /* no information, don't add PARTSTAT */ }
             }
 
@@ -392,31 +421,30 @@ abstract class AndroidEvent(
         Ical4Android.log.log(Level.FINE, "Read event reminder from calender provider", row)
         val event = requireNotNull(event)
 
-        val alarm = VAlarm(Duration.ofMinutes(-row.getAsLong(Reminders.MINUTES)))
+        var alarm = VAlarm(Duration.ofMinutes(-row.getAsLong(Reminders.MINUTES)))
 
-        val props = alarm.properties
         when (row.getAsInteger(Reminders.METHOD)) {
             Reminders.METHOD_EMAIL -> {
                 val accountName = calendar.account.name
                 if (Patterns.EMAIL_ADDRESS.matcher(accountName).matches()) {
-                    props += Action.EMAIL
+                    alarm = alarm.withProperty(Action(Action.VALUE_EMAIL)) as VAlarm
                     // ACTION:EMAIL requires SUMMARY, DESCRIPTION, ATTENDEE
-                    props += Summary(event.summary)
-                    props += Description(event.description ?: event.summary)
+                    alarm = alarm.withProperty(Summary(event.summary)) as VAlarm
+                    alarm = alarm.withProperty(Description(event.description ?: event.summary)) as VAlarm
                     // Android doesn't allow to save email reminder recipients, so we always use the
                     // account name (should be account owner's email address)
-                    props += Attendee(URI("mailto", calendar.account.name, null))
+                    alarm = alarm.withProperty(Attendee(URI("mailto", calendar.account.name, null))) as VAlarm
                 } else {
                     Ical4Android.log.warning("Account name is not an email address; changing EMAIL reminder to DISPLAY")
-                    props += Action.DISPLAY
-                    props += Description(event.summary)
+                    alarm = alarm.withProperty(Action(Action.VALUE_DISPLAY)) as VAlarm
+                    alarm = alarm.withProperty(Description(event.summary)) as VAlarm
                 }
             }
 
             // default: set ACTION:DISPLAY (requires DESCRIPTION)
             else -> {
-                props += Action.DISPLAY
-                props += Description(event.summary)
+                alarm = alarm.withProperty(Action(Action.VALUE_DISPLAY)) as VAlarm
+                alarm = alarm.withProperty(Description(event.summary)) as VAlarm
             }
         }
         event.alarms += alarm
@@ -463,20 +491,19 @@ abstract class AndroidEvent(
                     val recurrenceId = exceptionEvent.recurrenceId!!
 
                     // generate EXDATE instead of RECURRENCE-ID exceptions for cancelled instances
-                    if (exceptionEvent.status == Status.VEVENT_CANCELLED) {
-                        val list = DateList(
-                                if (DateUtils.isDate(recurrenceId)) Value.DATE else Value.DATE_TIME,
-                                recurrenceId.timeZone
-                        )
+                    if (exceptionEvent.status?.value == Status.VALUE_CANCELLED) {
+                        val list: DateList<Temporal> = DateList()
                         list.add(recurrenceId.date)
-                        event.exDates += ExDate(list).apply {
+                        event.exDates += ExDate(list)
+                        // FIXME - should no longer be necessary to update timezone
+                        /*.apply {
                             if (DateUtils.isDateTime(recurrenceId)) {
                                 if (recurrenceId.isUtc)
                                     setUtc(true)
                                 else
                                     timeZone = recurrenceId.timeZone
                             }
-                        }
+                        }*/
 
                     } else /* exceptionEvent.status != Status.VEVENT_CANCELLED */ {
                         // make sure that all components have the same ORGANIZER [RFC 6638 3.1]
@@ -497,7 +524,7 @@ abstract class AndroidEvent(
            that it can be reused when "server default" is selected */
         val event = requireNotNull(event)
         event.classification?.let {
-            if (it != Clazz.PUBLIC && it != Clazz.PRIVATE)
+            if (it.value != Clazz.VALUE_PUBLIC && it.value != Clazz.VALUE_PRIVATE)
                 event.unknownProperties += it
         }
     }
@@ -597,25 +624,15 @@ abstract class AndroidEvent(
                 throw AssertionError("buildEvent(exception) must set ORIGINAL_SYNC_ID")
 
             var recurrenceDate = recurrenceId.date
-            val dtStartDate = event.dtStart!!.date
-            if (recurrenceDate is DateTime && dtStartDate !is DateTime) {
-                // rewrite RECURRENCE-ID;VALUE=DATE-TIME to VALUE=DATE for all-day events
-                val localDate = recurrenceDate.toLocalDate()
-                recurrenceDate = Date(localDate.toIcal4jDate())
-
-            } else if (recurrenceDate !is DateTime && dtStartDate is DateTime) {
+            if (recurrenceDate.isSupported(ChronoUnit.HOURS)) {
                 // rewrite RECURRENCE-ID;VALUE=DATE to VALUE=DATE-TIME for non-all-day-events
-                val localDate = recurrenceDate.toLocalDate()
-                // guess time and time zone from DTSTART
-                val zonedTime = ZonedDateTime.of(
-                        localDate,
-                        dtStartDate.toLocalTime(),
-                        dtStartDate.requireZoneId()
-                )
-                recurrenceDate = zonedTime.toIcal4jDateTime()
+                recurrenceDate = ZonedDateTime.from(recurrenceDate)
+            } else if (recurrenceDate.isSupported(ChronoUnit.DAYS)) {
+                // rewrite RECURRENCE-ID;VALUE=DATE-TIME to VALUE=DATE for all-day events
+                recurrenceDate = LocalDate.from(recurrenceDate)
             }
-            exBuilder   .withValue(Events.ORIGINAL_ALL_DAY, if (DateUtils.isDate(event.dtStart)) 1 else 0)
-                        .withValue(Events.ORIGINAL_INSTANCE_TIME, recurrenceDate.time)
+            exBuilder.withValue(Events.ORIGINAL_ALL_DAY, if (DateUtils.isDate(event.dtStart)) 1 else 0)
+                     .withValue(Events.ORIGINAL_INSTANCE_TIME, Instant.from(recurrenceDate).toEpochMilli())
 
             val idxException = batch.nextBackrefIdx()
             batch.enqueue(exBuilder)
@@ -719,9 +736,6 @@ abstract class AndroidEvent(
         val dtStart = event.dtStart ?: throw InvalidCalendarException("Events must have DTSTART")
         val allDay = DateUtils.isDate(dtStart)
 
-        // make sure that time zone is supported by Android
-        AndroidTimeUtils.androidifyTimeZone(dtStart)
-
         val recurring = event.rRules.isNotEmpty() || event.rDates.isNotEmpty()
 
         /* [CalendarContract.Events SDK documentation]
@@ -734,12 +748,11 @@ abstract class AndroidEvent(
            - a calendar_id */
 
         builder .withValue(Events.CALENDAR_ID, calendar.id)
-                .withValue(Events.DTSTART, dtStart.date.time)
+                .withValue(Events.DTSTART, Instant.from(dtStart.date).toEpochMilli())
                 .withValue(Events.ALL_DAY, if (allDay) 1 else 0)
-                .withValue(Events.EVENT_TIMEZONE, AndroidTimeUtils.storageTzId(dtStart))
+                .withValue(Events.EVENT_TIMEZONE, (dtStart.date as? ZonedDateTime)?.zone?.id)
 
         var dtEnd = event.dtEnd
-        AndroidTimeUtils.androidifyTimeZone(dtEnd)
 
         var duration =
                 if (dtEnd == null)
@@ -755,9 +768,9 @@ abstract class AndroidEvent(
                 if (dtEnd != null) {
                     // calculate duration from dtEnd
                     duration = if (allDay)
-                        Period.between(dtStart.date.toLocalDate(), dtEnd.date.toLocalDate())
+                        Period.between(LocalDate.from(dtStart.date), LocalDate.from(dtEnd.date))
                     else
-                        Duration.between(dtStart.date.toInstant(), dtEnd.date.toInstant())
+                        Duration.between(LocalDate.from(dtStart.date), LocalDate.from(dtEnd.date))
                 } else {
                     // no dtEnd and no duration
                     duration = if (allDay)
@@ -779,7 +792,7 @@ abstract class AndroidEvent(
             }
 
             // iCalendar doesn't permit years and months, only PwWdDThHmMsS
-            builder .withValue(Events.DURATION, duration?.toRfc5545Duration(dtStart.date.toInstant()))
+            builder .withValue(Events.DURATION, duration?.toRfc5545Duration(Instant.from(dtStart.date)))
                     .withValue(Events.DTEND, null)
 
             // add RRULEs
@@ -790,11 +803,8 @@ abstract class AndroidEvent(
                 builder.withValue(Events.RRULE, null)
 
             if (event.rDates.isNotEmpty()) {
-                for (rDate in event.rDates)
-                    AndroidTimeUtils.androidifyTimeZone(rDate)
-
                 // Calendar provider drops DTSTART instance when using RDATE [https://code.google.com/p/android/issues/detail?id=171292]
-                val listWithDtStart = DateList()
+                val listWithDtStart = DateList<Temporal>()
                 listWithDtStart.add(dtStart.date)
                 event.rDates.addFirst(RDate(listWithDtStart))
 
@@ -807,50 +817,46 @@ abstract class AndroidEvent(
             else
                 builder.withValue(Events.EXRULE, null)
 
-            if (event.exDates.isNotEmpty()) {
-                for (exDate in event.exDates)
-                    AndroidTimeUtils.androidifyTimeZone(exDate)
+            if (event.exDates.isNotEmpty())
                 builder.withValue(Events.EXDATE, AndroidTimeUtils.recurrenceSetsToAndroidString(event.exDates, allDay))
-            } else
+            else
                 builder.withValue(Events.EXDATE, null)
 
         } else /* !recurring */ {
             // dtend must be set
             if (dtEnd == null) {
-                if (duration != null) {
+                dtEnd = if (duration != null) {
                     // calculate dtEnd from duration
                     if (allDay) {
-                        val calcDtEnd = dtStart.date.toLocalDate() + duration
-                        dtEnd = DtEnd(calcDtEnd.toIcal4jDate())
+                        val calcDtEnd = LocalDate.from(dtStart.date) + duration
+                        DtEnd(calcDtEnd)
                     } else {
-                        val zonedStartTime = (dtStart.date as DateTime).toZonedDateTime()
+                        val zonedStartTime = ZonedDateTime.from(dtStart.date)
                         val calcEnd = zonedStartTime + duration
-                        val calcDtEnd = DtEnd(calcEnd.toIcal4jDateTime())
-                        calcDtEnd.timeZone = dtStart.timeZone
-                        dtEnd = calcDtEnd
+                        DtEnd(calcEnd)
                     }
                 } else {
                     // no dtEnd and no duration
-                    dtEnd = if (allDay) {
+                    if (allDay) {
                         /* [RFC 5545 3.6.1 Event Component]
                            For cases where a "VEVENT" calendar component
                            specifies a "DTSTART" property with a DATE value type but no
                            "DTEND" nor "DURATION" property, the event's duration is taken to
                            be one day. */
-                        val calcDtEnd = dtStart.date.toLocalDate() + Period.ofDays(1)
-                        DtEnd(calcDtEnd.toIcal4jDate())
-                    } else
+                        val calcDtEnd = LocalDate.from(dtStart.date) + Period.ofDays(1)
+                        DtEnd(calcDtEnd)
+                    } else {
                         /* For cases where a "VEVENT" calendar component
                            specifies a "DTSTART" property with a DATE-TIME value type but no
                            "DTEND" property, the event ends on the same calendar date and
                            time of day specified by the "DTSTART" property. */
-                        DtEnd(dtStart.value, dtStart.timeZone)
+                        DtEnd(dtStart.value)
+                    }
                 }
             }
 
-            AndroidTimeUtils.androidifyTimeZone(dtEnd)
-            builder .withValue(Events.DTEND, dtEnd.date.time)
-                    .withValue(Events.EVENT_END_TIMEZONE, AndroidTimeUtils.storageTzId(dtEnd))
+            builder.withValue(Events.DTEND, Instant.from(dtEnd.date).toEpochMilli())
+                    .withValue(Events.EVENT_END_TIMEZONE, ZonedDateTime.from(dtEnd.date).zone.id)
                     .withValue(Events.DURATION, null)
                     .withValue(Events.RRULE, null)
                     .withValue(Events.RDATE, null)
@@ -883,7 +889,7 @@ abstract class AndroidEvent(
                         val email = if (uri.scheme.equals("mailto", true))
                             uri.schemeSpecificPart
                         else
-                            organizer.getParameter<Email>(Parameter.EMAIL)?.value
+                            organizer.getParameter<Email>(Parameter.EMAIL)?.getOrNull()?.value
                         if (email != null)
                             return@let email
                         Ical4Android.log.warning("Ignoring ORGANIZER without email address (not supported by Android)")
@@ -897,17 +903,17 @@ abstract class AndroidEvent(
         // Attention: don't update event with STATUS != null to STATUS = null (causes calendar provider operation to fail)!
         // In this case, the whole event must be deleted and inserted again.
         if (/* insert, not an update */ id == null || /* update, but we're not updating to null */ event.status != null)
-            builder.withValue(Events.STATUS, when (event.status) {
+            builder.withValue(Events.STATUS, when (event.status?.value) {
                 null /* not possible by if statement */ -> null
-                Status.VEVENT_CONFIRMED -> Events.STATUS_CONFIRMED
-                Status.VEVENT_CANCELLED -> Events.STATUS_CANCELED
+                Status.VALUE_CONFIRMED -> Events.STATUS_CONFIRMED
+                Status.VALUE_CANCELLED -> Events.STATUS_CANCELED
                 else -> Events.STATUS_TENTATIVE
             })
 
         builder .withValue(Events.AVAILABILITY, if (event.opaque) Events.AVAILABILITY_BUSY else Events.AVAILABILITY_FREE)
-                .withValue(Events.ACCESS_LEVEL, when (event.classification) {
-                    null, Clazz.PUBLIC -> Events.ACCESS_PUBLIC
-                    Clazz.CONFIDENTIAL -> Events.ACCESS_CONFIDENTIAL
+                .withValue(Events.ACCESS_LEVEL, when (event.classification?.value) {
+                    null, Clazz.VALUE_PUBLIC -> Events.ACCESS_PUBLIC
+                    Clazz.VALUE_CONFIDENTIAL -> Events.ACCESS_CONFIDENTIAL
                     else /* including Events.ACCESS_PRIVATE */ -> Events.ACCESS_PRIVATE
                 })
     }
@@ -917,12 +923,13 @@ abstract class AndroidEvent(
                 .newInsert(Reminders.CONTENT_URI.asSyncAdapter(calendar.account))
                 .withEventId(Reminders.EVENT_ID, idxEvent)
 
-        val method = when (alarm.action?.value?.uppercase(Locale.ROOT)) {
-            Action.DISPLAY.value,
-            Action.AUDIO.value -> Reminders.METHOD_ALERT
+        val action = alarm.getProperty<Action>(Property.ACTION)
+        val method = when (action?.getOrNull()?.value?.uppercase(Locale.ROOT)) {
+            Action.VALUE_DISPLAY,
+            Action.VALUE_AUDIO -> Reminders.METHOD_ALERT
 
             // Note: The calendar provider doesn't support saving specific attendees for email reminders.
-            Action.EMAIL.value -> Reminders.METHOD_EMAIL
+            Action.VALUE_EMAIL -> Reminders.METHOD_EMAIL
 
             else               -> Reminders.METHOD_DEFAULT
         }
@@ -948,19 +955,19 @@ abstract class AndroidEvent(
             builder .withValue(Attendees.ATTENDEE_ID_NAMESPACE, member.scheme)
                     .withValue(Attendees.ATTENDEE_IDENTITY, member.schemeSpecificPart)
 
-            attendee.getParameter<Email>(Parameter.EMAIL)?.let { email ->
+            attendee.getParameter<Email>(Parameter.EMAIL)?.getOrNull()?.let { email ->
                 builder.withValue(Attendees.ATTENDEE_EMAIL, email.value)
             }
         }
 
-        attendee.getParameter<Cn>(Parameter.CN)?.let { cn ->
+        attendee.getParameter<Cn>(Parameter.CN)?.getOrNull()?.let { cn ->
             builder.withValue(Attendees.ATTENDEE_NAME, cn.value)
         }
 
         // type/relation mapping is complex and thus outsourced to AttendeeMappings
         AttendeeMappings.iCalendarToAndroid(attendee, builder, organizer)
 
-        val status = when(attendee.getParameter(Parameter.PARTSTAT) as? PartStat) {
+        val status = when(attendee.getParameter<PartStat>(Parameter.PARTSTAT).getOrNull()) {
             PartStat.ACCEPTED     -> Attendees.ATTENDEE_STATUS_ACCEPTED
             PartStat.DECLINED     -> Attendees.ATTENDEE_STATUS_DECLINED
             PartStat.TENTATIVE    -> Attendees.ATTENDEE_STATUS_TENTATIVE

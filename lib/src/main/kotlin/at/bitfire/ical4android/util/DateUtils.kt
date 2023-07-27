@@ -7,14 +7,19 @@ package at.bitfire.ical4android.util
 import at.bitfire.ical4android.Ical4Android
 import at.bitfire.ical4android.UsesThreadContextClassLoader
 import net.fortuna.ical4j.data.CalendarBuilder
-import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.property.DateProperty
 import java.io.StringReader
+import java.time.DateTimeException
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.temporal.Temporal
+import net.fortuna.ical4j.model.property.DateListProperty
 
 /**
  * Date/time utilities
@@ -47,7 +52,7 @@ object DateUtils {
      * 2. Find partial matches (case-sensitive) in both directions, so both "Vienna"
      *    and "MyClient: Europe/Vienna" will return "Europe/Vienna". This shouln't be
      *    case-insensitive, because that would for instance return "EST" for "Westeuropäische Sommerzeit".
-     * 3. If nothing can be found or [tzId] is `null`, return the system default time zone.
+     * 3. If nothing can be found or [tzID] is `null`, return the system default time zone.
      *
      * @param tzID time zone ID to be converted into Android time zone ID
      *
@@ -88,12 +93,18 @@ object DateUtils {
                 try {
                     val zone = ZoneId.of(id)
                     zone
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     null
                 }
             }
 
-    @Suppress("DEPRECATION")
+    /**
+     * Extracts the [ZoneId] of the timezone contained in the given date property.
+     * @return The timezone of the passed [date], or `null` if [date] is null, not a [ZonedDateTime], or doesn't have a
+     * set timezone.
+     */
+    fun getZoneId(date: DateProperty<*>?): ZoneId? = (date?.date as? ZonedDateTime?)?.zone
+
     @UsesThreadContextClassLoader
     /**
      * Loads a time zone from the ical4j time zone registry (which contains the
@@ -111,16 +122,18 @@ object DateUtils {
     /**
      * Determines whether a given date represents a DATE value.
      * @param date date property to check
-     * @return *true* if the date is a DATE value; *false* otherwise (for instance, when the argument is a DATE-TIME value or null)
+     * @return *true* if the date is a DATE value; *false* otherwise (for instance, when the argument is a DATE-TIME
+     * value or null)
      */
-    fun isDate(date: DateProperty?) = date != null && date.date is Date && date.date !is DateTime
+    fun isDate(date: DateProperty<*>?) = date != null && date.date is LocalDate && date.date !is LocalDateTime
 
     /**
      * Determines whether a given date represents a DATE-TIME value.
      * @param date date property to check
-     * @return *true* if the date is a DATE-TIME value; *false* otherwise (for instance, when the argument is a DATE value or null)
+     * @return *true* if the date is a DATE-TIME value; *false* otherwise (for instance, when the argument is a DATE
+     * value or null)
      */
-    fun isDateTime(date: DateProperty?) = date != null && date.date is DateTime
+    fun isDateTime(date: DateProperty<*>?) = date != null && date.date is LocalDateTime
 
     /**
      * Parses a VTIMEZONE definition to a VTimeZone object.
@@ -134,10 +147,17 @@ object DateUtils {
         val builder = CalendarBuilder(tzRegistry)
         try {
             val cal = builder.build(StringReader(timezoneDef))
-            return cal.getComponent(VTimeZone.VTIMEZONE) as VTimeZone
-        } catch (e: Exception) {
+            return cal.getComponent<VTimeZone>(VTimeZone.VTIMEZONE).get()
+        } catch (_: Exception) {
             throw IllegalArgumentException("Couldn't parse timezone definition")
         }
     }
+
+    /**
+     * Maps [DateListProperty.dates] and converts them into a list of [Instant]s.
+     * @throws DateTimeException if a date cannot be converted into an [Instant].
+     */
+    val <T: Temporal> DateListProperty<T>.instantDates: List<Instant>
+        get() = dates.map { Instant.from(it) }
 
 }
