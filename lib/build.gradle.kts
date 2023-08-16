@@ -9,7 +9,7 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-val version_ical4j = "3.2.11"
+val version_ical4j = "3.2.12"
 
 android {
     compileSdk = 33
@@ -99,7 +99,7 @@ dependencies {
 
     implementation("androidx.core:core-ktx:1.10.1")
     api("org.mnode.ical4j:ical4j:${version_ical4j}")
-    implementation("org.slf4j:slf4j-jdk14:2.0.3")       // ical4j logging over java.util.Logger
+    implementation("org.slf4j:slf4j-jdk14:2.0.7")       // ical4j logging over java.util.Logger
 
     // ical4j requires newer Apache Commons libraries, which require Java8. Force latest Java7 versions.
     // noinspection GradleDependency
@@ -121,6 +121,6 @@ dependencies {
     androidTestImplementation("androidx.test:core:1.5.0")
     androidTestImplementation("androidx.test:runner:1.5.2")
     androidTestImplementation("androidx.test:rules:1.5.0")
-    androidTestImplementation("io.mockk:mockk-android:1.13.4")
+    androidTestImplementation("io.mockk:mockk-android:1.13.7")
     testImplementation("junit:junit:4.13.2")
 }
