@@ -9,9 +9,9 @@ import android.content.ContentValues
 import android.database.MatrixCursor
 import android.net.Uri
 import androidx.test.filters.SmallTest
-import at.bitfire.ical4android.util.MiscUtils.CursorHelper.toValues
-import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
+import at.bitfire.ical4android.util.MiscUtils.asSyncAdapter
 import at.bitfire.ical4android.util.MiscUtils.removeBlankStrings
+import at.bitfire.ical4android.util.MiscUtils.toValues
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

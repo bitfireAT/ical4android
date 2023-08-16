@@ -49,6 +49,14 @@ object MiscUtils {
 
     // various extension methods
 
+    fun ContentProviderClient.closeCompat() {
+        @Suppress("DEPRECATION")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+            close()
+        else
+            release()
+    }
+
     /**
      * Removes blank (empty or only white-space) [String] values from [ContentValues].
      *
@@ -64,49 +72,26 @@ object MiscUtils {
         return this
     }
 
+    /**
+     * Returns the entire contents of the current row as a [ContentValues] object.
+     *
+     * @param  removeBlankRows  whether rows with blank values should be removed
+     * @return entire contents of the current row
+     */
+    fun Cursor.toValues(removeBlankRows: Boolean = false): ContentValues {
+        val values = ContentValues(columnCount)
+        DatabaseUtils.cursorRowToContentValues(this, values)
 
-    object ContentProviderClientHelper {
+        if (removeBlankRows)
+            values.removeBlankStrings()
 
-        fun ContentProviderClient.closeCompat() {
-            @Suppress("DEPRECATION")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                close()
-            else
-                release()
-        }
-
+        return values
     }
 
-
-    object CursorHelper {
-
-        /**
-         * Returns the entire contents of the current row as a [ContentValues] object.
-         *
-         * @param  removeBlankRows  whether rows with blank values should be removed
-         * @return entire contents of the current row
-         */
-        fun Cursor.toValues(removeBlankRows: Boolean = false): ContentValues {
-            val values = ContentValues(columnCount)
-            DatabaseUtils.cursorRowToContentValues(this, values)
-
-            if (removeBlankRows)
-                values.removeBlankStrings()
-
-            return values
-        }
-
-    }
-
-
-    object UriHelper {
-
-        fun Uri.asSyncAdapter(account: Account): Uri = buildUpon()
-            .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_NAME, account.name)
-            .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE, account.type)
-            .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
-            .build()
-
-    }
+    fun Uri.asSyncAdapter(account: Account): Uri = buildUpon()
+        .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_NAME, account.name)
+        .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE, account.type)
+        .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
+        .build()
 
 }
