@@ -104,7 +104,7 @@ abstract class AndroidTask(
                         val newTask = Task()
                         field = newTask
 
-                        val values = cursor.toValues(true)
+                        val values = MiscUtils.removeEmptyAndBlankStrings(cursor.toValues(true))
                         Ical4Android.log.log(Level.FINER, "Found task", values)
                         populateTask(values)
 
