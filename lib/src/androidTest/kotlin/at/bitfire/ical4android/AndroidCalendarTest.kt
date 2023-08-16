@@ -16,17 +16,13 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import at.bitfire.ical4android.impl.TestCalendar
 import at.bitfire.ical4android.impl.TestEvent
-import at.bitfire.ical4android.util.MiscUtils.ContentProviderClientHelper.closeCompat
-import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
+import at.bitfire.ical4android.util.MiscUtils.asSyncAdapter
+import at.bitfire.ical4android.util.MiscUtils.closeCompat
 import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
-import org.junit.AfterClass
+import org.junit.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Before
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
 
 class AndroidCalendarTest {
 
@@ -121,7 +117,7 @@ class AndroidCalendarTest {
     }
 
     private fun countColors(account: Account): Int {
-        val uri = Colors.CONTENT_URI.asSyncAdapter(testAccount)
+        val uri = Colors.CONTENT_URI.asSyncAdapter(account)
         provider.query(uri, null, null, null, null)!!.use { cursor ->
             cursor.moveToNext()
             return cursor.count

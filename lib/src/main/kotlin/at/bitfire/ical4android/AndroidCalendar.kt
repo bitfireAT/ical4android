@@ -9,14 +9,9 @@ import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
-import android.provider.CalendarContract.Attendees
-import android.provider.CalendarContract.CalendarEntity
-import android.provider.CalendarContract.Calendars
-import android.provider.CalendarContract.Colors
-import android.provider.CalendarContract.Events
-import android.provider.CalendarContract.Reminders
-import at.bitfire.ical4android.util.MiscUtils.CursorHelper.toValues
-import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
+import android.provider.CalendarContract.*
+import at.bitfire.ical4android.util.MiscUtils.asSyncAdapter
+import at.bitfire.ical4android.util.MiscUtils.toValues
 import java.io.FileNotFoundException
 import java.util.LinkedList
 import java.util.logging.Level

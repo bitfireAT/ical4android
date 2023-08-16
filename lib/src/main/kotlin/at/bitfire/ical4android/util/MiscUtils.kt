@@ -12,13 +12,15 @@ import android.database.DatabaseUtils
 import android.net.Uri
 import android.os.Build
 import android.provider.CalendarContract
+import at.bitfire.ical4android.Ical4Android
 import org.apache.commons.lang3.StringUtils
 import java.lang.reflect.Modifier
 import java.util.*
+import kotlin.ConcurrentModificationException
 
 object MiscUtils {
 
-    const val TOSTRING_MAXCHARS = 10000
+    private const val TOSTRING_MAXCHARS = 10000
 
     /**
      * Generates useful toString info (fields and values) from [obj] by reflection.
@@ -44,65 +46,52 @@ object MiscUtils {
         return "${obj.javaClass.simpleName}=[${s.joinToString(", ")}]"
     }
 
+
+    // various extension methods
+
+    fun ContentProviderClient.closeCompat() {
+        @Suppress("DEPRECATION")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+            close()
+        else
+            release()
+    }
+
     /**
-     * Removes empty [String] values from [values].
+     * Removes blank (empty or only white-space) [String] values from [ContentValues].
      *
-     * @param values set of values to be modified
      * @return the modified object (which is the same object as passed in; for chaining)
      */
-    fun removeEmptyStrings(values: ContentValues): ContentValues {
-        val it = values.keySet().iterator()
-        while (it.hasNext()) {
-            val obj = values[it.next()]
-            if (obj is String && obj.isEmpty())
-                it.remove()
+    fun ContentValues.removeBlankStrings(): ContentValues {
+        val iter = keySet().iterator()
+        while (iter.hasNext()) {
+            val obj = this[iter.next()]
+            if (obj is CharSequence && obj.isBlank())
+                iter.remove()
         }
+        return this
+    }
+
+    /**
+     * Returns the entire contents of the current row as a [ContentValues] object.
+     *
+     * @param  removeBlankRows  whether rows with blank values should be removed
+     * @return entire contents of the current row
+     */
+    fun Cursor.toValues(removeBlankRows: Boolean = false): ContentValues {
+        val values = ContentValues(columnCount)
+        DatabaseUtils.cursorRowToContentValues(this, values)
+
+        if (removeBlankRows)
+            values.removeBlankStrings()
+
         return values
     }
 
-
-    object ContentProviderClientHelper {
-
-        fun ContentProviderClient.closeCompat() {
-            @Suppress("DEPRECATION")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                close()
-            else
-                release()
-        }
-
-    }
-
-
-    object CursorHelper {
-
-        /**
-         * Returns the entire contents of the current row as a [ContentValues] object.
-         *
-         * @param  removeEmptyRows  whether rows with empty values should be removed
-         * @return entire contents of the current row
-         */
-        fun Cursor.toValues(removeEmptyRows: Boolean = false): ContentValues {
-            val values = ContentValues(columnCount)
-            DatabaseUtils.cursorRowToContentValues(this, values)
-
-            if (removeEmptyRows)
-                removeEmptyStrings(values)
-
-            return values
-        }
-
-    }
-
-
-    object UriHelper {
-
-        fun Uri.asSyncAdapter(account: Account): Uri = buildUpon()
-            .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_NAME, account.name)
-            .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE, account.type)
-            .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
-            .build()
-
-    }
+    fun Uri.asSyncAdapter(account: Account): Uri = buildUpon()
+        .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_NAME, account.name)
+        .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE, account.type)
+        .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
+        .build()
 
 }

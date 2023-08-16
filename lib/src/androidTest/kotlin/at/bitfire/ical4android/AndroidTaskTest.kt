@@ -16,36 +16,15 @@ import at.bitfire.ical4android.util.DateUtils
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateList
 import net.fortuna.ical4j.model.DateTime
-import net.fortuna.ical4j.model.parameter.Email
-import net.fortuna.ical4j.model.parameter.RelType
+import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.parameter.TzId
-import net.fortuna.ical4j.model.parameter.Value
-import net.fortuna.ical4j.model.parameter.XParameter
-import net.fortuna.ical4j.model.property.Clazz
-import net.fortuna.ical4j.model.property.Completed
-import net.fortuna.ical4j.model.property.DtStart
-import net.fortuna.ical4j.model.property.Due
-import net.fortuna.ical4j.model.property.Duration
-import net.fortuna.ical4j.model.property.ExDate
-import net.fortuna.ical4j.model.property.Geo
-import net.fortuna.ical4j.model.property.Organizer
-import net.fortuna.ical4j.model.property.RDate
-import net.fortuna.ical4j.model.property.RRule
-import net.fortuna.ical4j.model.property.RelatedTo
-import net.fortuna.ical4j.model.property.Status
-import net.fortuna.ical4j.model.property.XProperty
+import net.fortuna.ical4j.model.property.*
 import org.dmfs.tasks.contract.TaskContract
-import org.dmfs.tasks.contract.TaskContract.Properties
+import org.dmfs.tasks.contract.TaskContract.*
 import org.dmfs.tasks.contract.TaskContract.Property.Category
 import org.dmfs.tasks.contract.TaskContract.Property.Relation
-import org.dmfs.tasks.contract.TaskContract.PropertyColumns
-import org.dmfs.tasks.contract.TaskContract.Tasks
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import java.time.ZoneId
@@ -97,7 +76,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Sequence() {
-        buildTask() {
+        buildTask {
             sequence = 12345
         }.let { result ->
             assertEquals(12345, result.getAsInteger(Tasks.SYNC_VERSION))
@@ -106,7 +85,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_CreatedAt() {
-        buildTask() {
+        buildTask {
             createdAt = 1593771404  // Fri Jul 03 10:16:44 2020 UTC
         }.let { result ->
             assertEquals(1593771404, result.getAsLong(Tasks.CREATED))
@@ -115,7 +94,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_LastModified() {
-        buildTask() {
+        buildTask {
             lastModified = 1593771404
         }.let { result ->
             assertEquals(1593771404, result.getAsLong(Tasks.LAST_MODIFIED))
@@ -124,7 +103,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Summary() {
-        buildTask() {
+        buildTask {
             summary = "Sample Summary"
         }.let { result ->
             assertEquals("Sample Summary", result.get(Tasks.TITLE))
@@ -133,7 +112,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Location() {
-        buildTask() {
+        buildTask {
             location = "Sample Location"
         }.let { result ->
             assertEquals("Sample Location", result.get(Tasks.LOCATION))
@@ -142,7 +121,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Geo() {
-        buildTask() {
+        buildTask {
             geoPosition = Geo(47.913563.toBigDecimal(), 16.159601.toBigDecimal())
         }.let { result ->
             assertEquals("16.159601,47.913563", result.get(Tasks.GEO))
@@ -151,7 +130,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Description() {
-        buildTask() {
+        buildTask {
             description = "Sample Description"
         }.let { result ->
             assertEquals("Sample Description", result.get(Tasks.DESCRIPTION))
@@ -160,7 +139,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Color() {
-        buildTask() {
+        buildTask {
             color = 0x11223344
         }.let { result ->
             assertEquals(0x11223344, result.getAsInteger(Tasks.TASK_COLOR))
@@ -169,7 +148,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Url() {
-        buildTask() {
+        buildTask {
             url = "https://www.example.com"
         }.let { result ->
             assertEquals("https://www.example.com", result.getAsString(Tasks.URL))
@@ -178,7 +157,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Organizer_MailTo() {
-        buildTask() {
+        buildTask {
             organizer = Organizer("mailto:organizer@example.com")
         }.let { result ->
             assertEquals("organizer@example.com", result.getAsString(Tasks.ORGANIZER))
@@ -187,7 +166,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Organizer_EmailParameter() {
-        buildTask() {
+        buildTask {
             organizer = Organizer("uri:unknown").apply {
                 parameters.add(Email("organizer@example.com"))
             }
@@ -198,7 +177,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Organizer_NotEmail() {
-        buildTask() {
+        buildTask {
             organizer = Organizer("uri:unknown")
         }.let { result ->
             assertNull(result.get(Tasks.ORGANIZER))
@@ -207,7 +186,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Priority() {
-        buildTask() {
+        buildTask {
             priority = 2
         }.let { result ->
             assertEquals(2, result.getAsInteger(Tasks.PRIORITY))
@@ -216,7 +195,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Classification_Public() {
-        buildTask() {
+        buildTask {
             classification = Clazz.PUBLIC
         }.let { result ->
             assertEquals(Tasks.CLASSIFICATION_PUBLIC, result.getAsInteger(Tasks.CLASSIFICATION))
@@ -225,7 +204,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Classification_Private() {
-        buildTask() {
+        buildTask {
             classification = Clazz.PRIVATE
         }.let { result ->
             assertEquals(Tasks.CLASSIFICATION_PRIVATE, result.getAsInteger(Tasks.CLASSIFICATION))
@@ -234,7 +213,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Classification_Confidential() {
-        buildTask() {
+        buildTask {
             classification = Clazz.CONFIDENTIAL
         }.let { result ->
             assertEquals(Tasks.CLASSIFICATION_CONFIDENTIAL, result.getAsInteger(Tasks.CLASSIFICATION))
@@ -243,7 +222,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Classification_Custom() {
-        buildTask() {
+        buildTask {
             classification = Clazz("x-custom")
         }.let { result ->
             assertEquals(Tasks.CLASSIFICATION_PRIVATE, result.getAsInteger(Tasks.CLASSIFICATION))
@@ -252,7 +231,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Classification_None() {
-        buildTask() {
+        buildTask {
         }.let { result ->
             assertEquals(Tasks.CLASSIFICATION_DEFAULT /* null */, result.getAsInteger(Tasks.CLASSIFICATION))
         }
@@ -260,7 +239,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Status_NeedsAction() {
-        buildTask() {
+        buildTask {
             status = Status.VTODO_NEEDS_ACTION
         }.let { result ->
             assertEquals(Tasks.STATUS_NEEDS_ACTION, result.getAsInteger(Tasks.STATUS))
@@ -269,7 +248,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Status_Completed() {
-        buildTask() {
+        buildTask {
             status = Status.VTODO_COMPLETED
         }.let { result ->
             assertEquals(Tasks.STATUS_COMPLETED, result.getAsInteger(Tasks.STATUS))
@@ -278,7 +257,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Status_InProcess() {
-        buildTask() {
+        buildTask {
             status = Status.VTODO_IN_PROCESS
         }.let { result ->
             assertEquals(Tasks.STATUS_IN_PROCESS, result.getAsInteger(Tasks.STATUS))
@@ -287,7 +266,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Status_Cancelled() {
-        buildTask() {
+        buildTask {
             status = Status.VTODO_CANCELLED
         }.let { result ->
             assertEquals(Tasks.STATUS_CANCELLED, result.getAsInteger(Tasks.STATUS))
@@ -296,7 +275,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_DtStart() {
-        buildTask() {
+        buildTask {
             dtStart = DtStart("20200703T155722", tzVienna)
         }.let { result ->
             assertEquals(1593784642000L, result.getAsLong(Tasks.DTSTART))
@@ -307,7 +286,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_DtStart_AllDay() {
-        buildTask() {
+        buildTask {
             dtStart = DtStart(Date("20200703"))
         }.let { result ->
             assertEquals(1593734400000L, result.getAsLong(Tasks.DTSTART))
@@ -318,7 +297,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Due() {
-        buildTask() {
+        buildTask {
             due = Due(DateTime("20200703T155722", tzVienna))
         }.let { result ->
             assertEquals(1593784642000L, result.getAsLong(Tasks.DUE))
@@ -329,7 +308,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Due_AllDay() {
-        buildTask() {
+        buildTask {
             due = Due(Date("20200703"))
         }.let { result ->
             assertEquals(1593734400000L, result.getAsLong(Tasks.DUE))
@@ -340,7 +319,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_DtStart_NonAllDay_Due_AllDay() {
-        buildTask() {
+        buildTask {
             dtStart = DtStart(DateTime("20200101T010203"))
             due = Due(Date("20200201"))
         }.let { result ->
@@ -351,7 +330,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_DtStart_AllDay_Due_NonAllDay() {
-        buildTask() {
+        buildTask {
             dtStart = DtStart(Date("20200101"))
             due = Due(DateTime("20200201T010203"))
         }.let { result ->
@@ -362,7 +341,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_DtStart_AllDay_Due_AllDay() {
-        buildTask() {
+        buildTask {
             dtStart = DtStart(Date("20200101"))
             due = Due(Date("20200201"))
         }.let { result ->
@@ -372,7 +351,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_DtStart_FloatingTime() {
-        buildTask() {
+        buildTask {
             dtStart = DtStart("20200703T010203")
         }.let { result ->
             assertEquals(DateTime("20200703T010203").time, result.getAsLong(Tasks.DTSTART))
@@ -383,7 +362,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_DtStart_Utc() {
-        buildTask() {
+        buildTask {
             dtStart = DtStart(DateTime(1593730923000), true)
         }.let { result ->
             assertEquals(1593730923000L, result.getAsLong(Tasks.DTSTART))
@@ -394,7 +373,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Due_FloatingTime() {
-        buildTask() {
+        buildTask {
             due = Due("20200703T010203")
         }.let { result ->
             assertEquals(DateTime("20200703T010203").time, result.getAsLong(Tasks.DUE))
@@ -405,7 +384,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Due_Utc() {
-        buildTask() {
+        buildTask {
             due = Due(DateTime(1593730923000).apply { isUtc = true })
         }.let { result ->
             assertEquals(1593730923000L, result.getAsLong(Tasks.DUE))
@@ -416,7 +395,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_Duration() {
-        buildTask() {
+        buildTask {
             dtStart = DtStart(DateTime())
             duration = Duration(null, "P1D")
         }.let { result ->
@@ -427,7 +406,7 @@ class AndroidTaskTest(
     @Test
     fun testBuildTask_CompletedAt() {
         val now = DateTime()
-        buildTask() {
+        buildTask {
             completedAt = Completed(now)
         }.let { result ->
             // Note: iCalendar does not allow COMPLETED to be all-day [RFC 5545 3.8.2.1]
@@ -438,7 +417,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_PercentComplete() {
-        buildTask() {
+        buildTask {
             percentComplete = 50
         }.let { result ->
             assertEquals(50, result.getAsInteger(Tasks.PERCENT_COMPLETE))
@@ -448,7 +427,7 @@ class AndroidTaskTest(
     @Test
     fun testBuildTask_RRule() {
         // Note: OpenTasks only supports one RRULE per VTODO (iCalendar: multiple RRULEs are allowed, but SHOULD not be used)
-        buildTask() {
+        buildTask {
             rRule = RRule("FREQ=DAILY;COUNT=10")
         }.let { result ->
             assertEquals("FREQ=DAILY;COUNT=10", result.getAsString(Tasks.RRULE))
@@ -457,7 +436,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_RDate() {
-        buildTask() {
+        buildTask {
             dtStart = DtStart(DateTime("20200101T010203", tzVienna))
             rDates += RDate(DateList("20200102T020304", Value.DATE_TIME, tzVienna))
             rDates += RDate(DateList("20200102T020304", Value.DATE_TIME, tzChicago))
@@ -471,7 +450,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_ExDate() {
-        buildTask() {
+        buildTask {
             dtStart = DtStart(DateTime("20200101T010203", tzVienna))
             rRule = RRule("FREQ=DAILY;COUNT=10")
             exDates += ExDate(DateList("20200102T020304", Value.DATE_TIME, tzVienna))
@@ -488,7 +467,7 @@ class AndroidTaskTest(
     fun testBuildTask_Categories() {
         var hasCat1 = false
         var hasCat2 = false
-        buildTask() {
+        buildTask {
             categories.addAll(arrayOf("Cat_1", "Cat 2"))
         }.let { result ->
             val id = result.getAsLong(Tasks._ID)
@@ -521,7 +500,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_RelatedTo_Parent() {
-        buildTask() {
+        buildTask {
             relatedTo.add(RelatedTo("Parent-Task").apply {
                 parameters.add(RelType.PARENT)
             })
@@ -536,7 +515,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_RelatedTo_Child() {
-        buildTask() {
+        buildTask {
             relatedTo.add(RelatedTo("Child-Task").apply {
                 parameters.add(RelType.CHILD)
             })
@@ -551,7 +530,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_RelatedTo_Sibling() {
-        buildTask() {
+        buildTask {
             relatedTo.add(RelatedTo("Sibling-Task").apply {
                 parameters.add(RelType.SIBLING)
             })
@@ -566,7 +545,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_RelatedTo_Custom() {
-        buildTask() {
+        buildTask {
             relatedTo.add(RelatedTo("Sibling-Task").apply {
                 parameters.add(RelType("custom-relationship"))
             })
@@ -581,7 +560,7 @@ class AndroidTaskTest(
 
     @Test
     fun testBuildTask_RelatedTo_Default() {
-        buildTask() {
+        buildTask {
             relatedTo.add(RelatedTo("Parent-Task"))
         }.let { result ->
             val taskId = result.getAsLong(Tasks._ID)
@@ -599,7 +578,7 @@ class AndroidTaskTest(
             parameters.add(TzId(tzVienna.id))
             parameters.add(XParameter("X-TEST-PARAMETER", "12345"))
         }
-        buildTask() {
+        buildTask {
             unknownProperties.add(xProperty)
         }.let { result ->
             val taskId = result.getAsLong(Tasks._ID)
