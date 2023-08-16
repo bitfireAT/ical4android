@@ -45,16 +45,16 @@ object MiscUtils {
     }
 
     /**
-     * Removes empty [String] values from [values].
+     * Removes empty and blank [String] values from [values].
      *
      * @param values set of values to be modified
      * @return the modified object (which is the same object as passed in; for chaining)
      */
-    fun removeEmptyStrings(values: ContentValues): ContentValues {
+    fun removeEmptyAndBlankStrings(values: ContentValues): ContentValues {
         val it = values.keySet().iterator()
         while (it.hasNext()) {
             val obj = values[it.next()]
-            if (obj is String && obj.isEmpty())
+            if (obj is String && obj.isBlank()) // isEmpty or isBlank
                 it.remove()
         }
         return values
@@ -87,7 +87,7 @@ object MiscUtils {
             DatabaseUtils.cursorRowToContentValues(this, values)
 
             if (removeEmptyRows)
-                removeEmptyStrings(values)
+                removeEmptyAndBlankStrings(values)
 
             return values
         }

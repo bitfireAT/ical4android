@@ -132,10 +132,10 @@ abstract class AndroidEvent(
                     val groupScheduled = e.subValues.any { it.uri == Attendees.CONTENT_URI }
                     val isOrganizer = (e.entityValues.getAsInteger(Events.IS_ORGANIZER) ?: 0) != 0
 
-                    populateEvent(MiscUtils.removeEmptyStrings(e.entityValues), groupScheduled)
+                    populateEvent(MiscUtils.removeEmptyAndBlankStrings(e.entityValues), groupScheduled)
 
                     for (subValue in e.subValues) {
-                        val subValues = MiscUtils.removeEmptyStrings(subValue.values)
+                        val subValues = MiscUtils.removeEmptyAndBlankStrings(subValue.values)
                         when (subValue.uri) {
                             Attendees.CONTENT_URI -> populateAttendee(subValues, isOrganizer)
                             Reminders.CONTENT_URI -> populateReminder(subValues)

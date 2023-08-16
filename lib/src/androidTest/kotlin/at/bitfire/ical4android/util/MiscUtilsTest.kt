@@ -11,8 +11,8 @@ import android.net.Uri
 import androidx.test.filters.SmallTest
 import at.bitfire.ical4android.util.MiscUtils.CursorHelper.toValues
 import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
-import org.junit.Assert
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class MiscUtilsTest {
@@ -34,15 +34,21 @@ class MiscUtilsTest {
 
     @Test
     @SmallTest
-    fun testRemoveEmptyStrings() {
+    fun testRemoveEmptyAndBlankStrings() {
         val values = ContentValues(2)
         values.put("key1", "value")
         values.put("key2", 1L)
         values.put("key3", "")
-        MiscUtils.removeEmptyStrings(values)
-        Assert.assertEquals("value", values.getAsString("key1"))
-        Assert.assertEquals(1L, values.getAsLong("key2").toLong())
-        Assert.assertNull(values.get("key3"))
+        values.put("key4", "\n")
+        values.put("key5", " \n ")
+        values.put("key6", " ")
+        MiscUtils.removeEmptyAndBlankStrings(values)
+        assertEquals("value", values.getAsString("key1"))
+        assertEquals(1L, values.getAsLong("key2").toLong())
+        assertNull(values.get("key3"))
+        assertNull(values.get("key4"))
+        assertNull(values.get("key5"))
+        assertNull(values.get("key6"))
     }
 
 
