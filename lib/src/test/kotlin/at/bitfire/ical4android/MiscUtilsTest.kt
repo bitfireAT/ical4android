@@ -12,7 +12,7 @@ class MiscUtilsTest {
 
     @Test
     fun testReflectionToString() {
-        val s = MiscUtils.reflectionToString(MiscUtilsTest.TestClass())
+        val s = MiscUtils.reflectionToString(TestClass())
         assertTrue(s.startsWith("TestClass=["))
         assertTrue(s.contains("i=2"))
         assertTrue(s.contains("large=null"))
@@ -21,7 +21,7 @@ class MiscUtilsTest {
 
     @Test
     fun testReflectionToString_OOM() {
-        val t = MiscUtilsTest.TestClass()
+        val t = TestClass()
         t.large = object: Any() {
             override fun toString(): String {
                 throw OutOfMemoryError("toString() causes OOM")

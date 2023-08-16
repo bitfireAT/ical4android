@@ -19,6 +19,7 @@ import at.bitfire.ical4android.util.DateUtils
 import at.bitfire.ical4android.util.MiscUtils
 import at.bitfire.ical4android.util.MiscUtils.CursorHelper.toValues
 import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
+import at.bitfire.ical4android.util.MiscUtils.removeBlankStrings
 import at.bitfire.ical4android.util.TimeApiExtensions
 import at.bitfire.ical4android.util.TimeApiExtensions.requireZoneId
 import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
@@ -132,10 +133,10 @@ abstract class AndroidEvent(
                     val groupScheduled = e.subValues.any { it.uri == Attendees.CONTENT_URI }
                     val isOrganizer = (e.entityValues.getAsInteger(Events.IS_ORGANIZER) ?: 0) != 0
 
-                    populateEvent(MiscUtils.removeEmptyAndBlankStrings(e.entityValues), groupScheduled)
+                    populateEvent(e.entityValues.removeBlankStrings(), groupScheduled)
 
                     for (subValue in e.subValues) {
-                        val subValues = MiscUtils.removeEmptyAndBlankStrings(subValue.values)
+                        val subValues = subValue.values.removeBlankStrings()
                         when (subValue.uri) {
                             Attendees.CONTENT_URI -> populateAttendee(subValues, isOrganizer)
                             Reminders.CONTENT_URI -> populateReminder(subValues)

@@ -11,14 +11,12 @@ import android.net.Uri
 import androidx.test.filters.SmallTest
 import at.bitfire.ical4android.util.MiscUtils.CursorHelper.toValues
 import at.bitfire.ical4android.util.MiscUtils.UriHelper.asSyncAdapter
+import at.bitfire.ical4android.util.MiscUtils.removeBlankStrings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class MiscUtilsTest {
-
-    private val tzVienna = DateUtils.ical4jTimeZone("Europe/Vienna")
-
 
     @Test
     @SmallTest
@@ -35,16 +33,16 @@ class MiscUtilsTest {
     @Test
     @SmallTest
     fun testRemoveEmptyAndBlankStrings() {
-        val values = ContentValues(2)
+        val values = ContentValues()
         values.put("key1", "value")
         values.put("key2", 1L)
         values.put("key3", "")
         values.put("key4", "\n")
         values.put("key5", " \n ")
         values.put("key6", " ")
-        MiscUtils.removeEmptyAndBlankStrings(values)
+        values.removeBlankStrings()
         assertEquals("value", values.getAsString("key1"))
-        assertEquals(1L, values.getAsLong("key2").toLong())
+        assertEquals(1L, values.getAsLong("key2"))
         assertNull(values.get("key3"))
         assertNull(values.get("key4"))
         assertNull(values.get("key5"))
