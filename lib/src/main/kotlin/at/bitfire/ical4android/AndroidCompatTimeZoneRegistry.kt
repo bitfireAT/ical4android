@@ -1,5 +1,6 @@
 package at.bitfire.ical4android
 
+import at.bitfire.ical4android.util.Ical4jUtils.removeAll
 import net.fortuna.ical4j.model.DefaultTimeZoneRegistryFactory
 import net.fortuna.ical4j.model.PropertyList
 import net.fortuna.ical4j.model.TimeZone
@@ -9,6 +10,7 @@ import net.fortuna.ical4j.model.TimeZoneRegistryImpl
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.property.TzId
 import java.time.ZoneId
+import net.fortuna.ical4j.model.ComponentList
 
 /**
  * Wrapper around default [TimeZoneRegistry] that uses the Android name if a time zone has a
@@ -47,7 +49,7 @@ class AndroidCompatTimeZoneRegistry(
         val androidTzId =
             try {
                 ZoneId.of(id).id
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 /* Not available in Android, should return null in a later version.
                    However, we return the ical4j timezone to keep the changes caused by AndroidCompatTimeZoneRegistry introduction
                    as small as possible. */
@@ -62,22 +64,21 @@ class AndroidCompatTimeZoneRegistry(
            Example: getTimeZone("Europe/Kiev") returns a TimeZone with TZID:Europe/Kyiv since ical4j/3.2.5,
            but most Android devices don't now Europe/Kyiv yet.
            */
-        if (tz.id != androidTzId) {
+        return if (tz.id != androidTzId) {
             Ical4Android.log.warning("Using Android TZID $androidTzId instead of ical4j ${tz.id}")
 
             // create a copy of the VTIMEZONE so that we don't modify the original registry values (which are not immutable)
             val vTimeZone = tz.vTimeZone
-            val newVTimeZoneProperties = PropertyList(vTimeZone.properties)
-            newVTimeZoneProperties.removeAll { property ->
-                property is TzId
-            }
-            newVTimeZoneProperties += TzId(androidTzId)
-            return TimeZone(VTimeZone(
+            val newVTimeZoneProperties = PropertyList(vTimeZone.propertyList.all)
+            newVTimeZoneProperties.removeAll { property -> property is TzId }
+            newVTimeZoneProperties.add(TzId(androidTzId))
+            TimeZone(VTimeZone(
                 newVTimeZoneProperties,
-                vTimeZone.observances
+                ComponentList(vTimeZone.observances)
             ))
-        } else
-            return tz
+        } else {
+            tz
+        }
     }
 
 

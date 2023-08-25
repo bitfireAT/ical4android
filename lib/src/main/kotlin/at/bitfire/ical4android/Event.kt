@@ -20,12 +20,15 @@ import java.io.IOException
 import java.io.OutputStream
 import java.io.Reader
 import java.net.URI
+import java.time.Instant
+import java.time.ZonedDateTime
+import java.time.temporal.Temporal
 import java.util.*
 
 class Event: ICalendar() {
 
     // uid and sequence are inherited from iCalendar
-    var recurrenceId: RecurrenceId? = null
+    var recurrenceId: RecurrenceId<Instant>? = null
 
     var summary: String? = null
     var location: String? = null
@@ -33,14 +36,14 @@ class Event: ICalendar() {
     var description: String? = null
     var color: Css3Color? = null
 
-    var dtStart: DtStart? = null
-    var dtEnd: DtEnd? = null
+    var dtStart: DtStart<ZonedDateTime>? = null
+    var dtEnd: DtEnd<ZonedDateTime>? = null
 
     var duration: Duration? = null
-    val rRules = LinkedList<RRule>()
+    val rRules = LinkedList<RRule<ZonedDateTime>>()
     val exRules = LinkedList<ExRule>()
-    val rDates = LinkedList<RDate>()
-    val exDates = LinkedList<ExDate>()
+    val rDates = LinkedList<RDate<ZonedDateTime>>()
+    val exDates = LinkedList<ExDate<ZonedDateTime>>()
 
     val exceptions = LinkedList<Event>()
 

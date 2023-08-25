@@ -59,6 +59,48 @@ by Google LLC. Android is a trademark of Google LLC._
     }
     ```
 
+# Migration to ical4j 4.0
+
+Conventions:
+- `net.fortuna.ical4j.model.Date` is now replaced by `java.time.LocalDate`
+- `net.fortuna.ical4j.model.DateTime` is now replaced by `java.time.LocalDateTime`
+
+Migrations:
+- `vTimeZone.properties` -> `vTimeZone.propertyList.all`
+- `PropertyList.removeAll` -> use extension function from `Ical4jUtils`
+- `PropertyList +=` -> `PropertyList.add`
+
+## `DtStart` methods
+- Initialization with `Date(...)` (all-day events) -> `Instant.ofEpochMilli(tsStart).let(LocalDate::from)`
+  This converts the epoch millis from `tsStart` into an `Instant`, and then converts that instant into a `LocalDate`.
+- Initialization with `DateTime(...)` -> `Instant.ofEpochMilli(tsStart).let(LocalDateTime::from)`
+- Timezone setting such as:
+    ```kotlin
+    if (startTz != null) {
+        if (TimeZones.isUtc(startTz))
+            isUtc = true
+        else
+            timeZone = startTz
+    }
+    ```
+  considering `startTz: net.fortuna.ical4j.model.TimeZone` and `it: java.time.LocalDateTime`.
+  It's replaced with ```.atZone(startTz)``` (extension function from `Ical4jUtils.kt`)
+- `Date` / `DateTime` instantiation with something like:
+    ```kotlin
+    if (originalAllDay)
+        Date(originalInstanceTime)
+     else
+        DateTime(originalInstanceTime)
+    ```
+  should be replaced to
+    ```kotlin
+    Instant.ofEpochMilli(originalInstanceTime).let {
+        if (originalAllDay)
+            it.let(LocalDate::from)
+        else
+            it.let(LocalDateTime::from)
+    }
+    ```
 
 ## Contact
 
