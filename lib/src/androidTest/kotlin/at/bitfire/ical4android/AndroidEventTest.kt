@@ -20,6 +20,7 @@ import at.bitfire.ical4android.util.DateUtils
 import at.bitfire.ical4android.util.MiscUtils.asSyncAdapter
 import at.bitfire.ical4android.util.MiscUtils.closeCompat
 import net.fortuna.ical4j.model.*
+import net.fortuna.ical4j.model.Recur.Frequency
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
@@ -262,6 +263,21 @@ class AndroidEventTest {
         assertNull(values.get(Events.EVENT_END_TIMEZONE))
 
         assertEquals("${tzShanghai.id};20200601T123000,20200701T183000,20200702T183000,20200801T123000,20200802T123000", values.getAsString(Events.RDATE))
+    }
+
+    @Test
+    fun testBuildEvent_NonAllDay_DtEnd_NoDuration_Recurring_InfiniteRruleAndRdate() {
+        val values = buildEvent(false) {
+            dtStart = DtStart("20200601T123000", tzShanghai)
+            dtEnd = DtEnd("20200601T123000", tzVienna)
+            rRules += RRule(
+                Recur("FREQ=DAILY;INTERVAL=2")
+            )
+            rDates += RDate(DateList("20200701T123000,20200702T123000", Value.DATE_TIME, tzVienna))
+        }
+
+        assertNotNull(values.get(Events.RRULE))
+        assertNull(values.get(Events.RDATE))
     }
 
     @Test
