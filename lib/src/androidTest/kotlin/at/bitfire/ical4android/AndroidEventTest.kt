@@ -276,8 +276,8 @@ class AndroidEventTest {
             rDates += RDate(DateList("20200701T123000,20200702T123000", Value.DATE_TIME, tzVienna))
         }
 
-        assertNotNull(values.get(Events.RRULE))
         assertNull(values.get(Events.RDATE))
+        assertEquals("FREQ=DAILY;INTERVAL=2", values.get(Events.RRULE))
     }
 
     @Test
