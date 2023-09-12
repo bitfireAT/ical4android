@@ -265,6 +265,21 @@ class AndroidEventTest {
     }
 
     @Test
+    fun testBuildEvent_NonAllDay_DtEnd_NoDuration_Recurring_InfiniteRruleAndRdate() {
+        val values = buildEvent(false) {
+            dtStart = DtStart("20200601T123000", tzShanghai)
+            dtEnd = DtEnd("20200601T123000", tzVienna)
+            rRules += RRule(
+                Recur("FREQ=DAILY;INTERVAL=2")
+            )
+            rDates += RDate(DateList("20200701T123000,20200702T123000", Value.DATE_TIME, tzVienna))
+        }
+
+        assertNull(values.get(Events.RDATE))
+        assertEquals("FREQ=DAILY;INTERVAL=2", values.get(Events.RRULE))
+    }
+
+    @Test
     fun testBuildEvent_NonAllDay_DtEnd_Duration_NonRecurring() {
         val values = buildEvent(false) {
             dtStart = DtStart("20200601T123000", tzVienna)

@@ -791,15 +791,25 @@ abstract class AndroidEvent(
                 builder.withValue(Events.RRULE, null)
 
             if (event.rDates.isNotEmpty()) {
-                for (rDate in event.rDates)
-                    AndroidTimeUtils.androidifyTimeZone(rDate)
+                // ignore RDATEs when there's also an infinite RRULE [https://issuetracker.google.com/issues/216374004]
+                val infiniteRrule = event.rRules.any { rRule ->
+                    rRule.recur.count == -1 &&  // no COUNT AND
+                    rRule.recur.until == null   // no UNTIL
+                }
 
-                // Calendar provider drops DTSTART instance when using RDATE [https://code.google.com/p/android/issues/detail?id=171292]
-                val listWithDtStart = DateList()
-                listWithDtStart.add(dtStart.date)
-                event.rDates.addFirst(RDate(listWithDtStart))
+                if (infiniteRrule)
+                    Ical4Android.log.warning("Android can't handle infinite RRULE + RDATE [https://issuetracker.google.com/issues/216374004]; ignoring RDATE(s)")
+                else {
+                    for (rDate in event.rDates)
+                        AndroidTimeUtils.androidifyTimeZone(rDate)
 
-                builder.withValue(Events.RDATE, AndroidTimeUtils.recurrenceSetsToAndroidString(event.rDates, allDay))
+                    // Calendar provider drops DTSTART instance when using RDATE [https://code.google.com/p/android/issues/detail?id=171292]
+                    val listWithDtStart = DateList()
+                    listWithDtStart.add(dtStart.date)
+                    event.rDates.addFirst(RDate(listWithDtStart))
+
+                    builder.withValue(Events.RDATE, AndroidTimeUtils.recurrenceSetsToAndroidString(event.rDates, allDay))
+                }
             } else
                 builder.withValue(Events.RDATE, null)
 
