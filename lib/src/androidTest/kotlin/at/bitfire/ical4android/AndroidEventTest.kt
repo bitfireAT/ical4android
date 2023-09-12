@@ -20,7 +20,6 @@ import at.bitfire.ical4android.util.DateUtils
 import at.bitfire.ical4android.util.MiscUtils.asSyncAdapter
 import at.bitfire.ical4android.util.MiscUtils.closeCompat
 import net.fortuna.ical4j.model.*
-import net.fortuna.ical4j.model.Recur.Frequency
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.*
 import net.fortuna.ical4j.model.property.*
