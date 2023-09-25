@@ -9,7 +9,7 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-val version_ical4j = "3.2.12"
+val version_ical4j = "3.2.13"
 
 android {
     compileSdk = 33
