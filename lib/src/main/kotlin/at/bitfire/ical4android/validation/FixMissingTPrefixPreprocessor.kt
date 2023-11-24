@@ -22,7 +22,7 @@ object FixMissingTPrefixPreprocessor: StreamPreprocessor() {
         var s: String = original
 
         // Find all instances matching the defined expression
-        val found = FixInvalidDayOffsetPreprocessor.regexpForProblem().findAll(s)
+        val found = regexpForProblem().findAll(s)
 
         // ..and repair them
         for (match in found) {
