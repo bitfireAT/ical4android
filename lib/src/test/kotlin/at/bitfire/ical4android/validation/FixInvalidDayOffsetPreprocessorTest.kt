@@ -39,6 +39,7 @@ class FixInvalidDayOffsetPreprocessorTest {
     fun test_FixString_DayOffsetFrom_Invalid() {
         fixAndAssert("DURATION:-P1D", "DURATION:-PT1D")
         fixAndAssert("TRIGGER:-P2D", "TRIGGER:-PT2D")
+        fixAndAssert("TRIGGER:-P5S", "TRIGGER:-PT5S")
 
         fixAndAssert("DURATION:-P1D", "DURATION:-P1DT")
         fixAndAssert("TRIGGER:-P2D", "TRIGGER:-P2DT")
@@ -48,17 +49,20 @@ class FixInvalidDayOffsetPreprocessorTest {
     fun test_FixString_DayOffsetFrom_Valid() {
         fixAndAssert("DURATION:-PT12H", "DURATION:-PT12H")
         fixAndAssert("TRIGGER:-PT12H", "TRIGGER:-PT12H")
+        fixAndAssert("TRIGGER:-PT5S", "TRIGGER:-PT5S")
     }
 
     @Test
     fun test_FixString_DayOffsetFromMultiple_Invalid() {
         fixAndAssert("DURATION:-P1D\nTRIGGER:-P2D", "DURATION:-PT1D\nTRIGGER:-PT2D")
         fixAndAssert("DURATION:-P1D\nTRIGGER:-P2D", "DURATION:-P1DT\nTRIGGER:-P2DT")
+        fixAndAssert("DURATION:-PT1S\nTRIGGER:-PT2S", "DURATION:-P1S\nTRIGGER:-P2S")
     }
 
     @Test
     fun test_FixString_DayOffsetFromMultiple_Valid() {
         fixAndAssert("DURATION:-PT12H\nTRIGGER:-PT12H", "DURATION:-PT12H\nTRIGGER:-PT12H")
+        fixAndAssert("DURATION:-PT5S\nTRIGGER:-PT5S", "DURATION:-PT5S\nTRIGGER:-PT5S")
     }
 
     @Test
@@ -72,6 +76,7 @@ class FixInvalidDayOffsetPreprocessorTest {
         val regex = FixInvalidDayOffsetPreprocessor.regexpForProblem()
         assertTrue(regex.matches("DURATION:PT2D"))
         assertTrue(regex.matches("TRIGGER:PT1D"))
+        assertTrue(regex.matches("TRIGGER:P5S"))
     }
 
     @Test
@@ -79,6 +84,7 @@ class FixInvalidDayOffsetPreprocessorTest {
         val regex = FixInvalidDayOffsetPreprocessor.regexpForProblem()
         assertFalse(regex.matches("DURATION:-PT12H"))
         assertFalse(regex.matches("TRIGGER:-PT15M"))
+        assertFalse(regex.matches("TRIGGER:-PT5S"))
     }
 
 }
