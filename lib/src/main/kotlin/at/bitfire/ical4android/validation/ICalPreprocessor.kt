@@ -34,7 +34,8 @@ object ICalPreprocessor {
 
     private val streamPreprocessors = arrayOf(
         FixInvalidUtcOffsetPreprocessor,    // fix things like TZOFFSET(FROM,TO):+5730
-        FixInvalidDayOffsetPreprocessor     // fix things like DURATION:PT2D
+        FixInvalidDayOffsetPreprocessor,    // fix things like DURATION:PT2D
+        FixMissingTPrefixPreprocessor       // fix things like TRIGGER:-P5S
     )
 
     /**
