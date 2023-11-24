@@ -14,7 +14,7 @@ object FixMissingTPrefixPreprocessor: StreamPreprocessor() {
     override fun regexpForProblem(): Regex = Regex(
         // Examples:
         // TRIGGER:-P5S
-        "^(DURATION|TRIGGER):-?P[^T]\\d*[SMH]\$",
+        "^(DURATION|TRIGGER):-?P[^T]?\\d+[SMH]$",
         setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE)
     )
 
