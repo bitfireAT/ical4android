@@ -8,7 +8,7 @@ package at.bitfire.ical4android.validation
  *
  * This preprocessor simply adds the `T` in this cases.
  *
- * See also https://github.com/bitfireAT/ical4android/issues/117
+ * See [matching GitHub issue](https://github.com/bitfireAT/ical4android/issues/117).
  */
 object FixMissingTPrefixPreprocessor: StreamPreprocessor() {
     override fun regexpForProblem(): Regex = Regex(
@@ -27,6 +27,7 @@ object FixMissingTPrefixPreprocessor: StreamPreprocessor() {
         // ..and repair them
         for (match in found) {
             val matchStr = match.value
+            println("MatchStr: $matchStr")
             val fixed = matchStr
                 .replace("P", "PT")
             s = s.replace(matchStr, fixed)
