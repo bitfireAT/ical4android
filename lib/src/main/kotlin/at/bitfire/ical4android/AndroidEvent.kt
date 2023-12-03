@@ -53,7 +53,7 @@ import java.util.logging.Level
  * in populateEvent() / buildEvent. Setting _ID and ORIGINAL_ID is not sufficient.
  */
 abstract class AndroidEvent(
-        val calendar: AndroidCalendar<AndroidEvent>
+    val calendar: AndroidCalendar<AndroidEvent>
 ) {
 
     companion object {
@@ -930,12 +930,12 @@ abstract class AndroidEvent(
 
         val method = when (alarm.action?.value?.uppercase(Locale.ROOT)) {
             Action.DISPLAY.value,
-            Action.AUDIO.value -> Reminders.METHOD_ALERT
+            Action.AUDIO.value -> Reminders.METHOD_ALERT    // will trigger an alarm on the Android device
 
             // Note: The calendar provider doesn't support saving specific attendees for email reminders.
             Action.EMAIL.value -> Reminders.METHOD_EMAIL
 
-            else               -> Reminders.METHOD_DEFAULT
+            else -> Reminders.METHOD_DEFAULT                // won't trigger an alarm on the Android device
         }
 
         val minutes = ICalendar.vAlarmToMin(alarm, event!!, false)?.second ?: Reminders.MINUTES_DEFAULT
