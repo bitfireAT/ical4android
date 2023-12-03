@@ -9,10 +9,10 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-val version_ical4j = "3.2.13"
+val version_ical4j = "3.2.14"
 
 android {
-    compileSdk = 33
+    compileSdk = 34
 
     namespace = "at.bitfire.ical4android"
 
@@ -95,9 +95,9 @@ configurations.forEach {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
-    implementation("androidx.core:core-ktx:1.10.1")
+    implementation("androidx.core:core-ktx:1.12.0")
     api("org.mnode.ical4j:ical4j:${version_ical4j}")
     implementation("org.slf4j:slf4j-jdk14:2.0.7")       // ical4j logging over java.util.Logger
 
@@ -109,7 +109,7 @@ dependencies {
         }
     }
     // noinspection GradleDependency
-    api("org.apache.commons:commons-lang3:3.8.1") {
+    api("org.apache.commons:commons-lang3") {
         version {
             strictly("3.8.1")
         }
@@ -121,6 +121,6 @@ dependencies {
     androidTestImplementation("androidx.test:core:1.5.0")
     androidTestImplementation("androidx.test:runner:1.5.2")
     androidTestImplementation("androidx.test:rules:1.5.0")
-    androidTestImplementation("io.mockk:mockk-android:1.13.7")
+    androidTestImplementation("io.mockk:mockk-android:1.13.8")
     testImplementation("junit:junit:4.13.2")
 }
