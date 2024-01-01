@@ -135,4 +135,25 @@ class JtxCollectionTest {
         assertTrue(ics.contains(Regex("BEGIN:VJOURNAL(\\n*|\\r*|\\t*|.*)*END:VJOURNAL")))
         assertTrue(ics.contains(Regex("BEGIN:VTODO(\\n*|\\r*|\\t*|.*)*END:VTODO")))
     }
+
+
+    @Test
+    fun updateLastSync_test() {
+        val collectionUri = JtxCollection.create(testAccount, client, cv)
+        assertNotNull(collectionUri)
+        val collections = JtxCollection.find(testAccount, client, context, TestJtxCollection.Factory, null, null)
+
+        collections.forEach { collection ->
+            client.query(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(testAccount), arrayOf(JtxContract.JtxCollection.LAST_SYNC), null, emptyArray(), null).use {
+                assertNotNull(it)
+                assertTrue(it!!.moveToFirst())
+                assertTrue(it.isNull(0))
+            }
+            collection.updateLastSync()
+            client.query(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(testAccount), arrayOf(JtxContract.JtxCollection.LAST_SYNC), null, emptyArray(), null).use {
+                assertNotNull(it)
+                assertTrue(it!!.isNull(0))
+            }
+        }
+    }
 }

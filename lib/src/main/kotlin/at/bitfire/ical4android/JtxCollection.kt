@@ -259,4 +259,13 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
             return ical.toString()
         }
     }
+
+    /**
+     * Updates the last sync datetime for all collections of an account
+     */
+    fun updateLastSync() {
+        val values = ContentValues(1)
+        values.put(JtxContract.JtxCollection.LAST_SYNC, System.currentTimeMillis())
+        client.update(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), values, "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ?", arrayOf(id.toString()))
+    }
 }
