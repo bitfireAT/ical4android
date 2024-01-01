@@ -266,6 +266,6 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
     fun updateLastSync() {
         val values = ContentValues(1)
         values.put(JtxContract.JtxCollection.LAST_SYNC, System.currentTimeMillis())
-        client.update(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), values, "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ?", arrayOf(id.toString()))
+        client.update(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), values, "${JtxContract.JtxCollection.ID} = ?", arrayOf(id.toString()))
     }
 }

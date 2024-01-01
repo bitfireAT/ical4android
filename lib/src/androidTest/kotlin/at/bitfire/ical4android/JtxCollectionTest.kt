@@ -152,7 +152,8 @@ class JtxCollectionTest {
             collection.updateLastSync()
             client.query(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(testAccount), arrayOf(JtxContract.JtxCollection.LAST_SYNC), null, emptyArray(), null).use {
                 assertNotNull(it)
-                assertTrue(it!!.isNull(0))
+                assertTrue(it!!.moveToFirst())
+                assertTrue(!it.isNull(0))
             }
         }
     }
