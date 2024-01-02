@@ -58,7 +58,7 @@ jobs:
     #  uses: github/codeql-action/autobuild@v2
 
     - name: Build
-      run: ./gradlew --no-daemon assemble
+      run: ./gradlew assemble
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
