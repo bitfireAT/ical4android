@@ -292,6 +292,12 @@ abstract class AndroidEvent(
         event.location = row.getAsString(Events.EVENT_LOCATION)
         event.description = row.getAsString(Events.DESCRIPTION)
 
+        event.uid = when {
+            row.containsKey(Events.UID_2445) -> row.getAsString(Events.UID_2445)
+            row.containsKey("iCalUid") -> row.getAsString("iCalUid")
+            else -> null
+        }
+
         row.getAsString(Events.EVENT_COLOR_KEY)?.let { name ->
             try {
                 event.color = Css3Color.valueOf(name)
@@ -872,6 +878,7 @@ abstract class AndroidEvent(
         builder.withValue(Events.TITLE, event.summary)
         builder.withValue(Events.EVENT_LOCATION, event.location)
         builder.withValue(Events.DESCRIPTION, event.description)
+        builder.withValue(Events.UID_2445, event.description)
         builder.withValue(Events.EVENT_COLOR_KEY, event.color?.let { color ->
             val colorName = color.name
             // set event color (if it's available for this account)
