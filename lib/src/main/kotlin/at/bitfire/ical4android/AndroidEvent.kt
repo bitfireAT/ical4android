@@ -10,6 +10,7 @@ import android.content.ContentValues
 import android.content.EntityIterator
 import android.net.Uri
 import android.os.RemoteException
+import android.provider.CalendarContract
 import android.provider.CalendarContract.*
 import android.util.Patterns
 import androidx.annotation.CallSuper
@@ -133,7 +134,19 @@ abstract class AndroidEvent(
                     val groupScheduled = e.subValues.any { it.uri == Attendees.CONTENT_URI }
                     val isOrganizer = (e.entityValues.getAsInteger(Events.IS_ORGANIZER) ?: 0) != 0
 
-                    populateEvent(e.entityValues.removeBlankStrings(), groupScheduled)
+                    val extendedProperties = calendar.provider.query(
+                        ContentUris.withAppendedId(ExtendedProperties.CONTENT_URI, id).asSyncAdapter(calendar.account),
+                        null, null, null, null
+                    )?.use { cur ->
+                        mutableListOf<ContentValues>().apply {
+                            cur.moveToFirst()
+                            do {
+                                cur.toValues().let(::add)
+                            } while (cur.moveToNext())
+                        }
+                    }
+
+                    populateEvent(e.entityValues.removeBlankStrings(), extendedProperties, groupScheduled)
 
                     for (subValue in e.subValues) {
                         val subValues = subValue.values.removeBlankStrings()
@@ -163,10 +176,15 @@ abstract class AndroidEvent(
      * Reads event data from the calendar provider.
      *
      * @param row values of an [Events] row, as returned by the calendar provider
+     * @param extendedProperties If any, extended properties that have been added to the event.
      */
     @Suppress("UNUSED_VALUE")
     @CallSuper
-    protected open fun populateEvent(row: ContentValues, groupScheduled: Boolean) {
+    protected open fun populateEvent(
+        row: ContentValues,
+        extendedProperties: List<ContentValues>?,
+        groupScheduled: Boolean
+    ) {
         Ical4Android.log.log(Level.FINE, "Read event entity from calender provider", row)
         val event = requireNotNull(event)
 
@@ -292,9 +310,10 @@ abstract class AndroidEvent(
         event.location = row.getAsString(Events.EVENT_LOCATION)
         event.description = row.getAsString(Events.DESCRIPTION)
 
+        val iCalUid = extendedProperties?.find { it.getAsString(ExtendedProperties.NAME) == "iCalUid" }
         event.uid = when {
             row.containsKey(Events.UID_2445) -> row.getAsString(Events.UID_2445)
-            row.containsKey("iCalUid") -> row.getAsString("iCalUid")
+            iCalUid != null -> iCalUid.getAsString(ExtendedProperties.VALUE)
             else -> null
         }
 
