@@ -134,15 +134,21 @@ abstract class AndroidEvent(
                     val groupScheduled = e.subValues.any { it.uri == Attendees.CONTENT_URI }
                     val isOrganizer = (e.entityValues.getAsInteger(Events.IS_ORGANIZER) ?: 0) != 0
 
-                    val extendedProperties = calendar.provider.query(
+                    val extendedProperties: List<ContentValues>? = calendar.provider.query(
                         ContentUris.withAppendedId(ExtendedProperties.CONTENT_URI, id).asSyncAdapter(calendar.account),
                         null, null, null, null
                     )?.use { cur ->
-                        mutableListOf<ContentValues>().apply {
-                            cur.moveToFirst()
-                            do {
-                                cur.toValues().let(::add)
-                            } while (cur.moveToNext())
+                        if (cur.count <= 0) {
+                            // If there are no extended properties, return null
+                            emptyList()
+                        } else {
+                            // Otherwise, fetch them all
+                            mutableListOf<ContentValues>().apply {
+                                cur.moveToFirst()
+                                do {
+                                    cur.toValues().let(::add)
+                                } while (cur.moveToNext())
+                            }
                         }
                     }
 
