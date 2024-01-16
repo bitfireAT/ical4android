@@ -135,8 +135,8 @@ abstract class AndroidEvent(
                     val isOrganizer = (e.entityValues.getAsInteger(Events.IS_ORGANIZER) ?: 0) != 0
 
                     val extendedProperties: List<ContentValues>? = calendar.provider.query(
-                        ContentUris.withAppendedId(ExtendedProperties.CONTENT_URI, id).asSyncAdapter(calendar.account),
-                        null, null, null, null
+                        ExtendedProperties.CONTENT_URI.asSyncAdapter(calendar.account),
+                        null, "${ExtendedProperties.EVENT_ID}=?", arrayOf(id.toString()), null
                     )?.use { cur ->
                         if (cur.count <= 0) {
                             // If there are no extended properties, return null
