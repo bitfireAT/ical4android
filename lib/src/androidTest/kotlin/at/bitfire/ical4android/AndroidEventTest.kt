@@ -1829,9 +1829,20 @@ class AndroidEventTest {
 
     @Test
     fun testPopulateEvent_Uid_iCalUid() {
-        populateEvent(true) {
-            put("iCalUid", "event1@example.com")
-        }.let { result ->
+        populateEvent(
+            true,
+            insertCallback = { id ->
+                provider.insert(
+                    ExtendedProperties.CONTENT_URI.asSyncAdapter(testAccount),
+                    ContentValues().apply {
+                        put(ExtendedProperties.EVENT_ID, id)
+                        put(ExtendedProperties.NAME, "iCalUid")
+                        put(ExtendedProperties.VALUE, "event1@example.com")
+                    }
+                )
+            },
+            valuesBuilder = {}
+        ).let { result ->
             assertEquals("event1@example.com", result.uid)
         }
     }
