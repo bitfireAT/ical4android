@@ -138,17 +138,13 @@ abstract class AndroidEvent(
                         ExtendedProperties.CONTENT_URI.asSyncAdapter(calendar.account),
                         null, "${ExtendedProperties.EVENT_ID}=?", arrayOf(id.toString()), null
                     )?.use { cur ->
-                        if (cur.count <= 0) {
-                            // If there are no extended properties, return null
-                            emptyList()
-                        } else {
-                            // Otherwise, fetch them all
-                            mutableListOf<ContentValues>().apply {
-                                cur.moveToFirst()
-                                do {
-                                    cur.toValues().let(::add)
-                                } while (cur.moveToNext())
-                            }
+                        // If movetoFirst returns false, cursor is empty, so return empty list
+                        if (!cur.moveToFirst()) return@use emptyList()
+                        // Otherwise, fetch all the values
+                        mutableListOf<ContentValues>().apply {
+                            do {
+                                cur.toValues().let(::add)
+                            } while (cur.moveToNext())
                         }
                     }
 
