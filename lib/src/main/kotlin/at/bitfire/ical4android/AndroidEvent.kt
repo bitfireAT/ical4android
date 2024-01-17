@@ -10,7 +10,6 @@ import android.content.ContentValues
 import android.content.EntityIterator
 import android.net.Uri
 import android.os.RemoteException
-import android.provider.CalendarContract
 import android.provider.CalendarContract.*
 import android.util.Patterns
 import androidx.annotation.CallSuper
@@ -78,6 +77,14 @@ abstract class AndroidEvent(
          * The URL is directly put into [ExtendedProperties.VALUE].
          */
         const val MIMETYPE_URL = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/vnd.ical4android.url"
+
+        /**
+         * Google Calendar uses an extended property called `iCalUid` for storing the event's UID, instead of the
+         * standard [Events.UID_2445].
+         *
+         * @see <a href="https://github.com/bitfireAT/ical4android/issues/125">GitHub Issue</a>
+         */
+        const val GCALENDAR_ICAL_UID = "iCalUid"
     }
 
     var id: Long? = null
@@ -134,21 +141,7 @@ abstract class AndroidEvent(
                     val groupScheduled = e.subValues.any { it.uri == Attendees.CONTENT_URI }
                     val isOrganizer = (e.entityValues.getAsInteger(Events.IS_ORGANIZER) ?: 0) != 0
 
-                    val extendedProperties: List<ContentValues>? = calendar.provider.query(
-                        ExtendedProperties.CONTENT_URI.asSyncAdapter(calendar.account),
-                        null, "${ExtendedProperties.EVENT_ID}=?", arrayOf(id.toString()), null
-                    )?.use { cur ->
-                        // If movetoFirst returns false, cursor is empty, so return empty list
-                        if (!cur.moveToFirst()) return@use emptyList()
-                        // Otherwise, fetch all the values
-                        mutableListOf<ContentValues>().apply {
-                            do {
-                                cur.toValues().let(::add)
-                            } while (cur.moveToNext())
-                        }
-                    }
-
-                    populateEvent(e.entityValues.removeBlankStrings(), extendedProperties, groupScheduled)
+                    populateEvent(e.entityValues.removeBlankStrings(), groupScheduled)
 
                     for (subValue in e.subValues) {
                         val subValues = subValue.values.removeBlankStrings()
@@ -178,15 +171,10 @@ abstract class AndroidEvent(
      * Reads event data from the calendar provider.
      *
      * @param row values of an [Events] row, as returned by the calendar provider
-     * @param extendedProperties If any, extended properties that have been added to the event.
      */
     @Suppress("UNUSED_VALUE")
     @CallSuper
-    protected open fun populateEvent(
-        row: ContentValues,
-        extendedProperties: List<ContentValues>?,
-        groupScheduled: Boolean
-    ) {
+    protected open fun populateEvent(row: ContentValues, groupScheduled: Boolean) {
         Ical4Android.log.log(Level.FINE, "Read event entity from calender provider", row)
         val event = requireNotNull(event)
 
@@ -312,11 +300,8 @@ abstract class AndroidEvent(
         event.location = row.getAsString(Events.EVENT_LOCATION)
         event.description = row.getAsString(Events.DESCRIPTION)
 
-        val iCalUid = extendedProperties?.find { it.getAsString(ExtendedProperties.NAME) == "iCalUid" }
-        event.uid = when {
-            row.containsKey(Events.UID_2445) -> row.getAsString(Events.UID_2445)
-            iCalUid != null -> iCalUid.getAsString(ExtendedProperties.VALUE)
-            else -> null
+        row.getAsString(Events.UID_2445)?.let { uid ->
+            event.uid = uid
         }
 
         row.getAsString(Events.EVENT_COLOR_KEY)?.let { name ->
@@ -451,13 +436,13 @@ abstract class AndroidEvent(
     }
 
     protected open fun populateExtended(row: ContentValues) {
-        val mimeType = row.getAsString(ExtendedProperties.NAME)
+        val name = row.getAsString(ExtendedProperties.NAME)
         val rawValue = row.getAsString(ExtendedProperties.VALUE)
-        Ical4Android.log.log(Level.FINE, "Read extended property from calender provider", arrayOf(mimeType, rawValue))
+        Ical4Android.log.log(Level.FINE, "Read extended property from calender provider", arrayOf(name, rawValue))
         val event = requireNotNull(event)
 
         try {
-            when (mimeType) {
+            when (name) {
                 MIMETYPE_CATEGORIES ->
                     event.categories += rawValue.split(CATEGORIES_SEPARATOR)
 
@@ -467,6 +452,9 @@ abstract class AndroidEvent(
                     } catch(e: URISyntaxException) {
                         Ical4Android.log.warning("Won't process invalid local URL: $rawValue")
                     }
+
+                GCALENDAR_ICAL_UID ->
+                    event.uid = rawValue
 
                 UnknownProperty.CONTENT_ITEM_TYPE ->
                     event.unknownProperties += UnknownProperty.fromJsonString(rawValue)
