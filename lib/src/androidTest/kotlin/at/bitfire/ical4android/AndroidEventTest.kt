@@ -11,6 +11,7 @@ import android.content.ContentValues
 import android.database.DatabaseUtils
 import android.net.Uri
 import android.provider.CalendarContract.*
+import androidx.core.content.contentValuesOf
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.rule.GrantPermissionRule
 import at.bitfire.ical4android.impl.TestCalendar
@@ -1422,6 +1423,7 @@ class AndroidEventTest {
             destinationCalendar: TestCalendar = calendar,
             asSyncAdapter: Boolean = false,
             insertCallback: (id: Long) -> Unit = {},
+            extendedProperties: Map<String, String> = emptyMap(),
             valuesBuilder: ContentValues.() -> Unit
     ): Event {
         val values = ContentValues()
@@ -1444,6 +1446,16 @@ class AndroidEventTest {
 
         // insert additional rows etc.
         insertCallback(id)
+
+        // insert extended properties
+        for ((name, value) in extendedProperties) {
+            val extendedValues = contentValuesOf(
+                ExtendedProperties.EVENT_ID to id,
+                ExtendedProperties.NAME to name,
+                ExtendedProperties.VALUE to value
+            )
+            provider.insert(ExtendedProperties.CONTENT_URI.asSyncAdapter(testAccount), extendedValues)
+        }
 
         val androidEvent = destinationCalendar.findById(id)
         return androidEvent.event!!
@@ -1620,13 +1632,10 @@ class AndroidEventTest {
 
     @Test
     fun textPopulateEvent_Url() {
-        populateEvent(true, insertCallback = { id ->
-            val urlValues = ContentValues()
-            urlValues.put(ExtendedProperties.EVENT_ID, id)
-            urlValues.put(ExtendedProperties.NAME, AndroidEvent.MIMETYPE_URL)
-            urlValues.put(ExtendedProperties.VALUE, "https://example.com")
-            provider.insert(ExtendedProperties.CONTENT_URI.asSyncAdapter(testAccount), urlValues)
-        }, valuesBuilder = {}).let { result ->
+        populateEvent(true,
+            extendedProperties = mapOf(AndroidEvent.MIMETYPE_URL to "https://example.com"),
+            valuesBuilder = {}
+        ).let { result ->
             assertEquals(URI("https://example.com"), result.url)
         }
     }
@@ -1773,15 +1782,12 @@ class AndroidEventTest {
 
     @Test
     fun testPopulateEvent_Classification_Confidential_Retained() {
-        populateEvent(true, valuesBuilder = {
-            put(Events.ACCESS_LEVEL, Events.ACCESS_DEFAULT)
-        }, insertCallback = { id ->
-            provider.insert(ExtendedProperties.CONTENT_URI.asSyncAdapter(testAccount), ContentValues().apply {
-                put(ExtendedProperties.EVENT_ID, id)
-                put(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
-                put(ExtendedProperties.VALUE, UnknownProperty.toJsonString(Clazz.CONFIDENTIAL))
-            })
-        }).let { result ->
+        populateEvent(true,
+            valuesBuilder = {
+                put(Events.ACCESS_LEVEL, Events.ACCESS_DEFAULT)
+            },
+            extendedProperties = mapOf(UnknownProperty.CONTENT_ITEM_TYPE to UnknownProperty.toJsonString(Clazz.CONFIDENTIAL))
+        ).let { result ->
             assertEquals(Clazz.CONFIDENTIAL, result.classification)
         }
     }
@@ -1797,15 +1803,15 @@ class AndroidEventTest {
 
     @Test
     fun testPopulateEvent_Classification_Custom() {
-        populateEvent(true, valuesBuilder = {
-            put(Events.ACCESS_LEVEL, Events.ACCESS_DEFAULT)
-        }, insertCallback = { id ->
-            provider.insert(ExtendedProperties.CONTENT_URI.asSyncAdapter(testAccount), ContentValues().apply {
-                put(ExtendedProperties.EVENT_ID, id)
-                put(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
-                put(ExtendedProperties.VALUE, UnknownProperty.toJsonString(Clazz("TOP-SECRET")))
-            })
-        }).let { result ->
+        populateEvent(
+            true,
+            valuesBuilder = {
+                put(Events.ACCESS_LEVEL, Events.ACCESS_DEFAULT)
+            },
+            extendedProperties = mapOf(
+                UnknownProperty.CONTENT_ITEM_TYPE to UnknownProperty.toJsonString(Clazz("TOP-SECRET"))
+            )
+        ).let { result ->
             assertEquals(Clazz("TOP-SECRET"), result.classification)
         }
     }
@@ -1831,16 +1837,9 @@ class AndroidEventTest {
     fun testPopulateEvent_Uid_iCalUid() {
         populateEvent(
             true,
-            insertCallback = { id ->
-                provider.insert(
-                    ExtendedProperties.CONTENT_URI.asSyncAdapter(testAccount),
-                    ContentValues().apply {
-                        put(ExtendedProperties.EVENT_ID, id)
-                        put(ExtendedProperties.NAME, "iCalUid")
-                        put(ExtendedProperties.VALUE, "event1@example.com")
-                    }
-                )
-            },
+            extendedProperties = mapOf(
+                AndroidEvent.GCALENDAR_ICAL_UID to "event1@example.com"
+            ),
             valuesBuilder = {}
         ).let { result ->
             assertEquals("event1@example.com", result.uid)
@@ -2165,13 +2164,13 @@ class AndroidEventTest {
         val params = ParameterList()
         params.add(Language("en"))
         val unknownProperty = XProperty("X-NAME", params, "Custom Value")
-        val result = populateEvent(true, valuesBuilder = {}, insertCallback = { id ->
-            val values = ContentValues()
-            values.put(ExtendedProperties.EVENT_ID, id)
-            values.put(ExtendedProperties.NAME, UnknownProperty.CONTENT_ITEM_TYPE)
-            values.put(ExtendedProperties.VALUE, UnknownProperty.toJsonString(unknownProperty))
-            provider.insert(ExtendedProperties.CONTENT_URI.asSyncAdapter(testAccount), values)
-        }).unknownProperties.first
+        val result = populateEvent(
+            true,
+            extendedProperties = mapOf(
+                UnknownProperty.CONTENT_ITEM_TYPE to UnknownProperty.toJsonString(unknownProperty)
+            ),
+            valuesBuilder = {}
+        ).unknownProperties.first
         assertEquals("X-NAME", result.name)
         assertEquals("en", result.getParameter<Language>(Parameter.LANGUAGE).value)
         assertEquals("Custom Value", result.value)
