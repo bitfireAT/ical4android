@@ -68,7 +68,7 @@ jobs:
       - name: Install task apps and run tests
         uses: reactivecircus/android-emulator-runner@v2
         env:
-          version_at_techbee_jtx: v2.6.4
+          version_at_techbee_jtx: v2.7.0
           version_org_tasks: 130501
           version_org_dmfs_tasks: 82200
         with:
