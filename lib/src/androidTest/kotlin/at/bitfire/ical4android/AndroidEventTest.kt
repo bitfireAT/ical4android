@@ -747,6 +747,7 @@ class AndroidEventTest {
         }
     }
 
+    @Test
     fun testBuildEvent_UID2445() {
         buildEvent(true) {
             uid = "event1@example.com"
