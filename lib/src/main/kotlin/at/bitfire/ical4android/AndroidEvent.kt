@@ -897,6 +897,7 @@ abstract class AndroidEvent(
                     .withValue(Events.EXDATE, null)
         }
 
+        builder.withValue(Events.UID_2445, event.uid)
         builder.withValue(Events.TITLE, event.summary)
         builder.withValue(Events.EVENT_LOCATION, event.location)
         builder.withValue(Events.DESCRIPTION, event.description)
