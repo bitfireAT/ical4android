@@ -17,7 +17,7 @@ android {
     namespace = "at.bitfire.ical4android"
 
     defaultConfig {
-        minSdk = 21        // Android 5.0
+        minSdk = 23        // Android 6
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
