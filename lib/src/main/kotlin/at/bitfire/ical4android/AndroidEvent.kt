@@ -10,12 +10,7 @@ import android.content.ContentValues
 import android.content.EntityIterator
 import android.net.Uri
 import android.os.RemoteException
-import android.provider.CalendarContract.Attendees
-import android.provider.CalendarContract.Colors
-import android.provider.CalendarContract.Events
-import android.provider.CalendarContract.EventsEntity
-import android.provider.CalendarContract.ExtendedProperties
-import android.provider.CalendarContract.Reminders
+import android.provider.CalendarContract.*
 import android.util.Patterns
 import androidx.annotation.CallSuper
 import at.bitfire.ical4android.BatchOperation.CpoBuilder
@@ -33,41 +28,19 @@ import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalTime
 import at.bitfire.ical4android.util.TimeApiExtensions.toRfc5545Duration
 import at.bitfire.ical4android.util.TimeApiExtensions.toZonedDateTime
+import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.DateList
-import net.fortuna.ical4j.model.DateTime
-import net.fortuna.ical4j.model.Parameter
-import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.component.VAlarm
-import net.fortuna.ical4j.model.parameter.Cn
-import net.fortuna.ical4j.model.parameter.Email
-import net.fortuna.ical4j.model.parameter.PartStat
-import net.fortuna.ical4j.model.parameter.Rsvp
-import net.fortuna.ical4j.model.parameter.Value
-import net.fortuna.ical4j.model.property.Action
-import net.fortuna.ical4j.model.property.Attendee
-import net.fortuna.ical4j.model.property.Clazz
-import net.fortuna.ical4j.model.property.Description
-import net.fortuna.ical4j.model.property.DtEnd
-import net.fortuna.ical4j.model.property.DtStart
-import net.fortuna.ical4j.model.property.ExDate
-import net.fortuna.ical4j.model.property.ExRule
-import net.fortuna.ical4j.model.property.Organizer
-import net.fortuna.ical4j.model.property.RDate
-import net.fortuna.ical4j.model.property.RRule
-import net.fortuna.ical4j.model.property.RecurrenceId
-import net.fortuna.ical4j.model.property.Status
-import net.fortuna.ical4j.model.property.Summary
+import net.fortuna.ical4j.model.parameter.*
+import net.fortuna.ical4j.model.property.*
 import net.fortuna.ical4j.util.TimeZones
 import java.io.FileNotFoundException
 import java.net.URI
 import java.net.URISyntaxException
+import java.time.*
 import java.time.Duration
-import java.time.Instant
 import java.time.Period
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.util.Locale
+import java.util.*
 import java.util.logging.Level
 
 /**
@@ -916,7 +889,6 @@ abstract class AndroidEvent(
         builder.withValue(Events.TITLE, event.summary)
         builder.withValue(Events.EVENT_LOCATION, event.location)
         builder.withValue(Events.DESCRIPTION, event.description)
-        builder.withValue(Events.UID_2445, event.description)
         builder.withValue(Events.EVENT_COLOR_KEY, event.color?.let { color ->
             val colorName = color.name
             // set event color (if it's available for this account)
