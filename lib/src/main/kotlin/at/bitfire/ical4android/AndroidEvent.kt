@@ -328,10 +328,6 @@ abstract class AndroidEvent(
         event.location = row.getAsString(Events.EVENT_LOCATION)
         event.description = row.getAsString(Events.DESCRIPTION)
 
-        row.getAsString(Events.UID_2445)?.let { uid ->
-            event.uid = uid
-        }
-
         row.getAsString(Events.EVENT_COLOR_KEY)?.let { name ->
             try {
                 event.color = Css3Color.valueOf(name)
