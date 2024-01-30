@@ -1662,7 +1662,7 @@ class AndroidEventTest {
     }
 
     @Test
-    fun textPopulateEvent_Url() {
+    fun testPopulateEvent_Url() {
         populateEvent(true,
             extendedProperties = mapOf(AndroidEvent.EXTNAME_URL to "https://example.com"),
             valuesBuilder = {}
