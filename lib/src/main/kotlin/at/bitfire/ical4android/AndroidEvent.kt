@@ -10,7 +10,12 @@ import android.content.ContentValues
 import android.content.EntityIterator
 import android.net.Uri
 import android.os.RemoteException
-import android.provider.CalendarContract.*
+import android.provider.CalendarContract.Attendees
+import android.provider.CalendarContract.Colors
+import android.provider.CalendarContract.Events
+import android.provider.CalendarContract.EventsEntity
+import android.provider.CalendarContract.ExtendedProperties
+import android.provider.CalendarContract.Reminders
 import android.util.Patterns
 import androidx.annotation.CallSuper
 import at.bitfire.ical4android.BatchOperation.CpoBuilder
@@ -28,20 +33,42 @@ import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalTime
 import at.bitfire.ical4android.util.TimeApiExtensions.toRfc5545Duration
 import at.bitfire.ical4android.util.TimeApiExtensions.toZonedDateTime
-import net.fortuna.ical4j.model.*
-import net.fortuna.ical4j.model.Date
-import net.fortuna.ical4j.model.component.VAlarm
-import net.fortuna.ical4j.model.parameter.*
-import net.fortuna.ical4j.model.property.*
-import net.fortuna.ical4j.util.TimeZones
 import java.io.FileNotFoundException
 import java.net.URI
 import java.net.URISyntaxException
-import java.time.*
 import java.time.Duration
+import java.time.Instant
 import java.time.Period
-import java.util.*
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.util.Locale
 import java.util.logging.Level
+import net.fortuna.ical4j.model.Date
+import net.fortuna.ical4j.model.DateList
+import net.fortuna.ical4j.model.DateTime
+import net.fortuna.ical4j.model.Parameter
+import net.fortuna.ical4j.model.Property
+import net.fortuna.ical4j.model.component.VAlarm
+import net.fortuna.ical4j.model.parameter.Cn
+import net.fortuna.ical4j.model.parameter.Email
+import net.fortuna.ical4j.model.parameter.PartStat
+import net.fortuna.ical4j.model.parameter.Rsvp
+import net.fortuna.ical4j.model.parameter.Value
+import net.fortuna.ical4j.model.property.Action
+import net.fortuna.ical4j.model.property.Attendee
+import net.fortuna.ical4j.model.property.Clazz
+import net.fortuna.ical4j.model.property.Description
+import net.fortuna.ical4j.model.property.DtEnd
+import net.fortuna.ical4j.model.property.DtStart
+import net.fortuna.ical4j.model.property.ExDate
+import net.fortuna.ical4j.model.property.ExRule
+import net.fortuna.ical4j.model.property.Organizer
+import net.fortuna.ical4j.model.property.RDate
+import net.fortuna.ical4j.model.property.RRule
+import net.fortuna.ical4j.model.property.RecurrenceId
+import net.fortuna.ical4j.model.property.Status
+import net.fortuna.ical4j.model.property.Summary
+import net.fortuna.ical4j.util.TimeZones
 
 /**
  * Stores and retrieves VEVENT iCalendar objects (represented as [Event]s) to/from the
@@ -69,14 +96,14 @@ abstract class AndroidEvent(
          *
          * Example: `Cat1\Cat2`
          */
-        const val MIMETYPE_CATEGORIES = "categories"
+        const val EXTNAME_CATEGORIES = "categories"
         const val CATEGORIES_SEPARATOR = '\\'
 
         /**
          * VEVENT URL is stored as an extended property with this [ExtendedProperties.NAME].
          * The URL is directly put into [ExtendedProperties.VALUE].
          */
-        const val MIMETYPE_URL = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/vnd.ical4android.url"
+        const val EXTNAME_URL = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/vnd.ical4android.url"
 
         /**
          * Google Calendar uses an extended property called `iCalUid` for storing the event's UID, instead of the
@@ -84,7 +111,7 @@ abstract class AndroidEvent(
          *
          * @see <a href="https://github.com/bitfireAT/ical4android/issues/125">GitHub Issue</a>
          */
-        const val GCALENDAR_ICAL_UID = "iCalUid"
+        const val EXTNAME_ICAL_UID = "iCalUid"
     }
 
     var id: Long? = null
@@ -444,17 +471,17 @@ abstract class AndroidEvent(
 
         try {
             when (name) {
-                MIMETYPE_CATEGORIES ->
+                EXTNAME_CATEGORIES ->
                     event.categories += rawValue.split(CATEGORIES_SEPARATOR)
 
-                MIMETYPE_URL ->
+                EXTNAME_URL ->
                     try {
                         event.url = URI(rawValue)
                     } catch(e: URISyntaxException) {
                         Ical4Android.log.warning("Won't process invalid local URL: $rawValue")
                     }
 
-                GCALENDAR_ICAL_UID ->
+                EXTNAME_ICAL_UID ->
                     event.uid = rawValue
 
                 UnknownProperty.CONTENT_ITEM_TYPE ->
@@ -575,7 +602,7 @@ abstract class AndroidEvent(
         retainClassification()
         // URL
         event.url?.let { url ->
-            insertExtendedProperty(batch, idxEvent, MIMETYPE_URL, url.toString())
+            insertExtendedProperty(batch, idxEvent, EXTNAME_URL, url.toString())
         }
         // unknown properties
         event.unknownProperties.forEach {
@@ -685,7 +712,7 @@ abstract class AndroidEvent(
                             .newDelete(ExtendedProperties.CONTENT_URI.asSyncAdapter(calendar.account))
                             .withSelection(
                                     "${ExtendedProperties.EVENT_ID}=? AND ${ExtendedProperties.NAME} IN (?,?,?)",
-                                    arrayOf(existingId.toString(), MIMETYPE_CATEGORIES, MIMETYPE_URL, UnknownProperty.CONTENT_ITEM_TYPE)
+                                    arrayOf(existingId.toString(), EXTNAME_CATEGORIES, EXTNAME_URL, UnknownProperty.CONTENT_ITEM_TYPE)
                             ))
 
             addOrUpdateRows(batch)
@@ -1014,7 +1041,7 @@ abstract class AndroidEvent(
                     // drop occurrences of CATEGORIES_SEPARATOR in category names
                     category.filter { it != CATEGORIES_SEPARATOR }
                 }
-        insertExtendedProperty(batch, idxEvent, MIMETYPE_CATEGORIES, rawCategories)
+        insertExtendedProperty(batch, idxEvent, EXTNAME_CATEGORIES, rawCategories)
     }
 
     protected open fun insertUnknownProperty(batch: BatchOperation, idxEvent: Int?, property: Property) {

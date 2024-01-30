@@ -26,6 +26,9 @@ import at.bitfire.ical4android.util.AndroidTimeUtils
 import at.bitfire.ical4android.util.DateUtils
 import at.bitfire.ical4android.util.MiscUtils.asSyncAdapter
 import at.bitfire.ical4android.util.MiscUtils.closeCompat
+import java.net.URI
+import java.time.Duration
+import java.time.Period
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateList
 import net.fortuna.ical4j.model.DateTime
@@ -57,9 +60,6 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-import java.net.URI
-import java.time.Duration
-import java.time.Period
 
 class AndroidEventTest {
 
@@ -563,7 +563,7 @@ class AndroidEventTest {
         buildEvent(true) {
             url = URI("https://example.com")
         }.let { result ->
-            assertEquals("https://example.com", firstExtendedProperty(result, AndroidEvent.MIMETYPE_URL))
+            assertEquals("https://example.com", firstExtendedProperty(result, AndroidEvent.EXTNAME_URL))
         }
     }
 
@@ -1664,7 +1664,7 @@ class AndroidEventTest {
     @Test
     fun textPopulateEvent_Url() {
         populateEvent(true,
-            extendedProperties = mapOf(AndroidEvent.MIMETYPE_URL to "https://example.com"),
+            extendedProperties = mapOf(AndroidEvent.EXTNAME_URL to "https://example.com"),
             valuesBuilder = {}
         ).let { result ->
             assertEquals(URI("https://example.com"), result.url)
@@ -1869,7 +1869,7 @@ class AndroidEventTest {
         populateEvent(
             true,
             extendedProperties = mapOf(
-                AndroidEvent.GCALENDAR_ICAL_UID to "event1@example.com"
+                AndroidEvent.EXTNAME_ICAL_UID to "event1@example.com"
             ),
             valuesBuilder = {}
         ).let { result ->
