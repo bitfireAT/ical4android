@@ -1455,7 +1455,7 @@ class AndroidEventTest {
             asSyncAdapter: Boolean = false,
             insertCallback: (id: Long) -> Unit = {},
             extendedProperties: Map<String, String> = emptyMap(),
-            valuesBuilder: ContentValues.() -> Unit
+            valuesBuilder: ContentValues.() -> Unit = {}
     ): Event {
         val values = ContentValues()
         values.put(Events.CALENDAR_ID, destinationCalendar.id)
@@ -1664,8 +1664,7 @@ class AndroidEventTest {
     @Test
     fun testPopulateEvent_Url() {
         populateEvent(true,
-            extendedProperties = mapOf(AndroidEvent.EXTNAME_URL to "https://example.com"),
-            valuesBuilder = {}
+            extendedProperties = mapOf(AndroidEvent.EXTNAME_URL to "https://example.com")
         ).let { result ->
             assertEquals(URI("https://example.com"), result.url)
         }
@@ -1719,10 +1718,7 @@ class AndroidEventTest {
 
     @Test
     fun testPopulateEvent_Status_None() {
-        populateEvent(true) {
-        }.let { result ->
-            assertNull(result.status)
-        }
+        assertNull(populateEvent(true).status)
     }
 
     @Test
@@ -1754,10 +1750,7 @@ class AndroidEventTest {
 
     @Test
     fun testPopulateEvent_Organizer_NotGroupScheduled() {
-        populateEvent(true) {
-        }.let { result ->
-            assertNull(result.organizer)
-        }
+        assertNull(populateEvent(true).organizer)
     }
 
     @Test
@@ -1771,15 +1764,15 @@ class AndroidEventTest {
 
     @Test
     fun testPopulateEvent_Organizer_GroupScheduled() {
-        populateEvent(true, valuesBuilder = {
-            put(Events.ORGANIZER, "organizer@example.com")
-        }, insertCallback = { id ->
+        populateEvent(true, insertCallback = { id ->
             provider.insert(Attendees.CONTENT_URI.asSyncAdapter(testAccount), ContentValues().apply {
                 put(Attendees.EVENT_ID, id)
                 put(Attendees.ATTENDEE_EMAIL, "organizer@example.com")
                 put(Attendees.ATTENDEE_TYPE, Attendees.RELATIONSHIP_ORGANIZER)
             })
-        }).let { result ->
+        }) {
+            put(Events.ORGANIZER, "organizer@example.com")
+        }.let { result ->
             assertEquals("mailto:organizer@example.com", result.organizer?.value)
         }
     }
@@ -1814,11 +1807,10 @@ class AndroidEventTest {
     @Test
     fun testPopulateEvent_Classification_Confidential_Retained() {
         populateEvent(true,
-            valuesBuilder = {
-                put(Events.ACCESS_LEVEL, Events.ACCESS_DEFAULT)
-            },
             extendedProperties = mapOf(UnknownProperty.CONTENT_ITEM_TYPE to UnknownProperty.toJsonString(Clazz.CONFIDENTIAL))
-        ).let { result ->
+        ) {
+            put(Events.ACCESS_LEVEL, Events.ACCESS_DEFAULT)
+        }.let { result ->
             assertEquals(Clazz.CONFIDENTIAL, result.classification)
         }
     }
@@ -1870,8 +1862,7 @@ class AndroidEventTest {
             true,
             extendedProperties = mapOf(
                 AndroidEvent.EXTNAME_ICAL_UID to "event1@example.com"
-            ),
-            valuesBuilder = {}
+            )
         ).let { result ->
             assertEquals("event1@example.com", result.uid)
         }
@@ -1879,7 +1870,7 @@ class AndroidEventTest {
 
 
     private fun populateReminder(destinationCalendar: TestCalendar = calendar, builder: ContentValues.() -> Unit): VAlarm? {
-        populateEvent(true, destinationCalendar = destinationCalendar, valuesBuilder = {}, insertCallback = { id ->
+        populateEvent(true, destinationCalendar = destinationCalendar, insertCallback = { id ->
             val reminderValues = ContentValues()
             reminderValues.put(Reminders.EVENT_ID, id)
             builder(reminderValues)
@@ -1956,7 +1947,7 @@ class AndroidEventTest {
 
 
     private fun populateAttendee(builder: ContentValues.() -> Unit): Attendee? {
-        populateEvent(true, valuesBuilder = {}, insertCallback = { id ->
+        populateEvent(true, insertCallback = { id ->
             val attendeeValues = ContentValues()
             attendeeValues.put(Attendees.EVENT_ID, id)
             builder(attendeeValues)
@@ -2199,8 +2190,7 @@ class AndroidEventTest {
             true,
             extendedProperties = mapOf(
                 UnknownProperty.CONTENT_ITEM_TYPE to UnknownProperty.toJsonString(unknownProperty)
-            ),
-            valuesBuilder = {}
+            )
         ).unknownProperties.first
         assertEquals("X-NAME", result.name)
         assertEquals("en", result.getParameter<Language>(Parameter.LANGUAGE).value)
