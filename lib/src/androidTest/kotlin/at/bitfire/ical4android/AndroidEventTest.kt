@@ -1449,14 +1449,14 @@ class AndroidEventTest {
     }
 
 
-    private fun populateEvent(
-            automaticDates: Boolean,
-            destinationCalendar: TestCalendar = calendar,
-            asSyncAdapter: Boolean = false,
-            insertCallback: (id: Long) -> Unit = {},
-            extendedProperties: Map<String, String> = emptyMap(),
-            valuesBuilder: ContentValues.() -> Unit = {}
-    ): Event {
+    private fun populateAndroidEvent(
+        automaticDates: Boolean,
+        destinationCalendar: TestCalendar = calendar,
+        asSyncAdapter: Boolean = false,
+        insertCallback: (id: Long) -> Unit = {},
+        extendedProperties: Map<String, String> = emptyMap(),
+        valuesBuilder: ContentValues.() -> Unit = {}
+    ): AndroidEvent {
         val values = ContentValues()
         values.put(Events.CALENDAR_ID, destinationCalendar.id)
         if (automaticDates) {
@@ -1468,11 +1468,11 @@ class AndroidEventTest {
         valuesBuilder(values)
         Ical4Android.log.info("Inserting test event: $values")
         val uri = provider.insert(
-                if (asSyncAdapter)
-                    Events.CONTENT_URI.asSyncAdapter(testAccount)
-                else
-                    Events.CONTENT_URI,
-                values)!!
+            if (asSyncAdapter)
+                Events.CONTENT_URI.asSyncAdapter(testAccount)
+            else
+                Events.CONTENT_URI,
+            values)!!
         val id = ContentUris.parseId(uri)
 
         // insert additional rows etc.
@@ -1488,8 +1488,25 @@ class AndroidEventTest {
             provider.insert(ExtendedProperties.CONTENT_URI.asSyncAdapter(testAccount), extendedValues)
         }
 
-        val androidEvent = destinationCalendar.findById(id)
-        return androidEvent.event!!
+        return destinationCalendar.findById(id)
+    }
+
+    private fun populateEvent(
+        automaticDates: Boolean,
+        destinationCalendar: TestCalendar = calendar,
+        asSyncAdapter: Boolean = false,
+        insertCallback: (id: Long) -> Unit = {},
+        extendedProperties: Map<String, String> = emptyMap(),
+        valuesBuilder: ContentValues.() -> Unit = {}
+    ): Event {
+        return populateAndroidEvent(
+            automaticDates,
+            destinationCalendar,
+            asSyncAdapter,
+            insertCallback,
+            extendedProperties,
+            valuesBuilder
+        ).event!!
     }
 
     @Test
@@ -1877,6 +1894,24 @@ class AndroidEventTest {
             put(Events.UID_2445, "event2@example.com")
         }.let { result ->
             assertEquals("event2@example.com", result.uid)
+        }
+    }
+
+    // Checks that AndroidEvent$extendedProperties is loaded correctly
+    @Test
+    fun testPopulateEvent_extendedProperties() {
+        populateAndroidEvent(
+            true,
+            destinationCalendar = calendar,
+            extendedProperties = mapOf(
+                "PROPERTY" to "event1@example.com"
+            )
+        ).let { androidEvent ->
+            // Run once to populate extendedProperties
+            androidEvent.event
+            val properties = androidEvent.extendedProperties
+            assertEquals(1, properties.size)
+            assertEquals("PROPERTY", properties[0])
         }
     }
 

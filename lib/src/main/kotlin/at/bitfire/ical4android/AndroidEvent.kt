@@ -18,6 +18,7 @@ import android.provider.CalendarContract.ExtendedProperties
 import android.provider.CalendarContract.Reminders
 import android.util.Patterns
 import androidx.annotation.CallSuper
+import androidx.annotation.VisibleForTesting
 import at.bitfire.ical4android.BatchOperation.CpoBuilder
 import at.bitfire.ical4android.util.AndroidTimeUtils
 import at.bitfire.ical4android.util.DateUtils
@@ -193,6 +194,13 @@ abstract class AndroidEvent(
             }
             throw FileNotFoundException("Couldn't find event $id")
         }
+
+    /**
+     * Holds a list of the names of all the loaded extended properties.
+     * Can be used for knowing which properties are stored for the current event.
+     */
+    @VisibleForTesting
+    val extendedProperties: MutableList<String> = mutableListOf()
 
     /**
      * Reads event data from the calendar provider.
@@ -465,6 +473,8 @@ abstract class AndroidEvent(
         Ical4Android.log.log(Level.FINE, "Read extended property from calender provider", arrayOf(name, rawValue))
         val event = requireNotNull(event)
 
+        extendedProperties.add(name)
+
         try {
             when (name) {
                 EXTNAME_CATEGORIES ->
@@ -478,7 +488,10 @@ abstract class AndroidEvent(
                     }
 
                 EXTNAME_ICAL_UID ->
-                    event.uid = rawValue
+                    // only consider iCalUid when there's no uid
+                    if (event.uid == null) {
+                        event.uid = rawValue
+                    }
 
                 UnknownProperty.CONTENT_ITEM_TYPE ->
                     event.unknownProperties += UnknownProperty.fromJsonString(rawValue)
@@ -581,6 +594,11 @@ abstract class AndroidEvent(
         buildEvent(null, builder)
         batch.enqueue(builder)
 
+        // If there's an uid set for the event, clear the iCalUid extended property if present
+        if (event.uid != null) {
+            insertOrDeleteExtendedProperty(batch, idxEvent, EXTNAME_ICAL_UID, null)
+        }
+
         // add reminders
         event.alarms.forEach { insertReminder(batch, idxEvent, it) }
 
@@ -598,7 +616,7 @@ abstract class AndroidEvent(
         retainClassification()
         // URL
         event.url?.let { url ->
-            insertExtendedProperty(batch, idxEvent, EXTNAME_URL, url.toString())
+            insertOrDeleteExtendedProperty(batch, idxEvent, EXTNAME_URL, url.toString())
         }
         // unknown properties
         event.unknownProperties.forEach {
@@ -1022,13 +1040,29 @@ abstract class AndroidEvent(
         batch.enqueue(builder)
     }
 
-    protected open fun insertExtendedProperty(batch: BatchOperation, idxEvent: Int?, mimeType: String, value: String) {
-        val builder = CpoBuilder
-                .newInsert(ExtendedProperties.CONTENT_URI.asSyncAdapter(calendar.account))
+    /**
+     * If [value] is not null, inserts a new extended property named [name] for the event with id [idxEvent].
+     */
+    protected open fun insertOrDeleteExtendedProperty(
+        batch: BatchOperation,
+        idxEvent: Int?,
+        name: String,
+        value: String?
+    ) {
+        val uri = ExtendedProperties.CONTENT_URI.asSyncAdapter(calendar.account)
+        val builder = if (value == null) {
+            // Only enqueue deletions if they have been added (cached in extendedProperties)
+            extendedProperties.find { name == it } ?: return
+            CpoBuilder.newDelete(uri)
+        } else
+            CpoBuilder.newInsert(uri)
+
+        batch.enqueue(
+            builder
                 .withEventId(ExtendedProperties.EVENT_ID, idxEvent)
-                .withValue(ExtendedProperties.NAME, mimeType)
+                .withValue(ExtendedProperties.NAME, name)
                 .withValue(ExtendedProperties.VALUE, value)
-        batch.enqueue(builder)
+        )
     }
 
     protected open fun insertCategories(batch: BatchOperation, idxEvent: Int?) {
@@ -1037,7 +1071,7 @@ abstract class AndroidEvent(
                     // drop occurrences of CATEGORIES_SEPARATOR in category names
                     category.filter { it != CATEGORIES_SEPARATOR }
                 }
-        insertExtendedProperty(batch, idxEvent, EXTNAME_CATEGORIES, rawCategories)
+        insertOrDeleteExtendedProperty(batch, idxEvent, EXTNAME_CATEGORIES, rawCategories)
     }
 
     protected open fun insertUnknownProperty(batch: BatchOperation, idxEvent: Int?, property: Property) {
@@ -1050,7 +1084,7 @@ abstract class AndroidEvent(
             return
         }
 
-        insertExtendedProperty(batch, idxEvent, UnknownProperty.CONTENT_ITEM_TYPE, UnknownProperty.toJsonString(property))
+        insertOrDeleteExtendedProperty(batch, idxEvent, UnknownProperty.CONTENT_ITEM_TYPE, UnknownProperty.toJsonString(property))
     }
 
     private fun useRetainedClassification() {
