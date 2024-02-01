@@ -26,9 +26,6 @@ import at.bitfire.ical4android.util.AndroidTimeUtils
 import at.bitfire.ical4android.util.DateUtils
 import at.bitfire.ical4android.util.MiscUtils.asSyncAdapter
 import at.bitfire.ical4android.util.MiscUtils.closeCompat
-import java.net.URI
-import java.time.Duration
-import java.time.Period
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateList
 import net.fortuna.ical4j.model.DateTime
@@ -60,6 +57,9 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+import java.net.URI
+import java.time.Duration
+import java.time.Period
 
 class AndroidEventTest {
 
@@ -1894,24 +1894,6 @@ class AndroidEventTest {
             put(Events.UID_2445, "event2@example.com")
         }.let { result ->
             assertEquals("event2@example.com", result.uid)
-        }
-    }
-
-    // Checks that AndroidEvent$extendedProperties is loaded correctly
-    @Test
-    fun testPopulateEvent_extendedProperties() {
-        populateAndroidEvent(
-            true,
-            destinationCalendar = calendar,
-            extendedProperties = mapOf(
-                "PROPERTY" to "event1@example.com"
-            )
-        ).let { androidEvent ->
-            // Run once to populate extendedProperties
-            androidEvent.event
-            val properties = androidEvent.extendedProperties
-            assertEquals(1, properties.size)
-            assertEquals("PROPERTY", properties[0])
         }
     }
 
