@@ -96,14 +96,22 @@ abstract class AndroidEvent(
          *
          * Example: `Cat1\Cat2`
          */
-        const val MIMETYPE_CATEGORIES = "categories"
+        const val EXTNAME_CATEGORIES = "categories"
         const val CATEGORIES_SEPARATOR = '\\'
+
+        /**
+         * Google Calendar uses an extended property called `iCalUid` for storing the event's UID, instead of the
+         * standard [Events.UID_2445].
+         *
+         * @see <a href="https://github.com/bitfireAT/ical4android/issues/125">GitHub Issue</a>
+         */
+        const val EXTNAME_ICAL_UID = "iCalUid"
 
         /**
          * VEVENT URL is stored as an extended property with this [ExtendedProperties.NAME].
          * The URL is directly put into [ExtendedProperties.VALUE].
          */
-        const val MIMETYPE_URL = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/vnd.ical4android.url"
+        const val EXTNAME_URL = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/vnd.ical4android.url"
     }
 
     var id: Long? = null
@@ -452,22 +460,27 @@ abstract class AndroidEvent(
     }
 
     protected open fun populateExtended(row: ContentValues) {
-        val mimeType = row.getAsString(ExtendedProperties.NAME)
+        val name = row.getAsString(ExtendedProperties.NAME)
         val rawValue = row.getAsString(ExtendedProperties.VALUE)
-        Ical4Android.log.log(Level.FINE, "Read extended property from calender provider", arrayOf(mimeType, rawValue))
+        Ical4Android.log.log(Level.FINE, "Read extended property from calender provider", arrayOf(name, rawValue))
         val event = requireNotNull(event)
 
         try {
-            when (mimeType) {
-                MIMETYPE_CATEGORIES ->
+            when (name) {
+                EXTNAME_CATEGORIES ->
                     event.categories += rawValue.split(CATEGORIES_SEPARATOR)
 
-                MIMETYPE_URL ->
+                EXTNAME_URL ->
                     try {
                         event.url = URI(rawValue)
                     } catch(e: URISyntaxException) {
                         Ical4Android.log.warning("Won't process invalid local URL: $rawValue")
                     }
+
+                EXTNAME_ICAL_UID ->
+                    // only consider iCalUid when there's no uid
+                    if (event.uid == null)
+                        event.uid = rawValue
 
                 UnknownProperty.CONTENT_ITEM_TYPE ->
                     event.unknownProperties += UnknownProperty.fromJsonString(rawValue)
@@ -587,7 +600,7 @@ abstract class AndroidEvent(
         retainClassification()
         // URL
         event.url?.let { url ->
-            insertExtendedProperty(batch, idxEvent, MIMETYPE_URL, url.toString())
+            insertExtendedProperty(batch, idxEvent, EXTNAME_URL, url.toString())
         }
         // unknown properties
         event.unknownProperties.forEach {
@@ -696,8 +709,14 @@ abstract class AndroidEvent(
                     .enqueue(CpoBuilder
                             .newDelete(ExtendedProperties.CONTENT_URI.asSyncAdapter(calendar.account))
                             .withSelection(
-                                    "${ExtendedProperties.EVENT_ID}=? AND ${ExtendedProperties.NAME} IN (?,?,?)",
-                                    arrayOf(existingId.toString(), MIMETYPE_CATEGORIES, MIMETYPE_URL, UnknownProperty.CONTENT_ITEM_TYPE)
+                                    "${ExtendedProperties.EVENT_ID}=? AND ${ExtendedProperties.NAME} IN (?,?,?,?)",
+                                    arrayOf(
+                                        existingId.toString(),
+                                        EXTNAME_CATEGORIES,
+                                        EXTNAME_ICAL_UID,       // UID is stored in UID_2445, don't leave iCalUid rows in events that we have written
+                                        EXTNAME_URL,
+                                        UnknownProperty.CONTENT_ITEM_TYPE
+                                    )
                             ))
 
             addOrUpdateRows(batch)
@@ -1011,12 +1030,12 @@ abstract class AndroidEvent(
         batch.enqueue(builder)
     }
 
-    protected open fun insertExtendedProperty(batch: BatchOperation, idxEvent: Int?, mimeType: String, value: String) {
+    protected open fun insertExtendedProperty(batch: BatchOperation, idxEvent: Int?, name: String, value: String) {
         val builder = CpoBuilder
-                .newInsert(ExtendedProperties.CONTENT_URI.asSyncAdapter(calendar.account))
-                .withEventId(ExtendedProperties.EVENT_ID, idxEvent)
-                .withValue(ExtendedProperties.NAME, mimeType)
-                .withValue(ExtendedProperties.VALUE, value)
+            .newInsert(ExtendedProperties.CONTENT_URI.asSyncAdapter(calendar.account))
+            .withEventId(ExtendedProperties.EVENT_ID, idxEvent)
+            .withValue(ExtendedProperties.NAME, name)
+            .withValue(ExtendedProperties.VALUE, value)
         batch.enqueue(builder)
     }
 
@@ -1026,7 +1045,7 @@ abstract class AndroidEvent(
                     // drop occurrences of CATEGORIES_SEPARATOR in category names
                     category.filter { it != CATEGORIES_SEPARATOR }
                 }
-        insertExtendedProperty(batch, idxEvent, MIMETYPE_CATEGORIES, rawCategories)
+        insertExtendedProperty(batch, idxEvent, EXTNAME_CATEGORIES, rawCategories)
     }
 
     protected open fun insertUnknownProperty(batch: BatchOperation, idxEvent: Int?, property: Property) {
