@@ -93,7 +93,7 @@ configurations.forEach {
 
 dependencies {
     implementation(libs.kotlin.stdlib)
-    coreLibraryDesugaring(libs.android.desugar)
+    coreLibraryDesugaring(libs.android.desugaring)
 
     implementation(libs.androidx.core)
     api(libs.ical4j)

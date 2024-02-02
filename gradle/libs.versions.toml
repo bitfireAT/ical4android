@@ -19,7 +19,7 @@ mockk = "1.13.9"
 slf4j = "2.0.7"
 
 [libraries]
-android-desugar = { module = "com.android.tools:desugar_jdk_libs", version.ref = "android-desugar" }
+android-desugaring = { module = "com.android.tools:desugar_jdk_libs", version.ref = "android-desugar" }
 androidx-core = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
 androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-test-rules" }
