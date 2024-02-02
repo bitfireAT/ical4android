@@ -3,13 +3,11 @@
  **************************************************************************************************/
 
 plugins {
-    id("com.android.library")
-    id("kotlin-android")
-    id("maven-publish")
-    id("org.jetbrains.dokka")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.dokka)
+    `maven-publish`
 }
-
-val version_ical4j = "3.2.14"
 
 android {
     compileSdk = 34
@@ -21,7 +19,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "version_ical4j", "\"${version_ical4j}\"")
+        buildConfigField("String", "version_ical4j", "\"${libs.versions.ical4j.get()}\"")
 
         aarMetadata {
             minCompileSdk = 29
@@ -94,33 +92,29 @@ configurations.forEach {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib")
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    implementation(libs.kotlin.stdlib)
+    coreLibraryDesugaring(libs.android.desugar)
 
-    implementation("androidx.core:core-ktx:1.12.0")
-    api("org.mnode.ical4j:ical4j:${version_ical4j}")
-    implementation("org.slf4j:slf4j-jdk14:2.0.7")       // ical4j logging over java.util.Logger
+    implementation(libs.androidx.core)
+    api(libs.ical4j)
+    implementation(libs.slf4j)       // ical4j logging over java.util.Logger
 
     // ical4j requires newer Apache Commons libraries, which require Java8. Force latest Java7 versions.
-    // noinspection GradleDependency
-    api("org.apache.commons:commons-collections4") {
+    api(libs.commons.collections) {
         version {
-            strictly("4.2")
+            strictly(libs.versions.commons.collections.get())
         }
     }
-    // noinspection GradleDependency
-    api("org.apache.commons:commons-lang3") {
+    api(libs.commons.lang3) {
         version {
-            strictly("3.8.1")
+            strictly(libs.versions.commons.lang.get())
         }
     }
-    // noinspection GradleDependency
-    @Suppress("GradleDependency")
-    implementation("commons-io:commons-io:2.6")
+    implementation(libs.commons.io)
 
-    androidTestImplementation("androidx.test:core:1.5.0")
-    androidTestImplementation("androidx.test:runner:1.5.2")
-    androidTestImplementation("androidx.test:rules:1.5.0")
-    androidTestImplementation("io.mockk:mockk-android:1.13.8")
-    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.mockk.android)
+    testImplementation(libs.junit)
 }
