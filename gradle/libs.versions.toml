@@ -1,0 +1,39 @@
+[versions]
+agp = "8.2.2"
+android-desugar = "2.0.4"
+androidx-core = "1.12.0"
+androidx-test-core = "1.5.0"
+androidx-test-rules = "1.5.0"
+androidx-test-runner = "1.5.2"
+# noinspection GradleDependency
+commons-collections = "4.2"
+# noinspection GradleDependency
+commons-lang = "3.8.1"
+# noinspection GradleDependency
+commons-io = "2.6"
+dokka  ="1.9.10"
+ical4j = "3.2.14"
+junit = "4.13.2"
+kotlin = "1.9.22"
+mockk = "1.13.9"
+slf4j = "2.0.11"
+
+[libraries]
+android-desugaring = { module = "com.android.tools:desugar_jdk_libs", version.ref = "android-desugar" }
+androidx-core = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
+androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-test-rules" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
+commons-collections = { module = "org.apache.commons:commons-collections4", version.ref = "commons-collections" }
+commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang" }
+commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
+ical4j = { module = "org.mnode.ical4j:ical4j", version.ref = "ical4j" }
+junit = { module = "junit:junit", version.ref = "junit" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
+slf4j = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
+
+[plugins]
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
