@@ -1,5 +1,5 @@
 [versions]
-agp = "8.2.1"
+agp = "8.2.2"
 android-desugar = "2.0.4"
 androidx-core = "1.12.0"
 androidx-test-core = "1.5.0"
@@ -16,7 +16,7 @@ ical4j = "3.2.14"
 junit = "4.13.2"
 kotlin = "1.9.22"
 mockk = "1.13.9"
-slf4j = "2.0.7"
+slf4j = "2.0.11"
 
 [libraries]
 android-desugaring = { module = "com.android.tools:desugar_jdk_libs", version.ref = "android-desugar" }
