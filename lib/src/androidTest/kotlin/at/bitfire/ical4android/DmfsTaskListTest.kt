@@ -20,7 +20,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class AndroidTaskListTest(providerName: TaskProvider.ProviderName):
+class DmfsTaskListTest(providerName: TaskProvider.ProviderName):
         AbstractTasksTest(providerName) {
 
     private val testAccount = Account("AndroidTaskListTest", TaskContract.LOCAL_ACCOUNT_TYPE)
@@ -34,10 +34,10 @@ class AndroidTaskListTest(providerName: TaskProvider.ProviderName):
         info.put(TaskContract.TaskLists.SYNC_ENABLED, 1)
         info.put(TaskContract.TaskLists.VISIBLE, 1)
 
-        val uri = AndroidTaskList.create(testAccount, provider, info)
+        val uri = DmfsTaskList.create(testAccount, provider, info)
         assertNotNull(uri)
 
-        return AndroidTaskList.findByID(testAccount, provider, TestTaskList.Factory, ContentUris.parseId(uri))
+        return DmfsTaskList.findByID(testAccount, provider, TestTaskList.Factory, ContentUris.parseId(uri))
     }
 
 

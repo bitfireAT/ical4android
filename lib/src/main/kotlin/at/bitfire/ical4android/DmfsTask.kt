@@ -32,16 +32,15 @@ import java.util.logging.Level
 
 /**
  * Stores and retrieves VTODO iCalendar objects (represented as [Task]s) to/from the
- * OpenTasks provider.
+ * tasks.org-content provider (currently tasks.org and OpenTasks).
  *
  * Extend this class to process specific fields of the task.
  *
  * The SEQUENCE field is stored in [Tasks.SYNC_VERSION], so don't use [Tasks.SYNC_VERSION]
  * for anything else.
- *
  */
-abstract class AndroidTask(
-        val taskList: AndroidTaskList<AndroidTask>
+abstract class DmfsTask(
+    val taskList: DmfsTaskList<DmfsTask>
 ) {
 
     companion object {
@@ -53,11 +52,11 @@ abstract class AndroidTask(
     var id: Long? = null
 
 
-    constructor(taskList: AndroidTaskList<AndroidTask>, values: ContentValues): this(taskList) {
+    constructor(taskList: DmfsTaskList<DmfsTask>, values: ContentValues): this(taskList) {
         id = values.getAsLong(Tasks._ID)
     }
 
-    constructor(taskList: AndroidTaskList<AndroidTask>, task: Task): this(taskList) {
+    constructor(taskList: DmfsTaskList<DmfsTask>, task: Task): this(taskList) {
         this.task = task
     }
 

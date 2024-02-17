@@ -20,14 +20,13 @@ import java.util.logging.Level
 
 
 /**
- * Represents a locally stored task list, containing AndroidTasks (whose data objects are Tasks).
- * Communicates with third-party content providers to store the tasks.
- * Currently, only the OpenTasks tasks provider (org.dmfs.provider.tasks) is supported.
+ * Represents a locally stored task list, containing [DmfsTask]s (tasks).
+ * Communicates with tasks.org-compatible content providers (currently tasks.org and OpenTasks) to store the tasks.
  */
-abstract class AndroidTaskList<out T : AndroidTask>(
+abstract class DmfsTaskList<out T : DmfsTask>(
     val account: Account,
     val provider: TaskProvider,
-    val taskFactory: AndroidTaskFactory<T>,
+    val taskFactory: DmfsTaskFactory<T>,
     val id: Long
 ) {
 
@@ -42,10 +41,10 @@ abstract class AndroidTaskList<out T : AndroidTask>(
                 ?: throw CalendarStorageException("Couldn't create task list (empty result from provider)")
         }
 
-        fun <T : AndroidTaskList<AndroidTask>> findByID(
+        fun <T : DmfsTaskList<DmfsTask>> findByID(
             account: Account,
             provider: TaskProvider,
-            factory: AndroidTaskListFactory<T>,
+            factory: DmfsTaskListFactory<T>,
             id: Long
         ): T {
             provider.client.query(
@@ -64,10 +63,10 @@ abstract class AndroidTaskList<out T : AndroidTask>(
             throw FileNotFoundException()
         }
 
-        fun <T : AndroidTaskList<AndroidTask>> find(
+        fun <T : DmfsTaskList<DmfsTask>> find(
             account: Account,
             provider: TaskProvider,
-            factory: AndroidTaskListFactory<T>,
+            factory: DmfsTaskListFactory<T>,
             where: String?,
             whereArgs: Array<String>?
         ): List<T> {
