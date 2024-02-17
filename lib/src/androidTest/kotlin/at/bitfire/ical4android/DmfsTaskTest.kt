@@ -29,7 +29,7 @@ import org.junit.Before
 import org.junit.Test
 import java.time.ZoneId
 
-class AndroidTaskTest(
+class DmfsTaskTest(
         providerName: TaskProvider.ProviderName
 ): AbstractTasksTest(providerName) {
 
@@ -583,7 +583,7 @@ class AndroidTaskTest(
         }.let { result ->
             val taskId = result.getAsLong(Tasks._ID)
             val unknownProperty = firstProperty(taskId, UnknownProperty.CONTENT_ITEM_TYPE)!!
-            assertEquals(xProperty, UnknownProperty.fromJsonString(unknownProperty.getAsString(AndroidTask.UNKNOWN_PROPERTY_DATA)))
+            assertEquals(xProperty, UnknownProperty.fromJsonString(unknownProperty.getAsString(DmfsTask.UNKNOWN_PROPERTY_DATA)))
         }
     }
 

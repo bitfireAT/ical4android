@@ -4,10 +4,10 @@
 
 package at.bitfire.ical4android
 
-import android.content.ContentValues
+import android.accounts.Account
 
-interface AndroidTaskFactory<out T: AndroidTask> {
+interface DmfsTaskListFactory<out T: DmfsTaskList<DmfsTask>> {
 
-    fun fromProvider(taskList: AndroidTaskList<AndroidTask>, values: ContentValues): T
+    fun newInstance(account: Account, provider: TaskProvider, id: Long): T
 
 }
