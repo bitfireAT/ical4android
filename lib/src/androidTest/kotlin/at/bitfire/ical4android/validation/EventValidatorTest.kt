@@ -310,6 +310,42 @@ class EventValidatorTest {
         )
     }
 
+    @Test
+    fun testRemoveRrulesOfRruleExceptions() {
+        val calendar = Event.eventsFromReader(StringReader(
+            "BEGIN:VCALENDAR\n" +
+                    "BEGIN:VEVENT\n" +
+                    "DTSTAMP:20240215T102755Z\n" +
+                    "SUMMARY:recurring event\n" +
+                    "DTSTART;TZID=Europe/Paris:20240219T130000\n" +
+                    "DTEND;TZID=Europe/Paris:20240219T140000\n" +
+                    "RRULE:FREQ=DAILY;INTERVAL=1;COUNT=5\n" +           // Should keep this RRULE
+                    "UID:76c08fb1-99a3-41cf-b482-2d3b06648814\n" +
+                    "END:VEVENT\n" +
+
+                    // Exception for the recurring event above
+                    "BEGIN:VEVENT\n" +
+                    "DTSTAMP:20240215T102908Z\n" +
+                    "RECURRENCE-ID;TZID=Europe/Paris:20240221T130000\n" +
+                    "SUMMARY:exception of recurring event\n" +
+                    "RRULE:FREQ=DAILY;COUNT=6;INTERVAL=2\n" +           // but remove this one
+                    "RRULE:FREQ=DAILY;COUNT=6;INTERVAL=2\n" +           // and this one
+                    "DTSTART;TZID=Europe/Paris:20240221T110000\n" +
+                    "DTEND;TZID=Europe/Paris:20240221T120000\n" +
+                    "UID:76c08fb1-99a3-41cf-b482-2d3b06648814\n" +
+                    "END:VEVENT\n" +
+                    "END:VCALENDAR"
+        ))
+        assertEquals("FREQ=DAILY;COUNT=5;INTERVAL=1", calendar.first().rRules.joinToString())
+        assertEquals(
+            "FREQ=DAILY;COUNT=6;INTERVAL=2\nFREQ=DAILY;COUNT=6;INTERVAL=2",
+            calendar.first().exceptions.first.rRules.joinToString()
+        )
+        EventValidator.removeRRulesOfExceptions(calendar.first().exceptions)
+        assertEquals("FREQ=DAILY;COUNT=5;INTERVAL=1", calendar.first().rRules.joinToString())
+        assertEquals("", calendar.first().exceptions.first.rRules.joinToString())
+    }
+
 
     @Test
     fun testRemoveRRulesWithUntilBeforeDtStart() {
