@@ -310,6 +310,7 @@ class EventValidatorTest {
         )
     }
 
+
     @Test
     fun testRemoveRrulesOfRruleExceptions() {
         val calendar = Event.eventsFromReader(StringReader(
@@ -343,7 +344,7 @@ class EventValidatorTest {
         )
         EventValidator.removeRRulesOfExceptions(calendar.first().exceptions)
         assertEquals("FREQ=DAILY;COUNT=5;INTERVAL=1", calendar.first().rRules.joinToString())
-        assertEquals("", calendar.first().exceptions.first.rRules.joinToString())
+        assertTrue(calendar.first().exceptions.first.rRules.isEmpty())
     }
 
 

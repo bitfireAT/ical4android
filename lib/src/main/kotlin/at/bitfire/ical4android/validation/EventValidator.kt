@@ -31,6 +31,7 @@ class EventValidator(val e: Event) {
         val dtStart = correctStartAndEndTime(e)
         sameTypeForDtStartAndRruleUntil(dtStart, e.rRules)
         removeRRulesWithUntilBeforeDtStart(dtStart, e.rRules)
+        
         removeRRulesOfExceptions(e.exceptions)
     }
 
@@ -131,9 +132,11 @@ class EventValidator(val e: Event) {
                 throw InvalidCalendarException("Event with invalid DTSTART value")
         }
 
+
         /**
-         * Removes RRULEs of exceptions of recurring events
-         * @param exceptions Exceptions of a recurring event
+         * Removes RRULEs of exceptions of (potentially recurring) events
+         *
+         * @param exceptions exceptions of an event
          */
         internal fun removeRRulesOfExceptions(exceptions: List<Event>) =
             exceptions.forEach { exception ->
