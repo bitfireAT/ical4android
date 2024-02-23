@@ -109,7 +109,7 @@ abstract class DmfsTaskList<out T : DmfsTask>(
      * @param info  values from tasks provider
      */
     @CallSuper
-    protected fun populate(values: ContentValues) {
+    protected open fun populate(values: ContentValues) {
         syncId = values.getAsString(TaskLists._SYNC_ID)
         name = values.getAsString(TaskLists.LIST_NAME)
         color = values.getAsInteger(TaskLists.LIST_COLOR)
