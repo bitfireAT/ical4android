@@ -10,6 +10,7 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
 import android.provider.CalendarContract.*
+import androidx.annotation.CallSuper
 import at.bitfire.ical4android.util.MiscUtils.asSyncAdapter
 import at.bitfire.ical4android.util.MiscUtils.toValues
 import java.io.FileNotFoundException
@@ -22,12 +23,12 @@ import java.util.logging.Level
  * database to store the events.
  */
 abstract class AndroidCalendar<out T: AndroidEvent>(
-        val account: Account,
-        val provider: ContentProviderClient,
-        val eventFactory: AndroidEventFactory<T>,
+    val account: Account,
+    val provider: ContentProviderClient,
+    val eventFactory: AndroidEventFactory<T>,
 
-        /** the calendar ID ([Calendars._ID]) **/
-        val id: Long
+    /** the calendar ID ([Calendars._ID]) **/
+    val id: Long
 ) {
 
     companion object {
@@ -155,6 +156,16 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
     var ownerAccount: String? = null
 
 
+    /**
+     * Sets the calendar properties ([name], [displayName] etc.) from the passed argument,
+     * which is usually directly taken from the Calendar Provider.
+     *
+     * Called when an instance is created from a Calendar Provider data row, for example
+     * using [find].
+     *
+     * @param info  values from Calendar Provider
+     */
+    @CallSuper
     protected open fun populate(info: ContentValues) {
         name = info.getAsString(Calendars.NAME)
         displayName = info.getAsString(Calendars.CALENDAR_DISPLAY_NAME)

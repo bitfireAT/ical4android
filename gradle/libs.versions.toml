@@ -16,7 +16,7 @@ ical4j = "3.2.14"
 junit = "4.13.2"
 kotlin = "1.9.22"
 mockk = "1.13.9"
-slf4j = "2.0.11"
+slf4j = "2.0.12"
 
 [libraries]
 android-desugaring = { module = "com.android.tools:desugar_jdk_libs", version.ref = "android-desugar" }

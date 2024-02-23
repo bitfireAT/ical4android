@@ -8,6 +8,7 @@ import android.accounts.Account
 import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
+import androidx.annotation.CallSuper
 import at.bitfire.ical4android.util.MiscUtils.asSyncAdapter
 import at.bitfire.ical4android.util.MiscUtils.toValues
 import org.dmfs.tasks.contract.TaskContract
@@ -98,6 +99,16 @@ abstract class DmfsTaskList<out T : DmfsTask>(
     var isVisible = false
 
 
+    /**
+     * Sets the task list properties ([syncId], [name] etc.) from the passed argument,
+     * which is usually directly taken from the tasks provider.
+     *
+     * Called when an instance is created from a tasks provider data row, for example
+     * using [find].
+     *
+     * @param info  values from tasks provider
+     */
+    @CallSuper
     protected fun populate(values: ContentValues) {
         syncId = values.getAsString(TaskLists._SYNC_ID)
         name = values.getAsString(TaskLists.LIST_NAME)
