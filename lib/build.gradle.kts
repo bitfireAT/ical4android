@@ -121,3 +121,22 @@ dependencies {
     androidTestImplementation(libs.mockk.android)
     testImplementation(libs.junit)
 }
+
+
+// install task apps from ~/.apk before running tests
+
+tasks.register("installTaskApps") {
+    doLast {
+        println("I am the task MyTask")
+        fileTree("../.apk").forEach {
+            println("Installing ${it.absolutePath}")
+            exec {
+                commandLine("adb", "install", "-r", it.absolutePath)
+            }
+        }
+    }
+}
+
+tasks.connectedCheck {
+    dependsOn("installTaskApps")
+}
