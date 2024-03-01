@@ -26,9 +26,6 @@ jobs:
   test_on_emulator:
     name: Tests with emulator
     runs-on: ubuntu-latest-4-cores
-    strategy:
-      matrix:
-        api-level: [ 31 ]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,46 +42,31 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Cache AVD and APKs
+      - name: Cache AVD
         uses: actions/cache@v4
-        id: avd-cache
         with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-            ~/.apk
-          key: avd-${{ matrix.api-level }}
+          path: ~/.config/.android/avd
+          key: avd-${{ hashFiles('app/build.gradle.kts') }}   # gradle-managed devices are defined there
 
-      - name: Create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
+      - name: Cache task apps
+        uses: actions/cache@v4
         with:
-          api-level: ${{ matrix.api-level }}
-          arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: false
-          script: echo "Generated AVD snapshot for caching."
+          path: ~/.apk
+          key: tasks-apks
 
-      - name: Install task apps and run tests
-        uses: reactivecircus/android-emulator-runner@v2
+      - name: Download task apps
         env:
           version_at_techbee_jtx: v2.7.0
-          version_org_tasks: 130501
           version_org_dmfs_tasks: 82200
-        with:
-          api-level: ${{ matrix.api-level }}
-          arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: true
-          script: |
-            mkdir .apk && cd .apk
-            (wget -cq -O org.dmfs.tasks.apk https://f-droid.org/repo/org.dmfs.tasks_${{ env.version_org_dmfs_tasks }}.apk || wget -cq -O org.dmfs.tasks.apk https://f-droid.org/archive/org.dmfs.tasks_${{ env.version_org_dmfs_tasks }}.apk) && adb install org.dmfs.tasks.apk
-            (wget -cq -O org.tasks.apk https://f-droid.org/repo/org.tasks_${{ env.version_org_tasks }}.apk || wget -cq -O org.tasks.apk https://f-droid.org/archive/org.tasks_${{ env.version_org_tasks }}.apk) && adb install org.tasks.apk
-            (wget -cq -O at.techbee.jtx.apk https://github.com/TechbeeAT/jtxBoard/releases/download/${{ env.version_at_techbee_jtx }}/jtxBoard-${{ env.version_at_techbee_jtx }}.apk) && adb install at.techbee.jtx.apk
-            cd ..
-            ./gradlew --no-daemon connectedCheck -Pandroid.testInstrumentationRunnerArguments.notAnnotation=androidx.test.filters.FlakyTest
+          version_org_tasks: 130501
+        run: |
+          mkdir .apk
+          wget -cq -O .apk/org.dmfs.tasks.apk https://f-droid.org/repo/org.dmfs.tasks_${{ env.version_org_dmfs_tasks }}.apk || wget -cq -O org.dmfs.tasks.apk https://f-droid.org/archive/org.dmfs.tasks_${{ env.version_org_dmfs_tasks }}.apk
+          wget -cq -O .apk/org.tasks.apk https://f-droid.org/repo/org.tasks_${{ env.version_org_tasks }}.apk || wget -cq -O org.tasks.apk https://f-droid.org/archive/org.tasks_${{ env.version_org_tasks }}.apk
+          wget -cq -O .apk/at.techbee.jtx.apk https://github.com/TechbeeAT/jtxBoard/releases/download/${{ env.version_at_techbee_jtx }}/jtxBoard-${{ env.version_at_techbee_jtx }}.apk
+
+      - name: Run device tests
+        run: ./gradlew --no-daemon app:virtualCheck
 
       - name: Archive results
         if: always()
