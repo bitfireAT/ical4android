@@ -8,6 +8,8 @@ package at.bitfire.ical4android.util
 
 import android.text.format.Time
 import at.bitfire.ical4android.Ical4Android
+import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
+import at.bitfire.ical4android.util.TimeApiExtensions.toZonedDateTime
 import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.TimeZone
@@ -21,6 +23,8 @@ import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.time.Duration
 import java.time.Period
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAmount
 import java.util.*
 
@@ -131,18 +135,25 @@ object AndroidTimeUtils {
      * TZID is given) or "yyyymmddThhmmssZ". We don't use the TZID format here because then we're limited
      * to one time-zone, while an iCalendar may contain multiple EXDATE/RDATE lines with different time zones.
      *
-     * @param dates         one more more lists of RDATE or EXDATE
-     * @param allDay        whether the event is an all-day event or not
+     * This method converts the values to the type of [dtStart], if necessary:
+     *
+     * - DTSTART (DATE-TIME) and RDATE/EXDATE (DATE) → method converts RDATE/EXDATE to DATE-TIME with same time as DTSTART
+     * - DTSTART (DATE) and RDATE/EXDATE (DATE-TIME) → method converts RDATE/EXDATE to DATE (just drops time)
+     *
+     * @param dates     one more more lists of RDATE or EXDATE
+     * @param dtStart   used to determine whether the event is an all-day event or not; also used to
+     *                  generate the date-time if the event is not all-day but the exception is
      *
      * @return formatted string for Android calendar provider
      */
-    fun recurrenceSetsToAndroidString(dates: List<DateListProperty>, allDay: Boolean): String {
+    fun recurrenceSetsToAndroidString(dates: List<DateListProperty>, dtStart: Date): String {
         /*  rdate/exdate:       DATE                                DATE_TIME
             all-day             store as ...T000000Z                cut off time and store as ...T000000Z
             event with time     (undefined)                         store as ...ThhmmssZ
         */
         val dateFormatUtcMidnight = SimpleDateFormat("yyyyMMdd'T'000000'Z'", Locale.ROOT)
         val strDates = LinkedList<String>()
+        val allDay = dtStart !is DateTime
 
         // use time zone of first entry for the whole set; null for UTC
         val tz =
@@ -156,26 +167,45 @@ object AndroidTimeUtils {
             }
 
             when (dateListProp.dates.type) {
-                Value.DATE_TIME -> {
+                Value.DATE_TIME -> {        // RDATE/EXDATE is DATE-TIME
                     if (tz == null && !dateListProp.dates.isUtc)
                         dateListProp.setUtc(true)
                     else if (tz != null && dateListProp.timeZone != tz)
                         dateListProp.timeZone = tz
 
                     if (allDay)
+                        // DTSTART is DATE
                         dateListProp.dates.mapTo(strDates) { dateFormatUtcMidnight.format(it) }
                     else
+                        // DTSTART is DATE-TIME
                         strDates.add(dateListProp.value)
                 }
-                Value.DATE ->
-                    // DATE values have to be converted to DATE-TIME <date>T000000Z for Android
-                    dateListProp.dates.mapTo(strDates) {
-                        dateFormatUtcMidnight.format(it)
+                Value.DATE ->               // RDATE/EXDATE is DATE
+                    if (allDay) {
+                        // DTSTART is DATE; DATE values have to be returned as <date>T000000Z for Android
+                        dateListProp.dates.mapTo(strDates) { date ->
+                            dateFormatUtcMidnight.format(date)
+                        }
+                    } else {
+                        // DTSTART is DATE-TIME; amend DATE-TIME with clock time from dtStart
+                        dateListProp.dates.mapTo(strDates) { date ->
+                            // take time (including time zone) from dtStart and date from date
+                            val dtStartTime = (dtStart as DateTime).toZonedDateTime()
+                            val localDate = date.toLocalDate()
+                            val dtStartTimeUtc = dtStartTime
+                                .withDayOfMonth(localDate.dayOfMonth)
+                                .withMonth(localDate.monthValue)
+                                .withYear(localDate.year)
+                                .withZoneSameInstant(ZoneOffset.UTC)
+
+                            val dateFormatUtc = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'", Locale.ROOT)
+                            dtStartTimeUtc.format(dateFormatUtc)
+                        }
                     }
             }
         }
 
-        // format: [tzid;]value1,value2,...
+        // format expected by Android: [tzid;]value1,value2,...
         val result = StringBuilder()
         if (tz != null)
             result.append(tz.id).append(RECURRENCE_LIST_TZID_SEPARATOR)
