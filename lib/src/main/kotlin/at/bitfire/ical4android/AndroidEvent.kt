@@ -855,7 +855,7 @@ abstract class AndroidEvent(
                     listWithDtStart.add(dtStart.date)
                     event.rDates.addFirst(RDate(listWithDtStart))
 
-                    builder.withValue(Events.RDATE, AndroidTimeUtils.recurrenceSetsToAndroidString(event.rDates, allDay))
+                    builder.withValue(Events.RDATE, AndroidTimeUtils.recurrenceSetsToAndroidString(event.rDates, dtStart.date))
                 }
             } else
                 builder.withValue(Events.RDATE, null)
@@ -868,7 +868,7 @@ abstract class AndroidEvent(
             if (event.exDates.isNotEmpty()) {
                 for (exDate in event.exDates)
                     AndroidTimeUtils.androidifyTimeZone(exDate)
-                builder.withValue(Events.EXDATE, AndroidTimeUtils.recurrenceSetsToAndroidString(event.exDates, allDay))
+                builder.withValue(Events.EXDATE, AndroidTimeUtils.recurrenceSetsToAndroidString(event.exDates, dtStart.date))
             } else
                 builder.withValue(Events.EXDATE, null)
 
