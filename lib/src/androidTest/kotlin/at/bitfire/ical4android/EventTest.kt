@@ -4,6 +4,7 @@
 
 package at.bitfire.ical4android
 
+import android.util.Log
 import at.bitfire.ical4android.util.DateUtils
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
@@ -20,6 +21,7 @@ import net.fortuna.ical4j.model.property.RecurrenceId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.ByteArrayOutputStream
@@ -100,6 +102,19 @@ class EventTest {
         assertEquals(2, e.exceptions.size)
         assertTrue("Event 2 Updated Exception 1" == e.exceptions.first.summary || "Event 2 Updated Exception 1" == e.exceptions[1].summary)
         assertTrue("Event 2 Exception 2" == e.exceptions.first.summary || "Event 2 Exception 2" == e.exceptions[1].summary)
+    }
+
+    @Test
+    fun testInvalid() {
+        assertThrows(InvalidCalendarException::class.java) {
+            parseCalendar("multiple-with-invalid.ics", ignoreInvalidEvents = false)
+        }
+    }
+
+    @Test
+    fun testIgnoreInvalidEvents() {
+        val events = parseCalendar("multiple-with-invalid.ics", ignoreInvalidEvents = true)
+        assertEquals(3, events.size)
     }
 
     @Test
@@ -334,9 +349,12 @@ class EventTest {
         throw FileNotFoundException()
     }
 
-    private fun parseCalendar(fname: String, charset: Charset = Charsets.UTF_8): List<Event> =
+    private fun parseCalendar(
+        fname: String,
+        charset: Charset = Charsets.UTF_8,
+        ignoreInvalidEvents: Boolean = false): List<Event> =
         javaClass.classLoader!!.getResourceAsStream("events/$fname").use { stream ->
-            return Event.eventsFromReader(InputStreamReader(stream, charset))
+            return Event.eventsFromReader(InputStreamReader(stream, charset), ignoreInvalidEvents = ignoreInvalidEvents)
         }
 
 }

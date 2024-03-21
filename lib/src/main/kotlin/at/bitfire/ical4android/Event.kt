@@ -21,8 +21,9 @@ import java.io.OutputStream
 import java.io.Reader
 import java.net.URI
 import java.util.*
+import java.util.logging.Level
 
-class Event: ICalendar() {
+class Event : ICalendar() {
 
     // uid and sequence are inherited from iCalendar
     var recurrenceId: RecurrenceId? = null
@@ -66,6 +67,7 @@ class Event: ICalendar() {
          *
          * @param reader where the iCalendar is taken from
          * @param properties Known iCalendar properties (like [CALENDAR_NAME]) will be put into this map. Key: property name; value: property value
+         * @param ignoreInvalidEvents If true, events that can't be parsed will be dropped. Otherwise, parsing will fail if an invalid event is encountered.
          *
          * @return array of filled [Event] data objects (may have size 0)
          *
@@ -75,7 +77,11 @@ class Event: ICalendar() {
          * @throws InvalidCalendarException on parsing exceptions
          */
         @UsesThreadContextClassLoader
-        fun eventsFromReader(reader: Reader, properties: MutableMap<String, String>? = null): List<Event> {
+        fun eventsFromReader(
+            reader: Reader,
+            properties: MutableMap<String, String>? = null,
+            ignoreInvalidEvents: Boolean = false
+        ): List<Event> {
             val ical = fromReader(reader, properties)
 
             // process VEVENTs
@@ -90,8 +96,8 @@ class Event: ICalendar() {
                 }
 
             Ical4Android.log.fine("Assigning exceptions to main events")
-            val mainEvents = mutableMapOf<String /* UID */,VEvent>()
-            val exceptions = mutableMapOf<String /* UID */,MutableMap<String /* RECURRENCE-ID */,VEvent>>()
+            val mainEvents = mutableMapOf<String /* UID */, VEvent>()
+            val exceptions = mutableMapOf<String /* UID */, MutableMap<String /* RECURRENCE-ID */, VEvent>>()
             for (vEvent in vEvents) {
                 val uid = vEvent.uid.value
                 val sequence = vEvent.sequence?.sequenceNo ?: 0
@@ -127,17 +133,25 @@ class Event: ICalendar() {
 
             val events = mutableListOf<Event>()
             for ((uid, vEvent) in mainEvents) {
-                val event = fromVEvent(vEvent)
+                try {
+                    val event = fromVEvent(vEvent)
 
-                // assign exceptions to main event and then remove them from exceptions array
-                exceptions.remove(uid)?.let { eventExceptions ->
-                    event.exceptions.addAll(eventExceptions.values.map { fromVEvent(it) })
+                    // assign exceptions to main event and then remove them from exceptions array
+                    exceptions.remove(uid)?.let { eventExceptions ->
+                        event.exceptions.addAll(eventExceptions.values.map { fromVEvent(it) })
+                    }
+
+                    // make sure that exceptions have at least a SUMMARY
+                    event.exceptions.forEach { it.summary = it.summary ?: event.summary }
+
+                    events += event
+                } catch (e: InvalidCalendarException) {
+                    Ical4Android.log.log(Level.WARNING, "Invalid VEvent: $vEvent", e)
+
+                    if (!ignoreInvalidEvents) {
+                        throw e
+                    }
                 }
-
-                // make sure that exceptions have at least a SUMMARY
-                event.exceptions.forEach { it.summary = it.summary ?: event.summary }
-
-                events += event
             }
 
             for ((uid, onlyExceptions) in exceptions) {
@@ -172,6 +186,7 @@ class Event: ICalendar() {
                     is Categories ->
                         for (category in prop.categories)
                             e.categories += category
+
                     is Color -> e.color = Css3Color.fromString(prop.value)
                     is DtStart -> e.dtStart = prop
                     is DtEnd -> e.dtEnd = prop
@@ -186,7 +201,9 @@ class Event: ICalendar() {
                     is Organizer -> e.organizer = prop
                     is Attendee -> e.attendees += prop
                     is LastModified -> e.lastModified = prop
-                    is ProdId, is DtStamp -> { /* don't save these as unknown properties */ }
+                    is ProdId, is DtStamp -> { /* don't save these as unknown properties */
+                    }
+
                     else -> e.unknownProperties += prop
                 }
 
@@ -321,16 +338,16 @@ class Event: ICalendar() {
 
 
     val organizerEmail: String?
-    get() {
-        var email: String? = null
-        organizer?.let { organizer ->
-            val uri = organizer.calAddress
-            email = if (uri.scheme.equals("mailto", true))
-                uri.schemeSpecificPart
-            else
-                organizer.getParameter<Email>(Parameter.EMAIL)?.value
+        get() {
+            var email: String? = null
+            organizer?.let { organizer ->
+                val uri = organizer.calAddress
+                email = if (uri.scheme.equals("mailto", true))
+                    uri.schemeSpecificPart
+                else
+                    organizer.getParameter<Email>(Parameter.EMAIL)?.value
+            }
+            return email
         }
-        return email
-    }
 
 }
