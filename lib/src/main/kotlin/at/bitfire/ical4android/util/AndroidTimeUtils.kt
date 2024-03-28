@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat
 import java.time.Duration
 import java.time.Period
 import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAmount
 import java.util.*
@@ -192,11 +193,11 @@ object AndroidTimeUtils {
                             // take time (including time zone) from dtStart and date from date
                             val dtStartTime = (dtStart as DateTime).toZonedDateTime()
                             val localDate = date.toLocalDate()
-                            val dtStartTimeUtc = dtStartTime
-                                .withDayOfMonth(localDate.dayOfMonth)
-                                .withMonth(localDate.monthValue)
-                                .withYear(localDate.year)
-                                .withZoneSameInstant(ZoneOffset.UTC)
+                            val dtStartTimeUtc = ZonedDateTime.of(
+                                localDate,
+                                dtStartTime.toLocalTime(),
+                                dtStartTime.zone
+                            ).withZoneSameInstant(ZoneOffset.UTC)
 
                             val dateFormatUtc = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'", Locale.ROOT)
                             dtStartTimeUtc.format(dateFormatUtc)

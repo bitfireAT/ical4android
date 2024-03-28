@@ -341,6 +341,16 @@ class AndroidTimeUtilsTest {
     }
 
     @Test
+    fun testRecurrenceSetsToAndroidString_Date_AlthoughDtStartIsDateTime_MonthWithLessDays() {
+        // DATEs (without time) have to be converted to <date>THHmmssZ for Android
+        val list = ArrayList<DateListProperty>(1)
+        list.add(ExDate(DateList("20240531", Value.DATE, tzDefault)))
+        val androidTimeString = AndroidTimeUtils.recurrenceSetsToAndroidString(list, DateTime("20240401T114500", tzBerlin))
+        // We ignore the timezone
+        assertEquals("20240531T094500Z", androidTimeString.substringAfter(';'))
+    }
+
+    @Test
     fun testRecurrenceSetsToAndroidString_Period() {
         // PERIODs are not supported yet — should be implemented later
         val list = listOf(
