@@ -69,8 +69,10 @@ class BatchOperation(
     /**
      * Runs a subset of the operations in [queue] using [providerClient] in a transaction.
      * Catches [TransactionTooLargeException] and splits the operations accordingly.
+     *
      * @param start index of first operation which will be run (inclusive)
      * @param end   index of last operation which will be run (exclusive!)
+     *
      * @throws RemoteException on calendar provider errors
      * @throws OperationApplicationException when the batch can't be processed
      * @throws CalendarStorageException if the transaction is too large
