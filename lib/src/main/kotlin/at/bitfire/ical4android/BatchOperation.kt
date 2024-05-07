@@ -35,13 +35,14 @@ class BatchOperation(
      *
      * @return number of affected rows
      *
-     * @throws RemoteException on calendar provider errors. In case of [DeadObjectException],
-     * the provider has probably been killed/crashed or the calling process is cached and thus IPC is freezed (Android 14+).
+     * @throws RemoteException on calendar provider errors. In case of [android.os.DeadObjectException],
+     * the provider has probably been killed/crashed or the calling process is cached and thus IPC is frozen (Android 14+).
      *
-     * @throws CalendarStorageException
+     * @throws CalendarStorageException if
      *
-     * - if the transaction is too large and can't be split (wrapped [TransactionTooLargeException])
-     * - if the batch can't be processed (wrapped [OperationApplicationException])
+     * - the transaction is too large and can't be split (wrapped [TransactionTooLargeException])
+     * - the batch can't be processed (wrapped [OperationApplicationException])
+     * - the content provider throws a [RuntimeException] (will be wrapped)
      */
     fun commit(): Int {
         var affected = 0
@@ -77,13 +78,14 @@ class BatchOperation(
      * @param start index of first operation which will be run (inclusive)
      * @param end   index of last operation which will be run (exclusive!)
      *
-     * @throws RemoteException on calendar provider errors. In case of [DeadObjectException],
-     * the provider has probably been killed/crashed or the calling process is cached and thus IPC is freezed (Android 14+).
+     * @throws RemoteException on calendar provider errors. In case of [android.os.DeadObjectException],
+     * the provider has probably been killed/crashed or the calling process is cached and thus IPC is frozen (Android 14+).
      *
-     * @throws CalendarStorageException
+     * @throws CalendarStorageException if
      *
-     * - if the transaction is too large and can't be split (wrapped [TransactionTooLargeException])
-     * - if the batch can't be processed (wrapped [OperationApplicationException])
+     * - the transaction is too large and can't be split (wrapped [TransactionTooLargeException])
+     * - the batch can't be processed (wrapped [OperationApplicationException])
+     * - the content provider throws a [RuntimeException] (will be wrapped)
      */
     private fun runBatch(start: Int, end: Int) {
         if (end == start)
@@ -99,8 +101,12 @@ class BatchOperation(
                 Ical4Android.log.warning("Batch operation returned only ${partResults.size} instead of $n results")
 
             System.arraycopy(partResults, 0, results, start, partResults.size)
+
         } catch (e: OperationApplicationException) {
             throw CalendarStorageException("Couldn't apply batch operation", e)
+
+        } catch (e: RuntimeException) {
+            throw CalendarStorageException("Content provider threw a runtime exception", e)
 
         } catch(e: TransactionTooLargeException) {
             if (end <= start + 1)
