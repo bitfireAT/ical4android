@@ -621,6 +621,7 @@ class DmfsTaskTest(
 
         // extended properties
         task.categories.addAll(arrayOf("Cat1", "Cat2"))
+        task.comment = Comment("A comment")
 
         val sibling = RelatedTo("most-fields2@example.com")
         sibling.parameters.add(RelType.SIBLING)
@@ -646,6 +647,7 @@ class DmfsTaskTest(
             assertEquals(task.dtStart, task2.dtStart)
 
             assertEquals(task.categories, task2.categories)
+            assertEquals(task.comment, task2.comment)
             assertEquals(task.relatedTo, task2.relatedTo)
             assertEquals(task.unknownProperties, task2.unknownProperties)
         } finally {
