@@ -202,7 +202,7 @@ abstract class DmfsTask(
             else ->                    Status.VTODO_NEEDS_ACTION
         }
 
-        val allDay = values.getAsInteger(Tasks.IS_ALLDAY) ?: 0 != 0
+        val allDay = (values.getAsInteger(Tasks.IS_ALLDAY) ?: 0) != 0
 
         val tzID = values.getAsString(Tasks.TZ)
         val tz = tzID?.let { DateUtils.ical4jTimeZone(it) }
