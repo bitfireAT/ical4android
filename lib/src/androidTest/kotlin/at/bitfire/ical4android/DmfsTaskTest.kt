@@ -37,7 +37,7 @@ class DmfsTaskTest(
     private val tzChicago = DateUtils.ical4jTimeZone("America/Chicago")!!
     private val tzDefault = DateUtils.ical4jTimeZone(ZoneId.systemDefault().id)!!
 
-    private val testAccount = Account("AndroidTaskTest", TaskContract.LOCAL_ACCOUNT_TYPE)
+    private val testAccount = Account("AndroidTaskTest", LOCAL_ACCOUNT_TYPE)
 
     private lateinit var taskListUri: Uri
     private var taskList: TestTaskList? = null
