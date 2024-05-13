@@ -502,6 +502,22 @@ class DmfsTaskTest(
         assertTrue(hasComment)
     }
 
+    @Test
+    fun testBuildTask_Comment_empty() {
+        var hasComment: Boolean
+        buildTask {
+            comment = Comment()
+        }.let { result ->
+            val id = result.getAsLong(Tasks._ID)
+            val uri = taskList!!.tasksPropertiesSyncUri()
+            provider.client.query(uri, arrayOf(Property.Comment.COMMENT), "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
+                arrayOf(Property.Comment.CONTENT_ITEM_TYPE, id.toString()), null)!!.use { cursor ->
+                    hasComment = cursor.count > 0
+            }
+        }
+        assertFalse(hasComment)
+    }
+
     private fun firstProperty(taskId: Long, mimeType: String): ContentValues? {
         val uri = taskList!!.tasksPropertiesSyncUri()
         provider.client.query(uri, null, "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
