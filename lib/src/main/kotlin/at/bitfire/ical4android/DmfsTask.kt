@@ -43,6 +43,7 @@ import net.fortuna.ical4j.util.TimeZones
 import org.dmfs.tasks.contract.TaskContract.Properties
 import org.dmfs.tasks.contract.TaskContract.Property.Alarm
 import org.dmfs.tasks.contract.TaskContract.Property.Category
+import org.dmfs.tasks.contract.TaskContract.Property.Comment
 import org.dmfs.tasks.contract.TaskContract.Property.Relation
 import org.dmfs.tasks.contract.TaskContract.Tasks
 import java.io.FileNotFoundException
@@ -264,6 +265,8 @@ abstract class DmfsTask(
                 populateAlarm(row)
             Category.CONTENT_ITEM_TYPE ->
                 task.categories += row.getAsString(Category.CATEGORY_NAME)
+            Comment.CONTENT_ITEM_TYPE ->
+                task.comment = net.fortuna.ical4j.model.property.Comment(row.getAsString(Comment.COMMENT))
             Relation.CONTENT_ITEM_TYPE ->
                 populateRelatedTo(row)
             UnknownProperty.CONTENT_ITEM_TYPE ->
@@ -368,6 +371,7 @@ abstract class DmfsTask(
     protected open fun insertProperties(batch: BatchOperation, idxTask: Int?) {
         insertAlarms(batch, idxTask)
         insertCategories(batch, idxTask)
+        insertComment(batch, idxTask)
         insertRelatedTo(batch, idxTask)
         insertUnknownProperties(batch, idxTask)
     }
@@ -417,6 +421,16 @@ abstract class DmfsTask(
             Ical4Android.log.log(Level.FINE, "Inserting category", builder.build())
             batch.enqueue(builder)
         }
+    }
+
+    protected open fun insertComment(batch: BatchOperation, idxTask: Int?) {
+        val comment = requireNotNull(task).comment?.value ?: return
+        val builder = CpoBuilder.newInsert(taskList.tasksPropertiesSyncUri())
+            .withTaskId(Comment.TASK_ID, idxTask)
+            .withValue(Comment.MIMETYPE, Comment.CONTENT_ITEM_TYPE)
+            .withValue(Comment.COMMENT, comment)
+        Ical4Android.log.log(Level.FINE, "Inserting comment", builder.build())
+        batch.enqueue(builder)
     }
 
     protected open fun insertRelatedTo(batch: BatchOperation, idxTask: Int?) {
