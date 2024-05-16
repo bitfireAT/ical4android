@@ -63,7 +63,7 @@ class Task: ICalendar() {
     companion object {
 
         /**
-         * Parses an iCalendar resource, applies [ICalPreprocessor] to increase compatibility
+         * Parses an iCalendar resource, applies [at.bitfire.ical4android.validation.ICalPreprocessor] to increase compatibility
          * and extracts the VTODOs.
          *
          * @param reader where the iCalendar is taken from
@@ -120,7 +120,7 @@ class Task: ICalendar() {
                     is Categories ->
                         for (category in prop.categories)
                             t.categories += category
-                    is Comment -> t.comment = prop.value
+                    is Comment -> t.comment = prop.value.trim().ifEmpty { null }
                     is RelatedTo -> t.relatedTo.add(prop)
                     is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */ }
                     else -> t.unknownProperties += prop
