@@ -51,7 +51,6 @@ import java.net.URISyntaxException
 import java.time.ZoneId
 import java.util.Locale
 import java.util.logging.Level
-import net.fortuna.ical4j.model.property.Comment as Ical4jComment
 
 /**
  * Stores and retrieves VTODO iCalendar objects (represented as [Task]s) to/from the
@@ -267,7 +266,7 @@ abstract class DmfsTask(
             Category.CONTENT_ITEM_TYPE ->
                 task.categories += row.getAsString(Category.CATEGORY_NAME)
             Comment.CONTENT_ITEM_TYPE ->
-                task.comment = Ical4jComment(row.getAsString(Comment.COMMENT))
+                task.comment = row.getAsString(Comment.COMMENT)
             Relation.CONTENT_ITEM_TYPE ->
                 populateRelatedTo(row)
             UnknownProperty.CONTENT_ITEM_TYPE ->
@@ -425,7 +424,7 @@ abstract class DmfsTask(
     }
 
     protected open fun insertComment(batch: BatchOperation, idxTask: Int?) {
-        val comment = requireNotNull(task).comment?.value ?: return
+        val comment = requireNotNull(task).comment ?: return
         val builder = CpoBuilder.newInsert(taskList.tasksPropertiesSyncUri())
             .withTaskId(Comment.TASK_ID, idxTask)
             .withValue(Comment.MIMETYPE, Comment.CONTENT_ITEM_TYPE)

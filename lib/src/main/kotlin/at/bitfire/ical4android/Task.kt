@@ -54,7 +54,7 @@ class Task: ICalendar() {
     val exDates = LinkedList<ExDate>()
 
     val categories = LinkedList<String>()
-    var comment: Comment? = null
+    var comment: String? = null
     var relatedTo = LinkedList<RelatedTo>()
     val unknownProperties = LinkedList<Property>()
 
@@ -120,7 +120,7 @@ class Task: ICalendar() {
                     is Categories ->
                         for (category in prop.categories)
                             t.categories += category
-                    is Comment -> t.comment = prop
+                    is Comment -> t.comment = prop.value
                     is RelatedTo -> t.relatedTo.add(prop)
                     is Uid, is ProdId, is DtStamp -> { /* don't save these as unknown properties */ }
                     else -> t.unknownProperties += prop
@@ -208,7 +208,7 @@ class Task: ICalendar() {
         props.addAll(relatedTo)
         props.addAll(unknownProperties)
 
-        comment?.let { props += it }
+        comment?.let { props += Comment(it) }
 
         // remember used time zones
         val usedTimeZones = HashSet<TimeZone>()

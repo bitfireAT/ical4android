@@ -22,7 +22,6 @@ import net.fortuna.ical4j.model.parameter.TzId
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.parameter.XParameter
 import net.fortuna.ical4j.model.property.Clazz
-import net.fortuna.ical4j.model.property.Comment
 import net.fortuna.ical4j.model.property.Completed
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.Due
@@ -512,7 +511,7 @@ class DmfsTaskTest(
     fun testBuildTask_Comment() {
         var hasComment = false
         buildTask {
-            comment = Comment("Comment value")
+            comment = "Comment value"
         }.let { result ->
             val id = result.getAsLong(Tasks._ID)
             val uri = taskList!!.tasksPropertiesSyncUri()
@@ -529,7 +528,7 @@ class DmfsTaskTest(
     fun testBuildTask_Comment_empty() {
         var hasComment: Boolean
         buildTask {
-            comment = Comment()
+            comment = null
         }.let { result ->
             val id = result.getAsLong(Tasks._ID)
             val uri = taskList!!.tasksPropertiesSyncUri()
@@ -660,7 +659,7 @@ class DmfsTaskTest(
 
         // extended properties
         task.categories.addAll(arrayOf("Cat1", "Cat2"))
-        task.comment = Comment("A comment")
+        task.comment = "A comment"
 
         val sibling = RelatedTo("most-fields2@example.com")
         sibling.parameters.add(RelType.SIBLING)
