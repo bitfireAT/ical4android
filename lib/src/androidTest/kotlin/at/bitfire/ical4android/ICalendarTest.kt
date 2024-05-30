@@ -111,8 +111,8 @@ class ICalendarTest {
 		ICalendar.minifyVTimeZone(vtzVienna, Date("20200101")).let { minified ->
 			assertEquals(2, minified.observances.size)
 			// now earliest observance for DAYLIGHT/STANDARD is 1981/1996
-			assertEquals(DateTime("19810329T020000"), minified.observances[0].startDate.date)
-			assertEquals(DateTime("19961027T030000"), minified.observances[1].startDate.date)
+			assertEquals(DateTime("19961027T030000"), minified.observances[0].startDate.date)
+			assertEquals(DateTime("19810329T020000"), minified.observances[1].startDate.date)
 		}
 
 	}
@@ -132,8 +132,8 @@ class ICalendarTest {
 		// Keep future observances.
 		ICalendar.minifyVTimeZone(vtzVienna, Date("19751001")).let { minified ->
 			assertEquals(4, minified.observances.size)
-			assertEquals(DateTime("19160430T230000"), minified.observances[2].startDate.date)
-			assertEquals(DateTime("19161001T010000"), minified.observances[3].startDate.date)
+			assertEquals(DateTime("19161001T010000"), minified.observances[2].startDate.date)
+			assertEquals(DateTime("19160430T230000"), minified.observances[3].startDate.date)
 		}
 		ICalendar.minifyVTimeZone(vtzKarachi, Date("19611001")).let { minified ->
 			assertEquals(4, minified.observances.size)

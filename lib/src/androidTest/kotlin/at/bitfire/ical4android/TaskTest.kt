@@ -198,7 +198,7 @@ class TaskTest {
     fun testWrite() {
         val t = Task()
         t.uid = "SAMPLEUID"
-        t.dtStart = DtStart("20190101T100000", TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone("Europe/Berlin"))
+        t.dtStart = DtStart("20190101T100000", DateUtils.ical4jTimeZone("Europe/Berlin"))
 
         val alarm = VAlarm(java.time.Duration.ofHours(-1) /*Dur(0, -1, 0, 0)*/)
         alarm.properties += Action.AUDIO

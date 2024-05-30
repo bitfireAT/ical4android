@@ -257,7 +257,7 @@ class Task: ICalendar() {
         percentComplete?.let { props += PercentComplete(it) }
 
         if (alarms.isNotEmpty())
-            vTodo.alarms.addAll(alarms)
+            vTodo.components.addAll(alarms)
 
         // determine earliest referenced date
         val earliest = arrayOf(
