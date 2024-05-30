@@ -331,7 +331,7 @@ class Event : ICalendar() {
 
         lastModified?.let { props += it }
 
-        event.alarms.addAll(alarms)
+        event.components.addAll(alarms)
 
         return event
     }
