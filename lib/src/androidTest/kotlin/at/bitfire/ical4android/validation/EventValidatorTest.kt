@@ -196,7 +196,6 @@ class EventValidatorTest {
         EventValidator.sameTypeForDtStartAndRruleUntil(event.dtStart!!, event.rRules)
         assertEquals("FREQ=MONTHLY;UNTIL=20211214T001100Z", event.rRules.joinToString())
 
-        Assume.assumeTrue(TimeZone.getDefault().id == "Europe/Vienna")
         val event2 = Event.eventsFromReader(
             StringReader(
                 "BEGIN:VCALENDAR\n" +
