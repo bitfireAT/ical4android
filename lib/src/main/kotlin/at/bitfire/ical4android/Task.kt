@@ -235,10 +235,9 @@ class Task: ICalendar() {
 
         if (categories.isNotEmpty())
             props += Categories(TextList(categories.toTypedArray()))
+        comment?.let { props += Comment(it) }
         props.addAll(relatedTo)
         props.addAll(unknownProperties)
-
-        comment?.let { props += Comment(it) }
 
         // remember used time zones
         val usedTimeZones = HashSet<TimeZone>()
