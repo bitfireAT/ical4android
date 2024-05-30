@@ -1,5 +1,5 @@
 [versions]
-agp = "8.4.0"
+agp = "8.4.1"
 android-desugar = "2.0.4"
 androidx-core = "1.13.1"
 androidx-test-core = "1.5.0"
@@ -14,8 +14,8 @@ commons-io = "2.6"
 dokka  ="1.9.20"
 ical4j = "3.2.17"
 junit = "4.13.2"
-kotlin = "1.9.24"
-mockk = "1.13.10"
+kotlin = "2.0.0"
+mockk = "1.13.11"
 slf4j = "2.0.13"
 
 [libraries]
