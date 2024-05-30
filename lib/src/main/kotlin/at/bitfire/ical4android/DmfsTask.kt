@@ -14,15 +14,37 @@ import at.bitfire.ical4android.util.AndroidTimeUtils
 import at.bitfire.ical4android.util.DateUtils
 import at.bitfire.ical4android.util.MiscUtils
 import at.bitfire.ical4android.util.MiscUtils.toValues
-import net.fortuna.ical4j.model.*
+import net.fortuna.ical4j.model.Date
+import net.fortuna.ical4j.model.DateTime
+import net.fortuna.ical4j.model.Parameter
+import net.fortuna.ical4j.model.Property
+import net.fortuna.ical4j.model.PropertyList
+import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.Email
 import net.fortuna.ical4j.model.parameter.RelType
 import net.fortuna.ical4j.model.parameter.Related
-import net.fortuna.ical4j.model.property.*
+import net.fortuna.ical4j.model.property.Action
+import net.fortuna.ical4j.model.property.Clazz
+import net.fortuna.ical4j.model.property.Completed
+import net.fortuna.ical4j.model.property.Description
+import net.fortuna.ical4j.model.property.DtStart
+import net.fortuna.ical4j.model.property.Due
+import net.fortuna.ical4j.model.property.Duration
+import net.fortuna.ical4j.model.property.ExDate
+import net.fortuna.ical4j.model.property.Geo
+import net.fortuna.ical4j.model.property.Organizer
+import net.fortuna.ical4j.model.property.RDate
+import net.fortuna.ical4j.model.property.RRule
+import net.fortuna.ical4j.model.property.RelatedTo
+import net.fortuna.ical4j.model.property.Status
+import net.fortuna.ical4j.model.property.Trigger
 import net.fortuna.ical4j.util.TimeZones
 import org.dmfs.tasks.contract.TaskContract.Properties
-import org.dmfs.tasks.contract.TaskContract.Property.*
+import org.dmfs.tasks.contract.TaskContract.Property.Alarm
+import org.dmfs.tasks.contract.TaskContract.Property.Category
+import org.dmfs.tasks.contract.TaskContract.Property.Comment
+import org.dmfs.tasks.contract.TaskContract.Property.Relation
 import org.dmfs.tasks.contract.TaskContract.Tasks
 import java.io.FileNotFoundException
 import java.net.URISyntaxException
@@ -179,7 +201,7 @@ abstract class DmfsTask(
             else ->                    Status.VTODO_NEEDS_ACTION
         }
 
-        val allDay = values.getAsInteger(Tasks.IS_ALLDAY) ?: 0 != 0
+        val allDay = (values.getAsInteger(Tasks.IS_ALLDAY) ?: 0) != 0
 
         val tzID = values.getAsString(Tasks.TZ)
         val tz = tzID?.let { DateUtils.ical4jTimeZone(it) }
@@ -243,6 +265,8 @@ abstract class DmfsTask(
                 populateAlarm(row)
             Category.CONTENT_ITEM_TYPE ->
                 task.categories += row.getAsString(Category.CATEGORY_NAME)
+            Comment.CONTENT_ITEM_TYPE ->
+                task.comment = row.getAsString(Comment.COMMENT)
             Relation.CONTENT_ITEM_TYPE ->
                 populateRelatedTo(row)
             UnknownProperty.CONTENT_ITEM_TYPE ->
@@ -347,6 +371,7 @@ abstract class DmfsTask(
     protected open fun insertProperties(batch: BatchOperation, idxTask: Int?) {
         insertAlarms(batch, idxTask)
         insertCategories(batch, idxTask)
+        insertComment(batch, idxTask)
         insertRelatedTo(batch, idxTask)
         insertUnknownProperties(batch, idxTask)
     }
@@ -398,6 +423,16 @@ abstract class DmfsTask(
         }
     }
 
+    protected open fun insertComment(batch: BatchOperation, idxTask: Int?) {
+        val comment = requireNotNull(task).comment ?: return
+        val builder = CpoBuilder.newInsert(taskList.tasksPropertiesSyncUri())
+            .withTaskId(Comment.TASK_ID, idxTask)
+            .withValue(Comment.MIMETYPE, Comment.CONTENT_ITEM_TYPE)
+            .withValue(Comment.COMMENT, comment)
+        Ical4Android.log.log(Level.FINE, "Inserting comment", builder.build())
+        batch.enqueue(builder)
+    }
+
     protected open fun insertRelatedTo(batch: BatchOperation, idxTask: Int?) {
         for (relatedTo in requireNotNull(task).relatedTo) {
             val relType = when ((relatedTo.getParameter(Parameter.RELTYPE) as RelType?)) {
@@ -435,11 +470,7 @@ abstract class DmfsTask(
     }
 
     fun delete(): Int {
-        try {
-            return taskList.provider.client.delete(taskSyncURI(), null, null)
-        } catch(e: RemoteException) {
-            throw CalendarStorageException("Couldn't delete event", e)
-        }
+        return taskList.provider.client.delete(taskSyncURI(), null, null)
     }
 
     @CallSuper

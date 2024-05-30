@@ -16,15 +16,37 @@ import at.bitfire.ical4android.util.DateUtils
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateList
 import net.fortuna.ical4j.model.DateTime
-import net.fortuna.ical4j.model.parameter.*
+import net.fortuna.ical4j.model.parameter.Email
+import net.fortuna.ical4j.model.parameter.RelType
 import net.fortuna.ical4j.model.parameter.TzId
-import net.fortuna.ical4j.model.property.*
-import org.dmfs.tasks.contract.TaskContract
-import org.dmfs.tasks.contract.TaskContract.*
+import net.fortuna.ical4j.model.parameter.Value
+import net.fortuna.ical4j.model.parameter.XParameter
+import net.fortuna.ical4j.model.property.Clazz
+import net.fortuna.ical4j.model.property.Completed
+import net.fortuna.ical4j.model.property.DtStart
+import net.fortuna.ical4j.model.property.Due
+import net.fortuna.ical4j.model.property.Duration
+import net.fortuna.ical4j.model.property.ExDate
+import net.fortuna.ical4j.model.property.Geo
+import net.fortuna.ical4j.model.property.Organizer
+import net.fortuna.ical4j.model.property.RDate
+import net.fortuna.ical4j.model.property.RRule
+import net.fortuna.ical4j.model.property.RelatedTo
+import net.fortuna.ical4j.model.property.Status
+import net.fortuna.ical4j.model.property.XProperty
+import org.dmfs.tasks.contract.TaskContract.LOCAL_ACCOUNT_TYPE
+import org.dmfs.tasks.contract.TaskContract.Properties
+import org.dmfs.tasks.contract.TaskContract.Property
 import org.dmfs.tasks.contract.TaskContract.Property.Category
 import org.dmfs.tasks.contract.TaskContract.Property.Relation
+import org.dmfs.tasks.contract.TaskContract.PropertyColumns
+import org.dmfs.tasks.contract.TaskContract.Tasks
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.ZoneId
@@ -37,7 +59,7 @@ class DmfsTaskTest(
     private val tzChicago = DateUtils.ical4jTimeZone("America/Chicago")!!
     private val tzDefault = DateUtils.ical4jTimeZone(ZoneId.systemDefault().id)!!
 
-    private val testAccount = Account("AndroidTaskTest", TaskContract.LOCAL_ACCOUNT_TYPE)
+    private val testAccount = Account("AndroidTaskTest", LOCAL_ACCOUNT_TYPE)
 
     private lateinit var taskListUri: Uri
     private var taskList: TestTaskList? = null
@@ -485,6 +507,39 @@ class DmfsTaskTest(
         assertTrue(hasCat2)
     }
 
+    @Test
+    fun testBuildTask_Comment() {
+        var hasComment = false
+        buildTask {
+            comment = "Comment value"
+        }.let { result ->
+            val id = result.getAsLong(Tasks._ID)
+            val uri = taskList!!.tasksPropertiesSyncUri()
+            provider.client.query(uri, arrayOf(Property.Comment.COMMENT), "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
+                arrayOf(Property.Comment.CONTENT_ITEM_TYPE, id.toString()), null)!!.use { cursor ->
+                if (cursor.moveToNext())
+                    hasComment = cursor.getString(0) == "Comment value"
+            }
+        }
+        assertTrue(hasComment)
+    }
+
+    @Test
+    fun testBuildTask_Comment_empty() {
+        var hasComment: Boolean
+        buildTask {
+            comment = null
+        }.let { result ->
+            val id = result.getAsLong(Tasks._ID)
+            val uri = taskList!!.tasksPropertiesSyncUri()
+            provider.client.query(uri, arrayOf(Property.Comment.COMMENT), "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
+                arrayOf(Property.Comment.CONTENT_ITEM_TYPE, id.toString()), null)!!.use { cursor ->
+                    hasComment = cursor.count > 0
+            }
+        }
+        assertFalse(hasComment)
+    }
+
     private fun firstProperty(taskId: Long, mimeType: String): ContentValues? {
         val uri = taskList!!.tasksPropertiesSyncUri()
         provider.client.query(uri, null, "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
@@ -604,6 +659,7 @@ class DmfsTaskTest(
 
         // extended properties
         task.categories.addAll(arrayOf("Cat1", "Cat2"))
+        task.comment = "A comment"
 
         val sibling = RelatedTo("most-fields2@example.com")
         sibling.parameters.add(RelType.SIBLING)
@@ -629,6 +685,7 @@ class DmfsTaskTest(
             assertEquals(task.dtStart, task2.dtStart)
 
             assertEquals(task.categories, task2.categories)
+            assertEquals(task.comment, task2.comment)
             assertEquals(task.relatedTo, task2.relatedTo)
             assertEquals(task.unknownProperties, task2.unknownProperties)
         } finally {
