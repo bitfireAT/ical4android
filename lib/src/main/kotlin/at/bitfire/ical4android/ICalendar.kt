@@ -8,9 +8,11 @@ import at.bitfire.ical4android.util.MiscUtils
 import at.bitfire.ical4android.validation.ICalPreprocessor
 import net.fortuna.ical4j.data.*
 import net.fortuna.ical4j.model.Calendar
+import net.fortuna.ical4j.model.ComponentList
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.Parameter
 import net.fortuna.ical4j.model.Property
+import net.fortuna.ical4j.model.PropertyList
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory
 import net.fortuna.ical4j.model.component.Daylight
 import net.fortuna.ical4j.model.component.Observance
@@ -24,8 +26,6 @@ import net.fortuna.ical4j.model.property.Color
 import net.fortuna.ical4j.model.property.ProdId
 import net.fortuna.ical4j.model.property.RDate
 import net.fortuna.ical4j.model.property.RRule
-import net.fortuna.ical4j.model.property.TzUrl
-import net.fortuna.ical4j.model.property.XProperty
 import net.fortuna.ical4j.validate.ValidationException
 import java.io.Reader
 import java.io.StringReader
@@ -150,14 +150,14 @@ open class ICalendar {
          * @return              minified time zone definition
          */
         fun minifyVTimeZone(originalTz: VTimeZone, start: Date?): VTimeZone {
-            val newTz = originalTz.copy() as VTimeZone
+            var newTz: VTimeZone? = null
             val keep = mutableSetOf<Observance>()
 
             if (start != null) {
                 // find latest matching STANDARD/DAYLIGHT observances
                 var latestDaylight: Pair<Date, Observance>? = null
                 var latestStandard: Pair<Date, Observance>? = null
-                for (observance in newTz.observances) {
+                for (observance in originalTz.observances) {
                     val latest = observance.getLatestOnset(start)
 
                     if (latest == null)         // observance begins after "start", keep in any case
@@ -209,28 +209,27 @@ open class ICalendar {
                     }
                 }
 
-                // remove all observances that shall not be kept
-                val iterator = newTz.observances.iterator() as MutableIterator<Observance>
-                while (iterator.hasNext()) {
-                    val entry = iterator.next()
-                    if (!keep.contains(entry))
-                        iterator.remove()
+                // construct minified time zone that only contains the ID and relevant observances
+                val relevantProperties = PropertyList<Property>().apply {
+                    add(originalTz.timeZoneId)
+                }
+                val relevantObservances = ComponentList<Observance>().apply {
+                    addAll(keep)
+                }
+                newTz = VTimeZone(relevantProperties, relevantObservances)
+
+                // validate minified timezone
+                try {
+                    newTz.validate()
+                } catch (e: ValidationException) {
+                    // This should never happen!
+                    Ical4Android.log.log(Level.WARNING, "Minified timezone is invalid, using original one", e)
+                    newTz = null
                 }
             }
 
-            // remove unnecessary properties
-            newTz.properties.removeAll { it is TzUrl || it is XProperty }
-
-            // validate minified timezone
-            try {
-                newTz.validate()
-            } catch (e: ValidationException) {
-                // This should never happen!
-                Ical4Android.log.log(Level.WARNING, "Minified timezone is invalid, using original one", e)
-                return originalTz
-            }
-
-            return newTz
+            // use original time zone if we couldn't calculate a minified one
+            return newTz ?: originalTz
         }
 
         /**

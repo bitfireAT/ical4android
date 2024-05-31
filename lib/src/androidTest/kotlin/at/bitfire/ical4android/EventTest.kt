@@ -259,7 +259,7 @@ class EventTest {
     fun testWrite() {
         val e = Event()
         e.uid = "SAMPLEUID"
-        e.dtStart = DtStart("20190101T100000", TimeZoneRegistryFactory.getInstance().createRegistry().getTimeZone("Europe/Berlin"))
+        e.dtStart = DtStart("20190101T100000", DateUtils.ical4jTimeZone("Europe/Berlin"))
         e.alarms += VAlarm(Duration.ofHours(-1))
 
         val os = ByteArrayOutputStream()
