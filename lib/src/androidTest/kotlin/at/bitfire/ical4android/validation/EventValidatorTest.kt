@@ -6,20 +6,20 @@ package at.bitfire.ical4android.validation
 
 import at.bitfire.ical4android.Event
 import at.bitfire.ical4android.InvalidCalendarException
+import at.bitfire.ical4android.util.DateUtils
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.Recur
-import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory
 import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.RRule
+import net.fortuna.ical4j.model.property.RecurrenceId
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Assume
 import org.junit.Test
 import java.io.StringReader
 
@@ -309,43 +309,76 @@ class EventValidatorTest {
         )
     }
 
-
     @Test
     fun testRemoveRrulesOfRruleExceptions() {
-        val calendar = Event.eventsFromReader(StringReader(
+        // Test manually created event
+        val tz = DateUtils.ical4jTimeZone("Europe/Paris")
+        val manualEvent = Event().apply {
+            dtStart = DtStart("20240219T130000", tz)
+            dtEnd = DtEnd("20240219T140000", tz)
+            summary = "recurring event"
+            rRules.add(RRule(Recur.Builder()                        // Should keep this RRULE
+                .frequency(Recur.Frequency.DAILY)
+                .interval(1)
+                .count(5)
+                .build()))
+            sequence = 0
+            uid = "76c08fb1-99a3-41cf-b482-2d3b06648814"
+            exceptions.add(Event().apply {
+                dtStart = DtStart("20240221T110000", tz)
+                dtEnd = DtEnd("20240221T120000", tz)
+                recurrenceId = RecurrenceId("20240221T130000", tz)
+                sequence = 0
+                summary = "exception of recurring event"
+                rRules.addAll(listOf(
+                    RRule(Recur.Builder()                           // but remove this one
+                        .frequency(Recur.Frequency.DAILY)
+                        .count(6)
+                        .interval(2)
+                        .build()),
+                    RRule(Recur.Builder()                           // and this one
+                        .frequency(Recur.Frequency.DAILY)
+                        .count(6)
+                        .interval(2)
+                        .build())
+                ))
+                uid = "76c08fb1-99a3-41cf-b482-2d3b06648814"
+            })
+        }
+        assertTrue(manualEvent.rRules.size == 1)
+        assertTrue(manualEvent.exceptions.first.rRules.size == 2)
+        EventValidator.removeRRulesOfExceptions(manualEvent.exceptions) // Repair the manually created event
+        assertTrue(manualEvent.rRules.size == 1)
+        assertTrue(manualEvent.exceptions.first.rRules.isEmpty())
+
+        // Test event from reader, the reader will repair the event itself
+        val eventFromReader = Event.eventsFromReader(StringReader(
             "BEGIN:VCALENDAR\n" +
-                    "BEGIN:VEVENT\n" +
-                    "DTSTAMP:20240215T102755Z\n" +
-                    "SUMMARY:recurring event\n" +
-                    "DTSTART;TZID=Europe/Paris:20240219T130000\n" +
-                    "DTEND;TZID=Europe/Paris:20240219T140000\n" +
-                    "RRULE:FREQ=DAILY;INTERVAL=1;COUNT=5\n" +           // Should keep this RRULE
-                    "UID:76c08fb1-99a3-41cf-b482-2d3b06648814\n" +
-                    "END:VEVENT\n" +
+                "BEGIN:VEVENT\n" +
+                "DTSTAMP:20240215T102755Z\n" +
+                "SUMMARY:recurring event\n" +
+                "DTSTART;TZID=Europe/Paris:20240219T130000\n" +
+                "DTEND;TZID=Europe/Paris:20240219T140000\n" +
+                "RRULE:FREQ=DAILY;INTERVAL=1;COUNT=5\n" +           // Should keep this RRULE
+                "UID:76c08fb1-99a3-41cf-b482-2d3b06648814\n" +
+                "END:VEVENT\n" +
 
-                    // Exception for the recurring event above
-                    "BEGIN:VEVENT\n" +
-                    "DTSTAMP:20240215T102908Z\n" +
-                    "RECURRENCE-ID;TZID=Europe/Paris:20240221T130000\n" +
-                    "SUMMARY:exception of recurring event\n" +
-                    "RRULE:FREQ=DAILY;COUNT=6;INTERVAL=2\n" +           // but remove this one
-                    "RRULE:FREQ=DAILY;COUNT=6;INTERVAL=2\n" +           // and this one
-                    "DTSTART;TZID=Europe/Paris:20240221T110000\n" +
-                    "DTEND;TZID=Europe/Paris:20240221T120000\n" +
-                    "UID:76c08fb1-99a3-41cf-b482-2d3b06648814\n" +
-                    "END:VEVENT\n" +
-                    "END:VCALENDAR"
-        ))
-        assertEquals("FREQ=DAILY;COUNT=5;INTERVAL=1", calendar.first().rRules.joinToString())
-        assertEquals(
-            "FREQ=DAILY;COUNT=6;INTERVAL=2\nFREQ=DAILY;COUNT=6;INTERVAL=2",
-            calendar.first().exceptions.first.rRules.joinToString()
-        )
-        EventValidator.removeRRulesOfExceptions(calendar.first().exceptions)
-        assertEquals("FREQ=DAILY;COUNT=5;INTERVAL=1", calendar.first().rRules.joinToString())
-        assertTrue(calendar.first().exceptions.first.rRules.isEmpty())
+                // Exception for the recurring event above
+                "BEGIN:VEVENT\n" +
+                "DTSTAMP:20240215T102908Z\n" +
+                "RECURRENCE-ID;TZID=Europe/Paris:20240221T130000\n" +
+                "SUMMARY:exception of recurring event\n" +
+                "RRULE:FREQ=DAILY;COUNT=6;INTERVAL=2\n" +           // but remove this one
+                "RRULE:FREQ=DAILY;COUNT=6;INTERVAL=2\n" +           // and this one
+                "DTSTART;TZID=Europe/Paris:20240221T110000\n" +
+                "DTEND;TZID=Europe/Paris:20240221T120000\n" +
+                "UID:76c08fb1-99a3-41cf-b482-2d3b06648814\n" +
+                "END:VEVENT\n" +
+                "END:VCALENDAR"
+        )).first()
+        assertTrue(eventFromReader.rRules.size == 1)
+        assertTrue(eventFromReader.exceptions.first.rRules.isEmpty())
     }
-
 
     @Test
     fun testRemoveRRulesWithUntilBeforeDtStart() {
