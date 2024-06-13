@@ -31,8 +31,6 @@ class EventValidator(val e: Event) {
         val dtStart = correctStartAndEndTime(e)
         sameTypeForDtStartAndRruleUntil(dtStart, e.rRules)
         removeRRulesWithUntilBeforeDtStart(dtStart, e.rRules)
-        
-        removeRRulesOfExceptions(e.exceptions)
     }
 
     companion object {
@@ -135,6 +133,7 @@ class EventValidator(val e: Event) {
 
         /**
          * Removes RRULEs of exceptions of (potentially recurring) events
+         * Note: This repair step needs to be applied after all exceptions have been found
          *
          * @param exceptions exceptions of an event
          */

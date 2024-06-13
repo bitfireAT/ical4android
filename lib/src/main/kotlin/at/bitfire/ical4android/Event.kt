@@ -164,6 +164,11 @@ class Event : ICalendar() {
                 events += fakeEvent
             }
 
+            events.forEach {
+                // This repair step can only be done once all exceptions are known
+                EventValidator.removeRRulesOfExceptions(it.exceptions)
+            }
+
             return events
         }
 
