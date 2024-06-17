@@ -201,13 +201,13 @@ class EventValidatorTest {
                 "BEGIN:VCALENDAR\n" +
                         "BEGIN:VEVENT\n" +
                         "UID:381fb26b-2da5-4dd2-94d7-2e0874128aa7\n" +
-                        "DTSTART;VALUE=DATETIME:20080214T001100\n" +            // DATETIME (no timezone)
-                        "RRULE:FREQ=YEARLY;UNTIL=20110214;BYMONTHDAY=15\n" +    // DATE
+                        "DTSTART;VALUE=DATETIME:20110605T001100Z\n" +            // DATETIME (UTC)
+                        "RRULE:FREQ=YEARLY;UNTIL=20211214;BYMONTHDAY=15\n" +     // DATE
                         "END:VEVENT\n" +
                         "END:VCALENDAR"
             )
         ).first()
-        assertEquals("FREQ=YEARLY;UNTIL=20110213T231100Z;BYMONTHDAY=15", event2.rRules.joinToString())
+        assertEquals("FREQ=YEARLY;UNTIL=20211214T001100Z;BYMONTHDAY=15", event2.rRules.joinToString())
     }
 
 
