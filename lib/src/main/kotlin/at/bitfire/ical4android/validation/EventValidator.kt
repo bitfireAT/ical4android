@@ -22,15 +22,25 @@ import java.util.Calendar
 import java.util.TimeZone
 
 /**
- * Sometimes CalendarStorage or servers respond with invalid event definitions. Here we try to
- * validate, repair and assume whatever seems appropriate before denying the whole event.
+ * Validates events and tries to repair broken events, since sometimes CalendarStorage or servers
+ * respond with invalid event definitions. This class tries to make assumptions as to whatever seems
+ * to have been the original intention.
+ *
+ * The EventValidator is applied
+ * - once to every event after completely reading an iCalendar
+ * - to every event when writing an iCalendar
+ *
  */
 class EventValidator(val e: Event) {
 
-    fun repair() {
+    /**
+     * Meta method to validate and repair events
+     */
+    fun validateAndRepair() {
         val dtStart = correctStartAndEndTime(e)
         sameTypeForDtStartAndRruleUntil(dtStart, e.rRules)
         removeRRulesWithUntilBeforeDtStart(dtStart, e.rRules)
+        removeRRulesOfExceptions(e.exceptions)
     }
 
     companion object {

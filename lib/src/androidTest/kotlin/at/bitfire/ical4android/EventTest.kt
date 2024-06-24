@@ -114,7 +114,7 @@ class EventTest {
     @Test
     fun testIgnoreInvalidEvents() {
         val events = parseCalendar("multiple-with-invalid.ics", ignoreInvalidEvents = true)
-        assertEquals(3, events.size)
+        assertEquals(4, events.size)
     }
 
     @Test
