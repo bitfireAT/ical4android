@@ -7,7 +7,6 @@ package at.bitfire.ical4android.validation
 import androidx.annotation.VisibleForTesting
 import at.bitfire.ical4android.Event
 import at.bitfire.ical4android.Ical4Android
-import at.bitfire.ical4android.InvalidCalendarException
 import at.bitfire.ical4android.util.DateUtils
 import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
@@ -24,12 +23,14 @@ import java.util.TimeZone
 
 /**
  * Validates events and tries to repair broken events, since sometimes CalendarStorage or servers
- * respond with invalid event definitions. This class tries to make assumptions as to whatever seems
- * to have been the original intention.
+ * respond with invalid event definitions.
  *
- * The EventValidator is applied
- * - once to every event after completely reading an iCalendar
- * - to every event when writing an iCalendar
+ * This class should not throw exceptions, but try to repair as much as possible instead.
+ *
+ * This class is applied
+ *
+ * - once to every event after completely reading an iCalendar, and
+ * - to every event when writing an iCalendar.
  */
 object EventValidator {
 
@@ -48,19 +49,35 @@ object EventValidator {
 
     /**
      * Makes sure that event has a start time and that it's before the end time.
-     * If the end time is before the start time, the end time is removed.
+     * If the event doesn't have start time,
      *
-     * @throws InvalidCalendarException if the event has no start time
+     * 1. the end time is used as start time, if available,
+     * 2. otherwise the current time is used as start time.
+     *
+     * If the event has an end time and it's before the start time, the end time is removed.
+     *
+     * @return the (potentially corrected) start time
      */
     @VisibleForTesting
     internal fun correctStartAndEndTime(e: Event): DtStart {
-        val dtStart = e.dtStart ?: throw InvalidCalendarException("Event without start time")
+        // make sure that event has a start time
+        var dtStart: DtStart? = e.dtStart
+        if (dtStart == null) {
+            dtStart =
+                e.dtEnd?.let {
+                    DtStart(it.date)
+                } ?: DtStart(DateTime(/* current time */))
+            e.dtStart = dtStart
+        }
+
+        // validate end time
         e.dtEnd?.let { dtEnd ->
             if (dtStart.date > dtEnd.date) {
                 Ical4Android.log.warning("DTSTART after DTEND; removing DTEND")
                 e.dtEnd = null
             }
         }
+
         return dtStart
     }
 
@@ -143,8 +160,7 @@ object EventValidator {
             }
             // add repaired RRULEs
             rRules += newRRules
-        } else
-            throw InvalidCalendarException("Event with invalid DTSTART value")
+        }
     }
 
 
@@ -155,10 +171,10 @@ object EventValidator {
      * @param exceptions exceptions of an event
      */
     @VisibleForTesting
-    internal fun removeRRulesOfExceptions(exceptions: List<Event>) =
-        exceptions.forEach { exception ->
+    internal fun removeRRulesOfExceptions(exceptions: List<Event>) {
+        for (exception in exceptions)
             exception.rRules.clear()     // Drop all RRULEs for the exception
-        }
+    }
 
 
     /**

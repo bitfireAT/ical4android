@@ -5,7 +5,6 @@
 package at.bitfire.ical4android.validation
 
 import at.bitfire.ical4android.Event
-import at.bitfire.ical4android.InvalidCalendarException
 import at.bitfire.ical4android.util.DateUtils
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
@@ -33,28 +32,39 @@ class EventValidatorTest {
 
     // DTSTART and DTEND
 
-    @Test(expected = InvalidCalendarException::class)
-    fun testEnsureCorrectStartAndEndTime_noDtStart_DateTime() {
+    @Test
+    fun testCorrectStartAndEndTime_NoDtStart_EndDateTime() {
         val event = Event().apply {
-            dtEnd = DtEnd(DateTime("20000105T000000"))  // DATETIME
             // no dtStart
+            dtEnd = DtEnd(DateTime("20000105T000000"))  // DATETIME
         }
         EventValidator.correctStartAndEndTime(event)
-    }
-
-    @Test(expected = InvalidCalendarException::class)
-    fun testEnsureCorrectStartAndEndTime_noDtStart_Date() {
-        Event.eventsFromReader(StringReader(
-            "BEGIN:VCALENDAR\n" +
-            "BEGIN:VEVENT\n" +
-            "UID:51d8529a-5844-4609-918b-2891b855e0e8\n" +
-            "DTEND;VALUE=DATE:20211116\n" +                   // DATE
-            "END:VEVENT\n" +
-            "END:VCALENDAR")).first()
+        assertEquals(event.dtEnd!!.date, event.dtStart!!.date)
     }
 
     @Test
-    fun testEnsureCorrectStartAndEndTime_dtEndBeforeDtStart() {
+    fun testCorrectStartAndEndTime_NoDtStart_EndDate() {
+        val event = Event().apply {
+            // no dtStart
+            dtEnd = DtEnd(Date("20000105"))  // DATE
+        }
+        EventValidator.correctStartAndEndTime(event)
+        assertEquals(event.dtEnd!!.date, event.dtStart!!.date)
+    }
+
+    @Test
+    fun testCorrectStartAndEndTime_NoDtStart_NoDtEnd() {
+        val event = Event(/* no dtStart, no dtEnd */)
+
+        val time = System.currentTimeMillis()
+        EventValidator.correctStartAndEndTime(event)
+
+        assertTrue(event.dtStart!!.date.time in (time-1000)..<(time+1000))   // within 2 seconds
+        assertNull(event.dtEnd)
+    }
+
+    @Test
+    fun testCorrectStartAndEndTime_DtEndBeforeDtStart() {
         val event = Event().apply {
             dtStart = DtStart(DateTime("20000105T001100"))              // DATETIME
             dtEnd = DtEnd(DateTime("20000105T000000"))                  // DATETIME

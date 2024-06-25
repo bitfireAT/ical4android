@@ -62,7 +62,7 @@ class Event : ICalendar() {
 
     companion object {
         /**
-         * Parses an iCalendar resource, applies [ICalPreprocessor] to increase compatibility
+         * Parses an iCalendar resource, applies [ICalPreprocessor] and [EventValidator] to increase compatibility
          * and extracts the VEVENTs.
          *
          * @param reader where the iCalendar is taken from
@@ -146,11 +146,10 @@ class Event : ICalendar() {
 
                     events += event
                 } catch (e: InvalidCalendarException) {
-                    Ical4Android.log.log(Level.WARNING, "Invalid VEvent: $vEvent", e)
-
-                    if (!ignoreInvalidEvents) {
+                    if (ignoreInvalidEvents)
+                        Ical4Android.log.log(Level.WARNING, "Ignoring invalid VEVENT: $vEvent", e)
+                    else
                         throw e
-                    }
                 }
             }
 
@@ -166,13 +165,7 @@ class Event : ICalendar() {
 
             // Try to repair all events after reading the whole iCalendar
             for (event in events)
-                try {
-                    EventValidator.repair(event)
-                } catch (e: InvalidCalendarException) {
-                    Ical4Android.log.log(Level.WARNING, "Invalid Event: $event", e)
-                    if (!ignoreInvalidEvents)
-                        throw e
-                }
+                EventValidator.repair(event)
 
             return events
         }
