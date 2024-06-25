@@ -167,7 +167,7 @@ class Event : ICalendar() {
             // Try to repair all events after reading the whole iCalendar
             for (event in events)
                 try {
-                    EventValidator(event).validateAndRepair()
+                    EventValidator.repair(event)
                 } catch (e: InvalidCalendarException) {
                     Ical4Android.log.log(Level.WARNING, "Invalid Event: $event", e)
                     if (!ignoreInvalidEvents)
@@ -234,7 +234,7 @@ class Event : ICalendar() {
 
         val dtStart = dtStart ?: throw InvalidCalendarException("Won't generate event without start time")
 
-        EventValidator(this).validateAndRepair() // validate and repair this event before creating VEVENT
+        EventValidator.repair(this)     // repair this event before creating the VEVENT
 
         // "main event" (without exceptions)
         val components = ical.components
