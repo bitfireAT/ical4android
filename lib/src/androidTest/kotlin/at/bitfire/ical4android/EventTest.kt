@@ -118,18 +118,6 @@ class EventTest {
         assertEquals("Unknown Value", unknown.value)
     }
 
-    @Test(expected = InvalidCalendarException::class)
-    fun testParse_Invalid_DontIgnore() {
-        parseCalendar("multiple-with-invalid.ics", ignoreInvalidEvents = false)
-    }
-
-    @Test
-    fun testParse_Invalid_Ignore() {
-        val events = parseCalendar("multiple-with-invalid.ics", ignoreInvalidEvents = true)
-        assertEquals(4, events.size)
-    }
-
-
     @Test
     fun testRecurringWriteFullDayException() {
         val event = Event().apply {
@@ -346,12 +334,9 @@ class EventTest {
         throw FileNotFoundException()
     }
 
-    private fun parseCalendar(
-        fname: String,
-        charset: Charset = Charsets.UTF_8,
-        ignoreInvalidEvents: Boolean = false): List<Event> =
+    private fun parseCalendar(fname: String, charset: Charset = Charsets.UTF_8): List<Event> =
         javaClass.classLoader!!.getResourceAsStream("events/$fname").use { stream ->
-            return Event.eventsFromReader(InputStreamReader(stream, charset), ignoreInvalidEvents = ignoreInvalidEvents)
+            return Event.eventsFromReader(InputStreamReader(stream, charset))
         }
 
 }

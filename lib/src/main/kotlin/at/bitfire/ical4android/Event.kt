@@ -21,7 +21,6 @@ import java.io.OutputStream
 import java.io.Reader
 import java.net.URI
 import java.util.*
-import java.util.logging.Level
 
 class Event : ICalendar() {
 
@@ -62,25 +61,21 @@ class Event : ICalendar() {
 
     companion object {
         /**
-         * Parses an iCalendar resource, applies [ICalPreprocessor] and [EventValidator] to increase compatibility
-         * and extracts the VEVENTs.
+         * Parses an iCalendar resource, applies [at.bitfire.ical4android.validation.ICalPreprocessor]
+         * and [EventValidator] to increase compatibility and extracts the VEVENTs.
          *
          * @param reader where the iCalendar is taken from
          * @param properties Known iCalendar properties (like [CALENDAR_NAME]) will be put into this map. Key: property name; value: property value
-         * @param ignoreInvalidEvents If true, events that can't be parsed will be dropped. Otherwise, parsing will fail if an invalid event is encountered.
          *
          * @return array of filled [Event] data objects (may have size 0)
          *
-         * @throws ParserException when the iCalendar can't be parsed
-         * @throws IllegalArgumentException when the iCalendar resource contains an invalid value
          * @throws IOException on I/O errors
-         * @throws InvalidCalendarException on parsing exceptions
+         * @throws ParserException when the iCalendar can't be parsed
          */
         @UsesThreadContextClassLoader
         fun eventsFromReader(
             reader: Reader,
-            properties: MutableMap<String, String>? = null,
-            ignoreInvalidEvents: Boolean = false
+            properties: MutableMap<String, String>? = null
         ): List<Event> {
             val ical = fromReader(reader, properties)
 
@@ -133,24 +128,17 @@ class Event : ICalendar() {
 
             val events = mutableListOf<Event>()
             for ((uid, vEvent) in mainEvents) {
-                try {
-                    val event = fromVEvent(vEvent)
+                val event = fromVEvent(vEvent)
 
-                    // assign exceptions to main event and then remove them from exceptions array
-                    exceptions.remove(uid)?.let { eventExceptions ->
-                        event.exceptions.addAll(eventExceptions.values.map { fromVEvent(it) })
-                    }
-
-                    // make sure that exceptions have at least a SUMMARY
-                    event.exceptions.forEach { it.summary = it.summary ?: event.summary }
-
-                    events += event
-                } catch (e: InvalidCalendarException) {
-                    if (ignoreInvalidEvents)
-                        Ical4Android.log.log(Level.WARNING, "Ignoring invalid VEVENT: $vEvent", e)
-                    else
-                        throw e
+                // assign exceptions to main event and then remove them from exceptions array
+                exceptions.remove(uid)?.let { eventExceptions ->
+                    event.exceptions.addAll(eventExceptions.values.map { fromVEvent(it) })
                 }
+
+                // make sure that exceptions have at least a SUMMARY
+                event.exceptions.forEach { it.summary = it.summary ?: event.summary }
+
+                events += event
             }
 
             for ((uid, onlyExceptions) in exceptions) {
@@ -204,8 +192,7 @@ class Event : ICalendar() {
                     is Organizer -> e.organizer = prop
                     is Attendee -> e.attendees += prop
                     is LastModified -> e.lastModified = prop
-                    is ProdId, is DtStamp -> { /* don't save these as unknown properties */
-                    }
+                    is ProdId, is DtStamp -> { /* don't save these as unknown properties */ }
 
                     else -> e.unknownProperties += prop
                 }
