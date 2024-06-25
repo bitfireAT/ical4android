@@ -5,55 +5,66 @@
 package at.bitfire.ical4android.validation
 
 import at.bitfire.ical4android.Event
-import at.bitfire.ical4android.InvalidCalendarException
+import at.bitfire.ical4android.util.DateUtils
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
 import net.fortuna.ical4j.model.Recur
-import net.fortuna.ical4j.model.TimeZone
+import net.fortuna.ical4j.model.TimeZoneRegistry
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory
 import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
 import net.fortuna.ical4j.model.property.RRule
+import net.fortuna.ical4j.model.property.RecurrenceId
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Assume
 import org.junit.Test
 import java.io.StringReader
 
 class EventValidatorTest {
 
     companion object {
-        val tzReg = TimeZoneRegistryFactory.getInstance().createRegistry()
+        val tzReg: TimeZoneRegistry = TimeZoneRegistryFactory.getInstance().createRegistry()
     }
 
 
     // DTSTART and DTEND
 
-    @Test(expected = InvalidCalendarException::class)
-    fun testEnsureCorrectStartAndEndTime_noDtStart_DateTime() {
+    @Test
+    fun testCorrectStartAndEndTime_NoDtStart_EndDateTime() {
         val event = Event().apply {
-            dtEnd = DtEnd(DateTime("20000105T000000"))  // DATETIME
             // no dtStart
+            dtEnd = DtEnd(DateTime("20000105T000000"))  // DATETIME
         }
         EventValidator.correctStartAndEndTime(event)
-    }
-
-    @Test(expected = InvalidCalendarException::class)
-    fun testEnsureCorrectStartAndEndTime_noDtStart_Date() {
-        Event.eventsFromReader(StringReader(
-            "BEGIN:VCALENDAR\n" +
-            "BEGIN:VEVENT\n" +
-            "UID:51d8529a-5844-4609-918b-2891b855e0e8\n" +
-            "DTEND;VALUE=DATE:20211116\n" +                   // DATE
-            "END:VEVENT\n" +
-            "END:VCALENDAR")).first()
+        assertEquals(event.dtEnd!!.date, event.dtStart!!.date)
     }
 
     @Test
-    fun testEnsureCorrectStartAndEndTime_dtEndBeforeDtStart() {
+    fun testCorrectStartAndEndTime_NoDtStart_EndDate() {
+        val event = Event().apply {
+            // no dtStart
+            dtEnd = DtEnd(Date("20000105"))  // DATE
+        }
+        EventValidator.correctStartAndEndTime(event)
+        assertEquals(event.dtEnd!!.date, event.dtStart!!.date)
+    }
+
+    @Test
+    fun testCorrectStartAndEndTime_NoDtStart_NoDtEnd() {
+        val event = Event(/* no dtStart, no dtEnd */)
+
+        val time = System.currentTimeMillis()
+        EventValidator.correctStartAndEndTime(event)
+
+        assertTrue(event.dtStart!!.date.time in (time-1000)..<(time+1000))   // within 2 seconds
+        assertNull(event.dtEnd)
+    }
+
+    @Test
+    fun testCorrectStartAndEndTime_DtEndBeforeDtStart() {
         val event = Event().apply {
             dtStart = DtStart(DateTime("20000105T001100"))              // DATETIME
             dtEnd = DtEnd(DateTime("20000105T000000"))                  // DATETIME
@@ -201,13 +212,13 @@ class EventValidatorTest {
                 "BEGIN:VCALENDAR\n" +
                         "BEGIN:VEVENT\n" +
                         "UID:381fb26b-2da5-4dd2-94d7-2e0874128aa7\n" +
-                        "DTSTART;VALUE=DATETIME:20080214T001100\n" +            // DATETIME (no timezone)
-                        "RRULE:FREQ=YEARLY;UNTIL=20110214;BYMONTHDAY=15\n" +    // DATE
+                        "DTSTART;VALUE=DATETIME:20110605T001100Z\n" +            // DATETIME (UTC)
+                        "RRULE:FREQ=YEARLY;UNTIL=20211214;BYMONTHDAY=15\n" +     // DATE
                         "END:VEVENT\n" +
                         "END:VCALENDAR"
             )
         ).first()
-        assertEquals("FREQ=YEARLY;UNTIL=20110213T231100Z;BYMONTHDAY=15", event2.rRules.joinToString())
+        assertEquals("FREQ=YEARLY;UNTIL=20211214T001100Z;BYMONTHDAY=15", event2.rRules.joinToString())
     }
 
 
@@ -217,7 +228,8 @@ class EventValidatorTest {
     fun testHasUntilBeforeDtStart_DtStartTime_RRuleNoUntil() {
         assertFalse(
             EventValidator.hasUntilBeforeDtStart(
-                DtStart(DateTime("20220531T010203")), RRule())
+                DtStart(DateTime("20220531T010203")), RRule()
+            )
         )
     }
 
@@ -225,46 +237,70 @@ class EventValidatorTest {
     @Test
     fun testHasUntilBeforeDtStart_DtStartDate_RRuleUntil_TimeBeforeDtStart_UTC() {
         assertTrue(
-            EventValidator.hasUntilBeforeDtStart(DtStart("20220912", tzReg.getTimeZone("UTC")), RRule(Recur.Builder()
-                .frequency(Recur.Frequency.DAILY)
-                .until(DateTime("20220911T235959Z"))
-                .build())))
+            EventValidator.hasUntilBeforeDtStart(
+                DtStart("20220912", tzReg.getTimeZone("UTC")), RRule(
+                    Recur.Builder()
+                        .frequency(Recur.Frequency.DAILY)
+                        .until(DateTime("20220911T235959Z"))
+                        .build()
+                )
+            )
+        )
     }
 
     @Test
     fun testHasUntilBeforeDtStart_DtStartDate_RRuleUntil_TimeBeforeDtStart_noTimezone() {
         assertTrue(
-            EventValidator.hasUntilBeforeDtStart(DtStart("20220912"), RRule(Recur.Builder()
-                .frequency(Recur.Frequency.DAILY)
-                .until(DateTime("20220911T235959"))
-                .build())))
+            EventValidator.hasUntilBeforeDtStart(
+                DtStart("20220912"), RRule(
+                    Recur.Builder()
+                        .frequency(Recur.Frequency.DAILY)
+                        .until(DateTime("20220911T235959"))
+                        .build()
+                )
+            )
+        )
     }
 
     @Test
     fun testHasUntilBeforeDtStart_DtStartDate_RRuleUntil_TimeBeforeDtStart_withTimezone() {
         assertTrue(
-            EventValidator.hasUntilBeforeDtStart(DtStart("20220912", tzReg.getTimeZone("America/New_York")), RRule(Recur.Builder()
-                .frequency(Recur.Frequency.DAILY)
-                .until(DateTime("20220911T235959", tzReg.getTimeZone("America/New_York")))
-                .build())))
+            EventValidator.hasUntilBeforeDtStart(
+                DtStart("20220912", tzReg.getTimeZone("America/New_York")), RRule(
+                    Recur.Builder()
+                        .frequency(Recur.Frequency.DAILY)
+                        .until(DateTime("20220911T235959", tzReg.getTimeZone("America/New_York")))
+                        .build()
+                )
+            )
+        )
     }
 
     @Test
     fun testHasUntilBeforeDtStart_DtStartDate_RRuleUntil_DateBeforeDtStart() {
         assertTrue(
-            EventValidator.hasUntilBeforeDtStart(DtStart("20220531"), RRule(Recur.Builder()
-                .frequency(Recur.Frequency.DAILY)
-                .until(DateTime("20220530T000000"))
-                .build())))
+            EventValidator.hasUntilBeforeDtStart(
+                DtStart("20220531"), RRule(
+                    Recur.Builder()
+                        .frequency(Recur.Frequency.DAILY)
+                        .until(DateTime("20220530T000000"))
+                        .build()
+                )
+            )
+        )
     }
 
     @Test
     fun testHasUntilBeforeDtStart_DtStartDate_RRuleUntil_TimeAfterDtStart() {
         assertFalse(
-            EventValidator.hasUntilBeforeDtStart(DtStart("20200912"), RRule(Recur.Builder()
-                .frequency(Recur.Frequency.DAILY)
-                .until(DateTime("20220912T000001Z"))
-                .build()))
+            EventValidator.hasUntilBeforeDtStart(
+                DtStart("20200912"), RRule(
+                    Recur.Builder()
+                        .frequency(Recur.Frequency.DAILY)
+                        .until(DateTime("20220912T000001Z"))
+                        .build()
+                )
+            )
         )
     }
 
@@ -272,80 +308,129 @@ class EventValidatorTest {
     @Test
     fun testHasUntilBeforeDtStart_DtStartTime_RRuleUntil_DateBeforeDtStart() {
         assertTrue(
-            EventValidator.hasUntilBeforeDtStart(DtStart(DateTime("20220531T010203")), RRule(Recur.Builder()
-                .frequency(Recur.Frequency.DAILY)
-                .until(Date("20220530"))
-                .build()))
+            EventValidator.hasUntilBeforeDtStart(
+                DtStart(DateTime("20220531T010203")), RRule(
+                    Recur.Builder()
+                        .frequency(Recur.Frequency.DAILY)
+                        .until(Date("20220530"))
+                        .build()
+                )
+            )
         )
     }
 
     @Test
     fun testHasUntilBeforeDtStart_DtStartTime_RRuleUntil_TimeBeforeDtStart() {
         assertTrue(
-            EventValidator.hasUntilBeforeDtStart(DtStart(DateTime("20220531T010203")), RRule(Recur.Builder()
-                .frequency(Recur.Frequency.DAILY)
-                .until(DateTime("20220531T010202"))
-                .build()))
+            EventValidator.hasUntilBeforeDtStart(
+                DtStart(DateTime("20220531T010203")), RRule(
+                    Recur.Builder()
+                        .frequency(Recur.Frequency.DAILY)
+                        .until(DateTime("20220531T010202"))
+                        .build()
+                )
+            )
         )
     }
 
     @Test
     fun testHasUntilBeforeDtStart_DtStartTime_RRuleUntil_TimeAtDtStart() {
         assertFalse(
-            EventValidator.hasUntilBeforeDtStart(DtStart(DateTime("20220531T010203")), RRule(Recur.Builder()
-                .frequency(Recur.Frequency.DAILY)
-                .until(DateTime("20220531T010203"))
-                .build()))
+            EventValidator.hasUntilBeforeDtStart(
+                DtStart(DateTime("20220531T010203")), RRule(
+                    Recur.Builder()
+                        .frequency(Recur.Frequency.DAILY)
+                        .until(DateTime("20220531T010203"))
+                        .build()
+                )
+            )
         )
     }
 
     @Test
     fun testHasUntilBeforeDtStart_DtStartTime_RRuleUntil_TimeAfterDtStart() {
         assertFalse(
-            EventValidator.hasUntilBeforeDtStart(DtStart(DateTime("20220531T010203")), RRule(Recur.Builder()
-                .frequency(Recur.Frequency.DAILY)
-                .until(DateTime("20220531T010204"))
-                .build()))
+            EventValidator.hasUntilBeforeDtStart(
+                DtStart(DateTime("20220531T010203")), RRule(
+                    Recur.Builder()
+                        .frequency(Recur.Frequency.DAILY)
+                        .until(DateTime("20220531T010204"))
+                        .build()
+                )
+            )
         )
     }
-
 
     @Test
     fun testRemoveRrulesOfRruleExceptions() {
-        val calendar = Event.eventsFromReader(StringReader(
+        // Test manually created event
+        val tz = DateUtils.ical4jTimeZone("Europe/Paris")
+        val manualEvent = Event().apply {
+            dtStart = DtStart("20240219T130000", tz)
+            dtEnd = DtEnd("20240219T140000", tz)
+            summary = "recurring event"
+            rRules.add(RRule(Recur.Builder()                        // Should keep this RRULE
+                .frequency(Recur.Frequency.DAILY)
+                .interval(1)
+                .count(5)
+                .build()))
+            sequence = 0
+            uid = "76c08fb1-99a3-41cf-b482-2d3b06648814"
+            exceptions.add(Event().apply {
+                dtStart = DtStart("20240221T110000", tz)
+                dtEnd = DtEnd("20240221T120000", tz)
+                recurrenceId = RecurrenceId("20240221T130000", tz)
+                sequence = 0
+                summary = "exception of recurring event"
+                rRules.addAll(listOf(
+                    RRule(Recur.Builder()                           // but remove this one
+                        .frequency(Recur.Frequency.DAILY)
+                        .count(6)
+                        .interval(2)
+                        .build()),
+                    RRule(Recur.Builder()                           // and this one
+                        .frequency(Recur.Frequency.DAILY)
+                        .count(6)
+                        .interval(2)
+                        .build())
+                ))
+                uid = "76c08fb1-99a3-41cf-b482-2d3b06648814"
+            })
+        }
+        assertTrue(manualEvent.rRules.size == 1)
+        assertTrue(manualEvent.exceptions.first.rRules.size == 2)
+        EventValidator.removeRRulesOfExceptions(manualEvent.exceptions) // Repair the manually created event
+        assertTrue(manualEvent.rRules.size == 1)
+        assertTrue(manualEvent.exceptions.first.rRules.isEmpty())
+
+        // Test event from reader, the reader will repair the event itself
+        val eventFromReader = Event.eventsFromReader(StringReader(
             "BEGIN:VCALENDAR\n" +
-                    "BEGIN:VEVENT\n" +
-                    "DTSTAMP:20240215T102755Z\n" +
-                    "SUMMARY:recurring event\n" +
-                    "DTSTART;TZID=Europe/Paris:20240219T130000\n" +
-                    "DTEND;TZID=Europe/Paris:20240219T140000\n" +
-                    "RRULE:FREQ=DAILY;INTERVAL=1;COUNT=5\n" +           // Should keep this RRULE
-                    "UID:76c08fb1-99a3-41cf-b482-2d3b06648814\n" +
-                    "END:VEVENT\n" +
+                "BEGIN:VEVENT\n" +
+                "DTSTAMP:20240215T102755Z\n" +
+                "SUMMARY:recurring event\n" +
+                "DTSTART;TZID=Europe/Paris:20240219T130000\n" +
+                "DTEND;TZID=Europe/Paris:20240219T140000\n" +
+                "RRULE:FREQ=DAILY;INTERVAL=1;COUNT=5\n" +           // Should keep this RRULE
+                "UID:76c08fb1-99a3-41cf-b482-2d3b06648814\n" +
+                "END:VEVENT\n" +
 
-                    // Exception for the recurring event above
-                    "BEGIN:VEVENT\n" +
-                    "DTSTAMP:20240215T102908Z\n" +
-                    "RECURRENCE-ID;TZID=Europe/Paris:20240221T130000\n" +
-                    "SUMMARY:exception of recurring event\n" +
-                    "RRULE:FREQ=DAILY;COUNT=6;INTERVAL=2\n" +           // but remove this one
-                    "RRULE:FREQ=DAILY;COUNT=6;INTERVAL=2\n" +           // and this one
-                    "DTSTART;TZID=Europe/Paris:20240221T110000\n" +
-                    "DTEND;TZID=Europe/Paris:20240221T120000\n" +
-                    "UID:76c08fb1-99a3-41cf-b482-2d3b06648814\n" +
-                    "END:VEVENT\n" +
-                    "END:VCALENDAR"
-        ))
-        assertEquals("FREQ=DAILY;COUNT=5;INTERVAL=1", calendar.first().rRules.joinToString())
-        assertEquals(
-            "FREQ=DAILY;COUNT=6;INTERVAL=2\nFREQ=DAILY;COUNT=6;INTERVAL=2",
-            calendar.first().exceptions.first.rRules.joinToString()
-        )
-        EventValidator.removeRRulesOfExceptions(calendar.first().exceptions)
-        assertEquals("FREQ=DAILY;COUNT=5;INTERVAL=1", calendar.first().rRules.joinToString())
-        assertTrue(calendar.first().exceptions.first.rRules.isEmpty())
+                // Exception for the recurring event above
+                "BEGIN:VEVENT\n" +
+                "DTSTAMP:20240215T102908Z\n" +
+                "RECURRENCE-ID;TZID=Europe/Paris:20240221T130000\n" +
+                "SUMMARY:exception of recurring event\n" +
+                "RRULE:FREQ=DAILY;COUNT=6;INTERVAL=2\n" +           // but remove this one
+                "RRULE:FREQ=DAILY;COUNT=6;INTERVAL=2\n" +           // and this one
+                "DTSTART;TZID=Europe/Paris:20240221T110000\n" +
+                "DTEND;TZID=Europe/Paris:20240221T120000\n" +
+                "UID:76c08fb1-99a3-41cf-b482-2d3b06648814\n" +
+                "END:VEVENT\n" +
+                "END:VCALENDAR"
+        )).first()
+        assertTrue(eventFromReader.rRules.size == 1)
+        assertTrue(eventFromReader.exceptions.first.rRules.isEmpty())
     }
-
 
     @Test
     fun testRemoveRRulesWithUntilBeforeDtStart() {
