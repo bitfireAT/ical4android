@@ -91,6 +91,26 @@ object MiscUtils {
         .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
         .build()
 
+    /**
+     * Abbreviates a String using ellipses. This will turn "Now is the time for all good men" into
+     * "Now is the time for..."
+     *
+     * Specifically:
+     *
+     * If the number of characters in str is less than or equal to maxWidth, return str.
+     * Else abbreviate it to (`substring(str, 0, max-3) + "..."`).
+     * If [maxWidth] is less than `4`, throw an [IllegalArgumentException].
+     * In no case will it return a [String] of length greater than [maxWidth].
+     * ```kotlin
+     * "".abbreviate(4)        = ""
+     * "abcdefg".abbreviate(6) = "abc..."
+     * "abcdefg".abbreviate(7) = "abcdefg"
+     * "abcdefg".abbreviate(8) = "abcdefg"
+     * "abcdefg".abbreviate(4) = "a..."
+     * "abcdefg".abbreviate(3) = IllegalArgumentException
+     * ```
+     * @see <a href="https://commons.apache.org/proper/commons-lang/apidocs/org/apache/commons/lang3/StringUtils.html#abbreviate-java.lang.String-int-">org.apache.commons.lang3.StringUtils#abbreviate</a>
+     */
     fun String.abbreviate(maxWidth: Int): String {
         require(maxWidth >= 4) { "Minimum maxWidth is 4" }
 
