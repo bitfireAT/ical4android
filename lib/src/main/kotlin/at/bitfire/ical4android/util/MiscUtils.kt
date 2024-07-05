@@ -12,11 +12,8 @@ import android.database.DatabaseUtils
 import android.net.Uri
 import android.os.Build
 import android.provider.CalendarContract
-import at.bitfire.ical4android.Ical4Android
-import org.apache.commons.lang3.StringUtils
 import java.lang.reflect.Modifier
 import java.util.*
-import kotlin.ConcurrentModificationException
 
 object MiscUtils {
 
@@ -35,7 +32,7 @@ object MiscUtils {
             for (prop in clazz.declaredFields.filterNot { Modifier.isStatic(it.modifiers) }) {
                 prop.isAccessible = true
                 val valueStr = try {
-                    StringUtils.abbreviate(prop.get(obj)?.toString(), TOSTRING_MAXCHARS)
+                    prop.get(obj)?.toString()?.abbreviate(TOSTRING_MAXCHARS)
                 } catch(e: OutOfMemoryError) {
                     "![$e]"
                 }
@@ -93,5 +90,15 @@ object MiscUtils {
         .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE, account.type)
         .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
         .build()
+
+    fun String.abbreviate(maxWidth: Int): String {
+        require(maxWidth >= 4) { "Minimum maxWidth is 4" }
+
+        return if (this.length <= maxWidth) {
+            this
+        } else {
+            this.substring(0, maxWidth - 3) + "..."
+        }
+    }
 
 }
