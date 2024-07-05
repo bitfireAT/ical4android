@@ -4,7 +4,6 @@
 
 package at.bitfire.ical4android.validation
 
-import org.apache.commons.io.IOUtils
 import java.io.IOException
 import java.io.Reader
 import java.io.StringReader
@@ -31,11 +30,11 @@ abstract class StreamPreprocessor {
             // reset is supported, no need to copy the whole stream to another String (unless we have to fix the TZOFFSET)
             if (regex == null || Scanner(reader).findWithinHorizon(regex.toPattern(), 0) != null) {
                 reader.reset()
-                result = fixString(IOUtils.toString(reader))
+                result = fixString(reader.readText())
             }
         } else
             // reset not supported, always generate a new String that will be returned
-            result = fixString(IOUtils.toString(reader))
+            result = fixString(reader.readText())
 
         if (result != null)
             // modified or reset not supported, return new stream
