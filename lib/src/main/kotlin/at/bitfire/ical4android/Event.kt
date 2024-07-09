@@ -9,55 +9,83 @@ import at.bitfire.ical4android.util.DateUtils.isDateTime
 import at.bitfire.ical4android.validation.EventValidator
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
-import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Calendar
+import net.fortuna.ical4j.model.Component
+import net.fortuna.ical4j.model.Parameter
+import net.fortuna.ical4j.model.Property
+import net.fortuna.ical4j.model.TextList
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VEvent
 import net.fortuna.ical4j.model.parameter.Email
-import net.fortuna.ical4j.model.property.*
+import net.fortuna.ical4j.model.property.Attendee
+import net.fortuna.ical4j.model.property.Categories
+import net.fortuna.ical4j.model.property.Clazz
+import net.fortuna.ical4j.model.property.Color
+import net.fortuna.ical4j.model.property.Description
+import net.fortuna.ical4j.model.property.DtEnd
+import net.fortuna.ical4j.model.property.DtStamp
+import net.fortuna.ical4j.model.property.DtStart
+import net.fortuna.ical4j.model.property.Duration
+import net.fortuna.ical4j.model.property.ExDate
+import net.fortuna.ical4j.model.property.ExRule
+import net.fortuna.ical4j.model.property.LastModified
+import net.fortuna.ical4j.model.property.Location
+import net.fortuna.ical4j.model.property.Organizer
+import net.fortuna.ical4j.model.property.ProdId
+import net.fortuna.ical4j.model.property.RDate
+import net.fortuna.ical4j.model.property.RRule
+import net.fortuna.ical4j.model.property.RecurrenceId
+import net.fortuna.ical4j.model.property.Sequence
+import net.fortuna.ical4j.model.property.Status
+import net.fortuna.ical4j.model.property.Summary
+import net.fortuna.ical4j.model.property.Transp
+import net.fortuna.ical4j.model.property.Uid
+import net.fortuna.ical4j.model.property.Url
+import net.fortuna.ical4j.model.property.Version
 import java.io.IOException
 import java.io.OutputStream
 import java.io.Reader
 import java.net.URI
-import java.util.*
+import java.util.LinkedList
+import java.util.UUID
 
-class Event : ICalendar() {
-
+data class Event(
     // uid and sequence are inherited from iCalendar
-    var recurrenceId: RecurrenceId? = null
+    var recurrenceId: RecurrenceId? = null,
 
-    var summary: String? = null
-    var location: String? = null
-    var url: URI? = null
-    var description: String? = null
-    var color: Css3Color? = null
+    var summary: String? = null,
+    var location: String? = null,
+    var url: URI? = null,
+    var description: String? = null,
+    var color: Css3Color? = null,
 
-    var dtStart: DtStart? = null
-    var dtEnd: DtEnd? = null
+    var dtStart: DtStart? = null,
+    var dtEnd: DtEnd? = null,
 
-    var duration: Duration? = null
-    val rRules = LinkedList<RRule>()
-    val exRules = LinkedList<ExRule>()
-    val rDates = LinkedList<RDate>()
-    val exDates = LinkedList<ExDate>()
+    var duration: Duration? = null,
+    val rRules: LinkedList<RRule> = LinkedList(),
+    val exRules: LinkedList<ExRule> = LinkedList(),
+    val rDates: LinkedList<RDate> = LinkedList(),
+    val exDates: LinkedList<ExDate> = LinkedList(),
 
-    val exceptions = LinkedList<Event>()
+    val exceptions: LinkedList<Event> = LinkedList(),
 
-    var classification: Clazz? = null
-    var status: Status? = null
+    var classification: Clazz? = null,
+    var status: Status? = null,
 
-    var opaque = true
+    var opaque: Boolean = true,
 
-    var organizer: Organizer? = null
-    val attendees = LinkedList<Attendee>()
+    var organizer: Organizer? = null,
+    val attendees: LinkedList<Attendee> = LinkedList(),
 
-    val alarms = LinkedList<VAlarm>()
+    val alarms: LinkedList<VAlarm> = LinkedList(),
 
-    var lastModified: LastModified? = null
+    var lastModified: LastModified? = null,
 
-    val categories = LinkedList<String>()
-    val unknownProperties = LinkedList<Property>()
+    val categories: LinkedList<String> = LinkedList(),
+    val unknownProperties: LinkedList<Property> = LinkedList()
+) : ICalendar() {
 
     companion object {
         /**

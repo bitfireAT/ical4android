@@ -4,7 +4,6 @@
 
 package at.bitfire.ical4android
 
-import at.bitfire.ical4android.util.MiscUtils
 import at.bitfire.ical4android.validation.ICalPreprocessor
 import net.fortuna.ical4j.data.*
 import net.fortuna.ical4j.model.Calendar
@@ -382,7 +381,5 @@ open class ICalendar {
     }
 
     fun prodId(): ProdId = prodId(userAgents)
-
-    override fun toString() = MiscUtils.reflectionToString(this)
 
 }
