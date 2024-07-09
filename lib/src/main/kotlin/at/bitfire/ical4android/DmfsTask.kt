@@ -12,7 +12,6 @@ import androidx.annotation.CallSuper
 import at.bitfire.ical4android.BatchOperation.CpoBuilder
 import at.bitfire.ical4android.util.AndroidTimeUtils
 import at.bitfire.ical4android.util.DateUtils
-import at.bitfire.ical4android.util.MiscUtils
 import at.bitfire.ical4android.util.MiscUtils.toValues
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
