@@ -52,43 +52,43 @@ import java.net.URISyntaxException
 import java.util.LinkedList
 import java.util.logging.Level
 
-class Task: ICalendar() {
+data class Task(
+    var createdAt: Long? = null,
+    var lastModified: Long? = null,
 
-    var createdAt: Long? = null
-    var lastModified: Long? = null
-
-    var summary: String? = null
-    var location: String? = null
-    var geoPosition: Geo? = null
-    var description: String? = null
-    var color: Int? = null
-    var url: String? = null
-    var organizer: Organizer? = null
+    var summary: String? = null,
+    var location: String? = null,
+    var geoPosition: Geo? = null,
+    var description: String? = null,
+    var color: Int? = null,
+    var url: String? = null,
+    var organizer: Organizer? = null,
 
     @IntRange(from = 0, to = 9)
-    var priority: Int = Priority.UNDEFINED.level
+    var priority: Int = Priority.UNDEFINED.level,
 
-    var classification: Clazz? = null
-    var status: Status? = null
+    var classification: Clazz? = null,
+    var status: Status? = null,
 
-    var dtStart: DtStart? = null
-    var due: Due? = null
-    var duration: Duration? = null
-    var completedAt: Completed? = null
+    var dtStart: DtStart? = null,
+    var due: Due? = null,
+    var duration: Duration? = null,
+    var completedAt: Completed? = null,
 
     @IntRange(from = 0, to = 100)
-    var percentComplete: Int? = null
+    var percentComplete: Int? = null,
 
-    var rRule: RRule? = null
-    val rDates = LinkedList<RDate>()
-    val exDates = LinkedList<ExDate>()
+    var rRule: RRule? = null,
+    val rDates: LinkedList<RDate> = LinkedList(),
+    val exDates: LinkedList<ExDate> = LinkedList(),
 
-    val categories = LinkedList<String>()
-    var comment: String? = null
-    var relatedTo = LinkedList<RelatedTo>()
-    val unknownProperties = LinkedList<Property>()
+    val categories: LinkedList<String> = LinkedList(),
+    var comment: String? = null,
+    var relatedTo: LinkedList<RelatedTo> = LinkedList(),
+    val unknownProperties: LinkedList<Property> = LinkedList(),
 
-    val alarms = LinkedList<VAlarm>()
+    val alarms: LinkedList<VAlarm> = LinkedList(),
+) : ICalendar() {
 
     companion object {
 

@@ -591,6 +591,4 @@ abstract class DmfsTask(
         return ContentUris.withAppendedId(taskList.tasksSyncUri(loadProperties), id)
     }
 
-    override fun toString() = MiscUtils.reflectionToString(this)
-
 }

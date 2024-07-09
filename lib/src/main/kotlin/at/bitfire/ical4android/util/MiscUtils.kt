@@ -12,37 +12,8 @@ import android.database.DatabaseUtils
 import android.net.Uri
 import android.os.Build
 import android.provider.CalendarContract
-import java.lang.reflect.Modifier
-import java.util.*
 
 object MiscUtils {
-
-    private const val TOSTRING_MAXCHARS = 10000
-
-    /**
-     * Generates useful toString info (fields and values) from [obj] by reflection.
-     *
-     * @param obj   object to inspect
-     * @return      string containing properties and non-static declared fields
-     */
-    fun reflectionToString(obj: Any): String {
-        val s = LinkedList<String>()
-        var clazz: Class<in Any>? = obj.javaClass
-        while (clazz != null) {
-            for (prop in clazz.declaredFields.filterNot { Modifier.isStatic(it.modifiers) }) {
-                prop.isAccessible = true
-                val valueStr = try {
-                    prop.get(obj)?.toString()?.abbreviate(TOSTRING_MAXCHARS)
-                } catch(e: OutOfMemoryError) {
-                    "![$e]"
-                }
-                s += "${prop.name}=" + valueStr
-            }
-            clazz = clazz.superclass
-        }
-        return "${obj.javaClass.simpleName}=[${s.joinToString(", ")}]"
-    }
-
 
     // various extension methods
 
@@ -90,35 +61,5 @@ object MiscUtils {
         .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE, account.type)
         .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
         .build()
-
-    /**
-     * Abbreviates a String using ellipses. This will turn "Now is the time for all good men" into
-     * "Now is the time for..."
-     *
-     * Specifically:
-     *
-     * If the number of characters in str is less than or equal to maxWidth, return str.
-     * Else abbreviate it to (`substring(str, 0, max-3) + "..."`).
-     * If [maxWidth] is less than `4`, throw an [IllegalArgumentException].
-     * In no case will it return a [String] of length greater than [maxWidth].
-     * ```kotlin
-     * "".abbreviate(4)        = ""
-     * "abcdefg".abbreviate(6) = "abc..."
-     * "abcdefg".abbreviate(7) = "abcdefg"
-     * "abcdefg".abbreviate(8) = "abcdefg"
-     * "abcdefg".abbreviate(4) = "a..."
-     * "abcdefg".abbreviate(3) = IllegalArgumentException
-     * ```
-     * @see <a href="https://commons.apache.org/proper/commons-lang/apidocs/org/apache/commons/lang3/StringUtils.html#abbreviate-java.lang.String-int-">org.apache.commons.lang3.StringUtils#abbreviate</a>
-     */
-    fun String.abbreviate(maxWidth: Int): String {
-        require(maxWidth >= 4) { "Minimum maxWidth is 4" }
-
-        return if (this.length <= maxWidth) {
-            this
-        } else {
-            this.substring(0, maxWidth - 3) + "..."
-        }
-    }
 
 }

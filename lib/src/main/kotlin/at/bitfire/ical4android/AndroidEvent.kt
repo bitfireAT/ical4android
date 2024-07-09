@@ -1094,6 +1094,4 @@ abstract class AndroidEvent(
         return ContentUris.withAppendedId(Events.CONTENT_URI, id).asSyncAdapter(calendar.account)
     }
 
-    override fun toString() = MiscUtils.reflectionToString(this)
-
 }
