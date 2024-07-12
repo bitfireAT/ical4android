@@ -51,6 +51,12 @@ import java.util.LinkedList
 import java.util.UUID
 
 data class Event(
+    override var uid: String? = null,
+    override var sequence: Int? = null,
+
+    /** list of CUAs which have edited the event since last sync */
+    override var userAgents: LinkedList<String> = LinkedList(),
+
     // uid and sequence are inherited from iCalendar
     var recurrenceId: RecurrenceId? = null,
 
