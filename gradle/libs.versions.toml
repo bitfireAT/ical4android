@@ -1,8 +1,8 @@
 [versions]
-agp = "8.4.2"
+agp = "8.5.1"
 android-desugar = "2.0.4"
 androidx-core = "1.13.1"
-androidx-test = "1.6.0"
+androidx-test = "1.6.1"
 # noinspection GradleDependency
 commons-collections = "4.2"
 # noinspection GradleDependency
