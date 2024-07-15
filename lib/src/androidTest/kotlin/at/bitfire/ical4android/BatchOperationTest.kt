@@ -88,7 +88,7 @@ class BatchOperationTest {
         val uri = TestEvent(calendar, event).add()
         val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
-            assertEquals(2000, testEvent._event!!.attendees.size)
+            assertEquals(2000, testEvent.event!!.attendees.size)
         } finally {
             testEvent.delete()
         }
@@ -109,7 +109,7 @@ class BatchOperationTest {
         val uri = TestEvent(calendar, event).add()
         val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
-            assertEquals(4000, testEvent._event!!.attendees.size)
+            assertEquals(4000, testEvent.event!!.attendees.size)
         } finally {
             testEvent.delete()
         }
