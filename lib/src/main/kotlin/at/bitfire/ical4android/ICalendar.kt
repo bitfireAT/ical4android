@@ -87,10 +87,9 @@ open class ICalendar {
          * @throws ParserException when the iCalendar can't be parsed
          * @throws IllegalArgumentException when the iCalendar resource contains an invalid value
          */
-        @UsesThreadContextClassLoader
         fun fromReader(reader: Reader, properties: MutableMap<String, String>? = null): Calendar {
-            Ical4Android.log.fine("Parsing iCalendar stream")
             Ical4Android.checkThreadContextClassLoader()
+            Ical4Android.log.fine("Parsing iCalendar stream")
 
             // preprocess stream to work around some problems that can't be fixed later
             val preprocessed = ICalPreprocessor.preprocessStream(reader)
@@ -237,7 +236,6 @@ open class ICalendar {
          * @param timezoneDef time zone definition (VCALENDAR with VTIMEZONE component)
          * @return time zone id (TZID) if VTIMEZONE contains a TZID, null otherwise
          */
-        @UsesThreadContextClassLoader
         fun timezoneDefToTzId(timezoneDef: String): String? {
             Ical4Android.checkThreadContextClassLoader()
             try {

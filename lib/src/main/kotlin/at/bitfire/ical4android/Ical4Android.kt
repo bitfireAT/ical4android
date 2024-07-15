@@ -7,6 +7,7 @@ package at.bitfire.ical4android
 import java.util.logging.Level
 import java.util.logging.Logger
 
+@Suppress("unused")
 object Ical4Android {
 
     val log: Logger = Logger.getLogger("ical4android")
@@ -21,7 +22,7 @@ object Ical4Android {
 
     fun checkThreadContextClassLoader() {
         if (Thread.currentThread().contextClassLoader == null)
-            throw IllegalStateException("Thread.currentThread().contextClassLoader must be set")
+            throw IllegalStateException("Thread.currentThread().contextClassLoader must be set for java.util.ServiceLoader (used by ical4j)")
     }
 
 }

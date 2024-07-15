@@ -72,7 +72,6 @@ class Event : ICalendar() {
          * @throws IOException on I/O errors
          * @throws ParserException when the iCalendar can't be parsed
          */
-        @UsesThreadContextClassLoader
         fun eventsFromReader(
             reader: Reader,
             properties: MutableMap<String, String>? = null
@@ -204,7 +203,6 @@ class Event : ICalendar() {
     }
 
 
-    @UsesThreadContextClassLoader
     fun write(os: OutputStream) {
         Ical4Android.checkThreadContextClassLoader()
 

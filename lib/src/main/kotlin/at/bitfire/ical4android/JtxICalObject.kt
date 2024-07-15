@@ -217,7 +217,6 @@ open class JtxICalObject(
          * @throws IllegalArgumentException when the iCalendar resource contains an invalid value
          * @throws IOException on I/O errors
          */
-        @UsesThreadContextClassLoader
         fun fromReader(
             reader: Reader,
             collection: JtxCollection<JtxICalObject>
@@ -563,7 +562,6 @@ open class JtxICalObject(
      * Takes the current JtxICalObject and transforms it to a Calendar (ical4j)
      * @return The current JtxICalObject transformed into a ical4j Calendar
      */
-    @UsesThreadContextClassLoader
     fun getICalendarFormat(): Calendar? {
         Ical4Android.checkThreadContextClassLoader()
 
@@ -668,7 +666,6 @@ open class JtxICalObject(
      * Takes the current JtxICalObject, transforms it to an iCalendar and writes it in an OutputStream
      * @param [os] OutputStream where iCalendar should be written to
      */
-    @UsesThreadContextClassLoader
     fun write(os: OutputStream) {
         Ical4Android.checkThreadContextClassLoader()
         CalendarOutputter(false).output(this.getICalendarFormat(), os)
