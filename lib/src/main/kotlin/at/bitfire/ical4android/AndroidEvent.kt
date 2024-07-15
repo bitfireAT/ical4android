@@ -131,20 +131,22 @@ abstract class AndroidEvent(
      * @param event event that can be saved into the calendar storage
      */
     constructor(calendar: AndroidCalendar<AndroidEvent>, event: Event) : this(calendar) {
-        this.event = event
+        this._event = event
     }
 
-    var event: Event? = null
-        /**
-         * This getter returns the full event data, either from [event] or, if [event] is null, by reading event
-         * number [id] from the Android calendar storage
-         * @throws IllegalArgumentException if event has not been saved yet
-         * @throws FileNotFoundException if there's no event with [id] in the calendar storage
-         * @throws RemoteException on calendar provider errors
-         */
+    private var _event: Event? = null
+
+    /**
+     * Returns the full event data, either from [event] or, if [event] is null, by reading event
+     * number [id] from the Android calendar storage
+     * @throws IllegalArgumentException if event has not been saved yet
+     * @throws FileNotFoundException if there's no event with [id] in the calendar storage
+     * @throws RemoteException on calendar provider errors
+     */
+    val event: Event?
         get() {
-            if (field != null)
-                return field
+            if (_event != null)
+                return _event
             val id = requireNotNull(id)
 
             var iterEvents: EntityIterator? = null
@@ -161,7 +163,7 @@ abstract class AndroidEvent(
 
                     // create new Event which will be populated
                     val newEvent = Event()
-                    field = newEvent
+                    _event = newEvent
 
                     // calculate some scheduling properties
                     val groupScheduled = e.subValues.any { it.uri == Attendees.CONTENT_URI }
@@ -185,7 +187,7 @@ abstract class AndroidEvent(
                 /* Populating event has been interrupted by an exception, so we reset the event to
                 avoid an inconsistent state. This also ensures that the exception will be thrown
                 again on the next get() call. */
-                field = null
+                _event = null
                 throw e
             } finally {
                 iterEvents?.close()
@@ -202,7 +204,7 @@ abstract class AndroidEvent(
     @CallSuper
     protected open fun populateEvent(row: ContentValues, groupScheduled: Boolean) {
         Ical4Android.log.log(Level.FINE, "Read event entity from calender provider", row)
-        val event = requireNotNull(event)
+        val event = requireNotNull(_event)
 
         row.getAsString(Events.MUTATORS)?.let { strPackages ->
             val packages = strPackages.split(MUTATORS_SEPARATOR).toSet()
@@ -418,7 +420,7 @@ abstract class AndroidEvent(
                 Attendees.ATTENDEE_STATUS_NONE -> { /* no information, don't add PARTSTAT */ }
             }
 
-            event!!.attendees.add(attendee)
+            _event!!.attendees.add(attendee)
         } catch (e: URISyntaxException) {
             Ical4Android.log.log(Level.WARNING, "Couldn't parse attendee information, ignoring", e)
         }
@@ -426,7 +428,7 @@ abstract class AndroidEvent(
 
     protected open fun populateReminder(row: ContentValues) {
         Ical4Android.log.log(Level.FINE, "Read event reminder from calender provider", row)
-        val event = requireNotNull(event)
+        val event = requireNotNull(_event)
 
         val alarm = VAlarm(Duration.ofMinutes(-row.getAsLong(Reminders.MINUTES)))
 
@@ -462,7 +464,7 @@ abstract class AndroidEvent(
         val name = row.getAsString(ExtendedProperties.NAME)
         val rawValue = row.getAsString(ExtendedProperties.VALUE)
         Ical4Android.log.log(Level.FINE, "Read extended property from calender provider", arrayOf(name, rawValue))
-        val event = requireNotNull(event)
+        val event = requireNotNull(_event)
 
         try {
             when (name) {
@@ -491,7 +493,7 @@ abstract class AndroidEvent(
 
     protected open fun populateExceptions() {
         requireNotNull(id)
-        val event = requireNotNull(event)
+        val event = requireNotNull(_event)
 
         calendar.provider.query(Events.CONTENT_URI.asSyncAdapter(calendar.account),
                 null,
@@ -500,7 +502,7 @@ abstract class AndroidEvent(
                 val values = c.toValues(true)
                 try {
                     val exception = calendar.eventFactory.fromProvider(calendar, values)
-                    val exceptionEvent = exception.event!!
+                    val exceptionEvent = exception._event!!
                     val recurrenceId = exceptionEvent.recurrenceId!!
 
                     // generate EXDATE instead of RECURRENCE-ID exceptions for cancelled instances
@@ -536,7 +538,7 @@ abstract class AndroidEvent(
     private fun retainClassification() {
         /* retain classification other than PUBLIC and PRIVATE as unknown property so
            that it can be reused when "server default" is selected */
-        val event = requireNotNull(event)
+        val event = requireNotNull(_event)
         event.classification?.let {
             if (it != Clazz.PUBLIC && it != Clazz.PRIVATE)
                 event.unknownProperties += it
@@ -564,14 +566,14 @@ abstract class AndroidEvent(
     }
 
     /**
-     * Adds or updates the calendar provider [Events] main row for this [event].
+     * Adds or updates the calendar provider [Events] main row for this [_event].
      *
      * @param batch batch operation for insert/update operation
      *
      * @return [Events._ID] of the created/updated row; *null* if now ID is available
      */
     fun addOrUpdateRows(batch: BatchOperation): Int? {
-        val event = requireNotNull(event)
+        val event = requireNotNull(_event)
         val builder =
                 if (id == null)
                     CpoBuilder.newInsert(Events.CONTENT_URI.asSyncAdapter(calendar.account))
@@ -678,7 +680,7 @@ abstract class AndroidEvent(
      * @throws RemoteException on calendar provider errors
      */
     fun update(event: Event): Uri {
-        this.event = event
+        this._event = event
         val existingId = requireNotNull(id)
 
         // There are cases where the event cannot be updated, but must be completely re-created.
@@ -756,12 +758,12 @@ abstract class AndroidEvent(
     /**
      * Builds an Android [Events] row for a given ical4android [Event].
      *
-     * @param recurrence   event to be used as data source; *null*: use this AndroidEvent's main [event] as source
+     * @param recurrence   event to be used as data source; *null*: use this AndroidEvent's main [_event] as source
      * @param builder      data row builder to be used
      */
     @CallSuper
     protected open fun buildEvent(recurrence: Event?, builder: CpoBuilder) {
-        val event = recurrence ?: requireNotNull(event)
+        val event = recurrence ?: requireNotNull(_event)
 
         val dtStart = event.dtStart ?: throw InvalidCalendarException("Events must have DTSTART")
         val allDay = DateUtils.isDate(dtStart)
@@ -985,7 +987,7 @@ abstract class AndroidEvent(
             else -> Reminders.METHOD_DEFAULT                // won't trigger an alarm on the Android device
         }
 
-        val minutes = ICalendar.vAlarmToMin(alarm, event!!, false)?.second ?: Reminders.MINUTES_DEFAULT
+        val minutes = ICalendar.vAlarmToMin(alarm, _event!!, false)?.second ?: Reminders.MINUTES_DEFAULT
 
         builder .withValue(Reminders.METHOD, method)
                 .withValue(Reminders.MINUTES, minutes)
@@ -1039,7 +1041,7 @@ abstract class AndroidEvent(
     }
 
     protected open fun insertCategories(batch: BatchOperation, idxEvent: Int?) {
-        val rawCategories = event!!.categories      // concatenate, separate by backslash
+        val rawCategories = _event!!.categories      // concatenate, separate by backslash
                 .joinToString(CATEGORIES_SEPARATOR.toString()) { category ->
                     // drop occurrences of CATEGORIES_SEPARATOR in category names
                     category.filter { it != CATEGORIES_SEPARATOR }
@@ -1061,7 +1063,7 @@ abstract class AndroidEvent(
     }
 
     private fun useRetainedClassification() {
-        val event = requireNotNull(event)
+        val event = requireNotNull(_event)
 
         var retainedClazz: Clazz? = null
         val it = event.unknownProperties.iterator()
@@ -1092,5 +1094,8 @@ abstract class AndroidEvent(
         val id = requireNotNull(id)
         return ContentUris.withAppendedId(Events.CONTENT_URI, id).asSyncAdapter(calendar.account)
     }
+
+    @CallSuper
+    override fun toString(): String = "AndroidEvent(calendar=$calendar, id=$id, event=$_event)"
 
 }

@@ -19,9 +19,14 @@ import at.bitfire.ical4android.util.MiscUtils.closeCompat
 import net.fortuna.ical4j.model.property.Attendee
 import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
-import org.junit.*
+import org.junit.After
+import org.junit.AfterClass
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Before
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 import java.net.URI
 import java.util.Arrays
 
@@ -83,7 +88,7 @@ class BatchOperationTest {
         val uri = TestEvent(calendar, event).add()
         val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
-            assertEquals(2000, testEvent.event!!.attendees.size)
+            assertEquals(2000, testEvent._event!!.attendees.size)
         } finally {
             testEvent.delete()
         }
@@ -104,7 +109,7 @@ class BatchOperationTest {
         val uri = TestEvent(calendar, event).add()
         val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
-            assertEquals(4000, testEvent.event!!.attendees.size)
+            assertEquals(4000, testEvent._event!!.attendees.size)
         } finally {
             testEvent.delete()
         }

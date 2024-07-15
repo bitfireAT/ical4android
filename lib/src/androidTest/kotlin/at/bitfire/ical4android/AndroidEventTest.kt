@@ -1506,7 +1506,7 @@ class AndroidEventTest {
             insertCallback,
             extendedProperties,
             valuesBuilder
-        ).event!!
+        )._event!!
     }
 
     @Test
@@ -2332,7 +2332,7 @@ class AndroidEventTest {
 
         // update test event in calendar
         val testEvent = calendar.findById(ContentUris.parseId(uri))
-        val event2 = testEvent.event!!
+        val event2 = testEvent._event!!
         event2.summary = "Updated event"
         // add data rows
         event2.alarms += VAlarm(Duration.parse("-P1DT2H3M4S"))
@@ -2345,7 +2345,7 @@ class AndroidEventTest {
         // read again and verify result
         val updatedEvent = calendar.findById(ContentUris.parseId(uri2))
         try {
-            val event3 = updatedEvent.event!!
+            val event3 = updatedEvent._event!!
             assertEquals(event2.summary, event3.summary)
             assertEquals(1, event3.alarms.size)
             assertEquals(1, event3.attendees.size)
@@ -2365,7 +2365,7 @@ class AndroidEventTest {
 
         // update test event in calendar
         val testEvent = calendar.findById(ContentUris.parseId(uri))
-        val event2 = testEvent.event!!
+        val event2 = testEvent._event!!
         event2.summary = "Sample event without STATUS"
         event2.status = Status.VEVENT_CONFIRMED
         val uri2 = testEvent.update(event2)
@@ -2376,7 +2376,7 @@ class AndroidEventTest {
         // read again and verify result
         val updatedEvent = calendar.findById(ContentUris.parseId(uri2))
         try {
-            val event3 = updatedEvent.event!!
+            val event3 = updatedEvent._event!!
             assertEquals(Status.VEVENT_CONFIRMED, event3.status)
         } finally {
             updatedEvent.delete()
@@ -2395,7 +2395,7 @@ class AndroidEventTest {
 
         // update test event in calendar
         val testEvent = calendar.findById(ContentUris.parseId(uri))
-        val event2 = testEvent.event!!
+        val event2 = testEvent._event!!
         event2.summary = "Sample event without STATUS"
         event2.status = null
         val uri2 = testEvent.update(event2)
@@ -2406,7 +2406,7 @@ class AndroidEventTest {
         // read again and verify result
         val updatedEvent = calendar.findById(ContentUris.parseId(uri2))
         try {
-            val event3 = updatedEvent.event!!
+            val event3 = updatedEvent._event!!
             assertNull(event3.status)
         } finally {
             updatedEvent.delete()
@@ -2428,7 +2428,7 @@ class AndroidEventTest {
 
         val testEvent = calendar.findById(ContentUris.parseId(uri))
         try {
-            assertEquals(20, testEvent.event!!.attendees.size)
+            assertEquals(20, testEvent._event!!.attendees.size)
         } finally {
             testEvent.delete()
         }
