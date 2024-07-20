@@ -104,7 +104,6 @@ data class Task(
          * @throws IllegalArgumentException when the iCalendar resource contains an invalid value
          * @throws IOException on I/O errors
          */
-        @UsesThreadContextClassLoader
         fun tasksFromReader(reader: Reader): List<Task> {
             val ical = fromReader(reader)
             val vToDos = ical.getComponents<VToDo>(Component.VTODO)
@@ -189,7 +188,6 @@ data class Task(
     }
 
 
-    @UsesThreadContextClassLoader
     fun write(os: OutputStream) {
         Ical4Android.checkThreadContextClassLoader()
 

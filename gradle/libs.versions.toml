@@ -1,8 +1,14 @@
 [versions]
-agp = "8.4.2"
+agp = "8.5.1"
 android-desugar = "2.0.4"
 androidx-core = "1.13.1"
-androidx-test = "1.6.0"
+androidx-test = "1.6.1"
+# noinspection GradleDependency
+commons-collections = "4.2"
+# noinspection GradleDependency
+commons-lang = "3.8.1"
+# noinspection GradleDependency
+commons-io = "2.6"
 dokka  ="1.9.20"
 # noinspection GradleDependency
 ical4j = "3.2.19"   # final version; update to 4.x will require much work

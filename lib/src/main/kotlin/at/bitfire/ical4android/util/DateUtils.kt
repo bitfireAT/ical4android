@@ -5,7 +5,6 @@
 package at.bitfire.ical4android.util
 
 import at.bitfire.ical4android.Ical4Android
-import at.bitfire.ical4android.UsesThreadContextClassLoader
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
@@ -24,16 +23,15 @@ import java.time.ZoneId
  */
 object DateUtils {
 
+    init {
+        Ical4Android.checkThreadContextClassLoader()
+    }
+
     /**
      * Global ical4j time zone registry used for event/task processing. Do not
      * modify this registry or its entries!
      */
-    @UsesThreadContextClassLoader
     private val tzRegistry = TimeZoneRegistryFactory.getInstance().createRegistry()
-
-    init {
-        Ical4Android.checkThreadContextClassLoader()
-    }
 
 
     // time zones
@@ -93,8 +91,6 @@ object DateUtils {
                 }
             }
 
-    @Suppress("DEPRECATION")
-    @UsesThreadContextClassLoader
     /**
      * Loads a time zone from the ical4j time zone registry (which contains the
      * VTIMEZONE definitions).
@@ -128,9 +124,9 @@ object DateUtils {
      * @return parsed VTimeZone
      * @throws IllegalArgumentException when the timezone definition can't be parsed
      */
-    @UsesThreadContextClassLoader
     fun parseVTimeZone(timezoneDef: String): VTimeZone {
         Ical4Android.checkThreadContextClassLoader()
+
         val builder = CalendarBuilder(tzRegistry)
         try {
             val cal = builder.build(StringReader(timezoneDef))
