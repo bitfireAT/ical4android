@@ -21,7 +21,6 @@ import androidx.annotation.CallSuper
 import at.bitfire.ical4android.BatchOperation.CpoBuilder
 import at.bitfire.ical4android.util.AndroidTimeUtils
 import at.bitfire.ical4android.util.DateUtils
-import at.bitfire.ical4android.util.MiscUtils
 import at.bitfire.ical4android.util.MiscUtils.asSyncAdapter
 import at.bitfire.ical4android.util.MiscUtils.removeBlankStrings
 import at.bitfire.ical4android.util.MiscUtils.toValues
@@ -135,17 +134,22 @@ abstract class AndroidEvent(
         this.event = event
     }
 
-    var event: Event? = null
-        /**
-         * This getter returns the full event data, either from [event] or, if [event] is null, by reading event
-         * number [id] from the Android calendar storage
-         * @throws IllegalArgumentException if event has not been saved yet
-         * @throws FileNotFoundException if there's no event with [id] in the calendar storage
-         * @throws RemoteException on calendar provider errors
-         */
+    private var _event: Event? = null
+
+    /**
+     * Returns the full event data, either from [event] or, if [event] is null, by reading event
+     * number [id] from the Android calendar storage
+     * @throws IllegalArgumentException if event has not been saved yet
+     * @throws FileNotFoundException if there's no event with [id] in the calendar storage
+     * @throws RemoteException on calendar provider errors
+     */
+    var event: Event?
+        private set(value) {
+            _event = value
+        }
         get() {
-            if (field != null)
-                return field
+            if (_event != null)
+                return _event
             val id = requireNotNull(id)
 
             var iterEvents: EntityIterator? = null
@@ -162,7 +166,7 @@ abstract class AndroidEvent(
 
                     // create new Event which will be populated
                     val newEvent = Event()
-                    field = newEvent
+                    _event = newEvent
 
                     // calculate some scheduling properties
                     val groupScheduled = e.subValues.any { it.uri == Attendees.CONTENT_URI }
@@ -186,7 +190,7 @@ abstract class AndroidEvent(
                 /* Populating event has been interrupted by an exception, so we reset the event to
                 avoid an inconsistent state. This also ensures that the exception will be thrown
                 again on the next get() call. */
-                field = null
+                _event = null
                 throw e
             } finally {
                 iterEvents?.close()
@@ -1094,6 +1098,7 @@ abstract class AndroidEvent(
         return ContentUris.withAppendedId(Events.CONTENT_URI, id).asSyncAdapter(calendar.account)
     }
 
-    override fun toString() = MiscUtils.reflectionToString(this)
+    @CallSuper
+    override fun toString(): String = "AndroidEvent(calendar=$calendar, id=$id, event=$_event)"
 
 }

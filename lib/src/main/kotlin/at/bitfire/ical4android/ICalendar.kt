@@ -4,7 +4,6 @@
 
 package at.bitfire.ical4android
 
-import at.bitfire.ical4android.util.MiscUtils
 import at.bitfire.ical4android.validation.ICalPreprocessor
 import net.fortuna.ical4j.data.*
 import net.fortuna.ical4j.model.Calendar
@@ -38,11 +37,11 @@ import java.util.logging.Logger
 
 open class ICalendar {
 
-    var uid: String? = null
-    var sequence: Int? = null
+    open var uid: String? = null
+    open var sequence: Int? = null
 
     /** list of CUAs which have edited the event since last sync */
-    var userAgents = LinkedList<String>()
+    open var userAgents = LinkedList<String>()
 
     companion object {
 
@@ -380,7 +379,5 @@ open class ICalendar {
     }
 
     fun prodId(): ProdId = prodId(userAgents)
-
-    override fun toString() = MiscUtils.reflectionToString(this)
 
 }

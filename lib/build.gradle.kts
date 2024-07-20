@@ -99,22 +99,6 @@ dependencies {
     api(libs.ical4j)
     implementation(libs.slf4j)       // ical4j logging over java.util.Logger
 
-    // ical4j requires newer Apache Commons libraries, which require Java8. Force latest Java7 versions.
-    @Suppress("RedundantSuppression")
-    api(libs.commons.collections) {
-        version {
-            strictly(libs.versions.commons.collections.get())
-        }
-    }
-    @Suppress("RedundantSuppression")
-    api(libs.commons.lang3) {
-        version {
-            strictly(libs.versions.commons.lang.get())
-        }
-    }
-    @Suppress("RedundantSuppression")
-    implementation(libs.commons.io)
-
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.androidx.test.runner)

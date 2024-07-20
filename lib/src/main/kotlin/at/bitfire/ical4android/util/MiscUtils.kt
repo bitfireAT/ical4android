@@ -12,40 +12,8 @@ import android.database.DatabaseUtils
 import android.net.Uri
 import android.os.Build
 import android.provider.CalendarContract
-import at.bitfire.ical4android.Ical4Android
-import org.apache.commons.lang3.StringUtils
-import java.lang.reflect.Modifier
-import java.util.*
-import kotlin.ConcurrentModificationException
 
 object MiscUtils {
-
-    private const val TOSTRING_MAXCHARS = 10000
-
-    /**
-     * Generates useful toString info (fields and values) from [obj] by reflection.
-     *
-     * @param obj   object to inspect
-     * @return      string containing properties and non-static declared fields
-     */
-    fun reflectionToString(obj: Any): String {
-        val s = LinkedList<String>()
-        var clazz: Class<in Any>? = obj.javaClass
-        while (clazz != null) {
-            for (prop in clazz.declaredFields.filterNot { Modifier.isStatic(it.modifiers) }) {
-                prop.isAccessible = true
-                val valueStr = try {
-                    StringUtils.abbreviate(prop.get(obj)?.toString(), TOSTRING_MAXCHARS)
-                } catch(e: OutOfMemoryError) {
-                    "![$e]"
-                }
-                s += "${prop.name}=" + valueStr
-            }
-            clazz = clazz.superclass
-        }
-        return "${obj.javaClass.simpleName}=[${s.joinToString(", ")}]"
-    }
-
 
     // various extension methods
 
