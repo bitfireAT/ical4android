@@ -131,7 +131,7 @@ abstract class AndroidEvent(
      * @param event event that can be saved into the calendar storage
      */
     constructor(calendar: AndroidCalendar<AndroidEvent>, event: Event) : this(calendar) {
-        this._event = event
+        this.event = event
     }
 
     private var _event: Event? = null
@@ -143,7 +143,10 @@ abstract class AndroidEvent(
      * @throws FileNotFoundException if there's no event with [id] in the calendar storage
      * @throws RemoteException on calendar provider errors
      */
-    val event: Event?
+    var event: Event?
+        private set(value) {
+            _event = value
+        }
         get() {
             if (_event != null)
                 return _event
@@ -680,7 +683,7 @@ abstract class AndroidEvent(
      * @throws RemoteException on calendar provider errors
      */
     fun update(event: Event): Uri {
-        this._event = event
+        this.event = event
         val existingId = requireNotNull(id)
 
         // There are cases where the event cannot be updated, but must be completely re-created.
