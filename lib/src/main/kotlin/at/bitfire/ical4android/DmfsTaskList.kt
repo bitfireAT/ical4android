@@ -18,6 +18,7 @@ import org.dmfs.tasks.contract.TaskContract.Tasks
 import java.io.FileNotFoundException
 import java.util.LinkedList
 import java.util.logging.Level
+import java.util.logging.Logger
 
 
 /**
@@ -33,11 +34,14 @@ abstract class DmfsTaskList<out T : DmfsTask>(
 
     companion object {
 
+        private val logger
+            get() = Logger.getLogger(DmfsTaskList::class.java.name)
+
         fun create(account: Account, provider: TaskProvider, info: ContentValues): Uri {
             info.put(TaskContract.ACCOUNT_NAME, account.name)
             info.put(TaskContract.ACCOUNT_TYPE, account.type)
 
-            Ical4Android.log.log(Level.FINE, "Creating ${provider.name.authority} task list", info)
+            logger.log(Level.FINE, "Creating ${provider.name.authority} task list", info)
             return provider.client.insert(provider.taskListsUri().asSyncAdapter(account), info)
                 ?: throw CalendarStorageException("Couldn't create task list (empty result from provider)")
         }
@@ -118,12 +122,12 @@ abstract class DmfsTaskList<out T : DmfsTask>(
     }
 
     fun update(info: ContentValues): Int {
-        Ical4Android.log.log(Level.FINE, "Updating ${provider.name.authority} task list (#$id)", info)
+        logger.log(Level.FINE, "Updating ${provider.name.authority} task list (#$id)", info)
         return provider.client.update(taskListSyncUri(), info, null, null)
     }
 
     fun delete(): Int {
-        Ical4Android.log.log(Level.FINE, "Deleting ${provider.name.authority} task list (#$id)")
+        logger.log(Level.FINE, "Deleting ${provider.name.authority} task list (#$id)")
         return provider.client.delete(taskListSyncUri(), null, null)
     }
 
@@ -148,7 +152,7 @@ abstract class DmfsTaskList<out T : DmfsTask>(
      * @return number of touched [Relation] rows
      */
     fun touchRelations(): Int {
-        Ical4Android.log.fine("Touching relations to set parent_id")
+        logger.fine("Touching relations to set parent_id")
         val batchOperation = BatchOperation(provider.client)
         provider.client.query(
             tasksSyncUri(true), null,

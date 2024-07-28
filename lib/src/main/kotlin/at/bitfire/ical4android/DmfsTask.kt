@@ -50,6 +50,7 @@ import java.net.URISyntaxException
 import java.time.ZoneId
 import java.util.Locale
 import java.util.logging.Level
+import java.util.logging.Logger
 
 /**
  * Stores and retrieves VTODO iCalendar objects (represented as [Task]s) to/from the
@@ -69,6 +70,8 @@ abstract class DmfsTask(
 
         val utcTimeZone by lazy { DateUtils.ical4jTimeZone(TimeZones.UTC_ID) }
     }
+
+    protected val logger = Logger.getLogger(javaClass.name)
 
     var id: Long? = null
 
@@ -104,7 +107,7 @@ abstract class DmfsTask(
                         field = newTask
 
                         val values = cursor.toValues(true)
-                        Ical4Android.log.log(Level.FINER, "Found task", values)
+                        logger.log(Level.FINER, "Found task", values)
                         populateTask(values)
 
                         if (values.containsKey(Properties.PROPERTY_ID)) {
@@ -165,7 +168,7 @@ abstract class DmfsTask(
             try {
                 task.geoPosition = Geo(lat.toBigDecimal(), lng.toBigDecimal())
             } catch (e: NumberFormatException) {
-                Ical4Android.log.warning("Invalid GEO value: $geo")
+                logger.warning("Invalid GEO value: $geo")
             }
         }
 
@@ -177,7 +180,7 @@ abstract class DmfsTask(
             try {
                 task.organizer = Organizer("mailto:$it")
             } catch(e: URISyntaxException) {
-                Ical4Android.log.log(Level.WARNING, "Invalid ORGANIZER email", e)
+                logger.log(Level.WARNING, "Invalid ORGANIZER email", e)
             }
         }
 
@@ -256,7 +259,7 @@ abstract class DmfsTask(
     }
 
     protected open fun populateProperty(row: ContentValues) {
-        Ical4Android.log.log(Level.FINER, "Found property", row)
+        logger.log(Level.FINER, "Found property", row)
 
         val task = requireNotNull(task)
         when (val type = row.getAsString(Properties.MIMETYPE)) {
@@ -271,7 +274,7 @@ abstract class DmfsTask(
             UnknownProperty.CONTENT_ITEM_TYPE ->
                 task.unknownProperties += UnknownProperty.fromJsonString(row.getAsString(UNKNOWN_PROPERTY_DATA))
             else ->
-                Ical4Android.log.warning("Found unknown property of type $type")
+                logger.warning("Found unknown property of type $type")
         }
     }
 
@@ -306,7 +309,7 @@ abstract class DmfsTask(
     protected open fun populateRelatedTo(row: ContentValues) {
         val uid = row.getAsString(Relation.RELATED_UID)
         if (uid == null) {
-            Ical4Android.log.warning("Task relation doesn't refer to same task list; can't be synchronized")
+            logger.warning("Task relation doesn't refer to same task list; can't be synchronized")
             return
         }
 
@@ -406,7 +409,7 @@ abstract class DmfsTask(
                     .withValue(Alarm.MESSAGE, alarm.description?.value ?: alarm.summary)
                     .withValue(Alarm.ALARM_TYPE, alarmType)
 
-            Ical4Android.log.log(Level.FINE, "Inserting alarm", builder.build())
+            logger.log(Level.FINE, "Inserting alarm", builder.build())
             batch.enqueue(builder)
         }
     }
@@ -417,7 +420,7 @@ abstract class DmfsTask(
                     .withTaskId(Category.TASK_ID, idxTask)
                     .withValue(Category.MIMETYPE, Category.CONTENT_ITEM_TYPE)
                     .withValue(Category.CATEGORY_NAME, category)
-            Ical4Android.log.log(Level.FINE, "Inserting category", builder.build())
+            logger.log(Level.FINE, "Inserting category", builder.build())
             batch.enqueue(builder)
         }
     }
@@ -428,7 +431,7 @@ abstract class DmfsTask(
             .withTaskId(Comment.TASK_ID, idxTask)
             .withValue(Comment.MIMETYPE, Comment.CONTENT_ITEM_TYPE)
             .withValue(Comment.COMMENT, comment)
-        Ical4Android.log.log(Level.FINE, "Inserting comment", builder.build())
+        logger.log(Level.FINE, "Inserting comment", builder.build())
         batch.enqueue(builder)
     }
 
@@ -447,7 +450,7 @@ abstract class DmfsTask(
                     .withValue(Relation.MIMETYPE, Relation.CONTENT_ITEM_TYPE)
                     .withValue(Relation.RELATED_UID, relatedTo.value)
                     .withValue(Relation.RELATED_TYPE, relType)
-            Ical4Android.log.log(Level.FINE, "Inserting relation", builder.build())
+            logger.log(Level.FINE, "Inserting relation", builder.build())
             batch.enqueue(builder)
         }
     }
@@ -455,7 +458,7 @@ abstract class DmfsTask(
     protected open fun insertUnknownProperties(batch: BatchOperation, idxTask: Int?) {
         for (property in requireNotNull(task).unknownProperties) {
             if (property.value.length > UnknownProperty.MAX_UNKNOWN_PROPERTY_SIZE) {
-                Ical4Android.log.warning("Ignoring unknown property with ${property.value.length} octets (too long)")
+                logger.warning("Ignoring unknown property with ${property.value.length} octets (too long)")
                 return
             }
 
@@ -463,7 +466,7 @@ abstract class DmfsTask(
                     .withTaskId(Properties.TASK_ID, idxTask)
                     .withValue(Properties.MIMETYPE, UnknownProperty.CONTENT_ITEM_TYPE)
                     .withValue(UNKNOWN_PROPERTY_DATA, UnknownProperty.toJsonString(property))
-            Ical4Android.log.log(Level.FINE, "Inserting unknown property", builder.build())
+            logger.log(Level.FINE, "Inserting unknown property", builder.build())
             batch.enqueue(builder)
         }
     }
@@ -500,7 +503,7 @@ abstract class DmfsTask(
             if (email != null)
                 builder.withValue(Tasks.ORGANIZER, email)
             else
-                Ical4Android.log.warning("Ignoring ORGANIZER without email address (not supported by Android)")
+                logger.warning("Ignoring ORGANIZER without email address (not supported by Android)")
         }
 
         builder .withValue(Tasks.PRIORITY, task.priority)
@@ -554,7 +557,7 @@ abstract class DmfsTask(
                             null
                         else
                             AndroidTimeUtils.recurrenceSetsToOpenTasksString(task.exDates, if (allDay) null else getTimeZone()))
-        Ical4Android.log.log(Level.FINE, "Built task object", builder.build())
+        logger.log(Level.FINE, "Built task object", builder.build())
     }
 
 

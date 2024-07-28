@@ -14,10 +14,13 @@ import android.os.RemoteException
 import android.os.TransactionTooLargeException
 import java.util.LinkedList
 import java.util.logging.Level
+import java.util.logging.Logger
 
 class BatchOperation(
-        private val providerClient: ContentProviderClient
+    private val providerClient: ContentProviderClient
 ) {
+    
+    private val logger = Logger.getLogger(javaClass.name)
 
     private val queue = LinkedList<CpoBuilder>()
     private var results = arrayOfNulls<ContentProviderResult?>(0)
@@ -47,10 +50,10 @@ class BatchOperation(
     fun commit(): Int {
         var affected = 0
         if (!queue.isEmpty()) {
-            if (Ical4Android.log.isLoggable(Level.FINE)) {
-                Ical4Android.log.log(Level.FINE, "Committing ${queue.size} operations:")
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Committing ${queue.size} operations:")
                 for ((idx, op) in queue.withIndex())
-                    Ical4Android.log.log(Level.FINE, "#$idx: ${op.build()}")
+                    logger.log(Level.FINE, "#$idx: ${op.build()}")
             }
 
             results = arrayOfNulls(queue.size)
@@ -61,7 +64,7 @@ class BatchOperation(
                     result.count != null -> affected += result.count ?: 0
                     result.uri != null -> affected += 1
                 }
-            Ical4Android.log.fine("… $affected record(s) affected")
+            logger.fine("… $affected record(s) affected")
         }
 
         queue.clear()
@@ -93,12 +96,12 @@ class BatchOperation(
 
         try {
             val ops = toCPO(start, end)
-            Ical4Android.log.fine("Running ${ops.size} operations ($start .. ${end - 1})")
+            logger.fine("Running ${ops.size} operations ($start .. ${end - 1})")
             val partResults = providerClient.applyBatch(ops)
 
             val n = end - start
             if (partResults.size != n)
-                Ical4Android.log.warning("Batch operation returned only ${partResults.size} instead of $n results")
+                logger.warning("Batch operation returned only ${partResults.size} instead of $n results")
 
             System.arraycopy(partResults, 0, results, start, partResults.size)
 
@@ -113,7 +116,7 @@ class BatchOperation(
                 // only one operation, can't be split
                 throw CalendarStorageException("Can't transfer data to content provider (too large data row can't be split)", e)
 
-            Ical4Android.log.warning("Transaction too large, splitting (losing atomicity)")
+            logger.warning("Transaction too large, splitting (losing atomicity)")
             val mid = start + (end - start)/2
 
             runBatch(start, mid)

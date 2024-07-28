@@ -19,6 +19,7 @@ import net.fortuna.ical4j.model.component.VToDo
 import net.fortuna.ical4j.model.property.Version
 import java.util.LinkedList
 import java.util.logging.Level
+import java.util.logging.Logger
 
 open class JtxCollection<out T: JtxICalObject>(val account: Account,
                                                val client: ContentProviderClient,
@@ -27,8 +28,11 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
 
     companion object {
 
+        private val logger
+            get() = Logger.getLogger(javaClass.name)
+
         fun create(account: Account, client: ContentProviderClient, values: ContentValues): Uri {
-            Ical4Android.log.log(Level.FINE, "Creating jtx Board collection", values)
+            logger.log(Level.FINE, "Creating jtx Board collection", values)
             return client.insert(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), values)
                 ?: throw CalendarStorageException("Couldn't create JTX Collection")
         }
@@ -60,12 +64,12 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
 
 
     fun delete() {
-        Ical4Android.log.log(Level.FINE, "Deleting jtx Board collection (#$id)")
+        logger.log(Level.FINE, "Deleting jtx Board collection (#$id)")
         client.delete(ContentUris.withAppendedId(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), id), null, null)
     }
 
     fun update(values: ContentValues) {
-        Ical4Android.log.log(Level.FINE, "Updating jtx Board collection (#$id)", values)
+        logger.log(Level.FINE, "Updating jtx Board collection (#$id)", values)
         client.update(ContentUris.withAppendedId(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), id), values, null, null)
     }
 
@@ -108,7 +112,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
             "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ? AND ${JtxContract.JtxICalObject.DELETED} = ? AND ${JtxContract.JtxICalObject.RECURID} IS NULL", arrayOf(id.toString(), "1"),
             null
         ).use { cursor ->
-            Ical4Android.log.fine("findDeleted: found ${cursor?.count} deleted records in ${account.name}")
+            logger.fine("findDeleted: found ${cursor?.count} deleted records in ${account.name}")
             while (cursor?.moveToNext() == true) {
                 values.add(cursor.toValues())
             }
@@ -128,7 +132,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
             "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ? AND ${JtxContract.JtxICalObject.DIRTY} = ? AND ${JtxContract.JtxICalObject.RECURID} IS NULL", arrayOf(id.toString(), "1"),
             null
         ).use { cursor ->
-            Ical4Android.log.fine("findDirty: found ${cursor?.count} dirty records in ${account.name}")
+            logger.fine("findDirty: found ${cursor?.count} dirty records in ${account.name}")
             while (cursor?.moveToNext() == true) {
                 values.add(cursor.toValues())
             }
@@ -147,7 +151,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
             "${JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID} = ? AND ${JtxContract.JtxICalObject.FILENAME} = ? AND ${JtxContract.JtxICalObject.RECURID} IS NULL", arrayOf(id.toString(), filename),
             null
         ).use { cursor ->
-            Ical4Android.log.fine("queryByFilename: found ${cursor?.count} records in ${account.name}")
+            logger.fine("queryByFilename: found ${cursor?.count} records in ${account.name}")
             if (cursor?.count != 1)
                 return null
             cursor.moveToFirst()
@@ -162,7 +166,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
      */
     fun queryByUID(uid: String): ContentValues? {
         client.query(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account), null, "${JtxContract.JtxICalObject.UID} = ?", arrayOf(uid), null).use { cursor ->
-            Ical4Android.log.fine("queryByUID: found ${cursor?.count} records in ${account.name}")
+            logger.fine("queryByUID: found ${cursor?.count} records in ${account.name}")
             if (cursor?.count != 1)
                 return null
             cursor.moveToFirst()
@@ -184,7 +188,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
             arrayOf(uid, recurid, dtstart.toString()),
             null
         ).use { cursor ->
-            Ical4Android.log.fine("queryByUID: found ${cursor?.count} records in ${account.name}")
+            logger.fine("queryByUID: found ${cursor?.count} records in ${account.name}")
             if (cursor?.count != 1)
                 return null
             cursor.moveToFirst()
@@ -241,7 +245,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
             arrayOf(id.toString(), "0"),
             null
         ).use { cursor ->
-            Ical4Android.log.fine("getICSForCollection: found ${cursor?.count} records in ${account.name}")
+            logger.fine("getICSForCollection: found ${cursor?.count} records in ${account.name}")
 
             val ical = Calendar()
             ical.properties += Version.VERSION_2_0

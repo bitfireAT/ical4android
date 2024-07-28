@@ -51,6 +51,7 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.util.LinkedList
 import java.util.logging.Level
+import java.util.logging.Logger
 
 data class Task(
     var createdAt: Long? = null,
@@ -92,6 +93,9 @@ data class Task(
 
     companion object {
 
+        private val logger
+            get() = Logger.getLogger(Task::class.java.name)
+
         /**
          * Parses an iCalendar resource, applies [at.bitfire.ical4android.validation.ICalPreprocessor] to increase compatibility
          * and extracts the VTODOs.
@@ -116,7 +120,7 @@ data class Task(
             if (todo.uid != null)
                 t.uid = todo.uid.value
             else {
-                Ical4Android.log.warning("Received VTODO without UID, generating new one")
+                logger.warning("Received VTODO without UID, generating new one")
                 t.generateUID()
             }
 
@@ -163,22 +167,22 @@ data class Task(
 
             if (dtStart != null && due != null) {
                 if (DateUtils.isDate(dtStart) && DateUtils.isDateTime(due)) {
-                    Ical4Android.log.warning("DTSTART is DATE but DUE is DATE-TIME, rewriting DTSTART to DATE-TIME")
+                    logger.warning("DTSTART is DATE but DUE is DATE-TIME, rewriting DTSTART to DATE-TIME")
                     t.dtStart = DtStart(DateTime(dtStart.value, due.timeZone))
                 } else if (DateUtils.isDateTime(dtStart) && DateUtils.isDate(due)) {
-                    Ical4Android.log.warning("DTSTART is DATE-TIME but DUE is DATE, rewriting DUE to DATE-TIME")
+                    logger.warning("DTSTART is DATE-TIME but DUE is DATE, rewriting DUE to DATE-TIME")
                     t.due = Due(DateTime(due.value, dtStart.timeZone))
                 }
 
 
                 if (due.date <= dtStart.date) {
-                    Ical4Android.log.warning("Found invalid DUE <= DTSTART; dropping DTSTART")
+                    logger.warning("Found invalid DUE <= DTSTART; dropping DTSTART")
                     t.dtStart = null
                 }
             }
 
             if (t.duration != null && t.dtStart == null) {
-                Ical4Android.log.warning("Found DURATION without DTSTART; ignoring")
+                logger.warning("Found DURATION without DTSTART; ignoring")
                 t.duration = null
             }
 
@@ -217,7 +221,7 @@ data class Task(
             try {
                 props += Url(URI(it))
             } catch (e: URISyntaxException) {
-                Ical4Android.log.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
+                logger.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
             }
         }
         organizer?.let { props += it }

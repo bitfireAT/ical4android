@@ -60,6 +60,7 @@ import org.junit.Test
 import java.net.URI
 import java.time.Duration
 import java.time.Period
+import java.util.logging.Logger
 
 class AndroidEventTest {
 
@@ -87,6 +88,8 @@ class AndroidEventTest {
         }
 
     }
+
+    private val logger = Logger.getLogger(javaClass.name)
 
     private val testAccount = Account("ical4android@example.com", ACCOUNT_TYPE_LOCAL)
 
@@ -1466,7 +1469,7 @@ class AndroidEventTest {
             values.put(Events.EVENT_END_TIMEZONE, "Europe/Berlin")
         }
         valuesBuilder(values)
-        Ical4Android.log.info("Inserting test event: $values")
+        logger.info("Inserting test event: $values")
         val uri = provider.insert(
             if (asSyncAdapter)
                 Events.CONTENT_URI.asSyncAdapter(testAccount)
@@ -1903,7 +1906,7 @@ class AndroidEventTest {
             val reminderValues = ContentValues()
             reminderValues.put(Reminders.EVENT_ID, id)
             builder(reminderValues)
-            Ical4Android.log.info("Inserting test reminder: $reminderValues")
+            logger.info("Inserting test reminder: $reminderValues")
             provider.insert(Reminders.CONTENT_URI.asSyncAdapter(testAccount), reminderValues)
         }).let { result ->
             return result.alarms.firstOrNull()
@@ -1980,7 +1983,7 @@ class AndroidEventTest {
             val attendeeValues = ContentValues()
             attendeeValues.put(Attendees.EVENT_ID, id)
             builder(attendeeValues)
-            Ical4Android.log.info("Inserting test attendee: $attendeeValues")
+            logger.info("Inserting test attendee: $attendeeValues")
             provider.insert(Attendees.CONTENT_URI.asSyncAdapter(testAccount), attendeeValues)
         }).let { result ->
             return result.attendees.firstOrNull()

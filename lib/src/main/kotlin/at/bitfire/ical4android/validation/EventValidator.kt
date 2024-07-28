@@ -20,6 +20,7 @@ import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.util.Calendar
 import java.util.TimeZone
+import java.util.logging.Logger
 
 /**
  * Validates events and tries to repair broken events, since sometimes CalendarStorage or servers
@@ -33,6 +34,9 @@ import java.util.TimeZone
  * - to every event when writing an iCalendar.
  */
 object EventValidator {
+
+    private val logger
+        get() = Logger.getLogger(javaClass.name)
 
     /**
      * Searches for some invalid conditions and fixes them.
@@ -73,7 +77,7 @@ object EventValidator {
         // validate end time
         e.dtEnd?.let { dtEnd ->
             if (dtStart.date > dtEnd.date) {
-                Ical4Android.log.warning("DTSTART after DTEND; removing DTEND")
+                logger.warning("DTSTART after DTEND; removing DTEND")
                 e.dtEnd = null
             }
         }
@@ -94,7 +98,7 @@ object EventValidator {
                 val rRule = rRuleIterator.next()
                 rRule.recur.until?.let { until ->
                     if (until is DateTime) {
-                        Ical4Android.log.warning("DTSTART has DATE, but UNTIL has DATETIME; making UNTIL have DATE only")
+                        logger.warning("DTSTART has DATE, but UNTIL has DATETIME; making UNTIL have DATE only")
 
                         val newUntil = until.toLocalDate().toIcal4jDate()
 
@@ -102,7 +106,7 @@ object EventValidator {
                         val newRRule = RRule(Recur.Builder(rRule.recur)
                             .until(newUntil)
                             .build())
-                        Ical4Android.log.info("New $newRRule (was ${rRule.toString().trim()})")
+                        logger.info("New $newRRule (was ${rRule.toString().trim()})")
                         newRRules += newRRule
                         rRuleIterator.remove()
                     }
@@ -119,7 +123,7 @@ object EventValidator {
                 val rRule = rRuleIterator.next()
                 rRule.recur.until?.let { until ->
                     if (until !is DateTime) {
-                        Ical4Android.log.warning("DTSTART has DATETIME, but UNTIL has DATE; copying time from DTSTART to UNTIL")
+                        logger.warning("DTSTART has DATETIME, but UNTIL has DATE; copying time from DTSTART to UNTIL")
                         val dtStartTimeZone = if (dtStart.timeZone != null)
                             dtStart.timeZone
                         else if (dtStart.isUtc)
@@ -152,7 +156,7 @@ object EventValidator {
                         val newRRule = RRule(Recur.Builder(rRule.recur)
                             .until(newUntilUTC)
                             .build())
-                        Ical4Android.log.info("New $newRRule (was ${rRule.toString().trim()})")
+                        logger.info("New $newRRule (was ${rRule.toString().trim()})")
                         newRRules += newRRule
                         rRuleIterator.remove()
                     }

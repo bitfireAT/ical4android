@@ -9,13 +9,19 @@ import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
-import android.provider.CalendarContract.*
+import android.provider.CalendarContract.Attendees
+import android.provider.CalendarContract.CalendarEntity
+import android.provider.CalendarContract.Calendars
+import android.provider.CalendarContract.Colors
+import android.provider.CalendarContract.Events
+import android.provider.CalendarContract.Reminders
 import androidx.annotation.CallSuper
 import at.bitfire.ical4android.util.MiscUtils.asSyncAdapter
 import at.bitfire.ical4android.util.MiscUtils.toValues
 import java.io.FileNotFoundException
 import java.util.LinkedList
 import java.util.logging.Level
+import java.util.logging.Logger
 
 /**
  * Represents a locally stored calendar, containing [AndroidEvent]s (whose data objects are [Event]s).
@@ -32,7 +38,10 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 ) {
 
     companion object {
-
+        
+        private val logger
+            get() = Logger.getLogger(AndroidCalendar::class.java.name)
+        
         /**
          * Recommended initial values when creating Android [Calendars].
          */
@@ -59,7 +68,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 
             info.putAll(calendarBaseValues)
 
-            Ical4Android.log.log(Level.FINE, "Creating local calendar", info)
+            logger.log(Level.FINE, "Creating local calendar", info)
             return provider.insert(Calendars.CONTENT_URI.asSyncAdapter(account), info) ?:
                     throw Exception("Couldn't create calendar: provider returned null")
         }
@@ -71,7 +80,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
                     return
             }
 
-            Ical4Android.log.info("Inserting event colors for account $account")
+            logger.info("Inserting event colors for account $account")
             val values = ContentValues(5)
             values.put(Colors.ACCOUNT_NAME, account.name)
             values.put(Colors.ACCOUNT_TYPE, account.type)
@@ -82,13 +91,13 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
                 try {
                     provider.insert(Colors.CONTENT_URI.asSyncAdapter(account), values)
                 } catch(e: Exception) {
-                    Ical4Android.log.log(Level.WARNING, "Couldn't insert event color: ${color.name}", e)
+                    logger.log(Level.WARNING, "Couldn't insert event color: ${color.name}", e)
                 }
             }
         }
 
         fun removeColors(provider: ContentProviderClient, account: Account) {
-            Ical4Android.log.info("Removing event colors from account $account")
+            logger.info("Removing event colors from account $account")
 
             // unassign colors from events
             /* ANDROID STRANGENESS:
@@ -147,6 +156,7 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 
     }
 
+
     var name: String? = null
     var displayName: String? = null
     var color: Int? = null
@@ -180,12 +190,12 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 
 
     fun update(info: ContentValues): Int {
-        Ical4Android.log.log(Level.FINE, "Updating local calendar (#$id)", info)
+        logger.log(Level.FINE, "Updating local calendar (#$id)", info)
         return provider.update(calendarSyncURI(), info, null, null)
     }
 
     fun delete(): Int {
-        Ical4Android.log.log(Level.FINE, "Deleting local calendar (#$id)")
+        logger.log(Level.FINE, "Deleting local calendar (#$id)")
         return provider.delete(calendarSyncURI(), null, null)
     }
 

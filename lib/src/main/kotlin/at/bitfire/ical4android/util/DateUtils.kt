@@ -14,6 +14,7 @@ import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.property.DateProperty
 import java.io.StringReader
 import java.time.ZoneId
+import java.util.logging.Logger
 
 /**
  * Date/time utilities
@@ -26,6 +27,9 @@ object DateUtils {
     init {
         Ical4Android.checkThreadContextClassLoader()
     }
+
+    private val logger
+        get() = Logger.getLogger(javaClass.name)
 
     /**
      * Global ical4j time zone registry used for event/task processing. Do not
@@ -64,7 +68,7 @@ object DateUtils {
                 for (availableTZ in availableTZs)
                     if (availableTZ.contains(tzID) || tzID.contains(availableTZ)) {
                         result = availableTZ
-                        Ical4Android.log.warning("Couldn't find system time zone \"$tzID\", assuming $result")
+                        logger.warning("Couldn't find system time zone \"$tzID\", assuming $result")
                         break
                     }
         }
