@@ -1,7 +1,28 @@
 name: Development tests
 on: push
 jobs:
+  compile:
+    name: Compile and cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # See https://community.gradle.org/github-actions/docs/setup-gradle/ for more information
+      - uses: gradle/actions/setup-gradle@v3            # creates build cache when on main branch
+        with:
+          cache-encryption-key: ${{ secrets.gradle_encryption_key }}
+          gradle-home-cache-cleanup: true               # clean up unused files
+          dependency-graph: generate-and-submit         # submit Github Dependency Graph info
+          dependency-graph-continue-on-failure: false
+
+      - run: ./gradlew --build-cache --configuration-cache assembleDebug
+
   test:
+    needs: compile
     name: Tests without emulator
     runs-on: ubuntu-latest
     steps:
@@ -11,19 +32,15 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v3
-
-      - name: Check
-        run: ./gradlew --no-daemon check
-      - name: Archive results
-        uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: |
-            build/outputs/lint*
-            build/reports
-          overwrite: true
+          cache-encryption-key: ${{ secrets.gradle_encryption_key }}
+          cache-read-only: true
+
+      - name: Run lint and unit tests
+        run: ./gradlew --build-cache --configuration-cache lintDebug testDebugUnitTest
 
   test_on_emulator:
+    needs: compile
     name: Tests with emulator
     runs-on: ubuntu-latest
     strategy:
@@ -31,13 +48,14 @@ jobs:
         api-level: [ 31 ]
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-encryption-key: ${{ secrets.gradle_encryption_key }}
+          cache-read-only: true
 
       - name: Enable KVM group perms
         run: |
@@ -69,8 +87,8 @@ jobs:
       - name: Install task apps and run tests
         uses: reactivecircus/android-emulator-runner@v2
         env:
-          version_at_techbee_jtx: v2.7.6
-          version_org_tasks: 130804
+          version_at_techbee_jtx: v2.9.0
+          version_org_tasks: 131104
           version_org_dmfs_tasks: 82200
         with:
           api-level: ${{ matrix.api-level }}
@@ -84,12 +102,4 @@ jobs:
             (wget -cq -O org.tasks.apk https://f-droid.org/repo/org.tasks_${{ env.version_org_tasks }}.apk || wget -cq -O org.tasks.apk https://f-droid.org/archive/org.tasks_${{ env.version_org_tasks }}.apk) && adb install org.tasks.apk
             (wget -cq -O at.techbee.jtx.apk https://github.com/TechbeeAT/jtxBoard/releases/download/${{ env.version_at_techbee_jtx }}/jtxBoard-${{ env.version_at_techbee_jtx }}.apk) && adb install at.techbee.jtx.apk
             cd ..
-            ./gradlew --no-daemon connectedCheck -Pandroid.testInstrumentationRunnerArguments.notAnnotation=androidx.test.filters.FlakyTest
-
-      - name: Archive results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: app/build/reports
-          overwrite: true
+            ./gradlew --build-cache --configuration-cache connectedCheck -Pandroid.testInstrumentationRunnerArguments.notAnnotation=androidx.test.filters.FlakyTest
