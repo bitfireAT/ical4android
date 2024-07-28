@@ -21,7 +21,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v3
 
       - name: Build KDoc
-        run: ./gradlew ical4android:dokkaHtml
+        run: ./gradlew --no-configuration-cache dokkaHtml
 
       - uses: actions/upload-pages-artifact@v3
         with:
