@@ -5,6 +5,7 @@
 package at.bitfire.ical4android
 
 import android.graphics.Color
+import java.util.logging.Logger
 import kotlin.math.sqrt
 
 /**
@@ -166,6 +167,9 @@ enum class Css3Color(val argb: Int) {
 
     companion object {
 
+        private val logger
+            get() = Logger.getLogger(Css3Color::javaClass.name)
+
         /**
          * Parses the given color either as CSS3 color name or as (A)RGB hex value.
          *
@@ -177,7 +181,7 @@ enum class Css3Color(val argb: Int) {
                 try {
                     Color.parseColor(color)
                 } catch(e: Exception) {
-                    Ical4Android.log.warning("Invalid color value: $color")
+                    logger.warning("Invalid color value: $color")
                     null
                 }
 
@@ -191,7 +195,7 @@ enum class Css3Color(val argb: Int) {
                 try {
                     valueOf(name.lowercase())
                 } catch (e: IllegalArgumentException) {
-                    Ical4Android.log.warning("Invalid color name: $name")
+                    logger.warning("Invalid color name: $name")
                     null
                 }
 

@@ -11,7 +11,6 @@ package at.techbee.jtx
 import android.accounts.Account
 import android.net.Uri
 import android.provider.BaseColumns
-import at.bitfire.ical4android.Ical4Android
 import net.fortuna.ical4j.model.ParameterList
 import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.PropertyList
@@ -19,10 +18,14 @@ import net.fortuna.ical4j.model.parameter.XParameter
 import net.fortuna.ical4j.model.property.XProperty
 import org.json.JSONObject
 import java.util.logging.Level
+import java.util.logging.Logger
 
 
 @Suppress("unused")
 object JtxContract {
+
+    private val logger
+        get() = Logger.getLogger(javaClass.name)
 
     /**
      * URI parameter to signal that the caller is a sync adapter.
@@ -101,7 +104,7 @@ object JtxContract {
                 }
             }
         } catch (e: NullPointerException) {
-            Ical4Android.log.log(Level.WARNING, "Error parsing x-property-list $string", e)
+            logger.log(Level.WARNING, "Error parsing x-property-list $string", e)
         }
         return propertyList
     }
@@ -164,7 +167,7 @@ object JtxContract {
             try {
                 longList.add(it.toLong())
             } catch (e: NumberFormatException) {
-                Ical4Android.log.log(Level.WARNING, "String could not be cast to Long ($it)")
+                logger.log(Level.WARNING, "String could not be cast to Long ($it)")
                 return@forEach
             }
         }

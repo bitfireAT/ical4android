@@ -5,7 +5,10 @@
 package at.bitfire.ical4android
 
 import at.bitfire.ical4android.validation.ICalPreprocessor
-import net.fortuna.ical4j.data.*
+import net.fortuna.ical4j.data.CalendarBuilder
+import net.fortuna.ical4j.data.CalendarParserFactory
+import net.fortuna.ical4j.data.ContentHandlerContext
+import net.fortuna.ical4j.data.ParserException
 import net.fortuna.ical4j.model.Calendar
 import net.fortuna.ical4j.model.ComponentList
 import net.fortuna.ical4j.model.Date
@@ -45,18 +48,8 @@ open class ICalendar {
 
     companion object {
 
-        // static ical4j initialization
-        init {
-            // reduce verbosity of various ical4j loggers
-            org.slf4j.LoggerFactory.getLogger(net.fortuna.ical4j.data.CalendarParserImpl::class.java)
-            Logger.getLogger(net.fortuna.ical4j.data.CalendarParserImpl::class.java.name).level = Level.CONFIG
-
-            org.slf4j.LoggerFactory.getLogger(net.fortuna.ical4j.model.Recur::class.java)
-            Logger.getLogger(net.fortuna.ical4j.model.Recur::class.java.name).level = Level.CONFIG
-
-            org.slf4j.LoggerFactory.getLogger(net.fortuna.ical4j.data.FoldingWriter::class.java)
-            Logger.getLogger(net.fortuna.ical4j.data.FoldingWriter::class.java.name).level = Level.CONFIG
-        }
+        private val logger
+            get() = Logger.getLogger(ICalendar::class.java.name)
 
         // known iCalendar properties
         const val CALENDAR_NAME = "X-WR-CALNAME"
@@ -88,7 +81,7 @@ open class ICalendar {
          */
         fun fromReader(reader: Reader, properties: MutableMap<String, String>? = null): Calendar {
             Ical4Android.checkThreadContextClassLoader()
-            Ical4Android.log.fine("Parsing iCalendar stream")
+            logger.fine("Parsing iCalendar stream")
 
             // preprocess stream to work around some problems that can't be fixed later
             val preprocessed = ICalPreprocessor.preprocessStream(reader)
@@ -111,7 +104,7 @@ open class ICalendar {
             try {
                 ICalPreprocessor.preprocessCalendar(calendar)
             } catch (e: Exception) {
-                Ical4Android.log.log(Level.WARNING, "Couldn't pre-process iCalendar", e)
+                logger.log(Level.WARNING, "Couldn't pre-process iCalendar", e)
             }
 
             // fill calendar properties
@@ -221,7 +214,7 @@ open class ICalendar {
                     newTz.validate()
                 } catch (e: ValidationException) {
                     // This should never happen!
-                    Ical4Android.log.log(Level.WARNING, "Minified timezone is invalid, using original one", e)
+                    logger.log(Level.WARNING, "Minified timezone is invalid, using original one", e)
                     newTz = null
                 }
             }
@@ -243,7 +236,7 @@ open class ICalendar {
                 val timezone = cal.getComponent(VTimeZone.VTIMEZONE) as VTimeZone?
                 timezone?.timeZoneId?.let { return it.value }
             } catch (e: ParserException) {
-                Ical4Android.log.log(Level.SEVERE, "Can't understand time zone definition", e)
+                logger.log(Level.SEVERE, "Can't understand time zone definition", e)
             }
             return null
         }
@@ -266,7 +259,7 @@ open class ICalendar {
                     // debug build, re-throw ValidationException
                     throw e
                 else
-                    Ical4Android.log.log(Level.WARNING, "iCalendar validation failed - This is only a warning!", e)
+                    logger.log(Level.WARNING, "iCalendar validation failed - This is only a warning!", e)
             }
         }
 
@@ -349,7 +342,7 @@ open class ICalendar {
 
                 if (related == Related.END && !allowRelEnd) {
                     if (duration == null) {
-                        Ical4Android.log.warning("Event/task without duration; can't calculate END-related alarm")
+                        logger.warning("Event/task without duration; can't calculate END-related alarm")
                         return null
                     }
                     // move alarm towards end
@@ -364,7 +357,7 @@ open class ICalendar {
                 minutes = Duration.between(triggerTime.toInstant(), start.toInstant()).toMinutes().toInt()
 
             } else {
-                Ical4Android.log.log(Level.WARNING, "VALARM TRIGGER type is not DURATION or DATE-TIME (requires event DTSTART for Android), ignoring alarm", alarm)
+                logger.log(Level.WARNING, "VALARM TRIGGER type is not DURATION or DATE-TIME (requires event DTSTART for Android), ignoring alarm", alarm)
                 return null
             }
 

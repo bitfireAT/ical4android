@@ -4,9 +4,9 @@
 
 package at.bitfire.ical4android.validation
 
-import at.bitfire.ical4android.Ical4Android
 import at.bitfire.ical4android.validation.FixInvalidUtcOffsetPreprocessor.TZOFFSET_REGEXP
 import java.util.logging.Level
+import java.util.logging.Logger
 
 
 /**
@@ -17,6 +17,9 @@ import java.util.logging.Level
  */
 object FixInvalidUtcOffsetPreprocessor: StreamPreprocessor() {
 
+    private val logger
+        get() = Logger.getLogger(javaClass.name)
+
     private val TZOFFSET_REGEXP = Regex("^(TZOFFSET(FROM|TO):[+\\-]?)((18|19|[2-6]\\d)\\d\\d)$",
         setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))
 
@@ -24,7 +27,7 @@ object FixInvalidUtcOffsetPreprocessor: StreamPreprocessor() {
 
     override fun fixString(original: String) =
         original.replace(TZOFFSET_REGEXP) {
-            Ical4Android.log.log(Level.FINE, "Applying Synology WebDAV fix to invalid utc-offset", it.value)
+            logger.log(Level.FINE, "Applying Synology WebDAV fix to invalid utc-offset", it.value)
             "${it.groupValues[1]}00${it.groupValues[3]}"
         }
 

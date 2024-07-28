@@ -28,6 +28,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAmount
 import java.util.*
+import java.util.logging.Logger
 
 object AndroidTimeUtils {
 
@@ -44,6 +45,9 @@ object AndroidTimeUtils {
      * Used to separate multiple RRULEs/EXRULEs in the RRULE/EXRULE storage field.
      */
     const val RECURRENCE_RULE_SEPARATOR = "\n"
+
+    private val logger
+        get() = Logger.getLogger(javaClass.name)
 
 
     /**
@@ -163,7 +167,7 @@ object AndroidTimeUtils {
 
         for (dateListProp in dates) {
             if (dateListProp is RDate && dateListProp.periods.isNotEmpty()) {
-                Ical4Android.log.warning("RDATE PERIOD not supported, ignoring")
+                logger.warning("RDATE PERIOD not supported, ignoring")
                 break
             }
 
@@ -290,10 +294,10 @@ object AndroidTimeUtils {
         for (dateListProp in dates) {
             if (dateListProp is RDate)
                 if (dateListProp.periods.isNotEmpty())
-                    Ical4Android.log.warning("RDATE PERIOD not supported, ignoring")
+                    logger.warning("RDATE PERIOD not supported, ignoring")
                 else if (dateListProp is ExDate)
                     if (dateListProp.periods.isNotEmpty())
-                        Ical4Android.log.warning("EXDATE PERIOD not supported, ignoring")
+                        logger.warning("EXDATE PERIOD not supported, ignoring")
 
             for (date in dateListProp.dates) {
                 val dateToUse =

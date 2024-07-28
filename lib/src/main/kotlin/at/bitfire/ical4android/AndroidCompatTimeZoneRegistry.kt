@@ -9,6 +9,7 @@ import net.fortuna.ical4j.model.TimeZoneRegistryImpl
 import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.property.TzId
 import java.time.ZoneId
+import java.util.logging.Logger
 
 /**
  * Wrapper around default [TimeZoneRegistry] that uses the Android name if a time zone has a
@@ -25,6 +26,9 @@ import java.time.ZoneId
 class AndroidCompatTimeZoneRegistry(
     private val base: TimeZoneRegistry
 ): TimeZoneRegistry by base {
+
+    private val logger
+        get() = Logger.getLogger(javaClass.name)
 
     /**
      * Gets the time zone for a given ID.
@@ -63,7 +67,7 @@ class AndroidCompatTimeZoneRegistry(
            but most Android devices don't now Europe/Kyiv yet.
            */
         if (tz.id != androidTzId) {
-            Ical4Android.log.warning("Using Android TZID $androidTzId instead of ical4j ${tz.id}")
+            logger.warning("Using Android TZID $androidTzId instead of ical4j ${tz.id}")
 
             // create a copy of the VTIMEZONE so that we don't modify the original registry values (which are not immutable)
             val vTimeZone = tz.vTimeZone

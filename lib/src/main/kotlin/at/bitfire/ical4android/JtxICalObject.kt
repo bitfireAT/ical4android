@@ -16,11 +16,37 @@ import at.techbee.jtx.JtxContract.JtxICalObject.TZ_ALLDAY
 import at.techbee.jtx.JtxContract.asSyncAdapter
 import net.fortuna.ical4j.data.CalendarOutputter
 import net.fortuna.ical4j.data.ParserException
-import net.fortuna.ical4j.model.*
+import net.fortuna.ical4j.model.Calendar
+import net.fortuna.ical4j.model.ComponentList
+import net.fortuna.ical4j.model.Date
+import net.fortuna.ical4j.model.DateList
+import net.fortuna.ical4j.model.DateTime
+import net.fortuna.ical4j.model.Parameter
+import net.fortuna.ical4j.model.ParameterList
+import net.fortuna.ical4j.model.Property
+import net.fortuna.ical4j.model.PropertyList
+import net.fortuna.ical4j.model.TextList
+import net.fortuna.ical4j.model.TimeZoneRegistryFactory
 import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VJournal
 import net.fortuna.ical4j.model.component.VToDo
-import net.fortuna.ical4j.model.parameter.*
+import net.fortuna.ical4j.model.parameter.AltRep
+import net.fortuna.ical4j.model.parameter.Cn
+import net.fortuna.ical4j.model.parameter.CuType
+import net.fortuna.ical4j.model.parameter.DelegatedFrom
+import net.fortuna.ical4j.model.parameter.DelegatedTo
+import net.fortuna.ical4j.model.parameter.Dir
+import net.fortuna.ical4j.model.parameter.FmtType
+import net.fortuna.ical4j.model.parameter.Language
+import net.fortuna.ical4j.model.parameter.Member
+import net.fortuna.ical4j.model.parameter.PartStat
+import net.fortuna.ical4j.model.parameter.RelType
+import net.fortuna.ical4j.model.parameter.Related
+import net.fortuna.ical4j.model.parameter.Role
+import net.fortuna.ical4j.model.parameter.Rsvp
+import net.fortuna.ical4j.model.parameter.SentBy
+import net.fortuna.ical4j.model.parameter.Value
+import net.fortuna.ical4j.model.parameter.XParameter
 import net.fortuna.ical4j.model.property.*
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -32,6 +58,7 @@ import java.time.format.DateTimeParseException
 import java.util.TimeZone
 import java.util.UUID
 import java.util.logging.Level
+import java.util.logging.Logger
 
 open class JtxICalObject(
     val collection: JtxCollection<JtxICalObject>
@@ -200,6 +227,9 @@ open class JtxICalObject(
 
     companion object {
 
+        private val logger
+            get() = Logger.getLogger(JtxICalObject::class.java.name)
+
         const val X_PROP_COMPLETEDTIMEZONE = "X-COMPLETEDTIMEZONE"
         const val X_PARAM_ATTACH_LABEL = "X-LABEL"     // used for filename in KOrganizer
         const val X_PARAM_FILENAME = "FILENAME"     // used for filename in GNOME Evolution
@@ -328,12 +358,12 @@ open class JtxICalObject(
                     is Priority -> iCalObject.priority = prop.level
                     is Clazz -> iCalObject.classification = prop.value
                     is Status -> iCalObject.status = prop.value
-                    is DtEnd -> Ical4Android.log.warning("The property DtEnd must not be used for VTODO and VJOURNAL, this value is rejected.")
+                    is DtEnd -> logger.warning("The property DtEnd must not be used for VTODO and VJOURNAL, this value is rejected.")
                     is Completed -> {
                         if (iCalObject.component == JtxContract.JtxICalObject.Component.VTODO.name) {
                             iCalObject.completed = prop.date.time
                         } else
-                            Ical4Android.log.warning("The property Completed is only supported for VTODO, this value is rejected.")
+                            logger.warning("The property Completed is only supported for VTODO, this value is rejected.")
                     }
 
                     is Due -> {
@@ -346,7 +376,7 @@ open class JtxICalObject(
                                 else -> iCalObject.dueTimezone = TZ_ALLDAY     // prop.date is Date (and not DateTime), therefore it must be Allday
                             }
                         } else
-                            Ical4Android.log.warning("The property Due is only supported for VTODO, this value is rejected.")
+                            logger.warning("The property Due is only supported for VTODO, this value is rejected.")
                     }
 
                     is Duration -> iCalObject.duration = prop.value
@@ -365,7 +395,7 @@ open class JtxICalObject(
                         if (iCalObject.component == JtxContract.JtxICalObject.Component.VTODO.name)
                             iCalObject.percent = prop.percentage
                         else
-                            Ical4Android.log.warning("The property PercentComplete is only supported for VTODO, this value is rejected.")
+                            logger.warning("The property PercentComplete is only supported for VTODO, this value is rejected.")
                     }
 
                     is RRule -> iCalObject.rrule = prop.value
@@ -526,7 +556,7 @@ open class JtxICalObject(
                     else -> when(prop.name) {
                         X_PROP_COMPLETEDTIMEZONE -> iCalObject.completedTimezone = prop.value
                         X_PROP_XSTATUS -> iCalObject.xstatus = prop.value
-                        X_PROP_GEOFENCE_RADIUS -> iCalObject.geofenceRadius = try { prop.value.toInt() } catch (e: NumberFormatException) { Ical4Android.log.warning("Wrong format for geofenceRadius: ${prop.value}"); null }
+                        X_PROP_GEOFENCE_RADIUS -> iCalObject.geofenceRadius = try { prop.value.toInt() } catch (e: NumberFormatException) { logger.warning("Wrong format for geofenceRadius: ${prop.value}"); null }
                         else -> iCalObject.unknown.add(Unknown(value = UnknownProperty.toJsonString(prop)))               // save the whole property for unknown properties
                     }
                 }
@@ -539,20 +569,20 @@ open class JtxICalObject(
 
             if (dtStartTZ != null && dueTZ != null) {
                 if (dtStartTZ == TZ_ALLDAY && dueTZ != TZ_ALLDAY) {
-                    Ical4Android.log.warning("DTSTART is DATE but DUE is DATE-TIME, rewriting DTSTART to DATE-TIME")
+                    logger.warning("DTSTART is DATE but DUE is DATE-TIME, rewriting DTSTART to DATE-TIME")
                     iCalObject.dtstartTimezone = dueTZ
                 } else if (dtStartTZ != TZ_ALLDAY && dueTZ == TZ_ALLDAY) {
-                    Ical4Android.log.warning("DTSTART is DATE-TIME but DUE is DATE, rewriting DUE to DATE-TIME")
+                    logger.warning("DTSTART is DATE-TIME but DUE is DATE, rewriting DUE to DATE-TIME")
                     iCalObject.dueTimezone = dtStartTZ
                 }
 
                 //previously due was dropped, now reduced to a warning, see also https://github.com/bitfireAT/ical4android/issues/70
                 if ( iCalObject.dtstart != null && iCalObject.due != null && iCalObject.due!! < iCalObject.dtstart!!)
-                    Ical4Android.log.warning("Found invalid DUE < DTSTART")
+                    logger.warning("Found invalid DUE < DTSTART")
             }
 
             if (iCalObject.duration != null && iCalObject.dtstart == null) {
-                Ical4Android.log.warning("Found DURATION without DTSTART; ignoring")
+                logger.warning("Found DURATION without DTSTART; ignoring")
                 iCalObject.duration = null
             }
         }
@@ -603,7 +633,7 @@ open class JtxICalObject(
                                     this.parameters.add(Related.END)
                             }
                         } catch (e: DateTimeParseException) {
-                            Ical4Android.log.log(Level.WARNING, "Could not parse Trigger duration as Duration.", e)
+                            logger.log(Level.WARNING, "Could not parse Trigger duration as Duration.", e)
                         }
                     })
 
@@ -626,7 +656,7 @@ open class JtxICalObject(
                                 }
                             }
                         } catch (e: ParseException) {
-                            Ical4Android.log.log(Level.WARNING, "TriggerTime could not be parsed.", e)
+                            logger.log(Level.WARNING, "TriggerTime could not be parsed.", e)
                         }})
                 }
                 alarm.summary?.let { add(Summary(it)) }
@@ -636,7 +666,7 @@ open class JtxICalObject(
                         val dur = java.time.Duration.parse(it)
                         this.duration = dur
                     } catch (e: DateTimeParseException) {
-                        Ical4Android.log.log(Level.WARNING, "Could not parse duration as Duration.", e)
+                        logger.log(Level.WARNING, "Could not parse duration as Duration.", e)
                     }
                 }) }
                 alarm.description?.let { add(Description(it)) }
@@ -708,7 +738,7 @@ open class JtxICalObject(
             try {
                 props += Url(URI(it))
             } catch (e: URISyntaxException) {
-                Ical4Android.log.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
+                logger.log(Level.WARNING, "Ignoring invalid task URL: $url", e)
             }
         }
         contact?.let {  props += Contact(it) }
@@ -861,11 +891,11 @@ open class JtxICalObject(
                     }
                 }
             } catch (e: FileNotFoundException) {
-                Ical4Android.log.log(Level.WARNING, "File not found at the given Uri: ${attachment.uri}", e)
+                logger.log(Level.WARNING, "File not found at the given Uri: ${attachment.uri}", e)
             } catch (e: NullPointerException) {
-                Ical4Android.log.log(Level.WARNING, "Provided Uri was empty: ${attachment.uri}", e)
+                logger.log(Level.WARNING, "Provided Uri was empty: ${attachment.uri}", e)
             } catch (e: IllegalArgumentException) {
-                Ical4Android.log.log(Level.WARNING, "Uri could not be parsed: ${attachment.uri}", e)
+                logger.log(Level.WARNING, "Uri could not be parsed: ${attachment.uri}", e)
             }
         }
 

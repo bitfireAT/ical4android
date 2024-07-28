@@ -13,6 +13,7 @@ import at.bitfire.ical4android.util.MiscUtils.closeCompat
 import org.dmfs.tasks.contract.TaskContract
 import java.io.Closeable
 import java.util.logging.Level
+import java.util.logging.Logger
 
 
 class TaskProvider private constructor(
@@ -47,6 +48,9 @@ class TaskProvider private constructor(
 
 
     companion object {
+
+        private val logger
+            get() = Logger.getLogger(TaskProvider::javaClass.name)
 
         val TASK_PROVIDERS = listOf(
                 ProviderName.OpenTasks,
@@ -87,9 +91,9 @@ class TaskProvider private constructor(
                     if (client != null)
                         return TaskProvider(provider, client)
                 } catch(e: SecurityException) {
-                    Ical4Android.log.log(Level.WARNING, "Not allowed to access task provider", e)
+                    logger.log(Level.WARNING, "Not allowed to access task provider", e)
                 } catch(e: PackageManager.NameNotFoundException) {
-                    Ical4Android.log.warning("Package ${provider.packageName} not installed")
+                    logger.warning("Package ${provider.packageName} not installed")
                 }
             return null
         }
@@ -114,7 +118,7 @@ class TaskProvider private constructor(
             val installedVersionCode = PackageInfoCompat.getLongVersionCode(info)
             if (installedVersionCode < name.minVersionCode) {
                 val exception = ProviderTooOldException(name, installedVersionCode, info.versionName)
-                Ical4Android.log.log(Level.WARNING, "Task provider too old", exception)
+                logger.log(Level.WARNING, "Task provider too old", exception)
                 throw exception
             }
         }

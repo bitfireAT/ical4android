@@ -12,6 +12,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import java.util.logging.Logger
 
 @RunWith(Parameterized::class)
 
@@ -38,7 +39,7 @@ abstract class AbstractTasksTest(
         Assume.assumeNotNull(providerOrNull)      // will halt here if providerOrNull is null
 
         provider = providerOrNull!!
-        Ical4Android.log.fine("Using task provider: $provider")
+        Logger.getLogger(javaClass.name).fine("Using task provider: $provider")
     }
 
     @After

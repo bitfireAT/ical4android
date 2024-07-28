@@ -49,6 +49,7 @@ import java.io.Reader
 import java.net.URI
 import java.util.LinkedList
 import java.util.UUID
+import java.util.logging.Logger
 
 data class Event(
     override var uid: String? = null,
@@ -94,6 +95,10 @@ data class Event(
 ) : ICalendar() {
 
     companion object {
+
+        private val logger
+            get() = Logger.getLogger(Event::class.java.name)
+
         /**
          * Parses an iCalendar resource, applies [at.bitfire.ical4android.validation.ICalPreprocessor]
          * and [EventValidator] to increase compatibility and extracts the VEVENTs.
@@ -119,11 +124,11 @@ data class Event(
             for (vEvent in vEvents)
                 if (vEvent.uid == null) {
                     val uid = Uid(UUID.randomUUID().toString())
-                    Ical4Android.log.warning("Found VEVENT without UID, using a random one: ${uid.value}")
+                    logger.warning("Found VEVENT without UID, using a random one: ${uid.value}")
                     vEvent.properties += uid
                 }
 
-            Ical4Android.log.fine("Assigning exceptions to main events")
+            logger.fine("Assigning exceptions to main events")
             val mainEvents = mutableMapOf<String /* UID */, VEvent>()
             val exceptions = mutableMapOf<String /* UID */, MutableMap<String /* RECURRENCE-ID */, VEvent>>()
             for (vEvent in vEvents) {
@@ -175,7 +180,7 @@ data class Event(
             }
 
             for ((uid, onlyExceptions) in exceptions) {
-                Ical4Android.log.info("UID $uid doesn't have a main event but only exceptions: $onlyExceptions")
+                logger.info("UID $uid doesn't have a main event but only exceptions: $onlyExceptions")
 
                 // create a fake main event from the first exception
                 val fakeEvent = fromVEvent(onlyExceptions.values.first())
@@ -265,7 +270,7 @@ data class Event(
 
             val recurrenceId = exception.recurrenceId
             if (recurrenceId == null) {
-                Ical4Android.log.warning("Ignoring exception without recurrenceId")
+                logger.warning("Ignoring exception without recurrenceId")
                 continue
             }
 
@@ -274,13 +279,13 @@ data class Event(
                strict in what we send (and servers may reject such a case).
              */
             if (isDateTime(recurrenceId) != isDateTime(dtStart)) {
-                Ical4Android.log.warning("Ignoring exception $recurrenceId with other date type than dtStart: $dtStart")
+                logger.warning("Ignoring exception $recurrenceId with other date type than dtStart: $dtStart")
                 continue
             }
 
             // for simplicity and compatibility, rewrite date-time exceptions to the same time zone as DTSTART
             if (isDateTime(recurrenceId) && recurrenceId.timeZone != dtStart.timeZone) {
-                Ical4Android.log.fine("Changing timezone of $recurrenceId to same time zone as dtStart: $dtStart")
+                logger.fine("Changing timezone of $recurrenceId to same time zone as dtStart: $dtStart")
                 recurrenceId.timeZone = dtStart.timeZone
             }
 
