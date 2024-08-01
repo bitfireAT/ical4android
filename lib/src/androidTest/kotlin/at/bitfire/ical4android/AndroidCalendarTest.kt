@@ -23,6 +23,7 @@ import net.fortuna.ical4j.model.property.DtStart
 import org.junit.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 
 class AndroidCalendarTest {
 
@@ -77,7 +78,7 @@ class AndroidCalendarTest {
         assertNotNull(calendar)
 
         // delete calendar
-        assertEquals(1, calendar.delete())
+        assertTrue(calendar.delete())
     }
 
 

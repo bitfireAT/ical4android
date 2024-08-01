@@ -56,7 +56,7 @@ class DmfsTaskListTest(providerName: TaskProvider.ProviderName):
             assertEquals(testAccount.name, taskList.tasksSyncUri().getQueryParameter(TaskContract.ACCOUNT_NAME))
         } finally {
             // delete task list
-            assertEquals(1, taskList.delete())
+            assertTrue(taskList.delete())
         }
     }
 
