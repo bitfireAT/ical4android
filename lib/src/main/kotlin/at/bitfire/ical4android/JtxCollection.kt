@@ -29,7 +29,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
     companion object {
 
         private val logger
-            get() = Logger.getLogger(javaClass.name)
+            get() = Logger.getLogger(JtxCollection::class.java.name)
 
         fun create(account: Account, client: ContentProviderClient, values: ContentValues): Uri {
             logger.log(Level.FINE, "Creating jtx Board collection", values)
@@ -63,9 +63,9 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
     var context: Context? = null
 
 
-    fun delete() {
+    fun delete(): Boolean {
         logger.log(Level.FINE, "Deleting jtx Board collection (#$id)")
-        client.delete(ContentUris.withAppendedId(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), id), null, null)
+        return client.delete(ContentUris.withAppendedId(JtxContract.JtxCollection.CONTENT_URI.asSyncAdapter(account), id), null, null) > 0
     }
 
     fun update(values: ContentValues) {

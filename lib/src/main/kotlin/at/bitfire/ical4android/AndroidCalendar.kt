@@ -194,9 +194,14 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
         return provider.update(calendarSyncURI(), info, null, null)
     }
 
-    fun delete(): Int {
+    /**
+     * Deletes this calendar from the local calendar provider.
+     *
+     * @return `true` if the calendar was deleted, `false` otherwise (like it was not there before the call)
+     */
+    fun delete(): Boolean {
         logger.log(Level.FINE, "Deleting local calendar (#$id)")
-        return provider.delete(calendarSyncURI(), null, null)
+        return provider.delete(calendarSyncURI(), null, null) > 0
     }
 
 

@@ -126,9 +126,14 @@ abstract class DmfsTaskList<out T : DmfsTask>(
         return provider.client.update(taskListSyncUri(), info, null, null)
     }
 
-    fun delete(): Int {
+    /**
+     * Deletes this calendar from the local calendar provider.
+     *
+     * @return `true` if the calendar was deleted, `false` otherwise (like it was not there before the call)
+     */
+    fun delete(): Boolean {
         logger.log(Level.FINE, "Deleting ${provider.name.authority} task list (#$id)")
-        return provider.client.delete(taskListSyncUri(), null, null)
+        return provider.client.delete(taskListSyncUri(), null, null) > 0
     }
 
     /**
