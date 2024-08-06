@@ -21,7 +21,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DmfsTaskListTest(providerName: TaskProvider.ProviderName):
-        AbstractTasksTest(providerName) {
+    AbstractTasksTest(providerName) {
 
     private val testAccount = Account("AndroidTaskListTest", TaskContract.LOCAL_ACCOUNT_TYPE)
 
@@ -34,7 +34,7 @@ class DmfsTaskListTest(providerName: TaskProvider.ProviderName):
         info.put(TaskContract.TaskLists.SYNC_ENABLED, 1)
         info.put(TaskContract.TaskLists.VISIBLE, 1)
 
-        val uri = DmfsTaskList.create(testAccount, provider, info)
+        val uri = DmfsTaskList.create(testAccount, provider.client, providerName, info)
         assertNotNull(uri)
 
         return DmfsTaskList.findByID(testAccount, provider, TestTaskList.Factory, ContentUris.parseId(uri))

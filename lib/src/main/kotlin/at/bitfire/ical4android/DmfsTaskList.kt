@@ -39,12 +39,13 @@ abstract class DmfsTaskList<out T : DmfsTask>(
         private val logger
             get() = Logger.getLogger(DmfsTaskList::class.java.name)
 
-        fun create(account: Account, provider: TaskProvider, info: ContentValues): Uri {
+        fun create(account: Account, provider: ContentProviderClient, providerName: TaskProvider.ProviderName, info: ContentValues): Uri {
             info.put(TaskContract.ACCOUNT_NAME, account.name)
             info.put(TaskContract.ACCOUNT_TYPE, account.type)
 
-            logger.log(Level.FINE, "Creating ${provider.name.authority} task list", info)
-            return provider.client.insert(provider.taskListsUri().asSyncAdapter(account), info)
+            val url = TaskLists.getContentUri(providerName.authority).asSyncAdapter(account)
+            logger.log(Level.FINE, "Creating ${providerName.authority} task list", info)
+            return provider.insert(url, info)
                 ?: throw CalendarStorageException("Couldn't create task list (empty result from provider)")
         }
 
@@ -113,7 +114,7 @@ abstract class DmfsTaskList<out T : DmfsTask>(
      * Called when an instance is created from a tasks provider data row, for example
      * using [find].
      *
-     * @param info  values from tasks provider
+     * @param values  values from tasks provider
      */
     @CallSuper
     protected open fun populate(values: ContentValues) {

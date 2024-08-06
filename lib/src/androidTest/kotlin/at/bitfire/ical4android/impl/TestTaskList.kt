@@ -22,13 +22,16 @@ class TestTaskList(
 
     companion object {
 
-        fun create(account: Account, provider: TaskProvider): TestTaskList {
+        fun create(
+            account: Account,
+            provider: TaskProvider,
+        ): TestTaskList {
             val values = ContentValues(4)
             values.put(TaskContract.TaskListColumns.LIST_NAME, "Test Task List")
             values.put(TaskContract.TaskListColumns.LIST_COLOR, 0xffff0000)
             values.put(TaskContract.TaskListColumns.SYNC_ENABLED, 1)
             values.put(TaskContract.TaskListColumns.VISIBLE, 1)
-            val uri = DmfsTaskList.create(account, provider, values)
+            val uri = DmfsTaskList.create(account, provider.client, provider.name, values)
 
             return TestTaskList(account, provider.client, provider.name, ContentUris.parseId(uri))
         }
