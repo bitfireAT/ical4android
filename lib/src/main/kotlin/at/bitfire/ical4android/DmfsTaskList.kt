@@ -5,6 +5,7 @@
 package at.bitfire.ical4android
 
 import android.accounts.Account
+import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
@@ -27,7 +28,8 @@ import java.util.logging.Logger
  */
 abstract class DmfsTaskList<out T : DmfsTask>(
     val account: Account,
-    val provider: TaskProvider,
+    val provider: ContentProviderClient,
+    val providerName: TaskProvider.ProviderName,
     val taskFactory: DmfsTaskFactory<T>,
     val id: Long
 ) {
@@ -60,7 +62,7 @@ abstract class DmfsTaskList<out T : DmfsTask>(
                 null
             )?.use { cursor ->
                 if (cursor.moveToNext()) {
-                    val taskList = factory.newInstance(account, provider, id)
+                    val taskList = factory.newInstance(account, provider.client, provider.name, id)
                     taskList.populate(cursor.toValues())
                     return taskList
                 }
@@ -70,14 +72,15 @@ abstract class DmfsTaskList<out T : DmfsTask>(
 
         fun <T : DmfsTaskList<DmfsTask>> find(
             account: Account,
-            provider: TaskProvider,
             factory: DmfsTaskListFactory<T>,
+            provider: ContentProviderClient,
+            providerName: TaskProvider.ProviderName,
             where: String?,
             whereArgs: Array<String>?
         ): List<T> {
             val taskLists = LinkedList<T>()
-            provider.client.query(
-                provider.taskListsUri().asSyncAdapter(account),
+            provider.query(
+                TaskLists.getContentUri(providerName.authority).asSyncAdapter(account),
                 null,
                 where,
                 whereArgs,
@@ -86,7 +89,7 @@ abstract class DmfsTaskList<out T : DmfsTask>(
                 while (cursor.moveToNext()) {
                     val values = cursor.toValues()
                     val taskList =
-                        factory.newInstance(account, provider, values.getAsLong(TaskLists._ID))
+                        factory.newInstance(account, provider, providerName, values.getAsLong(TaskLists._ID))
                     taskList.populate(values)
                     taskLists += taskList
                 }
@@ -122,8 +125,8 @@ abstract class DmfsTaskList<out T : DmfsTask>(
     }
 
     fun update(info: ContentValues): Int {
-        logger.log(Level.FINE, "Updating ${provider.name.authority} task list (#$id)", info)
-        return provider.client.update(taskListSyncUri(), info, null, null)
+        logger.log(Level.FINE, "Updating ${providerName.authority} task list (#$id)", info)
+        return provider.update(taskListSyncUri(), info, null, null)
     }
 
     /**
@@ -132,8 +135,8 @@ abstract class DmfsTaskList<out T : DmfsTask>(
      * @return `true` if the calendar was deleted, `false` otherwise (like it was not there before the call)
      */
     fun delete(): Boolean {
-        logger.log(Level.FINE, "Deleting ${provider.name.authority} task list (#$id)")
-        return provider.client.delete(taskListSyncUri(), null, null) > 0
+        logger.log(Level.FINE, "Deleting ${providerName.authority} task list (#$id)")
+        return provider.delete(taskListSyncUri(), null, null) > 0
     }
 
     /**
@@ -158,8 +161,8 @@ abstract class DmfsTaskList<out T : DmfsTask>(
      */
     fun touchRelations(): Int {
         logger.fine("Touching relations to set parent_id")
-        val batchOperation = BatchOperation(provider.client)
-        provider.client.query(
+        val batchOperation = BatchOperation(provider)
+        provider.query(
             tasksSyncUri(true), null,
             "${Tasks.LIST_ID}=? AND ${Tasks.PARENT_ID} IS NULL AND ${Relation.MIMETYPE}=? AND ${Relation.RELATED_ID} IS NOT NULL",
             arrayOf(id.toString(), Relation.CONTENT_ITEM_TYPE),
@@ -194,7 +197,7 @@ abstract class DmfsTaskList<out T : DmfsTask>(
         val whereArgs = (_whereArgs ?: arrayOf()) + id.toString()
 
         val tasks = LinkedList<T>()
-        provider.client.query(
+        provider.query(
             tasksSyncUri(),
             null,
             where, whereArgs, null
@@ -210,10 +213,10 @@ abstract class DmfsTaskList<out T : DmfsTask>(
 
 
     fun taskListSyncUri() =
-        ContentUris.withAppendedId(provider.taskListsUri(), id).asSyncAdapter(account)
+        ContentUris.withAppendedId(TaskLists.getContentUri(providerName.authority), id).asSyncAdapter(account)
 
     fun tasksSyncUri(loadProperties: Boolean = false): Uri {
-        val uri = provider.tasksUri().asSyncAdapter(account)
+        val uri = Tasks.getContentUri(providerName.authority).asSyncAdapter(account)
         return if (loadProperties)
             uri.buildUpon()
                 .appendQueryParameter(TaskContract.LOAD_PROPERTIES, "1")
@@ -222,6 +225,6 @@ abstract class DmfsTaskList<out T : DmfsTask>(
             uri
     }
 
-    fun tasksPropertiesSyncUri() = provider.propertiesUri().asSyncAdapter(account)
+    fun tasksPropertiesSyncUri() = TaskContract.Properties.getContentUri(providerName.authority).asSyncAdapter(account)
 
 }

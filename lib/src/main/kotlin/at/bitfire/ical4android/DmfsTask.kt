@@ -99,7 +99,7 @@ abstract class DmfsTask(
             val id = requireNotNull(id)
 
             try {
-                val client = taskList.provider.client
+                val client = taskList.provider
                 client.query(taskSyncURI(true), null, null, null, null)?.use { cursor ->
                     if (cursor.moveToFirst()) {
                         // create new Task which will be populated
@@ -161,7 +161,7 @@ abstract class DmfsTask(
         task.sequence = values.getAsInteger(Tasks.SYNC_VERSION)
         task.summary = values.getAsString(Tasks.TITLE)
         task.location = values.getAsString(Tasks.LOCATION)
-        task.userAgents += taskList.provider.name.packageName
+        task.userAgents += taskList.providerName.packageName
 
         values.getAsString(Tasks.GEO)?.let { geo ->
             val (lng, lat) = geo.split(',')
@@ -330,7 +330,7 @@ abstract class DmfsTask(
 
 
     fun add(): Uri {
-        val batch = BatchOperation(taskList.provider.client)
+        val batch = BatchOperation(taskList.provider)
 
         val builder = CpoBuilder.newInsert(taskList.tasksSyncUri())
         buildTask(builder, false)
@@ -350,7 +350,7 @@ abstract class DmfsTask(
         this.task = task
         val existingId = requireNotNull(id)
 
-        val batch = BatchOperation(taskList.provider.client)
+        val batch = BatchOperation(taskList.provider)
 
         // remove associated rows which are added later again
         batch.enqueue(CpoBuilder
@@ -367,7 +367,7 @@ abstract class DmfsTask(
         insertProperties(batch, null)
 
         batch.commit()
-        return ContentUris.withAppendedId(taskList.provider.tasksUri(), existingId)
+        return ContentUris.withAppendedId(Tasks.getContentUri(taskList.providerName.authority), existingId)
     }
 
     protected open fun insertProperties(batch: BatchOperation, idxTask: Int?) {
@@ -472,7 +472,7 @@ abstract class DmfsTask(
     }
 
     fun delete(): Int {
-        return taskList.provider.client.delete(taskSyncURI(), null, null)
+        return taskList.provider.delete(taskSyncURI(), null, null)
     }
 
     @CallSuper

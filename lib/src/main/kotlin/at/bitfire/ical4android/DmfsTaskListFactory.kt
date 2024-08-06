@@ -5,9 +5,10 @@
 package at.bitfire.ical4android
 
 import android.accounts.Account
+import android.content.ContentProviderClient
 
 interface DmfsTaskListFactory<out T: DmfsTaskList<DmfsTask>> {
 
-    fun newInstance(account: Account, provider: TaskProvider, id: Long): T
+    fun newInstance(account: Account, provider: ContentProviderClient, providerName: TaskProvider.ProviderName, id: Long): T
 
 }
