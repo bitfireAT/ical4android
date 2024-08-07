@@ -2218,12 +2218,12 @@ class AndroidEventTest {
         val params = ParameterList()
         params.add(Language("en"))
         val unknownProperty = XProperty("X-NAME", params, "Custom Value")
-        val result = populateEvent(
+        val (result) = populateEvent(
             true,
             extendedProperties = mapOf(
                 UnknownProperty.CONTENT_ITEM_TYPE to UnknownProperty.toJsonString(unknownProperty)
             )
-        ).unknownProperties.first
+        ).unknownProperties
         assertEquals("X-NAME", result.name)
         assertEquals("en", result.getParameter<Language>(Parameter.LANGUAGE).value)
         assertEquals("Custom Value", result.value)
@@ -2258,8 +2258,8 @@ class AndroidEventTest {
         }).let { event ->
             assertEquals("Recurring non-all-day event with exception", event.summary)
             assertEquals(DtStart("20200706T193000", tzVienna), event.dtStart)
-            assertEquals("FREQ=DAILY;COUNT=10", event.rRules.first.value)
-            val exception = event.exceptions.first!!
+            assertEquals("FREQ=DAILY;COUNT=10", event.rRules.first().value)
+            val exception = event.exceptions.first()
             assertEquals(RecurrenceId("20200708T013000", tzShanghai), exception.recurrenceId)
             assertEquals(DtStart("20200706T203000", tzShanghai), exception.dtStart)
             assertEquals("Event moved to one hour later", exception.summary)
@@ -2286,8 +2286,8 @@ class AndroidEventTest {
         }).let { event ->
             assertEquals("Recurring all-day event with exception", event.summary)
             assertEquals(DtStart(Date("20200706")), event.dtStart)
-            assertEquals("FREQ=WEEKLY;COUNT=3", event.rRules.first.value)
-            val exception = event.exceptions.first!!
+            assertEquals("FREQ=WEEKLY;COUNT=3", event.rRules.first().value)
+            val exception = event.exceptions.first()
             assertEquals(RecurrenceId(Date("20200707")), exception.recurrenceId)
             assertEquals(DtStart("20200706T183000", tzShanghai), exception.dtStart)
             assertEquals("Today not an all-day event", exception.summary)
@@ -2314,8 +2314,8 @@ class AndroidEventTest {
         }).let { event ->
             assertEquals("Recurring all-day event with cancelled exception", event.summary)
             assertEquals(DtStart("20200706T193000", tzVienna), event.dtStart)
-            assertEquals("FREQ=DAILY;COUNT=10", event.rRules.first.value)
-            assertEquals(DateTime("20200708T013000", tzShanghai), event.exDates.first.dates.first())
+            assertEquals("FREQ=DAILY;COUNT=10", event.rRules.first().value)
+            assertEquals(DateTime("20200708T013000", tzShanghai), event.exDates.first().dates.first())
             assertTrue(event.exceptions.isEmpty())
         }
     }

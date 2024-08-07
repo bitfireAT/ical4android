@@ -38,7 +38,7 @@ class Ical4jTest {
                         "END:VCALENDAR"
             )
         ).first()
-        assertEquals("attendee1@example.virtual", e.attendees.first.getParameter<Email>(Parameter.EMAIL).value)
+        assertEquals("attendee1@example.virtual", e.attendees.first().getParameter<Email>(Parameter.EMAIL).value)
     }
 
     @Test

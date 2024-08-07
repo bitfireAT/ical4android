@@ -174,11 +174,11 @@ class TaskTest {
 
         assertArrayEquals(arrayOf("Test","Sample"), t.categories.toArray())
 
-        val sibling = t.relatedTo.first
+        val (sibling) = t.relatedTo
         assertEquals("most-fields2@example.com", sibling.value)
         assertEquals(RelType.SIBLING, (sibling.getParameter(Parameter.RELTYPE) as RelType))
 
-        val unknown = t.unknownProperties.first
+        val (unknown) = t.unknownProperties
         assertEquals("X-UNKNOWN-PROP", unknown.name)
         assertEquals("xxx", unknown.getParameter<Parameter>("param1").value)
         assertEquals("Unknown Value", unknown.value)
