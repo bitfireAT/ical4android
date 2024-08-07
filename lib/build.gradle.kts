@@ -96,7 +96,18 @@ dependencies {
     coreLibraryDesugaring(libs.android.desugaring)
 
     implementation(libs.androidx.core)
-    api(libs.ical4j)
+    api(libs.ical4j) {
+        // Get rid of unnecessary transitive dependencies
+        exclude(group = "commons-validator", module = "commons-validator")
+        exclude(group = "org.slf4j", module = "slf4j-api")
+    }
+    // Force latest version of commons libraries
+    implementation("org.apache.commons:commons-lang3") {
+        version { strictly("3.15.0") }
+    }
+    implementation("commons-codec:commons-codec") {
+        version { strictly("1.17.1") }
+    }
     implementation(libs.slf4j)       // ical4j logging over java.util.Logger
 
     androidTestImplementation(libs.androidx.test.core)
