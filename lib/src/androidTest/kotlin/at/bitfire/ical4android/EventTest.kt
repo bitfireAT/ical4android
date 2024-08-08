@@ -92,13 +92,13 @@ class EventTest {
         e = findEvent(events, "multiple-1@ical4android.EventTest")
         assertEquals("Event 1", e.summary)
         assertEquals(1, e.exceptions.size)
-        assertEquals("Event 1 Exception", e.exceptions.first.summary)
+        assertEquals("Event 1 Exception", e.exceptions.first().summary)
 
         e = findEvent(events, "multiple-2@ical4android.EventTest")
         assertEquals("Event 2", e.summary)
         assertEquals(2, e.exceptions.size)
-        assertTrue("Event 2 Updated Exception 1" == e.exceptions.first.summary || "Event 2 Updated Exception 1" == e.exceptions[1].summary)
-        assertTrue("Event 2 Exception 2" == e.exceptions.first.summary || "Event 2 Exception 2" == e.exceptions[1].summary)
+        assertTrue("Event 2 Updated Exception 1" == e.exceptions.first().summary || "Event 2 Updated Exception 1" == e.exceptions[1].summary)
+        assertTrue("Event 2 Exception 2" == e.exceptions.first().summary || "Event 2 Exception 2" == e.exceptions[1].summary)
     }
 
 
@@ -110,9 +110,9 @@ class EventTest {
         assertEquals("Test Description", event.description)
         assertEquals("中华人民共和国", event.location)
         assertEquals(Css3Color.aliceblue, event.color)
-        assertEquals("cyrus@example.com", event.attendees.first.parameters.getParameter<Email>("EMAIL").value)
+        assertEquals("cyrus@example.com", event.attendees.first().parameters.getParameter<Email>("EMAIL").value)
 
-        val unknown = event.unknownProperties.first
+        val (unknown) = event.unknownProperties
         assertEquals("X-UNKNOWN-PROP", unknown.name)
         assertEquals("xxx", unknown.getParameter<Parameter>("param1").value)
         assertEquals("Unknown Value", unknown.value)
