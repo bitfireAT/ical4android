@@ -51,19 +51,20 @@ abstract class DmfsTaskList<out T : DmfsTask>(
 
         fun <T : DmfsTaskList<DmfsTask>> findByID(
             account: Account,
-            provider: TaskProvider,
+            provider: ContentProviderClient,
+            providerName: TaskProvider.ProviderName,
             factory: DmfsTaskListFactory<T>,
             id: Long
         ): T {
-            provider.client.query(
-                ContentUris.withAppendedId(provider.taskListsUri(), id).asSyncAdapter(account),
+            provider.query(
+                ContentUris.withAppendedId(TaskLists.getContentUri(providerName.authority), id).asSyncAdapter(account),
                 null,
                 null,
                 null,
                 null
             )?.use { cursor ->
                 if (cursor.moveToNext()) {
-                    val taskList = factory.newInstance(account, provider.client, provider.name, id)
+                    val taskList = factory.newInstance(account, provider, providerName, id)
                     taskList.populate(cursor.toValues())
                     return taskList
                 }

@@ -37,7 +37,7 @@ class DmfsTaskListTest(providerName: TaskProvider.ProviderName):
         val uri = DmfsTaskList.create(testAccount, provider.client, providerName, info)
         assertNotNull(uri)
 
-        return DmfsTaskList.findByID(testAccount, provider, TestTaskList.Factory, ContentUris.parseId(uri))
+        return DmfsTaskList.findByID(testAccount, provider.client, providerName, TestTaskList.Factory, ContentUris.parseId(uri))
     }
 
 
