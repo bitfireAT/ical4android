@@ -21,7 +21,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DmfsTaskListTest(providerName: TaskProvider.ProviderName):
-        AbstractTasksTest(providerName) {
+    AbstractTasksTest(providerName) {
 
     private val testAccount = Account("AndroidTaskListTest", TaskContract.LOCAL_ACCOUNT_TYPE)
 
@@ -34,10 +34,10 @@ class DmfsTaskListTest(providerName: TaskProvider.ProviderName):
         info.put(TaskContract.TaskLists.SYNC_ENABLED, 1)
         info.put(TaskContract.TaskLists.VISIBLE, 1)
 
-        val uri = DmfsTaskList.create(testAccount, provider, info)
+        val uri = DmfsTaskList.create(testAccount, provider.client, providerName, info)
         assertNotNull(uri)
 
-        return DmfsTaskList.findByID(testAccount, provider, TestTaskList.Factory, ContentUris.parseId(uri))
+        return DmfsTaskList.findByID(testAccount, provider.client, providerName, TestTaskList.Factory, ContentUris.parseId(uri))
     }
 
 
@@ -80,7 +80,7 @@ class DmfsTaskListTest(providerName: TaskProvider.ProviderName):
             val parentId = ContentUris.parseId(parentContentUri)
 
             // OpenTasks should provide the correct relation
-            taskList.provider.client.query(taskList.tasksPropertiesSyncUri(), null,
+            taskList.provider.query(taskList.tasksPropertiesSyncUri(), null,
                     "${Properties.TASK_ID}=?", arrayOf(childId.toString()),
                     null, null)!!.use { cursor ->
                 assertEquals(1, cursor.count)
@@ -99,7 +99,7 @@ class DmfsTaskListTest(providerName: TaskProvider.ProviderName):
             taskList.touchRelations()
 
             // now parent_id should bet set
-            taskList.provider.client.query(childContentUri, arrayOf(Tasks.PARENT_ID),
+            taskList.provider.query(childContentUri, arrayOf(Tasks.PARENT_ID),
                     null, null, null)!!.use { cursor ->
                 assertTrue(cursor.moveToNext())
                 assertEquals(parentId, cursor.getLong(0))
