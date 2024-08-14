@@ -11,6 +11,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.DatabaseUtils
 import android.os.ParcelFileDescriptor
+import androidx.core.content.pm.PackageInfoCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import at.bitfire.ical4android.impl.TestJtxCollection
@@ -139,7 +140,7 @@ class JtxICalObjectTest {
     @Test fun check_DTEND_TIMEZONE() = insertRetrieveAssertString(JtxICalObject.DTEND_TIMEZONE, sample?.dtendTimezone, Component.VJOURNAL.name)
     @Test fun check_STATUS() = insertRetrieveAssertString(JtxICalObject.STATUS, sample?.status, Component.VJOURNAL.name)
     @Test fun check_XSTATUS() {
-        val jtxVersionCode = context.packageManager.getPackageInfo("at.techbee.jtx", 0).longVersionCode
+        val jtxVersionCode = PackageInfoCompat.getLongVersionCode(context.packageManager.getPackageInfo("at.techbee.jtx", 0))
         Assume.assumeTrue(jtxVersionCode > 204020003)
         insertRetrieveAssertString(JtxICalObject.EXTENDED_STATUS, sample?.xstatus, Component.VJOURNAL.name)
     }
@@ -152,7 +153,7 @@ class JtxICalObjectTest {
     @Test fun check_LOCATION() = insertRetrieveAssertString(JtxICalObject.LOCATION, sample?.location, Component.VJOURNAL.name)
     @Test fun check_LOCATION_ALTREP() = insertRetrieveAssertString(JtxICalObject.LOCATION_ALTREP, sample?.locationAltrep, Component.VJOURNAL.name)
     @Test fun check_GEOFENCE_RADIUS() {
-        val jtxVersionCode = context.packageManager.getPackageInfo("at.techbee.jtx", 0).longVersionCode
+        val jtxVersionCode = PackageInfoCompat.getLongVersionCode(context.packageManager.getPackageInfo("at.techbee.jtx", 0))
         Assume.assumeTrue(jtxVersionCode > 204020003)
         insertRetrieveAssertInt(JtxICalObject.GEOFENCE_RADIUS, sample?.geofenceRadius, Component.VJOURNAL.name)
     }
