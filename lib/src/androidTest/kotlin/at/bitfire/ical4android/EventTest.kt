@@ -162,7 +162,7 @@ class EventTest {
         assertTrue(DateUtils.isDate(event.dtStart))
 
         assertEquals(1, event.exceptions.size)
-        val exception = event.exceptions.first
+        val (exception) = event.exceptions
         assertEquals("20150503", exception.recurrenceId!!.value)
         assertEquals("Another summary for the third day", exception.summary)
     }
@@ -172,7 +172,7 @@ class EventTest {
         val event = parseCalendar("recurring-only-exception.ics").first()
 
         assertEquals(1, event.exceptions.size)
-        val exception = event.exceptions.first
+        val (exception) = event.exceptions
         assertEquals("20150503T010203Z", exception.recurrenceId!!.value)
         assertEquals("This is an exception", exception.summary)
 
