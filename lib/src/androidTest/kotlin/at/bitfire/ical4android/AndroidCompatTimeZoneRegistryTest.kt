@@ -78,6 +78,13 @@ class AndroidCompatTimeZoneRegistryTest {
     }
 
     @Test
+    fun getTimeZone_Copenhagen_NoBerlin() {
+        val tz = registry.getTimeZone("Europe/Copenhagen")!!
+        assertEquals("Europe/Copenhagen", tz.id)
+        assertFalse(tz.vTimeZone.toString().contains("Berlin"))
+    }
+
+    @Test
     fun getTimeZone_NotExisting() {
         assertNull(registry.getTimeZone("Test/NotExisting"))
     }
