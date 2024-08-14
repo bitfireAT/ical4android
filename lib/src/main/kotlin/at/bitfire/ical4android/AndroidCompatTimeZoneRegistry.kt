@@ -10,6 +10,8 @@ import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.property.TzId
 import java.time.ZoneId
 import java.util.logging.Logger
+import net.fortuna.ical4j.model.property.TzUrl
+import net.fortuna.ical4j.model.property.XProperty
 
 /**
  * Wrapper around default [TimeZoneRegistry] that uses the Android name if a time zone has a
@@ -67,13 +69,13 @@ class AndroidCompatTimeZoneRegistry(
            but most Android devices don't now Europe/Kyiv yet.
            */
         if (tz.id != androidTzId) {
-            logger.warning("Using Android TZID $androidTzId instead of ical4j ${tz.id}")
+            logger.fine("Using ical4j timezone ${tz.id} data to construct Android timezone $androidTzId")
 
             // create a copy of the VTIMEZONE so that we don't modify the original registry values (which are not immutable)
             val vTimeZone = tz.vTimeZone
             val newVTimeZoneProperties = PropertyList(vTimeZone.properties)
-            newVTimeZoneProperties.removeAll { property ->
-                property is TzId
+            newVTimeZoneProperties.removeAll { prop ->
+                prop is TzId || prop is TzUrl || prop.name == "X-LIC-LOCATION"
             }
             newVTimeZoneProperties += TzId(androidTzId)
             return TimeZone(VTimeZone(
