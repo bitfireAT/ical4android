@@ -4,31 +4,26 @@
 
 package at.bitfire.ical4android
 
-import android.os.Build
+import androidx.test.filters.SdkSuppress
 import at.bitfire.ical4android.validation.FixInvalidDayOffsetPreprocessor
 import at.bitfire.ical4android.validation.FixInvalidUtcOffsetPreprocessor
 import at.bitfire.ical4android.validation.ICalPreprocessor
 import io.mockk.mockkObject
-import io.mockk.spyk
 import io.mockk.verify
+import java.io.InputStreamReader
+import java.io.StringReader
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Component
 import net.fortuna.ical4j.model.component.VEvent
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.io.InputStreamReader
-import java.io.StringReader
-import org.junit.Assume.assumeTrue
 
 class ICalPreprocessorTest {
 
     @Test
+    @SdkSuppress(minSdkVersion = 28)
     fun testPreprocessStream_appliesStreamProcessors() {
-        assumeTrue(
-            "Can only run on API Level 24 or newer because mockkObject doesn't support Android < P (SDK 28)",
-            Build.VERSION.SDK_INT >= 28
-        )
-
+        // Can only run on API Level 28 or newer because mockkObject doesn't support Android < P
         mockkObject(FixInvalidDayOffsetPreprocessor, FixInvalidUtcOffsetPreprocessor) {
             ICalPreprocessor.preprocessStream(StringReader(""))
 
