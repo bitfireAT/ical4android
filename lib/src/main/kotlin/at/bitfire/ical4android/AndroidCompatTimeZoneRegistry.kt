@@ -69,7 +69,7 @@ class AndroidCompatTimeZoneRegistry(
            but most Android devices don't now Europe/Kyiv yet.
            */
         if (tz.id != androidTzId) {
-            logger.fine("Using ical4j timezone ${tz.id} data to construct Android timezone $androidTzId")
+            logger.info("Using ical4j timezone ${tz.id} data to construct Android timezone $androidTzId")
 
             // create a copy of the VTIMEZONE so that we don't modify the original registry values (which are not immutable)
             val vTimeZone = tz.vTimeZone
