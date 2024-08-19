@@ -10,6 +10,9 @@ import net.fortuna.ical4j.model.component.VTimeZone
 import net.fortuna.ical4j.model.property.TzId
 import java.time.ZoneId
 import java.util.logging.Logger
+import net.fortuna.ical4j.model.Property
+import net.fortuna.ical4j.model.component.Daylight
+import net.fortuna.ical4j.model.component.Standard
 import net.fortuna.ical4j.model.property.TzUrl
 import net.fortuna.ical4j.model.property.XProperty
 
@@ -73,10 +76,7 @@ class AndroidCompatTimeZoneRegistry(
 
             // create a copy of the VTIMEZONE so that we don't modify the original registry values (which are not immutable)
             val vTimeZone = tz.vTimeZone
-            val newVTimeZoneProperties = PropertyList(vTimeZone.properties)
-            newVTimeZoneProperties.removeAll { prop ->
-                prop is TzId || prop is TzUrl || prop.name == "X-LIC-LOCATION"
-            }
+            val newVTimeZoneProperties = PropertyList<Property>()
             newVTimeZoneProperties += TzId(androidTzId)
             return TimeZone(VTimeZone(
                 newVTimeZoneProperties,
