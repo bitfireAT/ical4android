@@ -17,9 +17,8 @@ jobs:
           cache-encryption-key: ${{ secrets.gradle_encryption_key }}
           gradle-home-cache-cleanup: true               # clean up unused files
           dependency-graph: generate-and-submit         # submit Github Dependency Graph info
-          dependency-graph-continue-on-failure: false
 
-      - run: ./gradlew --build-cache --configuration-cache assembleDebug
+      - run: ./gradlew --build-cache --configuration-cache compileDebugSources
 
   test:
     needs: compile
