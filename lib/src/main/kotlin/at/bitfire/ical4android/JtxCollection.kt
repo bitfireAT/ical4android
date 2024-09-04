@@ -29,7 +29,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
     companion object {
 
         private val logger
-            get() = Logger.getLogger(JtxCollection::class.java.name)
+            get() = Logger.getLogger(javaClass.name)
 
         fun create(account: Account, client: ContentProviderClient, values: ContentValues): Uri {
             logger.log(Level.FINE, "Creating jtx Board collection", values)
