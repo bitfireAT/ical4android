@@ -2,7 +2,9 @@
 agp = "8.5.2"
 android-desugar = "2.1.2"
 androidx-core = "1.13.1"
-androidx-test = "1.6.2"
+androidx-test-core = "1.6.1"
+androidx-test-rules = "1.6.1"
+androidx-test-runner = "1.6.2"
 # noinspection GradleDependency
 commons-collections = "4.2"
 # noinspection GradleDependency
@@ -20,9 +22,9 @@ slf4j = "2.0.13"
 [libraries]
 android-desugaring = { module = "com.android.tools:desugar_jdk_libs", version.ref = "android-desugar" }
 androidx-core = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
-androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test" }
-androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-test" }
-androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
+androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-test-rules" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
 ical4j = { module = "org.mnode.ical4j:ical4j", version.ref = "ical4j" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
