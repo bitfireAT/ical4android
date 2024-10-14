@@ -1,30 +1,26 @@
 [versions]
-agp = "8.5.2"
+agp = "8.7.0"
 android-desugar = "2.1.2"
 androidx-core = "1.13.1"
-androidx-test-core = "1.6.1"
 androidx-test-rules = "1.6.1"
 androidx-test-runner = "1.6.2"
-# noinspection GradleDependency
-commons-collections = "4.2"
-# noinspection GradleDependency
-commons-lang = "3.8.1"
-# noinspection GradleDependency
-commons-io = "2.6"
+commons-codec = { strictly = "1.17.1" }
+commons-lang = { strictly = "3.15.0" }
 dokka  ="1.9.20"
 # noinspection GradleDependency
 ical4j = "3.2.19"   # final version; update to 4.x will require much work
 junit = "4.13.2"
-kotlin = "2.0.20"
-mockk = "1.13.12"
+kotlin = "2.0.21"
+mockk = "1.13.13"
 slf4j = "2.0.13"
 
 [libraries]
 android-desugaring = { module = "com.android.tools:desugar_jdk_libs", version.ref = "android-desugar" }
 androidx-core = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
-androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
 androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-test-rules" }
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
+commons-codec = { module = "commons-codec:commons-codec", version.ref = "commons-codec" }
+commons-lang = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang" }
 ical4j = { module = "org.mnode.ical4j:ical4j", version.ref = "ical4j" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }

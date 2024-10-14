@@ -29,12 +29,9 @@ android {
     compileOptions {
         // ical4j >= 3.x uses the Java 8 Time API
         isCoreLibraryDesugaringEnabled = true
-
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlin {
-        jvmToolchain(17)
+        jvmToolchain(21)
     }
 
     buildFeatures.buildConfig = true
@@ -101,15 +98,10 @@ dependencies {
         exclude(group = "commons-validator", module = "commons-validator")
     }
     // Force latest version of commons libraries
-    implementation("org.apache.commons:commons-lang3") {
-        version { require("3.15.0") }
-    }
-    implementation("commons-codec:commons-codec") {
-        version { require("1.17.1") }
-    }
+    implementation(libs.commons.codec)
+    implementation(libs.commons.lang)
     implementation(libs.slf4j)       // ical4j logging over java.util.Logger
 
-    androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.mockk.android)
