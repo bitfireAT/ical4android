@@ -10,7 +10,7 @@ plugins {
 }
 
 android {
-    compileSdk = 34
+    compileSdk = 35
 
     namespace = "at.bitfire.ical4android"
 

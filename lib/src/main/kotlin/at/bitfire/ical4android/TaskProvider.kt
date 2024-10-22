@@ -10,10 +10,10 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.pm.PackageInfoCompat
 import at.bitfire.ical4android.util.MiscUtils.closeCompat
-import org.dmfs.tasks.contract.TaskContract
 import java.io.Closeable
 import java.util.logging.Level
 import java.util.logging.Logger
+import org.dmfs.tasks.contract.TaskContract
 
 
 class TaskProvider private constructor(
@@ -143,7 +143,7 @@ class TaskProvider private constructor(
     class ProviderTooOldException(
             val provider: ProviderName,
             installedVersionCode: Long,
-            val installedVersionName: String
+            val installedVersionName: String?
     ): Exception("Package ${provider.packageName} has version $installedVersionName ($installedVersionCode), " +
             "required: ${provider.minVersionName} (${provider.minVersionCode})")
 
