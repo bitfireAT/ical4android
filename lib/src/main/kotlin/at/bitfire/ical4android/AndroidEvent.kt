@@ -336,13 +336,19 @@ abstract class AndroidEvent(
         event.location = row.getAsString(Events.EVENT_LOCATION)
         event.description = row.getAsString(Events.DESCRIPTION)
 
-        row.getAsString(Events.EVENT_COLOR_KEY)?.let { name ->
-            try {
-                event.color = Css3Color.valueOf(name)
-            } catch (e: IllegalArgumentException) {
-                logger.warning("Ignoring unknown color $name from Calendar Provider")
+        // color can be specified as RGB value and/or as index key (CSS3 color of AndroidCalendar)
+        event.color =
+            row.getAsString(Events.EVENT_COLOR_KEY)?.let { name ->      // try color key first
+                try {
+                     Css3Color.valueOf(name)
+                } catch (_: IllegalArgumentException) {
+                    logger.warning("Ignoring unknown color name \"$name\"")
+                    null
+                }
+            } ?:
+            row.getAsInteger(Events.EVENT_COLOR)?.let { color ->        // otherwise, try to find the color name from the value
+                Css3Color.entries.firstOrNull { it.argb == color }
             }
-        }
 
         // status
         when (row.getAsInteger(Events.STATUS)) {
@@ -928,18 +934,27 @@ abstract class AndroidEvent(
         builder.withValue(Events.TITLE, event.summary)
         builder.withValue(Events.EVENT_LOCATION, event.location)
         builder.withValue(Events.DESCRIPTION, event.description)
-        builder.withValue(Events.EVENT_COLOR_KEY, event.color?.let { color ->
-            val colorName = color.name
-            // set event color (if it's available for this account)
+
+        val color = event.color
+        if (color != null) {
+            // verify that color exists for this account
             calendar.provider.query(Colors.CONTENT_URI.asSyncAdapter(calendar.account), arrayOf(Colors.COLOR_KEY),
-                    "${Colors.COLOR_KEY}=? AND ${Colors.COLOR_TYPE}=${Colors.TYPE_EVENT}", arrayOf(colorName), null)?.use { cursor ->
+                "${Colors.COLOR_KEY}=? AND ${Colors.COLOR_TYPE}=?", arrayOf(color.name, Colors.TYPE_EVENT.toString()), null)?.use { cursor ->
                 if (cursor.moveToNext())
-                    return@let colorName
-                else
-                    logger.fine("Ignoring event color: $colorName (not available for this account)")
+                    // color key exists
+                    builder.withValue(Events.EVENT_COLOR_KEY, color.name)
+                else {
+                    logger.warning("No color with name \"${color.name}\", directly using value (${color.argb})")
+                    builder.withValue(Events.EVENT_COLOR, color.argb)
+                }
             }
-            null
-        })
+
+        } else {
+            // reset color index and value
+            builder
+                .withValue(Events.EVENT_COLOR_KEY, null)
+                .withValue(Events.EVENT_COLOR, null)
+        }
 
         // scheduling
         val groupScheduled = event.attendees.isNotEmpty()

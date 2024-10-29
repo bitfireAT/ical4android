@@ -104,9 +104,13 @@ class AndroidEventTest {
 
     @Before
     fun prepare() {
+        // create test calendar
         calendar = TestCalendar.findOrCreate(testAccount, provider)
         assertNotNull(calendar)
         calendarUri = ContentUris.withAppendedId(Calendars.CONTENT_URI, calendar.id)
+
+        // add colors
+        AndroidCalendar.insertColors(provider, testAccount)
     }
 
     @After
@@ -585,13 +589,15 @@ class AndroidEventTest {
         buildEvent(true) {
             color = Css3Color.darkseagreen
         }.let { result ->
-            assertNull(result.get(Events.CALENDAR_COLOR_KEY))
+            // no color key used
+            assertNull(result.get(Events.EVENT_COLOR_KEY))
+            // but fallback to color value
+            assertEquals(Css3Color.darkseagreen.argb, result.getAsInteger(Events.EVENT_COLOR))
         }
     }
 
     @Test
     fun testBuildEvent_Color_WhenAvailable() {
-        AndroidCalendar.insertColors(provider, testAccount)
         buildEvent(true) {
             color = Css3Color.darkseagreen
         }.let { result ->
@@ -1700,10 +1706,18 @@ class AndroidEventTest {
     }
 
     @Test
-    fun testPopulateEvent_Color() {
-        AndroidCalendar.insertColors(provider, testAccount)
+    fun testPopulateEvent_Color_FromIndex() {
         populateEvent(true) {
             put(Events.EVENT_COLOR_KEY, Css3Color.silver.name)
+        }.let { result ->
+            assertEquals(Css3Color.silver, result.color)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Color_FromValue() {
+        populateEvent(true) {
+            put(Events.EVENT_COLOR, Css3Color.silver.argb)
         }.let { result ->
             assertEquals(Css3Color.silver, result.color)
         }
@@ -2384,6 +2398,30 @@ class AndroidEventTest {
         } finally {
             updatedEvent.delete()
         }
+    }
+
+    @Test
+    fun testUpdateEvent_ResetColor() {
+        // add event with color
+        val event = Event().apply {
+            uid = "sample1@testAddEvent"
+            dtStart = DtStart(DateTime())
+            color = Css3Color.silver
+        }
+        val uri = TestEvent(calendar, event).add()
+        val id = ContentUris.parseId(uri)
+
+        // verify that it has color
+        val beforeUpdate = calendar.findById(id)
+        assertNotNull(beforeUpdate.event?.color)
+
+        // update: reset color
+        event.color = null
+        beforeUpdate.update(event)
+
+        // verify that it doesn't have color anymore
+        val afterUpdate = calendar.findById(id)
+        assertNull(afterUpdate.event!!.color)
     }
 
     @Test
