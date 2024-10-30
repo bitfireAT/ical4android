@@ -581,7 +581,6 @@ class AndroidEventTest {
 
     @Test
     fun testBuildEvent_Color_WhenNotAvailable() {
-        AndroidCalendar.removeColors(provider, testAccount)
         buildEvent(true) {
             color = Css3Color.darkseagreen
         }.let { result ->
@@ -1700,10 +1699,19 @@ class AndroidEventTest {
     }
 
     @Test
-    fun testPopulateEvent_Color() {
+    fun testPopulateEvent_Color_FromIndex() {
         AndroidCalendar.insertColors(provider, testAccount)
         populateEvent(true) {
             put(Events.EVENT_COLOR_KEY, Css3Color.silver.name)
+        }.let { result ->
+            assertEquals(Css3Color.silver, result.color)
+        }
+    }
+
+    @Test
+    fun testPopulateEvent_Color_FromValue() {
+        populateEvent(true) {
+            put(Events.EVENT_COLOR, Css3Color.silver.argb)
         }.let { result ->
             assertEquals(Css3Color.silver, result.color)
         }
@@ -2355,6 +2363,30 @@ class AndroidEventTest {
         } finally {
             updatedEvent.delete()
         }
+    }
+
+    @Test
+    fun testUpdateEvent_ResetColor() {
+        // add event with color
+        val event = Event().apply {
+            uid = "sample1@testAddEvent"
+            dtStart = DtStart(DateTime())
+            color = Css3Color.silver
+        }
+        val uri = TestEvent(calendar, event).add()
+        val id = ContentUris.parseId(uri)
+
+        // verify that it has color
+        val beforeUpdate = calendar.findById(id)
+        assertNotNull(beforeUpdate.event?.color)
+
+        // update: reset color
+        event.color = null
+        beforeUpdate.update(event)
+
+        // verify that it doesn't have color anymore
+        val afterUpdate = calendar.findById(id)
+        assertNull(afterUpdate.event!!.color)
     }
 
     @Test
