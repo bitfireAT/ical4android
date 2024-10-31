@@ -36,6 +36,14 @@ class FixInvalidDayOffsetPreprocessorTest {
     }
 
     @Test
+    fun test_FixString_CompleteICalProperty() {
+        fixAndAssert(
+            "REFRESH-INTERVAL;VALUE=DURATION:P1D",
+            "REFRESH-INTERVAL;VALUE=DURATION:PT1D"
+        )
+    }
+
+    @Test
     fun test_FixString_DayOffsetFrom_Invalid() {
         fixAndAssert("DURATION:-P1D", "DURATION:-PT1D")
         fixAndAssert("TRIGGER:-P2D", "TRIGGER:-PT2D")
