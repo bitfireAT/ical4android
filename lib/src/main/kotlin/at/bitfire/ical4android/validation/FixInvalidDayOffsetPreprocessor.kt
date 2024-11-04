@@ -15,7 +15,8 @@ object FixInvalidDayOffsetPreprocessor : StreamPreprocessor() {
         // TRIGGER:-P2DT
         // TRIGGER:-PT2D
         // REFRESH-INTERVAL;VALUE=DURATION:PT1D
-        "(?:^|=)(DURATION|TRIGGER):-?P((T-?\\d+D)|(-?\\d+DT))$",
+        "(?:^|(DURATION|REFRESH-INTERVAL|RELATED-TO|TRIGGER);VALUE=)" +
+            "(DURATION|TRIGGER):-?P((T-?\\d+D)|(-?\\d+DT))$",
         setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE)
     )
 

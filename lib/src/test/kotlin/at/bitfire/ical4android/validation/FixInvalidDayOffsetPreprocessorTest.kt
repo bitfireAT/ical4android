@@ -9,6 +9,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Duration
+import java.time.format.DateTimeParseException
 
 class FixInvalidDayOffsetPreprocessorTest {
 
@@ -36,11 +37,19 @@ class FixInvalidDayOffsetPreprocessorTest {
     }
 
     @Test
-    fun test_FixString_CompleteICalProperty() {
-        fixAndAssert(
-            "REFRESH-INTERVAL;VALUE=DURATION:P1D",
-            "REFRESH-INTERVAL;VALUE=DURATION:PT1D"
-        )
+    fun test_FixString_SucceedsAsValueOnCorrectProperties() {
+        // By RFC 5545 the only properties allowed to hold DURATION as a VALUE are:
+        // DURATION, REFRESH, RELATED, TRIGGER
+        fixAndAssert("DURATION;VALUE=DURATION:P1D", "DURATION;VALUE=DURATION:PT1D")
+        fixAndAssert("REFRESH-INTERVAL;VALUE=DURATION:P1D", "REFRESH-INTERVAL;VALUE=DURATION:PT1D")
+        fixAndAssert("RELATED-TO;VALUE=DURATION:P1D", "RELATED-TO;VALUE=DURATION:PT1D")
+        fixAndAssert("TRIGGER;VALUE=DURATION:P1D", "TRIGGER;VALUE=DURATION:PT1D")
+    }
+
+    @Test(expected = DateTimeParseException::class)
+    fun test_FixString_FailsAsValueOnWrongProperty() {
+        // The update from RFC 2445 to RFC 5545 disallows using DURATION as a VALUE in FREEBUSY
+        fixAndAssert("FREEBUSY;VALUE=DURATION:P1D", "FREEBUSY;VALUE=DURATION:PT1D")
     }
 
     @Test
