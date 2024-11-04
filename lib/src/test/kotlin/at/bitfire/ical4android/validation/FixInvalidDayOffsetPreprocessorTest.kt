@@ -6,15 +6,14 @@ package at.bitfire.ical4android.validation
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Duration
-import java.time.format.DateTimeParseException
 
 class FixInvalidDayOffsetPreprocessorTest {
 
-    private fun fixAndAssert(expected: String, testValue: String) {
-
+    private fun fixParseAssertEqual(expected: String, testValue: String) {
         // Fix the duration string
         val fixed = FixInvalidDayOffsetPreprocessor.fixString(testValue)
 
@@ -26,6 +25,14 @@ class FixInvalidDayOffsetPreprocessorTest {
 
         // Assert
         assertEquals(expected, fixed)
+    }
+
+    private fun fixAssertNotEqual(expected: String, testValue: String) {
+        // Fix the duration string
+        val fixed = FixInvalidDayOffsetPreprocessor.fixString(testValue)
+
+        // Assert not equal
+        assertNotEquals(expected, fixed)
     }
 
     @Test
@@ -40,48 +47,53 @@ class FixInvalidDayOffsetPreprocessorTest {
     fun test_FixString_SucceedsAsValueOnCorrectProperties() {
         // By RFC 5545 the only properties allowed to hold DURATION as a VALUE are:
         // DURATION, REFRESH, RELATED, TRIGGER
-        fixAndAssert("DURATION;VALUE=DURATION:P1D", "DURATION;VALUE=DURATION:PT1D")
-        fixAndAssert("REFRESH-INTERVAL;VALUE=DURATION:P1D", "REFRESH-INTERVAL;VALUE=DURATION:PT1D")
-        fixAndAssert("RELATED-TO;VALUE=DURATION:P1D", "RELATED-TO;VALUE=DURATION:PT1D")
-        fixAndAssert("TRIGGER;VALUE=DURATION:P1D", "TRIGGER;VALUE=DURATION:PT1D")
+        fixParseAssertEqual("DURATION;VALUE=DURATION:P1D", "DURATION;VALUE=DURATION:PT1D")
+        fixParseAssertEqual("REFRESH-INTERVAL;VALUE=DURATION:P1D", "REFRESH-INTERVAL;VALUE=DURATION:PT1D")
+        fixParseAssertEqual("RELATED-TO;VALUE=DURATION:P1D", "RELATED-TO;VALUE=DURATION:PT1D")
+        fixParseAssertEqual("TRIGGER;VALUE=DURATION:P1D", "TRIGGER;VALUE=DURATION:PT1D")
     }
 
-    @Test(expected = DateTimeParseException::class)
+    @Test
     fun test_FixString_FailsAsValueOnWrongProperty() {
         // The update from RFC 2445 to RFC 5545 disallows using DURATION as a VALUE in FREEBUSY
-        fixAndAssert("FREEBUSY;VALUE=DURATION:P1D", "FREEBUSY;VALUE=DURATION:PT1D")
+        fixAssertNotEqual("FREEBUSY;VALUE=DURATION:P1D", "FREEBUSY;VALUE=DURATION:PT1D")
+    }
+
+    @Test
+    fun test_FixString_FailsIfNotAtStartOfLine() {
+        fixAssertNotEqual("xxDURATION;VALUE=DURATION:P1D", "xxDURATION;VALUE=DURATION:PT1D")
     }
 
     @Test
     fun test_FixString_DayOffsetFrom_Invalid() {
-        fixAndAssert("DURATION:-P1D", "DURATION:-PT1D")
-        fixAndAssert("TRIGGER:-P2D", "TRIGGER:-PT2D")
+        fixParseAssertEqual("DURATION:-P1D", "DURATION:-PT1D")
+        fixParseAssertEqual("TRIGGER:-P2D", "TRIGGER:-PT2D")
 
-        fixAndAssert("DURATION:-P1D", "DURATION:-P1DT")
-        fixAndAssert("TRIGGER:-P2D", "TRIGGER:-P2DT")
+        fixParseAssertEqual("DURATION:-P1D", "DURATION:-P1DT")
+        fixParseAssertEqual("TRIGGER:-P2D", "TRIGGER:-P2DT")
     }
 
     @Test
     fun test_FixString_DayOffsetFrom_Valid() {
-        fixAndAssert("DURATION:-PT12H", "DURATION:-PT12H")
-        fixAndAssert("TRIGGER:-PT12H", "TRIGGER:-PT12H")
+        fixParseAssertEqual("DURATION:-PT12H", "DURATION:-PT12H")
+        fixParseAssertEqual("TRIGGER:-PT12H", "TRIGGER:-PT12H")
     }
 
     @Test
     fun test_FixString_DayOffsetFromMultiple_Invalid() {
-        fixAndAssert("DURATION:-P1D\nTRIGGER:-P2D", "DURATION:-PT1D\nTRIGGER:-PT2D")
-        fixAndAssert("DURATION:-P1D\nTRIGGER:-P2D", "DURATION:-P1DT\nTRIGGER:-P2DT")
+        fixParseAssertEqual("DURATION:-P1D\nTRIGGER:-P2D", "DURATION:-PT1D\nTRIGGER:-PT2D")
+        fixParseAssertEqual("DURATION:-P1D\nTRIGGER:-P2D", "DURATION:-P1DT\nTRIGGER:-P2DT")
     }
 
     @Test
     fun test_FixString_DayOffsetFromMultiple_Valid() {
-        fixAndAssert("DURATION:-PT12H\nTRIGGER:-PT12H", "DURATION:-PT12H\nTRIGGER:-PT12H")
+        fixParseAssertEqual("DURATION:-PT12H\nTRIGGER:-PT12H", "DURATION:-PT12H\nTRIGGER:-PT12H")
     }
 
     @Test
     fun test_FixString_DayOffsetFromMultiple_Mixed() {
-        fixAndAssert("DURATION:-P1D\nDURATION:-PT12H\nTRIGGER:-P2D", "DURATION:-PT1D\nDURATION:-PT12H\nTRIGGER:-PT2D")
-        fixAndAssert("DURATION:-P1D\nDURATION:-PT12H\nTRIGGER:-P2D", "DURATION:-P1DT\nDURATION:-PT12H\nTRIGGER:-P2DT")
+        fixParseAssertEqual("DURATION:-P1D\nDURATION:-PT12H\nTRIGGER:-P2D", "DURATION:-PT1D\nDURATION:-PT12H\nTRIGGER:-PT2D")
+        fixParseAssertEqual("DURATION:-P1D\nDURATION:-PT12H\nTRIGGER:-P2D", "DURATION:-P1DT\nDURATION:-PT12H\nTRIGGER:-P2DT")
     }
 
     @Test
