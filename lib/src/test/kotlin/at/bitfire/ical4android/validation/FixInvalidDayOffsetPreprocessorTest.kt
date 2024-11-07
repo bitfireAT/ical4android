@@ -12,6 +12,13 @@ import java.time.Duration
 
 class FixInvalidDayOffsetPreprocessorTest {
 
+    /**
+     * Calls [FixInvalidDayOffsetPreprocessor.fixString] and asserts the result is equal to [expected].
+     *
+     * @param expected      The expected result
+     * @param testValue     The value to test
+     * @param parseDuration If `true`, [Duration.parse] is called on the fixed value to make sure it's a valid duration
+     */
     private fun assertFixedEquals(expected: String, testValue: String, parseDuration: Boolean = true) {
         // Fix the duration string
         val fixed = FixInvalidDayOffsetPreprocessor.fixString(testValue)
