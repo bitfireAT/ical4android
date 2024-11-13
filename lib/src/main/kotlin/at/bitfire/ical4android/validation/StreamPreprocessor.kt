@@ -13,6 +13,12 @@ abstract class StreamPreprocessor {
 
     abstract fun regexpForProblem(): Regex?
 
+    /**
+     * Fixes an iCalendar string.
+     *
+     * @param original The complete iCalendar string
+     * @return The complete iCalendar string, but fixed
+     */
     abstract fun fixString(original: String): String
 
     fun preprocess(reader: Reader): Reader {
@@ -21,7 +27,7 @@ abstract class StreamPreprocessor {
         val resetSupported = try {
             reader.reset()
             true
-        } catch(e: IOException) {
+        } catch(_: IOException) {
             false
         }
 
