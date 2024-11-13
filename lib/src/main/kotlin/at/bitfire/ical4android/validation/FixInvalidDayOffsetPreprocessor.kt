@@ -23,23 +23,16 @@ object FixInvalidDayOffsetPreprocessor : StreamPreprocessor() {
         var iCal: String = original
 
         // Find all instances matching the defined expression
-        val found = regexpForProblem().findAll(iCal)
+        val found = regexpForProblem().findAll(iCal).toList()
 
-        // ..and repair them
-        for (match in found) {
-            // Fix the duration string
-            val faultyDuration = match.groupValues[1]       // IE: "-PT1D" (faulty)
-            val fixedDuration = faultyDuration              // IE: "-P1D" (fixed)
-                .replace("PT", "P")
-                .replace("DT", "D")
-
-            // Replace the faulty duration with the fixed one in the captured line
-            val faultyCapture = match.value                 // IE: "REFRESH-INTERVAL;VALUE=DURATION:-PT1D" (faulty)
-            val fixedCapture = faultyCapture                // IE: "REFRESH-INTERVAL;VALUE=DURATION:-P1D" (fixed)
-                .replace(faultyDuration, fixedDuration)
-
-            // Replace complete faulty line in the iCal string with the fixed one
-            iCal = iCal.replace(faultyCapture, fixedCapture)
+        // ... and repair them. Use reversed order so that already replaced occurrences don't interfere with the following matches.
+        for (match in found.reversed()) {
+            match.groups[1]?.let { duration ->      // first capturing group is the duration value, for instance: "-PT1D"
+                val fixed = duration.value     // fixed is then for instance: "-P1D"
+                    .replace("PT", "P")
+                    .replace("DT", "D")
+                iCal = iCal.replaceRange(duration.range, fixed)
+            }
         }
         return iCal
     }
