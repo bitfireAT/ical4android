@@ -1,7 +1,7 @@
 [versions]
-agp = "8.7.1"
-android-desugar = "2.1.2"
-androidx-core = "1.13.1"
+agp = "8.7.2"
+android-desugar = "2.1.3"
+androidx-core = "1.15.0"
 androidx-test-rules = "1.6.1"
 androidx-test-runner = "1.6.2"
 commons-codec = { strictly = "1.17.1" }
@@ -12,7 +12,7 @@ ical4j = "3.2.19"   # final version; update to 4.x will require much work
 junit = "4.13.2"
 kotlin = "2.0.21"
 mockk = "1.13.13"
-slf4j = "2.0.13"
+slf4j = "2.0.16"
 
 [libraries]
 android-desugaring = { module = "com.android.tools:desugar_jdk_libs", version.ref = "android-desugar" }
