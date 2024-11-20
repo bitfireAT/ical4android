@@ -745,7 +745,7 @@ class AndroidEventTest {
     fun testBuildEvent_Classification_None() {
         buildEvent(true) {
         }.let { result ->
-            assertEquals(Events.ACCESS_PUBLIC, result.getAsInteger(Events.ACCESS_LEVEL))
+            assertEquals(Events.ACCESS_DEFAULT, result.getAsInteger(Events.ACCESS_LEVEL))
             assertNull(firstUnknownProperty(result))
         }
     }
