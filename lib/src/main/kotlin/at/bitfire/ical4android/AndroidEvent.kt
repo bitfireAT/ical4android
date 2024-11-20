@@ -983,7 +983,8 @@ abstract class AndroidEvent(
 
         builder .withValue(Events.AVAILABILITY, if (event.opaque) Events.AVAILABILITY_BUSY else Events.AVAILABILITY_FREE)
                 .withValue(Events.ACCESS_LEVEL, when (event.classification) {
-                    null, Clazz.PUBLIC -> Events.ACCESS_PUBLIC
+                    null -> Events.ACCESS_DEFAULT
+                    Clazz.PUBLIC -> Events.ACCESS_PUBLIC
                     Clazz.CONFIDENTIAL -> Events.ACCESS_CONFIDENTIAL
                     else /* including Events.ACCESS_PRIVATE */ -> Events.ACCESS_PRIVATE
                 })
