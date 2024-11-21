@@ -123,20 +123,22 @@ object DateUtils {
     fun isDateTime(date: DateProperty?) = date != null && date.date is DateTime
 
     /**
-     * Parses a VTIMEZONE definition to a VTimeZone object.
-     * @param timezoneDef VTIMEZONE definition
-     * @return parsed VTimeZone
-     * @throws IllegalArgumentException when the timezone definition can't be parsed
+     * Parses an iCalendar that only contains a `VTIMEZONE` definition to a VTimeZone object.
+     *
+     * @param timezoneDef iCalendar with only a `VTIMEZONE` definition
+     *
+     * @return parsed [VTimeZone], or `null` when the timezone definition can't be parsed
      */
-    fun parseVTimeZone(timezoneDef: String): VTimeZone {
+    fun parseVTimeZone(timezoneDef: String): VTimeZone? {
         Ical4Android.checkThreadContextClassLoader()
 
         val builder = CalendarBuilder(tzRegistry)
         try {
             val cal = builder.build(StringReader(timezoneDef))
             return cal.getComponent(VTimeZone.VTIMEZONE) as VTimeZone
-        } catch (e: Exception) {
-            throw IllegalArgumentException("Couldn't parse timezone definition")
+        } catch (_: Exception) {
+            // Couldn't parse timezone definition
+            return null
         }
     }
 
