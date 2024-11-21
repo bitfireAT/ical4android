@@ -63,4 +63,23 @@ class DateUtilsTest {
         assertFalse(DateUtils.isDateTime(null))
     }
 
+
+    @Test
+    fun testParseVTimeZone() {
+        val vtz = """
+            BEGIN:VCALENDAR
+            VERSION:2.0
+            PRODID:DAVx5
+            BEGIN:VTIMEZONE
+            TZID:Asia/Shanghai
+            END:VTIMEZONE
+            END:VCALENDAR""".trimIndent()
+        assertEquals("Asia/Shanghai", DateUtils.parseVTimeZone(vtz)?.timeZoneId?.value)
+    }
+
+    @Test
+    fun testParseVTimeZone_Invalid() {
+        assertNull(DateUtils.parseVTimeZone("Invalid"))
+    }
+
 }
