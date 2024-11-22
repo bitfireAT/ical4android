@@ -46,7 +46,7 @@ object JtxContract {
     const val AUTHORITY = "at.techbee.jtx.provider"
 
     /** The version of this SyncContentProviderContract */
-    const val VERSION = 7
+    const val VERSION = 8
 
     /** Constructs an Uri for the Jtx Sync Adapter with the given Account
      * @param [account] The account that should be appended to the Base Uri
@@ -1215,6 +1215,12 @@ object JtxContract {
          */
         const val LAST_SYNC = "lastsync"
 
+        /**
+         * Purpose:  This column/property stores a sync_id for the given collection
+         * See https://github.com/TechbeeAT/jtxBoard/issues/1635
+         * Type: [Long]
+         */
+        const val SYNC_ID = "sync_id"
     }
 
 
