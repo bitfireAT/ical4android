@@ -16,7 +16,7 @@ import java.util.logging.Logger
 
 @RunWith(Parameterized::class)
 
-abstract class AbstractTasksTest(
+abstract class DmfsStyleProvidersTaskTest(
     val providerName: TaskProvider.ProviderName
 ) {
 
