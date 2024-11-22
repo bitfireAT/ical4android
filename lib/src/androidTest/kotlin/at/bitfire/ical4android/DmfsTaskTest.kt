@@ -9,13 +9,13 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.database.DatabaseUtils
 import android.net.Uri
-import androidx.test.filters.MediumTest
 import at.bitfire.ical4android.impl.TestTask
 import at.bitfire.ical4android.impl.TestTaskList
 import at.bitfire.ical4android.util.DateUtils
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateList
 import net.fortuna.ical4j.model.DateTime
+import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.parameter.Email
 import net.fortuna.ical4j.model.parameter.RelType
 import net.fortuna.ical4j.model.parameter.TzId
@@ -52,8 +52,8 @@ import org.junit.Test
 import java.time.ZoneId
 
 class DmfsTaskTest(
-        providerName: TaskProvider.ProviderName
-): AbstractTasksTest(providerName) {
+    providerName: TaskProvider.ProviderName
+): DmfsStyleProvidersTaskTest(providerName) {
 
     private val tzVienna = DateUtils.ical4jTimeZone("Europe/Vienna")!!
     private val tzChicago = DateUtils.ical4jTimeZone("America/Chicago")!!
@@ -643,7 +643,6 @@ class DmfsTaskTest(
     }
 
 
-    @MediumTest
     @Test
     fun testAddTask() {
         // build and write event to calendar provider
@@ -693,7 +692,6 @@ class DmfsTaskTest(
         }
     }
 
-    @MediumTest
     @Test(expected = CalendarStorageException::class)
     fun testAddTaskWithInvalidDue() {
         val task = Task()
@@ -705,7 +703,21 @@ class DmfsTaskTest(
         TestTask(taskList!!, task).add()
     }
 
-    @MediumTest
+    @Test
+    fun testAddTaskWithManyAlarms() {
+        val task = Task()
+        task.uid = "TaskWithManyAlarms"
+        task.summary = "Task with many alarms"
+        task.dtStart = DtStart(Date("20150102"))
+
+        for (i in 1..1050)
+            task.alarms += VAlarm(java.time.Duration.ofMinutes(i.toLong()))
+
+        val uri = TestTask(taskList!!, task).add()
+        val task2 = taskList!!.findById(ContentUris.parseId(uri))
+        assertEquals(1050, task2.task?.alarms?.size)
+    }
+
     @Test
     fun testUpdateTask() {
         // add test event without reminder
@@ -739,7 +751,6 @@ class DmfsTaskTest(
         }
     }
 
-    @MediumTest
     @Test
     fun testBuildAllDayTask() {
         // add all-day event to calendar provider

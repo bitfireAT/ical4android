@@ -21,7 +21,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DmfsTaskListTest(providerName: TaskProvider.ProviderName):
-    AbstractTasksTest(providerName) {
+    DmfsStyleProvidersTaskTest(providerName) {
 
     private val testAccount = Account("AndroidTaskListTest", TaskContract.LOCAL_ACCOUNT_TYPE)
 
