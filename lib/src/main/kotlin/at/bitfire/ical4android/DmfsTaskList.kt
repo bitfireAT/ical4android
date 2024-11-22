@@ -163,7 +163,7 @@ abstract class DmfsTaskList<out T : DmfsTask>(
      */
     fun touchRelations(): Int {
         logger.fine("Touching relations to set parent_id")
-        val batchOperation = BatchOperation(provider)
+        val batchOperation = BatchOperation(provider, BatchOperation.TASKS_OPERATIONS_PER_YIELD_POINT)
         provider.query(
             tasksSyncUri(true), null,
             "${Tasks.LIST_ID}=? AND ${Tasks.PARENT_ID} IS NULL AND ${Relation.MIMETYPE}=? AND ${Relation.RELATED_ID} IS NOT NULL",

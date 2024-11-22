@@ -17,15 +17,14 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 class BatchOperation(
-    private val providerClient: ContentProviderClient
+    private val providerClient: ContentProviderClient,
+    private val maxOperationsPerYieldPoint: Int? = null
 ) {
 
     companion object {
 
-        /** Maximum number of operations per yield point. SQLiteContentProvider, which most content providers
-         * are based on, indicates a value of 500. However to correct value to avoid the [OperationApplicationException]
-         * seems to be 499. */
-        const val MAX_OPERATIONS_PER_YIELD_POINT = 499
+        /** Maximum number of operations per yield point in task providers that are based on SQLiteContentProvider. */
+        const val TASKS_OPERATIONS_PER_YIELD_POINT = 499
 
     }
 
@@ -141,7 +140,7 @@ class BatchOperation(
          * 2. If a back reference points to a row outside of start/end,
          *    replace it by the actual result, which has already been calculated. */
 
-        var currentIdx = 1
+        var currentIdx = 0
         for (cpoBuilder in queue.subList(start, end)) {
             for ((backrefKey, backref) in cpoBuilder.valueBackrefs) {
                 val originalIdx = backref.originalIndex
@@ -158,7 +157,8 @@ class BatchOperation(
             }
 
             // Set a possible yield point every MAX_OPERATIONS_PER_YIELD_POINT operations for SQLiteContentProvider
-            if ((++currentIdx).mod(MAX_OPERATIONS_PER_YIELD_POINT) == 0)
+            currentIdx += 1
+            if (maxOperationsPerYieldPoint != null && currentIdx.mod(maxOperationsPerYieldPoint) == 0)
                 cpoBuilder.withYieldAllowed()
 
             cpo += cpoBuilder.build()
