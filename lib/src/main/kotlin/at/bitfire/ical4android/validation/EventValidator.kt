@@ -6,7 +6,6 @@ package at.bitfire.ical4android.validation
 
 import androidx.annotation.VisibleForTesting
 import at.bitfire.ical4android.Event
-import at.bitfire.ical4android.Ical4Android
 import at.bitfire.ical4android.util.DateUtils
 import at.bitfire.ical4android.util.TimeApiExtensions.toIcal4jDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
@@ -47,7 +46,7 @@ object EventValidator {
         val dtStart = correctStartAndEndTime(event)
         sameTypeForDtStartAndRruleUntil(dtStart, event.rRules)
         removeRRulesWithUntilBeforeDtStart(dtStart, event.rRules)
-        removeRRulesOfExceptions(event.exceptions)
+        removeRecurrenceOfExceptions(event.exceptions)
     }
 
 
@@ -169,15 +168,20 @@ object EventValidator {
 
 
     /**
-     * Removes RRULEs of exceptions of (potentially recurring) events
-     * Note: This repair step needs to be applied after all exceptions have been found
+     * Removes all recurrence information of exceptions of (potentially recurring) events. This is:
+     * `RRULE`, `RDATE` and `EXDATE`.
+     * Note: This repair step needs to be applied after all exceptions have been found.
      *
      * @param exceptions exceptions of an event
      */
     @VisibleForTesting
-    internal fun removeRRulesOfExceptions(exceptions: List<Event>) {
-        for (exception in exceptions)
-            exception.rRules.clear()     // Drop all RRULEs for the exception
+    internal fun removeRecurrenceOfExceptions(exceptions: List<Event>) {
+        for (exception in exceptions) {
+            // Drop all RRULEs, RDATEs, EXDATEs for the exception
+            exception.rRules.clear()
+            exception.rDates.clear()
+            exception.exDates.clear()
+        }
     }
 
 
