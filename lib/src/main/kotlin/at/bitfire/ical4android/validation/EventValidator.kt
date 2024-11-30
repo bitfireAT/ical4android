@@ -170,16 +170,17 @@ object EventValidator {
     /**
      * Removes all recurrence information of exceptions of (potentially recurring) events. This is:
      * `RRULE`, `RDATE` and `EXDATE`.
-     * Note: This repair step needs to be applied after all exceptions have been found
+     * Note: This repair step needs to be applied after all exceptions have been found.
      *
      * @param exceptions exceptions of an event
      */
     @VisibleForTesting
     internal fun removeRecurrenceOfExceptions(exceptions: List<Event>) {
         for (exception in exceptions) {
-            exception.rRules.clear()     // Drop all RRULEs for the exception
-            exception.rDates.clear()     // Drop all RDATEs for the exception
-            exception.exDates.clear()    // Drop all EXDATEs for the exception
+            // Drop all RRULEs, RDATEs, EXDATEs for the exception
+            exception.rRules.clear()
+            exception.rDates.clear()
+            exception.exDates.clear()
         }
     }
 

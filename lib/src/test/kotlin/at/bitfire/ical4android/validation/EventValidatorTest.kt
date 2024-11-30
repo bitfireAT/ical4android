@@ -371,7 +371,7 @@ class EventValidatorTest {
     }
 
     @Test
-    fun testRemoveRrulesOfRruleExceptions() {
+    fun testRemoveRecurrencesOfRecurringWithExceptions() {
         // Test manually created event
         val tz = DateUtils.ical4jTimeZone("Europe/Paris")
         val manualEvent = Event().apply {
@@ -475,6 +475,8 @@ class EventValidatorTest {
         )).first()
         assertTrue(eventFromReader.rRules.size == 1)
         assertTrue(eventFromReader.exceptions.first().rRules.isEmpty())
+        assertTrue(eventFromReader.exceptions.first().rDates.isEmpty())
+        assertTrue(eventFromReader.exceptions.first().exDates.isEmpty())
     }
 
     @Test
