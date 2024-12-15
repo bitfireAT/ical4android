@@ -17,9 +17,17 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 class BatchOperation(
-    private val providerClient: ContentProviderClient
+    private val providerClient: ContentProviderClient,
+    private val maxOperationsPerYieldPoint: Int? = null
 ) {
-    
+
+    companion object {
+
+        /** Maximum number of operations per yield point in task providers that are based on SQLiteContentProvider. */
+        const val TASKS_OPERATIONS_PER_YIELD_POINT = 499
+
+    }
+
     private val logger = Logger.getLogger(javaClass.name)
 
     private val queue = LinkedList<CpoBuilder>()
@@ -96,7 +104,6 @@ class BatchOperation(
 
         try {
             val ops = toCPO(start, end)
-            logger.fine("Running ${ops.size} operations ($start .. ${end - 1})")
             val partResults = providerClient.applyBatch(ops)
 
             val n = end - start
@@ -133,6 +140,7 @@ class BatchOperation(
          * 2. If a back reference points to a row outside of start/end,
          *    replace it by the actual result, which has already been calculated. */
 
+        var currentIdx = 0
         for (cpoBuilder in queue.subList(start, end)) {
             for ((backrefKey, backref) in cpoBuilder.valueBackrefs) {
                 val originalIdx = backref.originalIndex
@@ -148,6 +156,11 @@ class BatchOperation(
                     backref.setIndex(originalIdx - start)
             }
 
+            // Set a possible yield point every MAX_OPERATIONS_PER_YIELD_POINT operations for SQLiteContentProvider
+            currentIdx += 1
+            if (maxOperationsPerYieldPoint != null && currentIdx.mod(maxOperationsPerYieldPoint) == 0)
+                cpoBuilder.withYieldAllowed()
+
             cpo += cpoBuilder.build()
         }
         return cpo
@@ -155,10 +168,10 @@ class BatchOperation(
 
 
     class BackReference(
-            /** index of the referenced row in the original, nonsplitted transaction */
-            val originalIndex: Int
+        /** index of the referenced row in the original, non-splitted transaction */
+        val originalIndex: Int
     ) {
-        /** overriden index, i.e. index within the splitted transaction */
+        /** overridden index, i.e. index within the splitted transaction */
         private var index: Int? = null
 
         /**
@@ -182,8 +195,8 @@ class BatchOperation(
      * value back references.
      */
     class CpoBuilder private constructor(
-            val uri: Uri,
-            val type: Type
+        val uri: Uri,
+        val type: Type
     ) {
 
         enum class Type { INSERT, UPDATE, DELETE }
@@ -197,11 +210,13 @@ class BatchOperation(
         }
 
 
-        var selection: String? = null
-        var selectionArguments: Array<String>? = null
+        private var selection: String? = null
+        private var selectionArguments: Array<String>? = null
 
-        val values = mutableMapOf<String, Any?>()
-        val valueBackrefs = mutableMapOf<String, BackReference>()
+        internal val values = mutableMapOf<String, Any?>()
+        internal val valueBackrefs = mutableMapOf<String, BackReference>()
+
+        private var yieldAllowed = false
 
 
         fun withSelection(select: String, args: Array<String>): CpoBuilder {
@@ -226,6 +241,10 @@ class BatchOperation(
             return this
         }
 
+        fun withYieldAllowed() {
+            yieldAllowed = true
+        }
+
 
         fun build(): ContentProviderOperation {
             val builder = when (type) {
@@ -241,6 +260,9 @@ class BatchOperation(
                 builder.withValue(key, value)
             for ((key, backref) in valueBackrefs)
                 builder.withValueBackReference(key, backref.getIndex())
+
+            if (yieldAllowed)
+                builder.withYieldAllowed(true)
 
             return builder.build()
         }

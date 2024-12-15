@@ -330,7 +330,7 @@ abstract class DmfsTask(
 
 
     fun add(): Uri {
-        val batch = BatchOperation(taskList.provider)
+        val batch = BatchOperation(taskList.provider, BatchOperation.TASKS_OPERATIONS_PER_YIELD_POINT)
 
         val builder = CpoBuilder.newInsert(taskList.tasksSyncUri())
         buildTask(builder, false)
@@ -350,7 +350,7 @@ abstract class DmfsTask(
         this.task = task
         val existingId = requireNotNull(id)
 
-        val batch = BatchOperation(taskList.provider)
+        val batch = BatchOperation(taskList.provider, BatchOperation.TASKS_OPERATIONS_PER_YIELD_POINT)
 
         // remove associated rows which are added later again
         batch.enqueue(CpoBuilder
