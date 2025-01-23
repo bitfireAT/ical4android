@@ -165,6 +165,8 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
 
     var ownerAccount: String? = null
 
+    var syncId: String? = null
+
 
     /**
      * Sets the calendar properties ([name], [displayName] etc.) from the passed argument,
@@ -186,6 +188,8 @@ abstract class AndroidCalendar<out T: AndroidEvent>(
         isVisible = info.getAsInteger(Calendars.VISIBLE) != 0
 
         ownerAccount = info.getAsString(Calendars.OWNER_ACCOUNT)
+
+        syncId = info.getAsString(Calendars._SYNC_ID)
     }
 
 

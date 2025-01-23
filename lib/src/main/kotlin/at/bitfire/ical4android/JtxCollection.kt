@@ -60,6 +60,8 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
     var supportsVTODO = true
     var supportsVJOURNAL = true
 
+    var syncId: Long? = null
+
     var context: Context? = null
 
 
@@ -84,6 +86,8 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
                 || values.getAsString(JtxContract.JtxCollection.SUPPORTSVTODO) == "true"
         supportsVJOURNAL = values.getAsString(JtxContract.JtxCollection.SUPPORTSVJOURNAL) == "1"
                 || values.getAsString(JtxContract.JtxCollection.SUPPORTSVJOURNAL) == "true"
+
+        syncId = values.getAsLong(JtxContract.JtxCollection.SYNC_ID)
 
         this.context = context
     }
