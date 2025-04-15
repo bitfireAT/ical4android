@@ -181,6 +181,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
 
     /**
      * @param [uid] of the entry that should be retrieved as content values
+     * @param [recurid] of the entry that should be retrieved as content values
      * @return Content Values of the found item with the given UID or null if the result was empty or more than 1
      * The query checks for the [uid] within all collections of this account, not only the current collection.
      */
