@@ -184,12 +184,12 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
      * @return Content Values of the found item with the given UID or null if the result was empty or more than 1
      * The query checks for the [uid] within all collections of this account, not only the current collection.
      */
-    fun queryRecur(uid: String, recurid: String, dtstart: Long): ContentValues? {
+    fun queryRecur(uid: String, recurid: String): ContentValues? {
         client.query(
             JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(account),
             null,
-            "${JtxContract.JtxICalObject.UID} = ? AND ${JtxContract.JtxICalObject.RECURID} = ? AND ${JtxContract.JtxICalObject.DTSTART} = ?",
-            arrayOf(uid, recurid, dtstart.toString()),
+            "${JtxContract.JtxICalObject.UID} = ? AND ${JtxContract.JtxICalObject.RECURID} = ?",
+            arrayOf(uid, recurid),
             null
         ).use { cursor ->
             logger.fine("queryByUID: found ${cursor?.count} records in ${account.name}")
