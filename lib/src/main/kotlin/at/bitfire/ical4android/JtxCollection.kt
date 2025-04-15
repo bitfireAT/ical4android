@@ -192,7 +192,7 @@ open class JtxCollection<out T: JtxICalObject>(val account: Account,
             arrayOf(uid, recurid),
             null
         ).use { cursor ->
-            logger.fine("queryByUID: found ${cursor?.count} records in ${account.name}")
+            logger.fine("queryRecur: found ${cursor?.count} records in ${account.name}")
             if (cursor?.count != 1)
                 return null
             cursor.moveToFirst()
