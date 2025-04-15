@@ -106,6 +106,31 @@ class JtxCollectionTest {
     }
 
     @Test
+    fun queryRecur_test() {
+        val collectionUri = JtxCollection.create(testAccount, client, cv)
+        assertNotNull(collectionUri)
+
+        val collections = JtxCollection.find(testAccount, client, context, TestJtxCollection.Factory, null, null)
+        val item = collections[0].queryRecur("abc1234", "xyz5678")
+        assertNull(item)
+
+        val cv = ContentValues().apply {
+            put(JtxContract.JtxICalObject.UID, "abc1234")
+            put(JtxContract.JtxICalObject.RECURID, "xyz5678")
+            put(JtxContract.JtxICalObject.RECURID_TIMEZONE, "Europe/Vienna")
+            put(JtxContract.JtxICalObject.SUMMARY, "summary")
+            put(JtxContract.JtxICalObject.COMPONENT, JtxContract.JtxICalObject.Component.VJOURNAL.name)
+            put(JtxContract.JtxICalObject.ICALOBJECT_COLLECTIONID, collections[0].id)
+        }
+        client.insert(JtxContract.JtxICalObject.CONTENT_URI.asSyncAdapter(testAccount), cv)
+        val contentValues = collections[0].queryRecur("abc1234", "xyz5678")
+
+        assertEquals("abc1234", contentValues?.getAsString(JtxContract.JtxICalObject.UID))
+        assertEquals("xyz5678", contentValues?.getAsString(JtxContract.JtxICalObject.RECURID))
+        assertEquals("Europe/Vienna", contentValues?.getAsString(JtxContract.JtxICalObject.RECURID_TIMEZONE))
+    }
+
+    @Test
     fun getICSForCollection_test() {
         val collectionUri = JtxCollection.create(testAccount, client, cv)
         assertNotNull(collectionUri)
