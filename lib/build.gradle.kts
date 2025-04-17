@@ -94,9 +94,6 @@ dependencies {
 
     implementation(libs.androidx.core)
     api(libs.ical4j)
-    // Force latest version of commons libraries
-    implementation(libs.commons.codec)
-    implementation(libs.commons.lang)
     implementation(libs.slf4j)       // ical4j logging over java.util.Logger
 
     androidTestImplementation(libs.androidx.test.rules)
