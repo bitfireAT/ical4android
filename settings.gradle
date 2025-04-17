@@ -17,7 +17,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ical4android"
-// include ':sample-app'
+rootProject.name = "root"
+
 include ':lib'
 project(':lib').name = 'ical4android'

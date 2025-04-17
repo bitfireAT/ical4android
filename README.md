@@ -59,6 +59,9 @@ by Google LLC. Android is a trademark of Google LLC._
     }
     ```
 
+To view the available gradle tasks for the library: `./gradlew ical4android:tasks`
+(the `ical4android` module is defined in `settings.gradle`).
+
 
 ## Contact
 
