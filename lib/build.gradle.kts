@@ -93,10 +93,7 @@ dependencies {
     coreLibraryDesugaring(libs.android.desugaring)
 
     implementation(libs.androidx.core)
-    api(libs.ical4j) {
-        // Get rid of unnecessary transitive dependencies
-        exclude(group = "commons-validator", module = "commons-validator")
-    }
+    api(libs.ical4j)
     // Force latest version of commons libraries
     implementation(libs.commons.codec)
     implementation(libs.commons.lang)
