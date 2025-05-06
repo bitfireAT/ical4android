@@ -7,11 +7,14 @@
 package at.bitfire.ical4android.util
 
 import android.text.format.Time
-import at.bitfire.ical4android.Ical4Android
+import at.bitfire.ical4android.util.AndroidTimeUtils.androidifyTimeZone
+import at.bitfire.ical4android.util.AndroidTimeUtils.storageTzId
 import at.bitfire.ical4android.util.TimeApiExtensions.toLocalDate
 import at.bitfire.ical4android.util.TimeApiExtensions.toZonedDateTime
-import net.fortuna.ical4j.model.*
 import net.fortuna.ical4j.model.Date
+import net.fortuna.ical4j.model.DateList
+import net.fortuna.ical4j.model.DateTime
+import net.fortuna.ical4j.model.TemporalAmountAdapter
 import net.fortuna.ical4j.model.TimeZone
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.property.DateListProperty
@@ -27,7 +30,8 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAmount
-import java.util.*
+import java.util.LinkedList
+import java.util.Locale
 import java.util.logging.Logger
 
 object AndroidTimeUtils {
