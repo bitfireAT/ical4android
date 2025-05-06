@@ -193,8 +193,6 @@ data class Task(
 
 
     fun write(os: OutputStream) {
-        Ical4Android.checkThreadContextClassLoader()
-
         val ical = Calendar()
         ical.properties += Version.VERSION_2_0
         ical.properties += prodId()

@@ -47,7 +47,42 @@ import net.fortuna.ical4j.model.parameter.Rsvp
 import net.fortuna.ical4j.model.parameter.SentBy
 import net.fortuna.ical4j.model.parameter.Value
 import net.fortuna.ical4j.model.parameter.XParameter
-import net.fortuna.ical4j.model.property.*
+import net.fortuna.ical4j.model.property.Action
+import net.fortuna.ical4j.model.property.Attach
+import net.fortuna.ical4j.model.property.Categories
+import net.fortuna.ical4j.model.property.Clazz
+import net.fortuna.ical4j.model.property.Color
+import net.fortuna.ical4j.model.property.Comment
+import net.fortuna.ical4j.model.property.Completed
+import net.fortuna.ical4j.model.property.Contact
+import net.fortuna.ical4j.model.property.Created
+import net.fortuna.ical4j.model.property.Description
+import net.fortuna.ical4j.model.property.DtEnd
+import net.fortuna.ical4j.model.property.DtStamp
+import net.fortuna.ical4j.model.property.DtStart
+import net.fortuna.ical4j.model.property.Due
+import net.fortuna.ical4j.model.property.Duration
+import net.fortuna.ical4j.model.property.ExDate
+import net.fortuna.ical4j.model.property.Geo
+import net.fortuna.ical4j.model.property.LastModified
+import net.fortuna.ical4j.model.property.Location
+import net.fortuna.ical4j.model.property.PercentComplete
+import net.fortuna.ical4j.model.property.Priority
+import net.fortuna.ical4j.model.property.ProdId
+import net.fortuna.ical4j.model.property.RDate
+import net.fortuna.ical4j.model.property.RRule
+import net.fortuna.ical4j.model.property.RecurrenceId
+import net.fortuna.ical4j.model.property.RelatedTo
+import net.fortuna.ical4j.model.property.Repeat
+import net.fortuna.ical4j.model.property.Resources
+import net.fortuna.ical4j.model.property.Sequence
+import net.fortuna.ical4j.model.property.Status
+import net.fortuna.ical4j.model.property.Summary
+import net.fortuna.ical4j.model.property.Trigger
+import net.fortuna.ical4j.model.property.Uid
+import net.fortuna.ical4j.model.property.Url
+import net.fortuna.ical4j.model.property.Version
+import net.fortuna.ical4j.model.property.XProperty
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.OutputStream
@@ -593,8 +628,6 @@ open class JtxICalObject(
      * @return The current JtxICalObject transformed into a ical4j Calendar
      */
     fun getICalendarFormat(): Calendar? {
-        Ical4Android.checkThreadContextClassLoader()
-
         val ical = Calendar()
         ical.properties += Version.VERSION_2_0
         ical.properties += ICalendar.prodId(listOf(TaskProvider.ProviderName.JtxBoard.packageName))
@@ -697,7 +730,6 @@ open class JtxICalObject(
      * @param [os] OutputStream where iCalendar should be written to
      */
     fun write(os: OutputStream) {
-        Ical4Android.checkThreadContextClassLoader()
         CalendarOutputter(false).output(this.getICalendarFormat(), os)
     }
 
