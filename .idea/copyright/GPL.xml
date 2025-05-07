@@ -1,0 +1,8 @@
+<component name="CopyrightManager">
+  <copyright>
+    <option name="allowReplaceRegexp" value="See the LICENSE" />
+    <option name="keyword" value="See the LICENSE" />
+    <option name="notice" value="This file is part of ical4android which is released under GPLv3.&#10;Copyright © All Contributors. See the LICENSE and AUTHOR files in the root directory for details.&#10;SPDX-License-Identifier: GPL-3.0-or-later" />
+    <option name="myName" value="GPL" />
+  </copyright>
+</component>

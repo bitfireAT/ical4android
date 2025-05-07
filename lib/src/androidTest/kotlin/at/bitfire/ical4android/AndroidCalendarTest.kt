@@ -1,6 +1,8 @@
-/***************************************************************************************************
- * Copyright © All Contributors. See LICENSE and AUTHORS in the root directory for details.
- **************************************************************************************************/
+/*
+ * This file is part of ical4android which is released under GPLv3.
+ * Copyright © All Contributors. See the LICENSE and AUTHOR files in the root directory for details.
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
 
 package at.bitfire.ical4android
 
@@ -20,10 +22,14 @@ import at.bitfire.ical4android.util.MiscUtils.asSyncAdapter
 import at.bitfire.ical4android.util.MiscUtils.closeCompat
 import net.fortuna.ical4j.model.property.DtEnd
 import net.fortuna.ical4j.model.property.DtStart
-import org.junit.*
+import org.junit.AfterClass
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 
 class AndroidCalendarTest {
 
