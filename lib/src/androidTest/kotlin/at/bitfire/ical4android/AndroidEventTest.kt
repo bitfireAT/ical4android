@@ -1,6 +1,8 @@
-/***************************************************************************************************
- * Copyright © All Contributors. See LICENSE and AUTHORS in the root directory for details.
- **************************************************************************************************/
+/*
+ * This file is part of ical4android which is released under GPLv3.
+ * Copyright © All Contributors. See the LICENSE and AUTHOR files in the root directory for details.
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
 package at.bitfire.ical4android
 
 import android.Manifest
@@ -61,6 +63,15 @@ import java.net.URI
 import java.time.Duration
 import java.time.Period
 import java.util.logging.Logger
+import kotlin.collections.Map
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.emptyMap
+import kotlin.collections.first
+import kotlin.collections.firstOrNull
+import kotlin.collections.iterator
+import kotlin.collections.mapOf
+import kotlin.collections.plusAssign
 
 class AndroidEventTest {
 

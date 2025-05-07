@@ -1,6 +1,8 @@
-/***************************************************************************************************
- * Copyright © All Contributors. See LICENSE and AUTHORS in the root directory for details.
- **************************************************************************************************/
+/*
+ * This file is part of ical4android which is released under GPLv3.
+ * Copyright © All Contributors. See the LICENSE and AUTHOR files in the root directory for details.
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
 
 package at.bitfire.ical4android
 
@@ -10,13 +12,13 @@ import at.bitfire.ical4android.validation.FixInvalidUtcOffsetPreprocessor
 import at.bitfire.ical4android.validation.ICalPreprocessor
 import io.mockk.mockkObject
 import io.mockk.verify
-import java.io.InputStreamReader
-import java.io.StringReader
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Component
 import net.fortuna.ical4j.model.component.VEvent
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.io.InputStreamReader
+import java.io.StringReader
 
 class ICalPreprocessorTest {
 

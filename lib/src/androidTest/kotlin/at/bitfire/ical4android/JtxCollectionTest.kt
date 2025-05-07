@@ -1,6 +1,8 @@
-/***************************************************************************************************
- * Copyright © All Contributors. See LICENSE and AUTHORS in the root directory for details.
- **************************************************************************************************/
+/*
+ * This file is part of ical4android which is released under GPLv3.
+ * Copyright © All Contributors. See the LICENSE and AUTHOR files in the root directory for details.
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
 
 package at.bitfire.ical4android
 
@@ -13,8 +15,16 @@ import at.bitfire.ical4android.impl.TestJtxCollection
 import at.bitfire.ical4android.util.MiscUtils.closeCompat
 import at.techbee.jtx.JtxContract
 import at.techbee.jtx.JtxContract.asSyncAdapter
-import junit.framework.TestCase.*
-import org.junit.*
+import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertNotNull
+import junit.framework.TestCase.assertNull
+import junit.framework.TestCase.assertTrue
+import org.junit.After
+import org.junit.AfterClass
+import org.junit.Assume
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 
 class JtxCollectionTest {
 
