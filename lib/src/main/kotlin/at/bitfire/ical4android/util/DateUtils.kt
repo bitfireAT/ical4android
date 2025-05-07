@@ -4,7 +4,6 @@
 
 package at.bitfire.ical4android.util
 
-import at.bitfire.ical4android.Ical4Android
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateTime
@@ -23,10 +22,6 @@ import java.util.logging.Logger
  * must be set to an Android Context.classLoader!
  */
 object DateUtils {
-
-    init {
-        Ical4Android.checkThreadContextClassLoader()
-    }
 
     private val logger
         get() = Logger.getLogger(javaClass.name)
@@ -130,8 +125,6 @@ object DateUtils {
      * @return parsed [VTimeZone], or `null` when the timezone definition can't be parsed
      */
     fun parseVTimeZone(timezoneDef: String): VTimeZone? {
-        Ical4Android.checkThreadContextClassLoader()
-
         val builder = CalendarBuilder(tzRegistry)
         try {
             val cal = builder.build(StringReader(timezoneDef))

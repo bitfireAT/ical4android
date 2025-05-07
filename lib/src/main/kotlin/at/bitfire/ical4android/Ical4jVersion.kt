@@ -4,15 +4,8 @@
 
 package at.bitfire.ical4android
 
+/**
+ * The used version of ical4j.
+ */
 @Suppress("unused")
-object Ical4Android {
-
-    const val ical4jVersion = BuildConfig.version_ical4j
-
-
-    fun checkThreadContextClassLoader() {
-        if (Thread.currentThread().contextClassLoader == null)
-            throw IllegalStateException("Thread.currentThread().contextClassLoader must be set for java.util.ServiceLoader (used by ical4j)")
-    }
-
-}
+const val ical4jVersion = BuildConfig.version_ical4j

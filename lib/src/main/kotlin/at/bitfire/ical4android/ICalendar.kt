@@ -4,6 +4,7 @@
 
 package at.bitfire.ical4android
 
+import at.bitfire.ical4android.ICalendar.Companion.CALENDAR_NAME
 import at.bitfire.ical4android.validation.ICalPreprocessor
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.data.CalendarParserFactory
@@ -80,7 +81,6 @@ open class ICalendar {
          * @throws IllegalArgumentException when the iCalendar resource contains an invalid value
          */
         fun fromReader(reader: Reader, properties: MutableMap<String, String>? = null): Calendar {
-            Ical4Android.checkThreadContextClassLoader()
             logger.fine("Parsing iCalendar stream")
 
             // preprocess stream to work around some problems that can't be fixed later
@@ -229,7 +229,6 @@ open class ICalendar {
          * @return time zone id (TZID) if VTIMEZONE contains a TZID, null otherwise
          */
         fun timezoneDefToTzId(timezoneDef: String): String? {
-            Ical4Android.checkThreadContextClassLoader()
             try {
                 val builder = CalendarBuilder()
                 val cal = builder.build(StringReader(timezoneDef))
