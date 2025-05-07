@@ -90,23 +90,13 @@ publishing {
     }
 }
 
-configurations.forEach {
-    // exclude modules which are in conflict with system libraries
-    it.exclude("commons-logging")
-    it.exclude("org.json", "json")
-
-    // exclude groovy because we don"t need it, and it needs API 26+
-    it.exclude("org.codehaus.groovy", "groovy")
-    it.exclude("org.codehaus.groovy", "groovy-dateutil")
-}
-
 dependencies {
     implementation(libs.kotlin.stdlib)
     coreLibraryDesugaring(libs.android.desugaring)
 
     implementation(libs.androidx.core)
     api(libs.ical4j)
-    implementation(libs.slf4j)       // ical4j logging over java.util.Logger
+    implementation(libs.slf4j.jdk)       // ical4j uses slf4j, this module uses java.util.Logger
 
     androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.androidx.test.runner)
