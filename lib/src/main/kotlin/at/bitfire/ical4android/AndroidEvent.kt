@@ -703,9 +703,9 @@ abstract class AndroidEvent(
         var rebuild = false
         if (event.status == null)
             calendar.provider.query(eventSyncURI(), arrayOf(Events.STATUS), null, null, null)?.use { cursor ->
-                cursor.moveToNext()
-                if (!cursor.isNull(0))      // Events.STATUS != null
-                    rebuild = true
+                if (cursor.moveToNext())
+                    if (!cursor.isNull(0))      // Events.STATUS != null
+                        rebuild = true
             }
 
         if (rebuild) {  // delete whole event and insert updated event
