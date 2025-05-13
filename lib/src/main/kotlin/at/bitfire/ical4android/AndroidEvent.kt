@@ -365,7 +365,7 @@ abstract class AndroidEvent(
         // scheduling
         if (groupScheduled) {
             // ORGANIZER must only be set for group-scheduled events (= events with attendees)
-            if (row.containsKey(Events.ORGANIZER) && groupScheduled)
+            if (row.containsKey(Events.ORGANIZER))
                 try {
                     event.organizer = Organizer(URI("mailto", row.getAsString(Events.ORGANIZER), null))
                 } catch (e: URISyntaxException) {
@@ -489,7 +489,7 @@ abstract class AndroidEvent(
                 EXTNAME_URL ->
                     try {
                         event.url = URI(rawValue)
-                    } catch(e: URISyntaxException) {
+                    } catch(_: URISyntaxException) {
                         logger.warning("Won't process invalid local URL: $rawValue")
                     }
 
@@ -703,9 +703,11 @@ abstract class AndroidEvent(
         var rebuild = false
         if (event.status == null)
             calendar.provider.query(eventSyncURI(), arrayOf(Events.STATUS), null, null, null)?.use { cursor ->
-                cursor.moveToNext()
-                if (!cursor.isNull(0))      // Events.STATUS != null
-                    rebuild = true
+                if (cursor.moveToNext()) {
+                    val statusIndex = cursor.getColumnIndexOrThrow(Events.STATUS)
+                    if (!cursor.isNull(statusIndex))
+                        rebuild = true
+                }
             }
 
         if (rebuild) {  // delete whole event and insert updated event
