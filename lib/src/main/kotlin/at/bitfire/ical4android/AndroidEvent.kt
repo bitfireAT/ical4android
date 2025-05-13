@@ -365,7 +365,7 @@ abstract class AndroidEvent(
         // scheduling
         if (groupScheduled) {
             // ORGANIZER must only be set for group-scheduled events (= events with attendees)
-            if (row.containsKey(Events.ORGANIZER) && groupScheduled)
+            if (row.containsKey(Events.ORGANIZER))
                 try {
                     event.organizer = Organizer(URI("mailto", row.getAsString(Events.ORGANIZER), null))
                 } catch (e: URISyntaxException) {
@@ -489,7 +489,7 @@ abstract class AndroidEvent(
                 EXTNAME_URL ->
                     try {
                         event.url = URI(rawValue)
-                    } catch(e: URISyntaxException) {
+                    } catch(_: URISyntaxException) {
                         logger.warning("Won't process invalid local URL: $rawValue")
                     }
 
