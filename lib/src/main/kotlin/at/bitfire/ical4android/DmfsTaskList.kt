@@ -16,6 +16,7 @@ import at.bitfire.ical4android.util.MiscUtils.asSyncAdapter
 import at.bitfire.ical4android.util.MiscUtils.toValues
 import org.dmfs.tasks.contract.TaskContract
 import org.dmfs.tasks.contract.TaskContract.Property.Relation
+import org.dmfs.tasks.contract.TaskContract.TaskListColumns
 import org.dmfs.tasks.contract.TaskContract.TaskLists
 import org.dmfs.tasks.contract.TaskContract.Tasks
 import java.io.FileNotFoundException
@@ -42,6 +43,7 @@ abstract class DmfsTaskList<out T : DmfsTask>(
     var name: String? = null
     var color: Int? = null
     var isSynced = false
+    var accessLevel: Int = TaskListColumns.ACCESS_LEVEL_UNDEFINED
     var isVisible = false
 
     /**
@@ -59,6 +61,7 @@ abstract class DmfsTaskList<out T : DmfsTask>(
         name = values.getAsString(TaskLists.LIST_NAME)
         color = values.getAsInteger(TaskLists.LIST_COLOR)
         values.getAsInteger(TaskLists.SYNC_ENABLED)?.let { isSynced = it != 0 }
+        accessLevel = values.getAsInteger(TaskListColumns.ACCESS_LEVEL)
         values.getAsInteger(TaskLists.VISIBLE)?.let { isVisible = it != 0 }
     }
 
