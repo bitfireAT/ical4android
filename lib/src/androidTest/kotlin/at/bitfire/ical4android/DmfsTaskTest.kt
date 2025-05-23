@@ -10,9 +10,9 @@ import android.accounts.Account
 import android.content.ContentUris
 import android.content.ContentValues
 import android.database.DatabaseUtils
-import android.net.Uri
 import at.bitfire.ical4android.impl.TestTask
 import at.bitfire.ical4android.impl.TestTaskList
+import at.bitfire.ical4android.impl.TestTaskListStore
 import at.bitfire.ical4android.util.DateUtils
 import net.fortuna.ical4j.model.Date
 import net.fortuna.ical4j.model.DateList
@@ -55,7 +55,7 @@ import java.time.ZoneId
 
 class DmfsTaskTest(
     providerName: TaskProvider.ProviderName
-): DmfsStyleProvidersTaskTest(providerName) {
+) : AbstractTaskProvidersTest(providerName) {
 
     private val tzVienna = DateUtils.ical4jTimeZone("Europe/Vienna")!!
     private val tzChicago = DateUtils.ical4jTimeZone("America/Chicago")!!
@@ -63,23 +63,23 @@ class DmfsTaskTest(
 
     private val testAccount = Account("AndroidTaskTest", LOCAL_ACCOUNT_TYPE)
 
-    private lateinit var taskListUri: Uri
+    private lateinit var provider: TaskProvider
     private var taskList: TestTaskList? = null
 
     @Before
-    override fun prepare() {
-        super.prepare()
+    fun setUp() {
+        provider = acquireTasksProvider()
 
-        taskList = TestTaskList.create(testAccount, provider)
-        assertNotNull("Couldn't find/create test task list", taskList)
-
-        taskListUri = ContentUris.withAppendedId(provider.taskListsUri(), taskList!!.id)
+        val store = TestTaskListStore(testAccount, providerName, provider.client)
+        taskList = store.provideTestTaskList()
     }
 
     @After
-    override fun shutdown() {
+    fun cleanUp() {
         taskList?.delete()
-        super.shutdown()
+
+        if (this::provider.isInitialized)
+            provider.close()
     }
 
 
@@ -496,8 +496,10 @@ class DmfsTaskTest(
         }.let { result ->
             val id = result.getAsLong(Tasks._ID)
             val uri = taskList!!.tasksPropertiesSyncUri()
-            provider.client.query(uri, arrayOf(Category.CATEGORY_NAME), "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
-                    arrayOf(Category.CONTENT_ITEM_TYPE, id.toString()), null)!!.use { cursor ->
+            provider.client.query(
+                uri, arrayOf(Category.CATEGORY_NAME), "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
+                arrayOf(Category.CONTENT_ITEM_TYPE, id.toString()), null
+            )!!.use { cursor ->
                 while (cursor.moveToNext())
                     when (cursor.getString(0)) {
                         "Cat_1" -> hasCat1 = true
@@ -517,8 +519,10 @@ class DmfsTaskTest(
         }.let { result ->
             val id = result.getAsLong(Tasks._ID)
             val uri = taskList!!.tasksPropertiesSyncUri()
-            provider.client.query(uri, arrayOf(Property.Comment.COMMENT), "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
-                arrayOf(Property.Comment.CONTENT_ITEM_TYPE, id.toString()), null)!!.use { cursor ->
+            provider.client.query(
+                uri, arrayOf(Property.Comment.COMMENT), "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
+                arrayOf(Property.Comment.CONTENT_ITEM_TYPE, id.toString()), null
+            )!!.use { cursor ->
                 if (cursor.moveToNext())
                     hasComment = cursor.getString(0) == "Comment value"
             }
@@ -534,9 +538,11 @@ class DmfsTaskTest(
         }.let { result ->
             val id = result.getAsLong(Tasks._ID)
             val uri = taskList!!.tasksPropertiesSyncUri()
-            provider.client.query(uri, arrayOf(Property.Comment.COMMENT), "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
-                arrayOf(Property.Comment.CONTENT_ITEM_TYPE, id.toString()), null)!!.use { cursor ->
-                    hasComment = cursor.count > 0
+            provider.client.query(
+                uri, arrayOf(Property.Comment.COMMENT), "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
+                arrayOf(Property.Comment.CONTENT_ITEM_TYPE, id.toString()), null
+            )!!.use { cursor ->
+                hasComment = cursor.count > 0
             }
         }
         assertFalse(hasComment)
@@ -544,8 +550,10 @@ class DmfsTaskTest(
 
     private fun firstProperty(taskId: Long, mimeType: String): ContentValues? {
         val uri = taskList!!.tasksPropertiesSyncUri()
-        provider.client.query(uri, null, "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
-                arrayOf(mimeType, taskId.toString()), null)!!.use { cursor ->
+        provider.client.query(
+            uri, null, "${Properties.MIMETYPE}=? AND ${PropertyColumns.TASK_ID}=?",
+            arrayOf(mimeType, taskId.toString()), null
+        )!!.use { cursor ->
             if (cursor.moveToNext()) {
                 val result = ContentValues(cursor.count)
                 DatabaseUtils.cursorRowToContentValues(cursor, result)

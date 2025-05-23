@@ -20,7 +20,7 @@ import java.util.LinkedList
 import java.util.logging.Level
 import java.util.logging.Logger
 
-class DmfsTaskListStore<TaskList: DmfsTaskList<Task>, Task: DmfsTask>(
+open class DmfsTaskListStore<out TaskList : DmfsTaskList<Task>, out Task : DmfsTask>(
     private val account: Account,
     private val providerName: TaskProvider.ProviderName,
     private val provider: ContentProviderClient,
