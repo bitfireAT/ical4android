@@ -1,7 +1,11 @@
 
+> [!IMPORTANT]  
+> This library has been merged into / superseded by [bitfireAT/synctools](https://github.com/bitfireAT/synctools).
+
+---
+
 [![Development tests](https://github.com/bitfireAT/ical4android/actions/workflows/test-dev.yml/badge.svg)](https://github.com/bitfireAT/ical4android/actions/workflows/test-dev.yml)
 [![Documentation](https://img.shields.io/badge/documentation-kdoc-brightgreen)](https://bitfireat.github.io/ical4android/)
-[![Latest Version](https://img.shields.io/jitpack/version/com.github.bitfireAT/ical4android)](https://jitpack.io/#bitfireAT/ical4android)
 
 
 # ical4android
